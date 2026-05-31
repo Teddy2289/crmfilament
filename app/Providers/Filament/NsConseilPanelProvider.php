@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\NsConseil\Pages\AircallDashboard;
 use App\Http\Responses\NsConseil\LoginResponse;
 use App\Filament\NsConseil\Pages\Dashboard;
+use App\Http\Middleware\SetLocale;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -13,6 +14,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;           // ← AJOUT
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -88,6 +90,7 @@ class NsConseilPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                SetLocale::class,
             ])
             ->authMiddleware([Authenticate::class])
             ->authGuard('web')
@@ -96,6 +99,10 @@ class NsConseilPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('60s')
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
-            ->spa();
+            ->spa()
+            ->renderHook(                                                    // ← AJOUT
+                PanelsRenderHook::BODY_START,
+                fn() => view('filament.loading-overlay'),
+            );
     }
 }
