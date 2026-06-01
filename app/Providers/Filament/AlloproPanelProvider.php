@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Allopro\Pages\Dashboard;
 use App\Http\Responses\Allopro\LoginResponse;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -67,11 +68,11 @@ class AlloproPanelProvider extends PanelProvider
                 in: app_path('Filament/Allopro/Pages'),
                 for: 'App\\Filament\\Allopro\\Pages'
             )
+            ->pages([])
             ->discoverWidgets(
                 in: app_path('Filament/Allopro/Widgets'),
                 for: 'App\\Filament\\Allopro\\Widgets'
             )
-            ->pages([])
             ->widgets([])
             ->middleware([
                 EncryptCookies::class,

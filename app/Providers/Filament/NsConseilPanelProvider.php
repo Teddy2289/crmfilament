@@ -14,7 +14,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\View\PanelsRenderHook;           // ← AJOUT
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -22,6 +22,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;  // ← AJOUT
 
 class NsConseilPanelProvider extends PanelProvider
 {
@@ -46,9 +47,9 @@ class NsConseilPanelProvider extends PanelProvider
                 'primary' => Color::Blue,
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
-                'danger' => Color::Rose,
-                'info' => Color::Sky,
-                'gray' => Color::Slate,
+                'danger'  => Color::Rose,
+                'info'    => Color::Sky,
+                'gray'    => Color::Slate,
             ])
             ->navigationGroups([
                 NavigationGroup::make('Pipeline')
@@ -63,6 +64,15 @@ class NsConseilPanelProvider extends PanelProvider
                     ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ])
+            // ── AJOUT : plugin FullCalendar ──────────────────────────
+            ->plugins([
+                FilamentFullCalendarPlugin::make()
+                    ->selectable(true)
+                    ->editable(false)
+                    ->timezone(config('app.timezone', 'Europe/Paris'))
+                    ->locale('fr'),
+            ])
+            // ────────────────────────────────────────────────────────
             ->discoverResources(
                 in: app_path('Filament/NsConseil/Resources'),
                 for: 'App\\Filament\\NsConseil\\Resources'
@@ -100,7 +110,7 @@ class NsConseilPanelProvider extends PanelProvider
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()
-            ->renderHook(                                                    // ← AJOUT
+            ->renderHook(
                 PanelsRenderHook::BODY_START,
                 fn() => view('filament.loading-overlay'),
             );

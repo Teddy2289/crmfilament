@@ -33,7 +33,7 @@ class MesPartenairesRecentWidget extends BaseWidget
                     ->weight('bold')
                     ->searchable(),
 
-                Tables\Columns\BadgeColumn::make('statut')
+                Tables\Columns\TextColumn::make('statut')
                     ->formatStateUsing(fn (OrganizationStatus $state) => $state->label())
                     ->color(fn (OrganizationStatus $state) => $state->color())
                     ->icon(fn (OrganizationStatus $state) => $state->icon()),

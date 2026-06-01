@@ -33,14 +33,14 @@ class Artisan extends Model
     ];
 
     protected $casts = [
-        'corps_de_metier' => CorpsDeMetier::class,
-        'statut_compte' => StatutCompteArtisan::class,
-        'canal_alerte' => CanalAlerte::class,
-        'date_souscription' => 'date',
-        'date_activation' => 'date',
-        'agenda_disponibilites' => 'boolean',
-        'note_moyenne' => 'decimal:2',
-        'nb_interventions' => 'integer',
+        'corps_de_metier'      => CorpsDeMetier::class,
+        'statut_compte'        => StatutCompteArtisan::class,
+        'canal_alerte'         => CanalAlerte::class,
+        'date_souscription'    => 'date',
+        'date_activation'      => 'date',
+        'agenda_disponibilites'=> 'boolean',
+        'note_moyenne'         => 'decimal:2',
+        'nb_interventions'     => 'integer',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -90,33 +90,36 @@ class Artisan extends Model
     // ── Scopes ──────────────────────────────────────────────────────
     public function scopeActifs($query)
     {
-        return $query->where('statut_compte', StatutCompteArtisan::Actif);
+        return $query->where('statut_compte', StatutCompteArtisan::Actif->value);
     }
 
     public function scopeEnAttente($query)
     {
-        return $query->where('statut_compte', StatutCompteArtisan::EnAttenteActivation);
+        return $query->where('statut_compte', StatutCompteArtisan::EnAttenteActivation->value);
     }
 
     public function scopeSuspendus($query)
     {
-        return $query->where('statut_compte', StatutCompteArtisan::Suspendu);
+        return $query->where('statut_compte', StatutCompteArtisan::Suspendu->value);
     }
 
     public function scopeByMetier($query, CorpsDeMetier $metier)
     {
-        return $query->where('corps_de_metier', $metier);
+        return $query->where('corps_de_metier', $metier->value);
     }
 
     public function scopePrioritaires($query)
     {
-        return $query->whereIn('corps_de_metier', CorpsDeMetier::metiersPrioritaires());
+        return $query->whereIn('corps_de_metier', array_map(
+            fn($e) => $e->value,
+            CorpsDeMetier::metiersPrioritaires()
+        ));
     }
 
     public function scopeDisponibles($query)
     {
         return $query->where('agenda_disponibilites', true)
-                     ->where('statut_compte', StatutCompteArtisan::Actif);
+                     ->where('statut_compte', StatutCompteArtisan::Actif->value);
     }
 
     public function scopeBienNotes($query, float $minimum = 4.0)
@@ -148,7 +151,7 @@ class Artisan extends Model
     public function activer(): void
     {
         $this->update([
-            'statut_compte' => StatutCompteArtisan::Actif,
+            'statut_compte'   => StatutCompteArtisan::Actif,
             'date_activation' => now(),
         ]);
     }
@@ -157,7 +160,7 @@ class Artisan extends Model
     {
         $this->update([
             'statut_compte' => StatutCompteArtisan::Suspendu,
-            'notes' => $motif ? $this->notes . "\nSuspension: " . $motif : $this->notes,
+            'notes'         => $motif ? $this->notes . "\nSuspension: " . $motif : $this->notes,
         ]);
     }
 
@@ -171,9 +174,7 @@ class Artisan extends Model
     public function getTauxSatisfactionAttribute(): float
     {
         $total = $this->rapportsSatisfaction()->count();
-        if ($total === 0) {
-            return 0;
-        }
+        if ($total === 0) return 0;
 
         $satisfaits = $this->rapportsSatisfaction()
             ->where('note_nps', '>=', 8)
@@ -217,7 +218,6 @@ class Artisan extends Model
         });
 
         static::updating(function (Artisan $artisan) {
-            // Si activation et pas de date d'activation
             if ($artisan->isDirty('statut_compte') &&
                 $artisan->statut_compte === StatutCompteArtisan::Actif &&
                 !$artisan->date_activation) {
@@ -234,14 +234,11 @@ class Artisan extends Model
 
     public function ticketsEnCours()
     {
-        return $this->tickets()
-            ->whereHas('statut', function ($q) {
-                $q->whereIn('statut', [
-                    'rdv_planifie',
-                    'artisan_confirme',
-                    'en_attente_confirmation_artisan',
-                ]);
-            });
+        return $this->tickets()->whereIn('statut', [
+            'rdv_planifie',
+            'artisan_confirme',
+            'en_attente_confirmation_artisan',
+        ]);
     }
 
     public function prospection()

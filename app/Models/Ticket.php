@@ -8,6 +8,10 @@ use App\Enums\CorpsDeMetier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Ticket extends Model
 {
@@ -29,30 +33,35 @@ class Ticket extends Model
         'notes',
     ];
 
+    /**
+     * Typage strict des attributs.
+     * En liant les Enums ici, Laravel s'occupe de toutes les conversions.
+     */
     protected $casts = [
-        'statut' => TicketStatut::class,
-        'niveau_priorite' => NiveauPriorite::class,
-        'corps_de_metier' => CorpsDeMetier::class,
-        'date_creation' => 'datetime',
-        'date_cloture' => 'datetime',
-        'rdv_planifie_at' => 'datetime',
-        'rappel_promise_at' => 'datetime',
+        'statut'           => TicketStatut::class,
+        'niveau_priorite'  => NiveauPriorite::class,
+        'corps_de_metier'  => CorpsDeMetier::class,
+        'date_creation'    => 'datetime',
+        'date_cloture'     => 'datetime',
+        'rdv_planifie_at'  => 'datetime',
+        'rappel_promise_at'=> 'datetime',
     ];
 
-    // ── Accesseurs ──────────────────────────────────────────────────
+    // ── Accesseurs Nettoyés (Grâce au Cast d'Enum) ───────────────────
+
     public function getStatutLabelAttribute(): string
     {
-        return $this->statut->label();
+        return $this->statut?->label() ?? 'Non défini';
     }
 
     public function getStatutColorAttribute(): string
     {
-        return $this->statut->color();
+        return $this->statut?->color() ?? 'gray';
     }
 
     public function getStatutIconAttribute(): string
     {
-        return $this->statut->icon();
+        return $this->statut?->icon() ?? 'heroicon-o-question-mark-circle';
     }
 
     public function getPrioriteLabelAttribute(): string
@@ -67,10 +76,8 @@ class Ticket extends Model
 
     public function getDureeTraitementMinutesAttribute(): int
     {
-        if (!$this->date_cloture) {
-            return now()->diffInMinutes($this->date_creation);
-        }
-        return $this->date_creation->diffInMinutes($this->date_cloture);
+        $fin = $this->date_cloture ?? now();
+        return $this->date_creation ? $fin->diffInMinutes($this->date_creation) : 0;
     }
 
     public function getDureeTraitementFormateeAttribute(): string
@@ -82,13 +89,13 @@ class Ticket extends Model
         }
 
         $heures = floor($minutes / 60);
-        $mins = $minutes % 60;
+        $mins   = $minutes % 60;
 
         if ($heures < 24) {
             return $heures . 'h' . ($mins > 0 ? ' ' . $mins . 'min' : '');
         }
 
-        $jours = floor($heures / 24);
+        $jours  = floor($heures / 24);
         $heures = $heures % 24;
         return $jours . 'j ' . $heures . 'h';
     }
@@ -99,82 +106,89 @@ class Ticket extends Model
             return true;
         }
 
-        $delaiMax = $this->niveau_priorite->delaiMaxMinutes();
+        $delaiMax = $this->niveau_priorite->delaiMaxMinutes() ?? 480;
         return $this->duree_traitement_minutes <= $delaiMax;
     }
 
     public function getEstEnRetardAttribute(): bool
     {
-        return !$this->sla_respecte && $this->statut->estActif();
+        return !$this->sla_respecte && ($this->statut?->estActif() ?? false);
     }
 
     public function getStatutOrdreAttribute(): int
     {
-        return $this->statut->ordre();
+        return $this->statut?->ordre() ?? 0;
     }
 
     public function getProgressionPourcentageAttribute(): int
     {
-        return (int) round(($this->statut->ordre() / 14) * 100);
+        return (int) round((($this->statut?->ordre() ?? 0) / 14) * 100);
     }
 
     // ── Scopes ──────────────────────────────────────────────────────
+
     public function scopeActifs($query): Builder
     {
         return $query->whereNotIn('statut', [
-            TicketStatut::DossierCloture,
-            TicketStatut::ClotureSatisfait,
+            TicketStatut::DossierCloture->value,
+            TicketStatut::ClotureSatisfait->value,
         ]);
     }
 
     public function scopeClotures($query): Builder
     {
         return $query->whereIn('statut', [
-            TicketStatut::DossierCloture,
-            TicketStatut::ClotureSatisfait,
+            TicketStatut::DossierCloture->value,
+            TicketStatut::ClotureSatisfait->value,
         ]);
     }
 
     public function scopeBloquants($query): Builder
     {
         return $query->whereIn('statut', [
-            TicketStatut::FicheIncomplete,
-            TicketStatut::ReclamationOuverte,
-            TicketStatut::SuiviQualiteRequis,
+            TicketStatut::FicheIncomplete->value,
+            TicketStatut::ReclamationOuverte->value,
+            TicketStatut::SuiviQualiteRequis->value,
         ]);
     }
 
     public function scopeByStatut($query, TicketStatut $statut): Builder
     {
-        return $query->where('statut', $statut);
+        return $query->where('statut', $statut->value);
     }
 
     public function scopeByPriorite($query, NiveauPriorite $priorite): Builder
     {
-        return $query->where('niveau_priorite', $priorite);
+        return $query->where('niveau_priorite', $priorite->value);
     }
 
     public function scopeUrgents($query): Builder
     {
-        return $query->where('niveau_priorite', NiveauPriorite::Urgence)
+        return $query->where('niveau_priorite', NiveauPriorite::Urgence->value)
                      ->whereNotIn('statut', [
-                         TicketStatut::DossierCloture,
-                         TicketStatut::ClotureSatisfait,
+                         TicketStatut::DossierCloture->value,
+                         TicketStatut::ClotureSatisfait->value,
                      ]);
     }
 
     public function scopeEnRetard($query): Builder
     {
         return $query->where(function ($q) {
-            $q->where('niveau_priorite', NiveauPriorite::Urgence)
-              ->where('date_creation', '<', now()->subMinutes(30))
-              ->orWhere('niveau_priorite', NiveauPriorite::Prioritaire)
-              ->where('date_creation', '<', now()->subMinutes(120))
-              ->orWhere('niveau_priorite', NiveauPriorite::Standard)
-              ->where('date_creation', '<', now()->subMinutes(480));
+            $q->where(function ($q) {
+                    $q->where('niveau_priorite', NiveauPriorite::Urgence->value)
+                      ->where('date_creation', '<', now()->subMinutes(30));
+                })
+                ->orWhere(function ($q) {
+                    $q->where('niveau_priorite', NiveauPriorite::Prioritaire->value)
+                      ->where('date_creation', '<', now()->subMinutes(120));
+                })
+                ->orWhere(function ($q) {
+                    $q->where('niveau_priorite', NiveauPriorite::Standard->value)
+                      ->where('date_creation', '<', now()->subMinutes(480));
+                });
         })->whereNotIn('statut', [
-            TicketStatut::DossierCloture,
-            TicketStatut::ClotureSatisfait,
+            TicketStatut::DossierCloture->value,
+            TicketStatut::ClotureSatisfait->value,
         ]);
     }
 
@@ -182,8 +196,8 @@ class Ticket extends Model
     {
         return $query->whereNull('artisan_id')
                      ->whereIn('statut', [
-                         TicketStatut::FicheComplete,
-                         TicketStatut::RdvPlanifie,
+                         TicketStatut::FicheComplete->value,
+                         TicketStatut::RdvPlanifie->value,
                      ]);
     }
 
@@ -198,14 +212,15 @@ class Ticket extends Model
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
+
     public function estActif(): bool
     {
-        return $this->statut->estActif();
+        return $this->statut?->estActif() ?? false;
     }
 
     public function estBloquant(): bool
     {
-        return $this->statut->estBloquant();
+        return $this->statut?->estBloquant() ?? false;
     }
 
     public function estCloture(): bool
@@ -213,27 +228,27 @@ class Ticket extends Model
         return in_array($this->statut, [
             TicketStatut::DossierCloture,
             TicketStatut::ClotureSatisfait,
-        ]);
+        ], true);
     }
 
     public function peutPasserA(TicketStatut $nouveauStatut): bool
     {
-        return in_array($nouveauStatut, $this->statut->statutsSuivants());
+        return in_array($nouveauStatut, $this->statut?->statutsSuivants() ?? [], true);
     }
 
     public function changerStatut(TicketStatut $nouveauStatut, ?string $notes = null): void
     {
         if (!$this->peutPasserA($nouveauStatut)) {
-            throw new \Exception("Transition impossible de {$this->statut->value} à {$nouveauStatut->value}");
+            throw new \Exception("Transition impossible de {$this->statut?->value} à {$nouveauStatut->value}");
         }
 
-        $data = ['statut' => $nouveauStatut];
+        $data = ['statut' => $nouveauStatut->value];
 
         if ($notes) {
             $data['notes'] = $this->notes . "\n[" . now()->format('d/m/Y H:i') . "] {$notes}";
         }
 
-        if (in_array($nouveauStatut, [TicketStatut::DossierCloture, TicketStatut::ClotureSatisfait])) {
+        if (in_array($nouveauStatut, [TicketStatut::DossierCloture, TicketStatut::ClotureSatisfait], true)) {
             $data['date_cloture'] = now();
         }
 
@@ -252,16 +267,16 @@ class Ticket extends Model
     public function planifierRDV(\DateTime $dateRdv): void
     {
         $this->update([
-            'statut' => TicketStatut::RdvPlanifie,
-            'rdv_planifie_at' => $dateRdv,
+            'statut'          => TicketStatut::RdvPlanifie->value,
+            'rdv_planifie_at'=> $dateRdv,
         ]);
     }
 
     public function programmerRappel(\DateTime $dateRappel): void
     {
         $this->update([
-            'statut' => TicketStatut::RappelPromis,
-            'rappel_promise_at' => $dateRappel,
+            'statut'            => TicketStatut::RappelPromis->value,
+            'rappel_promise_at'=> $dateRappel,
         ]);
     }
 
@@ -289,25 +304,26 @@ class Ticket extends Model
             return 0;
         }
 
-        $delaiMax = $this->niveau_priorite->delaiMaxMinutes();
-        $ecoule = $this->date_creation->diffInMinutes(now());
+        $delaiMax = $this->niveau_priorite->delaiMaxMinutes() ?? 480;
+        $ecoule   = $this->date_creation ? $this->date_creation->diffInMinutes(now()) : 0;
 
         return max(0, $delaiMax - $ecoule);
     }
 
     public function getSlaDepasseDepuis(): ?string
     {
-        if ($this->sla_respecte) {
+        if ($this->sla_respecte || !$this->date_creation || !$this->niveau_priorite) {
             return null;
         }
 
-        $delaiMax = $this->niveau_priorite->delaiMaxMinutes();
+        $delaiMax    = $this->niveau_priorite->delaiMaxMinutes() ?? 480;
         $depassement = $this->date_creation->addMinutes($delaiMax);
 
         return $depassement->diffForHumans();
     }
 
-    // ── Méthodes statiques ──────────────────────────────────────────
+    // ── Méthodes statiques calculées côté SQL ────────────────────────
+
     public static function genererReference(): string
     {
         $count = static::whereYear('created_at', now()->year)->count() + 1;
@@ -317,13 +333,13 @@ class Ticket extends Model
     public static function getKpis(): array
     {
         return [
-            'total_jour' => static::duJour()->count(),
-            'actifs' => static::actifs()->count(),
-            'urgents' => static::urgents()->count(),
-            'en_retard' => static::enRetard()->count(),
-            'sans_artisan' => static::sansArtisan()->count(),
-            'clotures_jour' => static::clotures()->duJour()->count(),
-            'taux_satisfaction' => static::getTauxSatisfaction(),
+            'total_jour'          => static::duJour()->count(),
+            'actifs'              => static::actifs()->count(),
+            'urgents'             => static::urgents()->count(),
+            'en_retard'           => static::enRetard()->count(),
+            'sans_artisan'        => static::sansArtisan()->count(),
+            'clotures_jour'       => static::clotures()->duJour()->count(),
+            'taux_satisfaction'   => static::getTauxSatisfaction(),
             'delai_moyen_minutes' => static::getDelaiMoyen(),
         ];
     }
@@ -341,17 +357,20 @@ class Ticket extends Model
         return round(($satisfaits / $total) * 100, 1);
     }
 
+    /**
+     * Optimisation majeure : Calcul direct par la base de données (Évite l'implosion mémoire)
+     */
     public static function getDelaiMoyen(): float
     {
-        return static::clotures()
+        return (float) static::clotures()
             ->whereNotNull('date_cloture')
-            ->get()
-            ->avg(function ($ticket) {
-                return $ticket->date_creation->diffInMinutes($ticket->date_cloture);
-            }) ?? 0;
+            ->whereNotNull('date_creation')
+            ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, date_creation, date_cloture)) as average_duration'))
+            ->value('average_duration') ?? 0.0;
     }
 
     // ── Boot ────────────────────────────────────────────────────────
+
     protected static function booted(): void
     {
         static::creating(function (Ticket $ticket) {
@@ -367,57 +386,57 @@ class Ticket extends Model
         });
 
         static::updating(function (Ticket $ticket) {
-            // Si clôture, enregistrer la date
             if ($ticket->isDirty('statut') &&
-                in_array($ticket->statut, [TicketStatut::DossierCloture, TicketStatut::ClotureSatisfait]) &&
+                $ticket->estCloture() &&
                 !$ticket->date_cloture) {
                 $ticket->date_cloture = now();
             }
         });
     }
 
-    // ── Relations ────────────────────────────────────────────────────
-    public function contactParticulier()
+    // ── Relations Typées (Sécurise Filament v3) ──────────────────────
+
+    public function contactParticulier(): BelongsTo
     {
         return $this->belongsTo(ContactParticulier::class);
     }
 
-    public function artisan()
+    public function artisan(): BelongsTo
     {
         return $this->belongsTo(Artisan::class);
     }
 
-    public function operateur()
+    public function operateur(): BelongsTo
     {
         return $this->belongsTo(User::class, 'operateur_id');
     }
 
-    public function ficheP2()
+    public function ficheP2(): HasOne
     {
         return $this->hasOne(FicheP2::class);
     }
 
-    public function rapportsSatisfaction()
+    public function rapportsSatisfaction(): HasMany
     {
         return $this->hasMany(RapportSatisfactionP6::class);
     }
 
-    public function rapportSatisfaction()
+    public function rapportSatisfaction(): HasOne
     {
         return $this->hasOne(RapportSatisfactionP6::class)->latestOfMany();
     }
 
-    public function reclamations()
+    public function reclamations(): HasMany
     {
         return $this->hasMany(ReclamationP8::class);
     }
 
-    public function reclamation()
+    public function reclamation(): HasOne
     {
         return $this->hasOne(ReclamationP8::class)->latestOfMany();
     }
 
-    public function reclamationActive()
+    public function reclamationActive(): HasOne
     {
         return $this->hasOne(ReclamationP8::class)
             ->whereIn('statut', ['ouverte', 'en_traitement']);

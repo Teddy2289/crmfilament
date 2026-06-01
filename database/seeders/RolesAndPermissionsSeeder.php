@@ -61,7 +61,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $admin = Role::firstOrCreate(['name' => 'administrateur', 'guard_name' => 'web']);
         $admin->syncPermissions(Permission::all());
 
-        $teamLeader = Role::firstOrCreate(['name' => 'team_leader', 'guard_name' => 'web']); // ← AJOUTÉ
+        $teamLeader = Role::firstOrCreate(['name' => 'team_leader', 'guard_name' => 'web']);
         $teamLeader->syncPermissions([
             'partenaires.view_any',
             'partenaires.view',
@@ -132,6 +132,40 @@ class RolesAndPermissionsSeeder extends Seeder
         $responsablePlateau->syncPermissions(
             Permission::whereIn('name', $permissionsAP)->get()
         );
+
+        // ✅ AJOUTER LE RÔLE SUPERVISEUR
+        $superviseur = Role::firstOrCreate(['name' => 'superviseur', 'guard_name' => 'web']);
+        $superviseur->syncPermissions([
+            'tickets.view',
+            'tickets.update_statut',
+            'fiche_p2.view',
+            'fiche_p2.update',
+            'artisans.view',
+            'artisans.update',
+            'reclamations.view',
+            'reclamations.valider',
+            'rapports_satisfaction.create',
+            'dashboard.temps_reel',
+        ]);
+
+        // ✅ AJOUTER LE RÔLE FORMATEUR
+        $formateur = Role::firstOrCreate(['name' => 'formateur', 'guard_name' => 'web']);
+        $formateur->syncPermissions([
+            'tickets.view',
+            'artisans.view',
+            'reclamations.view',
+        ]);
+
+        // ✅ AJOUTER LE RÔLE SUPPORT TECHNIQUE
+        $supportTechnique = Role::firstOrCreate(['name' => 'support_technique', 'guard_name' => 'web']);
+        $supportTechnique->syncPermissions([
+            'tickets.view',
+            'tickets.update_statut',
+        ]);
+
+        // ✅ AJOUTER SUPER_ADMIN S'IL N'EXISTE PAS
+        $superAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $superAdmin->syncPermissions(Permission::all());
 
         $this->command->info('Rôles et permissions créés avec succès.');
         $this->command->table(

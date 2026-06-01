@@ -16,9 +16,9 @@ class ArtisanProspection extends Model
     protected $table = 'artisan_prospections';
 
     protected $casts = [
-        'statut_campagne' => StatutCampagneProspection::class,  // ✅ Typage enum
-        'priorite_segment' => PrioriteSegment::class,            // ✅ Typage enum
-        'corps_de_metier' => CorpsDeMetier::class,              // ✅ Typage enum
+        'statut_campagne' => StatutCampagneProspection::class,
+        'priorite_segment' => PrioriteSegment::class,
+        'corps_de_metier' => CorpsDeMetier::class,
         'date_dernier_contact' => 'datetime',
         'date_envoi_document' => 'datetime',
         'accord_verbal' => 'boolean',

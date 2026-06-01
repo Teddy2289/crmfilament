@@ -2,32 +2,36 @@
 
 namespace App\Enums;
 
-enum TypeLogement: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasIcon;
+use Filament\Support\Contracts\HasLabel;
+
+enum TypeLogement: string implements HasLabel, HasColor, HasIcon
 {
-    case Maison = 'Maison';
-    case Appartement = 'Appartement';
+    case Maison          = 'Maison';
+    case Appartement     = 'Appartement';
     case LocalCommercial = 'Local commercial';
 
-    public function label(): string
-    {
-        return $this->value;
-    }
+    public function getLabel(): ?string  { return $this->value; }
+    public function label(): string      { return $this->value; }
 
-    public function color(): string
+    public function getColor(): string|array|null
     {
         return match($this) {
-            self::Maison => 'success',
-            self::Appartement => 'info',
+            self::Maison          => 'success',
+            self::Appartement     => 'info',
             self::LocalCommercial => 'warning',
         };
     }
+    public function color(): string { return $this->getColor(); }
 
-    public function icon(): string
+    public function getIcon(): ?string
     {
         return match($this) {
-            self::Maison => 'heroicon-o-home',
-            self::Appartement => 'heroicon-o-building-office',
+            self::Maison          => 'heroicon-o-home',
+            self::Appartement     => 'heroicon-o-building-office',
             self::LocalCommercial => 'heroicon-o-building-storefront',
         };
     }
+    public function icon(): string { return $this->getIcon(); }
 }

@@ -47,7 +47,7 @@ class RappelsDuJourWidget extends BaseWidget
                     ->label('Téléphone')
                     ->copyable(),
 
-                Tables\Columns\BadgeColumn::make('statut')
+                Tables\Columns\TextColumn::make('statut')
                     ->formatStateUsing(fn (ProspectStatut $state) => $state->label())
                     ->color(fn (ProspectStatut $state) => $state->color())
                     ->icon(fn (ProspectStatut $state) => $state->icon()),

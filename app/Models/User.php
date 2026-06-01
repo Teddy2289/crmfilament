@@ -77,6 +77,7 @@ class User extends Authenticatable implements FilamentUser
                 'administrateur',
                 'superviseur',
                 'teleprospecteur',
+                'responsable_plateau'
             ]),
             default => false,
         };
