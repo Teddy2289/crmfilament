@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources\ProspectResource\Pages;
 use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Pages\PhoningWorkflow;
 use App\Filament\NsConseil\Resources\ProspectResource;
+use App\Filament\NsConseil\Resources\ProspectResource\Actions\ImportProspectsAction;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
@@ -25,6 +26,8 @@ class ListProspects extends ListRecords
                 ->color('success'),
 
             Actions\CreateAction::make()->label('Nouveau prospect'),
+
+            ImportProspectsAction::make(),
         ];
     }
 
