@@ -48,7 +48,7 @@ class AircallService
             fn() => $this->client()->get('/calls', [
                 'per_page' => $perPage,
                 'page' => $page,
-                'order' => 'desc', // du plus récent au plus ancien
+                'order' => 'desc',
             ])->json('calls', [])
         );
     }
