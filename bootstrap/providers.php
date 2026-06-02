@@ -6,4 +6,6 @@ return [
     App\Providers\Filament\AlloproPanelProvider::class,
     App\Providers\Filament\NsConseilPanelProvider::class,
     App\Providers\TelescopeServiceProvider::class,
+    App\Providers\Filament\SuperAdminPanelProvider::class,
+
 ];

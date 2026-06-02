@@ -110,9 +110,16 @@ class NsConseilPanelProvider extends PanelProvider
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()
+            // ✅ CORRECT
             ->renderHook(
                 PanelsRenderHook::BODY_START,
                 fn() => view('filament.loading-overlay'),
+            )
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_END,
+                fn() => auth()->user()?->isSuperAdmin()
+                    ? view('filament.shared.admin-button')
+                    : '',
             );
     }
 }

@@ -64,6 +64,9 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
+            'super-admin' => $this->roles->pluck('name')
+                ->intersect(['super_admin', 'administrateur'])->isNotEmpty() && $this->actif,
+
             'ns-conseil' => $this->hasAnyRole([
                 'administrateur',
                 'team_leader',
@@ -71,14 +74,19 @@ class User extends Authenticatable implements FilamentUser
                 'superviseur',
                 'responsable',
             ]),
+
             'allopro' => $this->hasAnyRole([
                 'operateur_n1',
                 'back_office',
                 'administrateur',
                 'superviseur',
                 'teleprospecteur',
-                'responsable_plateau'
+                'responsable_plateau',
             ]),
+
+            'admin' => $this->roles->pluck('name')
+                ->intersect(['super_admin', 'administrateur'])->isNotEmpty() && $this->actif,
+
             default => false,
         };
     }
@@ -188,7 +196,9 @@ class User extends Authenticatable implements FilamentUser
 
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole(self::ROLE_SUPER_ADMIN);
+        return $this->roles->pluck('name')
+            ->intersect(['super_admin', 'administrateur'])
+            ->isNotEmpty();
     }
     public function isAdmin(): bool
     {
