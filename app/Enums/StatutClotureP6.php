@@ -4,19 +4,23 @@ namespace App\Enums;
 
 enum StatutClotureP6: string
 {
-    case Satisfait = 'Satisfait';
-    case SuiviQualiteRequis = 'Suivi qualité requis';
-    case ReclamationOuverte = 'Réclamation ouverte';
+    case Satisfait          = 'satisfait';
+    case SuiviQualiteRequis = 'suivi_qualite_requis';
+    case ReclamationOuverte = 'reclamation_ouverte';
 
     public function label(): string
     {
-        return $this->value;
+        return match($this) {
+            self::Satisfait          => 'Satisfait',
+            self::SuiviQualiteRequis => 'Suivi qualité requis',
+            self::ReclamationOuverte => 'Réclamation ouverte',
+        };
     }
 
     public function color(): string
     {
         return match($this) {
-            self::Satisfait => 'success',
+            self::Satisfait          => 'success',
             self::SuiviQualiteRequis => 'warning',
             self::ReclamationOuverte => 'danger',
         };
@@ -25,7 +29,7 @@ enum StatutClotureP6: string
     public function icon(): string
     {
         return match($this) {
-            self::Satisfait => 'heroicon-o-face-smile',
+            self::Satisfait          => 'heroicon-o-face-smile',
             self::SuiviQualiteRequis => 'heroicon-o-clipboard-document-check',
             self::ReclamationOuverte => 'heroicon-o-exclamation-triangle',
         };
@@ -38,12 +42,10 @@ enum StatutClotureP6: string
 
     public static function depuisNPS(int $note): self
     {
-        if ($note >= 8) {
-            return self::Satisfait;
-        } elseif ($note >= 6) {
-            return self::SuiviQualiteRequis;
-        } else {
-            return self::ReclamationOuverte;
-        }
+        return match(true) {
+            $note >= 8 => self::Satisfait,
+            $note >= 6 => self::SuiviQualiteRequis,
+            default    => self::ReclamationOuverte,
+        };
     }
 }

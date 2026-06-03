@@ -17,7 +17,7 @@ enum TicketStatut: string implements HasLabel, HasColor, HasIcon
     case EnAttenteConfirmationArtisan = 'en_attente_confirmation_artisan';
     case ArtisanConfirme              = 'artisan_confirme';
 
-    // NOUVEAUX STATUTS POUR LA CHAÎNE DOCUMENTAIRE
+        // NOUVEAUX STATUTS POUR LA CHAÎNE DOCUMENTAIRE
     case DevisEnAttente               = 'devis_en_attente';      // Devis émis, en attente réponse client
     case DevisAccepte                 = 'devis_accepte';         // Devis accepté, BC généré
     case InterventionRealisee         = 'intervention_realisee'; // Artisan a clôturé le BC
@@ -30,11 +30,14 @@ enum TicketStatut: string implements HasLabel, HasColor, HasIcon
     case P8EnTraitement               = 'p8_en_traitement';
     case DossierCloture               = 'dossier_cloture';
 
-    public function getLabel(): ?string { return $this->label(); }
+    public function getLabel(): ?string
+    {
+        return $this->label();
+    }
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::AppelRecu                    => 'Appel reçu',
             self::EnQualification              => 'En qualification',
             self::FicheComplete                => 'Fiche complète',
@@ -59,11 +62,14 @@ enum TicketStatut: string implements HasLabel, HasColor, HasIcon
         };
     }
 
-    public function getColor(): string|array|null { return $this->color(); }
+    public function getColor(): string|array|null
+    {
+        return $this->color();
+    }
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::AppelRecu                    => 'info',
             self::EnQualification              => 'warning',
             self::FicheComplete                => 'success',
@@ -88,11 +94,14 @@ enum TicketStatut: string implements HasLabel, HasColor, HasIcon
         };
     }
 
-    public function getIcon(): ?string { return $this->icon(); }
+    public function getIcon(): ?string
+    {
+        return $this->icon();
+    }
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::AppelRecu                    => 'heroicon-o-phone-arrow-down-left',
             self::EnQualification              => 'heroicon-o-magnifying-glass',
             self::FicheComplete                => 'heroicon-o-document-check',
@@ -171,7 +180,7 @@ enum TicketStatut: string implements HasLabel, HasColor, HasIcon
 
     public function ordre(): int
     {
-        return match($this) {
+        return match ($this) {
             self::AppelRecu                    => 1,
             self::EnQualification              => 2,
             self::FicheComplete                => 3,
@@ -206,20 +215,22 @@ enum TicketStatut: string implements HasLabel, HasColor, HasIcon
         return (int) round(($position / $total) * 100);
     }
 
+
+
     public function statutsSuivants(): array
     {
-        return match($this) {
+        return match ($this) {
             self::AppelRecu                    => [self::EnQualification],
             self::EnQualification              => [self::FicheComplete, self::FicheIncomplete],
             self::FicheComplete                => [self::RdvPlanifie, self::RappelPromis],
             self::FicheIncomplete              => [self::EnQualification],
             self::RdvPlanifie                  => [self::EnAttenteConfirmationArtisan],
             self::RappelPromis                 => [self::EnQualification, self::DevisEnAttente],
-            self::EnAttenteConfirmationArtisan => [self::ArtisanConfirme],
+            self::EnAttenteConfirmationArtisan => [self::ArtisanConfirme],  // ← Transition correcte
             self::ArtisanConfirme              => [self::DevisEnAttente, self::InterventionRealisee],
 
             // NOUVELLES TRANSITIONS
-            self::DevisEnAttente               => [self::DevisAccepte, self::EnQualification], // Refus devis → requalification
+            self::DevisEnAttente               => [self::DevisAccepte, self::EnQualification],
             self::DevisAccepte                 => [self::InterventionRealisee],
             self::InterventionRealisee         => [self::FactureEmise, self::ClotureSatisfait, self::SuiviQualiteRequis],
             self::FactureEmise                 => [self::PaiementRecu],

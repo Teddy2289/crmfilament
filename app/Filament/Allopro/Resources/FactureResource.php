@@ -12,13 +12,13 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Allopro\Resources\TicketResource;
 
 class FactureResource extends Resource
 {
@@ -51,7 +51,8 @@ class FactureResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('numero')
                         ->label('N° Facture')
-                        ->disabled()->dehydrated(false)
+                        ->disabled()
+                        ->dehydrated(false)
                         ->placeholder('Généré automatiquement (séquentiel)'),
 
                     Forms\Components\Select::make('statut_paiement')
@@ -59,12 +60,14 @@ class FactureResource extends Resource
                         ->options(collect(StatutPaiement::cases())
                             ->mapWithKeys(fn($e) => [$e->value => $e->label()])
                             ->toArray())
-                        ->native(false)->required()
+                        ->native(false)
+                        ->required()
                         ->default(StatutPaiement::EnAttente->value),
 
                     Forms\Components\DatePicker::make('date_echeance')
                         ->label('Date d\'échéance')
-                        ->native(false)->required()
+                        ->native(false)
+                        ->required()
                         ->default(now()->addDays(30)),
                 ]),
 
@@ -75,26 +78,36 @@ class FactureResource extends Resource
                     Forms\Components\Select::make('bon_de_commande_id')
                         ->label('Bon de commande')
                         ->relationship('bonDeCommande', 'numero')
-                        ->searchable()->preload()->nullable(),
+                        ->searchable()
+                        ->preload()
+                        ->nullable(),
 
                     Forms\Components\Select::make('ticket_id')
                         ->label('Ticket')
                         ->relationship('ticket', 'reference')
-                        ->searchable()->preload()->required(),
+                        ->searchable()
+                        ->preload()
+                        ->required(),
 
                     Forms\Components\Select::make('artisan_id')
                         ->label('Artisan (SIRET requis)')
                         ->relationship('artisan', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn($r) =>
-                            $r->nom_complet . ($r->siret ? ' — ' . $r->siret : ' ⚠️ SIRET manquant')
+                        ->getOptionLabelFromRecordUsing(
+                            fn($record) =>
+                            $record->nom_complet . ($record->siret ? ' — ' . $record->siret : ' ⚠️ SIRET manquant')
                         )
-                        ->searchable()->required(),
+                        ->searchable(['nom', 'prenom', 'siret'])
+                        ->required(),
 
                     Forms\Components\Select::make('contact_particulier_id')
                         ->label('Client facturé')
                         ->relationship('contactParticulier', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn($r) => trim($r->prenom . ' ' . $r->nom))
-                        ->searchable()->required(),
+                        ->getOptionLabelFromRecordUsing(
+                            fn($record) =>
+                            trim($record->prenom . ' ' . $record->nom)
+                        )
+                        ->searchable(['nom', 'prenom'])
+                        ->required(),
                 ]),
 
             Forms\Components\Section::make('Prestations réalisées')
@@ -104,18 +117,43 @@ class FactureResource extends Resource
                         ->label('')
                         ->schema([
                             Forms\Components\TextInput::make('libelle')
-                                ->label('Libellé prestation')->required()->columnSpan(3),
+                                ->label('Libellé prestation')
+                                ->required()
+                                ->columnSpan(3),
+
                             Forms\Components\TextInput::make('quantite')
-                                ->label('Qté')->numeric()->minValue(0.01)->default(1)->required()->live(debounce: 500),
+                                ->label('Qté')
+                                ->numeric()
+                                ->minValue(0.01)
+                                ->default(1)
+                                ->required()
+                                ->live(debounce: 500),
+
                             Forms\Components\TextInput::make('prix_unitaire_ht')
-                                ->label('Prix HT (€)')->numeric()->minValue(0)->required()->prefix('€')->live(debounce: 500),
+                                ->label('Prix HT (€)')
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->prefix('€')
+                                ->live(debounce: 500),
+
                             Forms\Components\Select::make('taux_tva')
                                 ->label('TVA')
-                                ->options([5.5 => '5,5 %', 10.0 => '10 %', 20.0 => '20 %'])
-                                ->default(10.0)->native(false)->required(),
+                                ->options([
+                                    5.5 => '5,5 %',
+                                    10.0 => '10 %',
+                                    20.0 => '20 %'
+                                ])
+                                ->default(10.0)
+                                ->native(false)
+                                ->required(),
                         ])
-                        ->columns(6)->reorderable()->addActionLabel('Ajouter une ligne')
-                        ->minItems(1)->defaultItems(1)->columnSpanFull(),
+                        ->columns(6)
+                        ->reorderable()
+                        ->addActionLabel('Ajouter une ligne')
+                        ->minItems(1)
+                        ->defaultItems(1)
+                        ->columnSpanFull(),
                 ]),
 
             Forms\Components\Section::make('Paiement')
@@ -124,7 +162,10 @@ class FactureResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('acompte_deja_verse')
                         ->label('Acompte déjà versé (€)')
-                        ->numeric()->minValue(0)->prefix('€')->nullable()
+                        ->numeric()
+                        ->minValue(0)
+                        ->prefix('€')
+                        ->nullable()
                         ->helperText('Déduit du total TTC'),
 
                     Forms\Components\Select::make('mode_paiement')
@@ -132,15 +173,18 @@ class FactureResource extends Resource
                         ->options(collect(ModePaiement::cases())
                             ->mapWithKeys(fn($e) => [$e->value => $e->label()])
                             ->toArray())
-                        ->native(false)->nullable(),
+                        ->native(false)
+                        ->nullable(),
 
                     Forms\Components\DatePicker::make('date_paiement_effectif')
                         ->label('Date de paiement effectif')
-                        ->native(false)->nullable(),
+                        ->native(false)
+                        ->nullable(),
 
                     Forms\Components\Textarea::make('notes')
                         ->label('Notes')
-                        ->rows(2)->columnSpanFull(),
+                        ->rows(2)
+                        ->columnSpanFull(),
                 ]),
         ]);
     }
@@ -153,61 +197,65 @@ class FactureResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('numero')
                     ->label('N° Facture')
-                    ->searchable()->weight('semibold')->copyable(),
+                    ->searchable()
+                    ->weight('semibold')
+                    ->copyable(),
 
                 Tables\Columns\TextColumn::make('statut_paiement')
                     ->label('Paiement')
                     ->badge()
-                    ->formatStateUsing(fn($s) => $s instanceof StatutPaiement ? $s->label() : $s)
-                    ->color(fn($s) => $s instanceof StatutPaiement ? $s->color() : 'gray')
-                    ->icon(fn($s) => $s instanceof StatutPaiement ? $s->icon() : null),
+                    ->formatStateUsing(fn($state) => $state instanceof StatutPaiement ? $state->label() : $state)
+                    ->color(fn($state) => $state instanceof StatutPaiement ? $state->color() : 'gray')
+                    ->icon(fn($state) => $state instanceof StatutPaiement ? $state->icon() : null),
 
                 Tables\Columns\TextColumn::make('ticket.reference')
                     ->label('Ticket')
-                    ->url(fn($r) => $r->ticket_id
-                        ? TicketResource::getUrl('view', ['record' => $r->ticket_id])
+                    ->url(fn($record) => $record->ticket_id
+                        ? TicketResource::getUrl('view', ['record' => $record->ticket_id])
                         : null)
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('artisan.nom')
                     ->label('Artisan')
-                    ->formatStateUsing(fn($s, $r) => $r->artisan?->nom_complet ?? '—')
-                    ->description(fn($r) => $r->artisan?->siret ?? '⚠️ SIRET manquant'),
+                    ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—')
+                    ->description(fn($record) => $record->artisan?->siret ?? '⚠️ SIRET manquant'),
 
                 Tables\Columns\TextColumn::make('contactParticulier.nom')
                     ->label('Client')
-                    ->formatStateUsing(fn($s, $r) =>
-                        trim(($r->contactParticulier?->prenom ?? '') . ' ' . ($r->contactParticulier?->nom ?? '')) ?: '—'
+                    ->formatStateUsing(
+                        fn($record) =>
+                        trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
                     ),
 
                 Tables\Columns\TextColumn::make('total_ttc')
                     ->label('Total TTC')
-                    ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €')
-                    ->sortable()->weight('semibold'),
+                    ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('solde_restant_du')
                     ->label('Solde dû')
-                    ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €')
-                    ->color(fn($s) => (float)$s > 0 ? 'danger' : 'success'),
+                    ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
+                    ->color(fn($state) => (float)$state > 0 ? 'danger' : 'success'),
 
                 Tables\Columns\TextColumn::make('date_echeance')
                     ->label('Échéance')
                     ->date('d/m/Y')
                     ->sortable()
-                    ->color(fn($s, $r) => match(true) {
-                        $r->est_payee           => 'success',
-                        $r->est_en_retard       => 'danger',
-                        $s && $s->diffInDays(now()) <= 7 => 'warning',
-                        default                 => 'gray',
+                    ->color(fn($record) => match (true) {
+                        $record->est_payee           => 'success',
+                        $record->est_en_retard       => 'danger',
+                        $record->date_echeance && $record->date_echeance->diffInDays(now()) <= 7 => 'warning',
+                        default                      => 'gray',
                     })
-                    ->description(fn($r) => $r->est_en_retard
-                        ? 'Retard : ' . $r->jours_retard . ' j'
+                    ->description(fn($record) => $record->est_en_retard
+                        ? 'Retard : ' . $record->jours_retard . ' j'
                         : null),
 
                 Tables\Columns\TextColumn::make('penalites_retard')
                     ->label('Pénalités')
-                    ->formatStateUsing(fn($s) => (float)$s > 0
-                        ? number_format((float)$s, 2, ',', ' ') . ' €'
+                    ->formatStateUsing(fn($state) => (float)$state > 0
+                        ? number_format((float)$state, 2, ',', ' ') . ' €'
                         : '—')
                     ->color('danger')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -217,8 +265,10 @@ class FactureResource extends Resource
                 Tables\Filters\SelectFilter::make('statut_paiement')
                     ->label('Statut paiement')
                     ->options(collect(StatutPaiement::cases())
-                        ->mapWithKeys(fn($e) => [$e->value => $e->label()])->toArray())
-                    ->native(false)->multiple(),
+                        ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                        ->toArray())
+                    ->native(false)
+                    ->multiple(),
 
                 Tables\Filters\Filter::make('en_retard')
                     ->label('En retard')
@@ -243,25 +293,34 @@ class FactureResource extends Resource
                     ->label('Enregistrer paiement')
                     ->icon('heroicon-o-banknotes')
                     ->color('success')
-                    ->visible(fn(Facture $r) => !$r->est_payee && !$r->est_litigieux)
+                    ->visible(fn(Facture $record) => !$record->est_payee && !$record->est_litigieux)
                     ->form([
                         Forms\Components\TextInput::make('montant')
                             ->label('Montant reçu (€)')
-                            ->numeric()->prefix('€')->required()
-                            ->default(fn(Facture $r) => $r->solde_restant_du),
+                            ->numeric()
+                            ->prefix('€')
+                            ->required()
+                            ->default(fn(Facture $record) => $record->solde_restant_du),
                         Forms\Components\Select::make('mode')
                             ->label('Mode de paiement')
                             ->options(collect(ModePaiement::cases())
-                                ->mapWithKeys(fn($e) => [$e->value => $e->label()])->toArray())
-                            ->native(false)->required(),
+                                ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                                ->toArray())
+                            ->native(false)
+                            ->required(),
                         Forms\Components\DatePicker::make('date')
                             ->label('Date de paiement')
-                            ->native(false)->required()->default(today()),
+                            ->native(false)
+                            ->required()
+                            ->default(today()),
                     ])
                     ->action(function (Facture $record, array $data) {
                         $mode = ModePaiement::from($data['mode']);
                         $record->enregistrerPaiement($data['montant'], $mode, new \DateTime($data['date']));
-                        Notification::make()->title('Paiement enregistré')->success()->send();
+                        Notification::make()
+                            ->title('Paiement enregistré')
+                            ->success()
+                            ->send();
                     }),
 
                 // ── Marquer litigieux ──
@@ -269,17 +328,29 @@ class FactureResource extends Resource
                     ->label('Litige')
                     ->icon('heroicon-o-shield-exclamation')
                     ->color('danger')
-                    ->visible(fn(Facture $r) => $r->est_en_retard && !$r->est_litigieux)
+                    ->visible(fn(Facture $record) => $record->est_en_retard && !$record->est_litigieux)
                     ->form([
                         Forms\Components\Textarea::make('motif')
-                            ->label('Motif du litige')->rows(3)->required(),
+                            ->label('Motif du litige')
+                            ->rows(3)
+                            ->required(),
                     ])
                     ->action(function (Facture $record, array $data) {
                         $record->marquerLitigieux($data['motif']);
-                        Notification::make()->title('Facture marquée litigieuse')->warning()->send();
+                        Notification::make()
+                            ->title('Facture marquée litigieuse')
+                            ->warning()
+                            ->send();
                     }),
 
                 Tables\Actions\ViewAction::make(),
+
+                Tables\Actions\Action::make('pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->url(fn(Facture $record) => route('factures.pdf', $record))
+                    ->openUrlInNewTab(),
             ])
 
             ->bulkActions([
@@ -295,6 +366,7 @@ class FactureResource extends Resource
             ->striped();
     }
 
+    // ── Infolist ─────────────────────────────────────────────────
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
@@ -303,61 +375,97 @@ class FactureResource extends Resource
                 ->icon('heroicon-o-receipt-percent')
                 ->columns(4)
                 ->schema([
-                    TextEntry::make('numero')->label('N° Facture')->weight('bold')->copyable(),
-                    TextEntry::make('statut_paiement')->label('Statut paiement')->badge()
-                        ->formatStateUsing(fn($s) => $s instanceof StatutPaiement ? $s->label() : $s)
-                        ->color(fn($s) => $s instanceof StatutPaiement ? $s->color() : 'gray'),
-                    TextEntry::make('date_echeance')->label('Échéance')->date('d/m/Y'),
-                    TextEntry::make('date_paiement_effectif')->label('Payé le')->date('d/m/Y')->placeholder('—'),
+                    TextEntry::make('numero')
+                        ->label('N° Facture')
+                        ->weight('bold')
+                        ->copyable(),
+
+                    TextEntry::make('statut_paiement')
+                        ->label('Statut paiement')
+                        ->badge()
+                        ->formatStateUsing(fn($state) => $state instanceof StatutPaiement ? $state->label() : $state)
+                        ->color(fn($state) => $state instanceof StatutPaiement ? $state->color() : 'gray'),
+
+                    TextEntry::make('date_echeance')
+                        ->label('Échéance')
+                        ->date('d/m/Y'),
+
+                    TextEntry::make('date_paiement_effectif')
+                        ->label('Payé le')
+                        ->date('d/m/Y')
+                        ->placeholder('—'),
                 ]),
 
             Section::make('Parties')
                 ->columns(3)
                 ->schema([
-                    TextEntry::make('bonDeCommande.numero')->label('BC d\'origine')->placeholder('—'),
-                    TextEntry::make('artisan.nom')->label('Artisan émetteur')
-                        ->formatStateUsing(fn($s, $r) => $r->artisan?->nom_complet ?? '—')
-                        ->description(fn($r) => 'SIRET : ' . ($r->artisan?->siret ?? '⚠️ manquant')),
-                    TextEntry::make('contactParticulier.nom')->label('Client facturé')
-                        ->formatStateUsing(fn($s, $r) =>
-                            trim(($r->contactParticulier?->prenom ?? '') . ' ' . ($r->contactParticulier?->nom ?? '')) ?: '—'
+                    TextEntry::make('bonDeCommande.numero')
+                        ->label('BC d\'origine')
+                        ->placeholder('—'),
+
+                    TextEntry::make('artisan.nom')
+                        ->label('Artisan émetteur')
+                        ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—')
+                        ->hint(fn($record) => 'SIRET : ' . ($record->artisan?->siret ?? '⚠️ manquant'))
+                        ->hintColor(fn($record) => $record->artisan?->siret ? null : 'danger'),
+
+                    TextEntry::make('contactParticulier.nom')
+                        ->label('Client facturé')
+                        ->formatStateUsing(
+                            fn($record) =>
+                            trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
                         ),
                 ]),
 
             Section::make('Montants')
                 ->columns(5)
                 ->schema([
-                    TextEntry::make('total_ht')->label('HT')
-                        ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €'),
-                    TextEntry::make('montant_tva')->label('TVA')
-                        ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €'),
-                    TextEntry::make('total_ttc')->label('TTC')
-                        ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €')
+                    TextEntry::make('total_ht')
+                        ->label('HT')
+                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €'),
+
+                    TextEntry::make('montant_tva')
+                        ->label('TVA')
+                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €'),
+
+                    TextEntry::make('total_ttc')
+                        ->label('TTC')
+                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
                         ->weight('bold'),
-                    TextEntry::make('acompte_deja_verse')->label('Acompte versé')
-                        ->formatStateUsing(fn($s) => $s ? number_format((float)$s, 2, ',', ' ') . ' €' : '—'),
-                    TextEntry::make('solde_restant_du')->label('Solde dû')
-                        ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €')
-                        ->color(fn($s) => (float)$s > 0 ? 'danger' : 'success'),
+
+                    TextEntry::make('acompte_deja_verse')
+                        ->label('Acompte versé')
+                        ->formatStateUsing(fn($state) => $state ? number_format((float)$state, 2, ',', ' ') . ' €' : '—'),
+
+                    TextEntry::make('solde_restant_du')
+                        ->label('Solde dû')
+                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
+                        ->color(fn($state) => (float)$state > 0 ? 'danger' : 'success'),
                 ]),
 
             Section::make('Pénalités & Litiges')
                 ->collapsible()
                 ->columns(2)
                 ->schema([
-                    TextEntry::make('penalites_retard')->label('Pénalités de retard')
-                        ->formatStateUsing(fn($s) => (float)$s > 0
-                            ? number_format((float)$s, 2, ',', ' ') . ' €'
+                    TextEntry::make('penalites_retard')
+                        ->label('Pénalités de retard')
+                        ->formatStateUsing(fn($state) => (float)$state > 0
+                            ? number_format((float)$state, 2, ',', ' ') . ' €'
                             : 'Aucune')
-                        ->color(fn($s) => (float)$s > 0 ? 'danger' : 'success'),
-                    TextEntry::make('jours_retard')->label('Retard')
-                        ->formatStateUsing(fn($s) => $s > 0 ? $s . ' jour(s)' : 'Dans les délais'),
+                        ->color(fn($state) => (float)$state > 0 ? 'danger' : 'success'),
+
+                    TextEntry::make('jours_retard')
+                        ->label('Retard')
+                        ->formatStateUsing(fn($state) => $state > 0 ? $state . ' jour(s)' : 'Dans les délais'),
                 ]),
 
             Section::make('Notes')
                 ->collapsible()
                 ->schema([
-                    TextEntry::make('notes')->label('')->prose()->placeholder('Aucune note'),
+                    TextEntry::make('notes')
+                        ->label('')
+                        ->prose()
+                        ->placeholder('Aucune note'),
                 ]),
         ]);
     }

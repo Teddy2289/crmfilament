@@ -46,7 +46,7 @@ class TicketResource extends Resource
 
     public static function getNavigationBadgeColor(): string
     {
-        $urgents = Ticket::where('niveau_priorite', NiveauPriorite::Urgence->value)
+        $urgents = Ticket::query()->where('niveau_priorite', NiveauPriorite::Urgence->value)
             ->whereNotIn('statut', [
                 TicketStatut::DossierCloture->value,
                 TicketStatut::ClotureSatisfait->value,

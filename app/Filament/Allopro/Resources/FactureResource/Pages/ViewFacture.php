@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\FactureResource\Pages;
 
 use App\Enums\ModePaiement;
@@ -66,6 +67,13 @@ class ViewFacture extends ViewRecord
                     $this->refreshFormData(['penalites_retard', 'statut_paiement']);
                     Notification::make()->title('Pénalités calculées')->warning()->send();
                 }),
+
+            Actions\Action::make('telecharger_pdf')
+                ->label('Télécharger PDF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(fn() => route('factures.pdf', $this->record))
+                ->openUrlInNewTab(),
         ];
     }
 }

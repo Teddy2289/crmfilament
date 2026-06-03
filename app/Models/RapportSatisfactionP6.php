@@ -6,13 +6,15 @@ use App\Enums\StatutClotureP6;
 use App\Enums\TicketStatut;
 use App\Enums\StatutReclamation;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class RapportSatisfactionP6 extends Model
 {
     protected $table = 'rapport_satisfaction_p6s';
 
     protected $casts = [
-        'statut_cloture' => StatutClotureP6::class,  // ✅ Typage enum
+        'statut_cloture' => StatutClotureP6::class,
         'date_appel_j1' => 'date',
         'note_nps' => 'integer',
         'feedback_artisan' => 'boolean',
@@ -30,7 +32,7 @@ class RapportSatisfactionP6 extends Model
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
-    public function getClassificationNPS(): string  // ✅ Du modèle 2
+    public function getClassificationNPS(): string
     {
         return match (true) {
             $this->note_nps >= 9 => 'Promoteur',
@@ -45,6 +47,7 @@ class RapportSatisfactionP6 extends Model
             'Promoteur' => 'success',
             'Passif' => 'warning',
             'Détracteur' => 'danger',
+            default => 'gray',
         };
     }
 
@@ -54,33 +57,34 @@ class RapportSatisfactionP6 extends Model
             'Promoteur' => 'heroicon-o-face-smile',
             'Passif' => 'heroicon-o-face-meh',
             'Détracteur' => 'heroicon-o-face-frown',
+            default => 'heroicon-o-question-mark-circle',
         };
     }
 
     public function getStatutLabelAttribute(): string
     {
-        return $this->statut_cloture->label();
+        return $this->statut_cloture?->label() ?? 'Non défini';
     }
 
     public function getStatutColorAttribute(): string
     {
-        return $this->statut_cloture->color();
+        return $this->statut_cloture?->color() ?? 'gray';
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
-    public function declencheP8(): bool  // ✅ Du modèle 1 (renommé pour cohérence)
+    public function declencheP8(): bool
     {
         return $this->note_nps <= 5;
     }
 
-    public function necessiteSuiviQualite(): bool  // ✅ Du modèle 1
+    public function necessiteSuiviQualite(): bool
     {
         return in_array($this->note_nps, [6, 7]);
     }
 
-    public function necessiteP8(): bool  // ✅ Du modèle 2 (amélioré)
+    public function necessiteP8(): bool
     {
-        return $this->statut_cloture?->necessiteP8() || $this->note_nps <= 5;
+        return $this->statut_cloture?->necessiteP8() ?? $this->declencheP8();
     }
 
     public function estSatisfait(): bool
@@ -88,19 +92,31 @@ class RapportSatisfactionP6 extends Model
         return $this->note_nps >= 8;
     }
 
-    public function updateNoteArtisan(): void  // ✅ Du modèle 2
+    public function updateNoteArtisan(): void
     {
+        if (!$this->artisan_id) {
+            return;
+        }
+
         $moyenne = static::where('artisan_id', $this->artisan_id)
+            ->whereNotNull('note_nps')
             ->avg('note_nps');
 
-        $this->artisan->update([
-            'note_moyenne' => round($moyenne, 2)
-        ]);
+        if ($this->artisan) {
+            $this->artisan->update([
+                'note_moyenne' => round($moyenne, 2)
+            ]);
+        }
     }
 
-    public function ouvrirReclamationP8(): ?ReclamationP8  // ✅ Du modèle 1 (amélioré)
+    public function ouvrirReclamationP8(): ?ReclamationP8
     {
         if (!$this->declencheP8()) {
+            return null;
+        }
+
+        // Vérifier si le ticket existe
+        if (!$this->ticket) {
             return null;
         }
 
@@ -121,10 +137,17 @@ class RapportSatisfactionP6 extends Model
         ]);
 
         // Mise à jour statut ticket
-        $this->ticket->changerStatut(
-            TicketStatut::ReclamationOuverte,
-            "P8 ouvert automatiquement - NPS: {$this->note_nps}/10"
-        );
+        if ($this->ticket) {
+            try {
+                $this->ticket->changerStatut(
+                    TicketStatut::ReclamationOuverte,
+                    "P8 ouvert automatiquement - NPS: {$this->note_nps}/10"
+                );
+            } catch (\Exception $e) {
+                // Log error but continue
+                \Log::error('Erreur changement statut ticket: ' . $e->getMessage());
+            }
+        }
 
         return $reclamation;
     }
@@ -139,8 +162,13 @@ class RapportSatisfactionP6 extends Model
             $description .= "Verbatim client: {$this->verbatim_client}\n";
         }
 
-        $description .= "Artisan: {$this->artisan->nom_complet}\n";
-        $description .= "Date appel J+1: {$this->date_appel_j1->format('d/m/Y')}";
+        if ($this->artisan) {
+            $description .= "Artisan: {$this->artisan->nom_complet}\n";
+        }
+
+        if ($this->date_appel_j1) {
+            $description .= "Date appel J+1: {$this->date_appel_j1->format('d/m/Y')}";
+        }
 
         return $description;
     }
@@ -200,7 +228,7 @@ class RapportSatisfactionP6 extends Model
     // ── Méthodes statiques KPIs ─────────────────────────────────────
     public static function getNPSMoyen(): float
     {
-        return round(static::avg('note_nps') ?? 0, 1);
+        return round(static::whereNotNull('note_nps')->avg('note_nps') ?? 0, 1);
     }
 
     public static function getTauxSatisfaction(): float
@@ -245,17 +273,17 @@ class RapportSatisfactionP6 extends Model
     protected static function booted(): void
     {
         static::saving(function (RapportSatisfactionP6 $rapport) {
-            // ✅ Du modèle 2 : Auto-statut selon NPS
-            if ($rapport->note_nps && !$rapport->statut_cloture) {
+            // Auto-statut selon NPS
+            if ($rapport->note_nps !== null && !$rapport->statut_cloture) {
                 $rapport->statut_cloture = StatutClotureP6::depuisNPS($rapport->note_nps);
             }
         });
 
         static::created(function (RapportSatisfactionP6 $rapport) {
-            // ✅ Du modèle 2 : Mise à jour note artisan
+            // Mise à jour note artisan
             $rapport->updateNoteArtisan();
 
-            // ✅ Du modèle 1 : Ouverture P8 automatique si NPS ≤ 5
+            // Ouverture P8 automatique si NPS ≤ 5
             if ($rapport->declencheP8()) {
                 $rapport->ouvrirReclamationP8();
             }
@@ -267,30 +295,30 @@ class RapportSatisfactionP6 extends Model
                 $rapport->updateNoteArtisan();
 
                 // Vérifier si on doit ouvrir P8 maintenant
-                if ($rapport->declencheP8() && !$rapport->ticket->reclamationActive) {
+                if ($rapport->declencheP8() && $rapport->ticket && !$rapport->ticket->reclamationActive) {
                     $rapport->ouvrirReclamationP8();
                 }
             }
         });
     }
 
-    // ── Relations ────────────────────────────────────────────────────
-    public function ticket()
+    // ── Relations Typées ─────────────────────────────────────────────
+    public function ticket(): BelongsTo
     {
-        return $this->belongsTo(Ticket::class);
+        return $this->belongsTo(Ticket::class, 'ticket_id');
     }
 
-    public function artisan()
+    public function artisan(): BelongsTo
     {
-        return $this->belongsTo(Artisan::class);
+        return $this->belongsTo(Artisan::class, 'artisan_id');
     }
 
-    public function operateur()
+    public function operateur(): BelongsTo
     {
         return $this->belongsTo(User::class, 'operateur_id');
     }
 
-    public function reclamation()  // ✅ Nouvelle relation
+    public function reclamation(): HasOne
     {
         return $this->hasOne(ReclamationP8::class, 'rapport_satisfaction_id');
     }

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\StatutBonDeCommande;
 use App\Enums\StatutDevis;
 use App\Enums\TauxTVA;
+use App\Enums\TicketStatut;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Devis
@@ -148,10 +151,10 @@ class Devis extends Model
     // ── Calculs financiers ───────────────────────────────────────────
 
     /**
-     * Recalcule et persiste total_ht, montant_tva, total_ttc depuis les lignes.
+     * Calcule total_ht, montant_tva, total_ttc depuis les lignes.
      * Applique la remise avant TVA.
      */
-    public function recalculerTotaux(): void
+    public function calculerTotaux(): void
     {
         $totalHtBrut = 0.0;
         $totalTva    = 0.0;
@@ -176,11 +179,11 @@ class Devis extends Model
             $totalTva += $tva;
         }
 
-        $this->update([
-            'total_ht'    => round($totalHtNet, 2),
-            'montant_tva' => round($totalTva, 2),
-            'total_ttc'   => round($totalHtNet + $totalTva, 2),
-        ]);
+        // On injecte les valeurs directement dans l'objet.
+        // Laravel se chargera de les envoyer en BDD dans la foulée.
+        $this->total_ht    = round($totalHtNet, 2);
+        $this->montant_tva = round($totalTva, 2);
+        $this->total_ttc   = round($totalHtNet + $totalTva, 2);
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
@@ -196,20 +199,64 @@ class Devis extends Model
         ]);
     }
 
-    public function accepter(string $mode = 'appel'): BonDeCommande
+    // Dans App/Models/Devis.php
+
+    public function accepter(string $modeAcceptation): BonDeCommande
     {
         if (!in_array($this->statut, [StatutDevis::Envoye, StatutDevis::Brouillon])) {
-            throw new \Exception("Ce devis ne peut plus être accepté (statut : {$this->statut->value}).");
+            throw new \Exception("Seuls les devis envoyés ou en brouillon peuvent être acceptés.");
         }
 
-        $this->update([
-            'statut'                 => StatutDevis::Accepte,
-            'mode_acceptation'       => $mode,
-            'date_acceptation_refus' => now(),
-        ]);
+        $bonCommande = DB::transaction(function () use ($modeAcceptation) {
+            // 1. Mettre à jour le devis
+            $this->update([
+                'statut'               => StatutDevis::Accepte,
+                'mode_acceptation'     => $modeAcceptation,
+                'date_acceptation_refus' => now(),
+            ]);
 
-        // Génération automatique du bon de commande
-        return $this->genererBonDeCommande();
+            // 2. Générer le bon de commande
+            $bonCommande = BonDeCommande::create([
+                'numero'                 => BonDeCommande::genererNumero(),
+                'devis_id'               => $this->id,
+                'ticket_id'              => $this->ticket_id,
+                'artisan_id'             => $this->artisan_id,
+                'contact_particulier_id' => $this->contact_particulier_id,
+                'lignes'                 => $this->lignes,
+                'montant_total_ttc'      => $this->total_ttc,
+                'acompte_montant'        => $this->calculerAcompte(),
+                'conditions_paiement'    => $this->conditions_paiement,
+                'statut'                 => StatutBonDeCommande::EnAttente,
+            ]);
+
+            // 3. Utiliser la méthode progresserJusquA pour le ticket
+            $ticket = $this->ticket;
+
+            if ($ticket) {
+                try {
+                    // Faire progresser le ticket jusqu'au statut DevisAccepte
+                    $ticket->progresserJusquA(TicketStatut::DevisAccepte, [
+                        'date_rdv' => $bonCommande->date_intervention_prevue ?? now()->addDays(7)
+                    ]);
+
+                    // Ajouter une note au ticket
+                    $ticket->changerStatut(
+                        $ticket->statut, // Garder le même statut
+                        "Devis #{$this->numero} accepté par {$modeAcceptation} - BC #{$bonCommande->numero} généré"
+                    );
+                } catch (\Exception $e) {
+                    // Log l'erreur mais continue (le BC est créé)
+                    \Log::error("Erreur progression ticket: " . $e->getMessage(), [
+                        'devis_id' => $this->id,
+                        'ticket_id' => $ticket->id
+                    ]);
+                }
+            }
+
+            return $bonCommande;
+        });
+
+        return $bonCommande;
     }
 
     public function refuser(string $motif = null): void
@@ -355,21 +402,17 @@ class Devis extends Model
             }
         });
 
-        static::created(function (Devis $devis) {
-            $devis->recalculerTotaux();
-        });
+        static::saving(function (Devis $devis) {
+            // On calcule automatiquement les totaux avant CHAQUE enregistrement (create ou update)
+            $devis->calculerTotaux();
 
-        static::updated(function (Devis $devis) {
-            if ($devis->isDirty('lignes') || $devis->isDirty('remise_montant') || $devis->isDirty('remise_pourcentage')) {
-                $devis->recalculerTotaux();
-            }
-            // Expiration automatique
+            // Gestion de l'expiration automatique directement avant la sauvegarde
             if (
-                $devis->isDirty('statut') === false &&
                 $devis->statut === StatutDevis::Envoye &&
+                $devis->date_validite &&
                 $devis->date_validite->isPast()
             ) {
-                $devis->marquerExpire();
+                $devis->statut = StatutDevis::Expire;
             }
         });
     }

@@ -5,7 +5,9 @@ namespace App\Filament\NsConseil\Pages;
 use App\Models\ArtisanProspection;
 use App\Models\ContactPartenaire;
 use App\Models\ContactParticulier;
+use App\Models\Prospect;
 use App\Enums\StatutCampagneProspection;
+use App\Enums\ProspectStatut;
 use Filament\Pages\Page;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -21,7 +23,7 @@ class PhoningWorkflow extends Page
     protected static string $view = 'filament.ns-conseil.pages.phoning-workflow';
 
     public ?Model $currentContact = null;
-    public string $contactType = ''; // 'partenaire', 'particulier', 'artisan'
+    public string $contactType = '';
     public string $commentaires = '';
     public string $statut_resultat = '';
     public string $rappel_date = '';
@@ -30,6 +32,7 @@ class PhoningWorkflow extends Page
     public int $progress = 0;
     public int $total = 0;
     public int $completed = 0;
+    public string $activeScriptTab = 'accroche';
 
     public function mount(): void
     {
@@ -103,8 +106,30 @@ class PhoningWorkflow extends Page
                 'model' => $item,
             ]);
 
+        // 4. Prospect avec statut AC (À contacter) - NOUVEAU
+        $prospects = Prospect::query()
+            ->where('statut', ProspectStatut::AC)
+            ->where(function ($q) {
+                $q->whereNull('date_premier_contact')
+                    ->orWhere('date_premier_contact', '<=', now()->subHours(72));
+            })
+            ->whereNull('deleted_at')
+            ->get()
+            ->map(fn($item) => (object) [
+                'id' => $item->id,
+                'type' => 'prospect',
+                'nom' => $item->nom,
+                'prenom' => null,
+                'telephone' => $item->telephone,
+                'email' => $item->email,
+                'statut_actuel' => $item->statut_label,
+                'priorite' => $item->type_pressenti ? ucfirst(str_replace('_', ' ', $item->type_pressenti)) : 'Standard',
+                'notes' => $item->description,
+                'model' => $item,
+            ]);
+
         // Fusionner et trier par priorité
-        $allContacts = $artisans->concat($partenaires)->concat($particuliers)
+        $allContacts = $artisans->concat($partenaires)->concat($particuliers)->concat($prospects)
             ->sortByDesc(function ($contact) {
                 $prioriteMap = [
                     'Haute' => 5,
@@ -130,7 +155,7 @@ class PhoningWorkflow extends Page
         }
 
         // Stats de progression (total des contacts contactables)
-        $this->total = $artisans->count() + $partenaires->count() + $particuliers->count();
+        $this->total = $artisans->count() + $partenaires->count() + $particuliers->count() + $prospects->count();
 
         // Pour le complété, vous pouvez stocker dans une table séparée ou utiliser un champ
         // Pour l'instant, on met 0 et on incrémente manuellement
@@ -163,6 +188,7 @@ class PhoningWorkflow extends Page
             'artisan' => $this->currentContact->telephone,
             'partenaire' => $this->currentContact->telephone_principal,
             'particulier' => $this->currentContact->telephone,
+            'prospect' => $this->currentContact->telephone,
             default => null,
         };
 
@@ -196,6 +222,7 @@ class PhoningWorkflow extends Page
             'artisan' => $this->updateArtisan(),
             'partenaire' => $this->updatePartenaire(),
             'particulier' => $this->updateParticulier(),
+            'prospect' => $this->updateProspect(),
         };
 
         Notification::make()
@@ -278,6 +305,49 @@ class PhoningWorkflow extends Page
         ]);
     }
 
+    protected function updateProspect(): void
+    {
+        $prospect = $this->currentContact;
+
+        $nouveauStatut = match ($this->statut_resultat) {
+            'qualifie' => ProspectStatut::RP, // Réponse positive
+            'non_joignable' => ProspectStatut::STD_NR, // Standard non référencé
+            'rappel' => ProspectStatut::AC, // À contacter (avec rappel)
+            'a_relancer' => ProspectStatut::AC, // À contacter
+            default => ProspectStatut::AC,
+        };
+
+        $note = match ($this->statut_resultat) {
+            'qualifie' => "✅ Contact qualifié - Intéressé",
+            'non_joignable' => "❌ Non joignable après appel",
+            'rappel' => "🔄 Rappel à programmer",
+            'a_relancer' => "📞 À relancer ultérieurement",
+            default => "Appel effectué",
+        };
+
+        if ($this->commentaires) {
+            $note .= " - {$this->commentaires}";
+        }
+
+        $prospect->changerStatut($nouveauStatut, $note);
+        $prospect->marquerContact();
+
+        // Programmer le rappel si demandé
+        if ($this->statut_resultat === 'rappel' && $this->rappel_date) {
+            try {
+                $rappelDateTime = \DateTime::createFromFormat(
+                    'Y-m-d' . ($this->rappel_heure ? ' H:i' : ''),
+                    $this->rappel_date . ($this->rappel_heure ? ' ' . $this->rappel_heure : '')
+                );
+                if ($rappelDateTime) {
+                    $prospect->programmerRappel($rappelDateTime);
+                }
+            } catch (\Exception $e) {
+                // Log silencieusement les erreurs de date
+            }
+        }
+    }
+
     public function skipCall(): void
     {
         if (!$this->currentContact)
@@ -326,6 +396,7 @@ class PhoningWorkflow extends Page
                 'statut' => $this->currentContact->statut_campagne->label(),
                 'priorite' => $this->currentContact->priorite_segment->label(),
                 'metier' => $this->currentContact->corps_de_metier?->label(),
+                'email' => null,
             ],
             'partenaire' => [
                 'nom' => $this->currentContact->nom,
@@ -334,6 +405,7 @@ class PhoningWorkflow extends Page
                 'statut' => $this->currentContact->est_principal ? 'Principal' : 'Contact',
                 'priorite' => $this->currentContact->niveau_influence_label,
                 'metier' => $this->currentContact->fonction,
+                'email' => $this->currentContact->email ?? $this->currentContact->email_perso,
             ],
             'particulier' => [
                 'nom' => $this->currentContact->nom,
@@ -342,6 +414,19 @@ class PhoningWorkflow extends Page
                 'statut' => $this->currentContact->statut_occupant?->label() ?? 'Contact',
                 'priorite' => $this->currentContact->type_logement?->label(),
                 'metier' => null,
+                'email' => $this->currentContact->email,
+            ],
+            'prospect' => [
+                'nom' => $this->currentContact->nom,
+                'prenom' => null,
+                'telephone' => $this->currentContact->telephone,
+                'telephone_alt' => $this->currentContact->telephone_alt,
+                'statut' => $this->currentContact->statut_label,
+                'priorite' => $this->currentContact->type_pressenti,
+                'metier' => $this->currentContact->secteur_activite,
+                'email' => $this->currentContact->email,
+                'adresse' => $this->currentContact->adresse_complete,
+                'interlocuteur' => $this->currentContact->interlocuteur_complet,
             ],
             default => [],
         };

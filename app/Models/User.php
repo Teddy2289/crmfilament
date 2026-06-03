@@ -92,22 +92,16 @@ class User extends Authenticatable implements FilamentUser
     }
 
 
-
-    /**
-     * Check if user has all of the given roles (utile si rôles multiples).
-     */
-    public function hasAllRoles(array $roles): bool
-    {
-        return count(array_intersect([$this->role_cache], $roles)) === count($roles);
-    }
-
-    /**
-     * Check if user has a specific role.
-     */
-    public function hasRole(string $role): bool
+    public function hasRoleCache(string $role): bool
     {
         return $this->role_cache === $role;
     }
+
+    public function hasAllRolesCache(array $roles): bool
+    {
+        return in_array($this->role_cache, $roles);
+    }
+
 
     // ── Constantes de rôles ─────────────────────────────────────────
     const ROLE_SUPER_ADMIN       = 'super_admin';
@@ -202,27 +196,27 @@ class User extends Authenticatable implements FilamentUser
     }
     public function isAdmin(): bool
     {
-        return $this->hasRole(self::ROLE_ADMIN) || $this->isSuperAdmin();
+        return $this->hasRoleCache(self::ROLE_ADMIN) || $this->isSuperAdmin();
     }
     public function isCommercial(): bool
     {
-        return $this->hasRole(self::ROLE_COMMERCIAL);
+        return $this->hasRoleCache(self::ROLE_COMMERCIAL);
     }
     public function isTeleprospecteur(): bool
     {
-        return $this->hasRole(self::ROLE_TELEPROSPECTEUR);
+        return $this->hasRoleCache(self::ROLE_TELEPROSPECTEUR);
     }
     public function isOperateur(): bool
     {
-        return $this->hasRole(self::ROLE_OPERATEUR);
+        return $this->hasRoleCache(self::ROLE_OPERATEUR);
     }
     public function isBackOffice(): bool
     {
-        return $this->hasRole(self::ROLE_BACK_OFFICE);
+        return $this->hasRoleCache(self::ROLE_BACK_OFFICE);
     }
     public function isSuperviseur(): bool
     {
-        return $this->hasRole(self::ROLE_SUPERVISEUR);
+        return $this->hasRoleCache(self::ROLE_SUPERVISEUR);
     }
 
     // Assigner un rôle Spatie ET mettre à jour role_cache en même temps

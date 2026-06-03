@@ -34,8 +34,7 @@ class RapportSatisfactionP6Resource extends Resource
     // ── Badge : appels J+1 à planifier ───────────────────────────
     public static function getNavigationBadge(): ?string
     {
-        // Tickets interv. réalisée sans rapport P6 depuis plus de 24h
-        $count = \App\Models\Ticket::where('statut', TicketStatut::InterventionRealisee->value)
+        $count = \App\Models\Ticket::query()->where('statut', TicketStatut::InterventionRealisee->value)
             ->doesntHave('rapportSatisfaction')
             ->where('updated_at', '<', now()->subDay())
             ->count();
@@ -56,20 +55,29 @@ class RapportSatisfactionP6Resource extends Resource
                 ->icon('heroicon-o-ticket')
                 ->columns(2)
                 ->schema([
+                    // ✅ Utiliser relationship() comme dans DevisResource
                     Forms\Components\Select::make('ticket_id')
                         ->label('Ticket')
-                        ->relationship(
-                            'ticket',
-                            'reference',
-                            fn(Builder $q) => $q->where('statut', TicketStatut::InterventionRealisee->value)
+                        ->options(
+                            \App\Models\Ticket::query()
+                                ->where('statut', TicketStatut::InterventionRealisee->value)
+                                ->with('contactParticulier')
+                                ->get()
+                                ->mapWithKeys(fn($ticket) => [
+                                    $ticket->id => $ticket->reference . ' - ' .
+                                        ($ticket->contactParticulier
+                                            ? trim($ticket->contactParticulier->prenom . ' ' . $ticket->contactParticulier->nom)
+                                            : 'Sans client')
+                                ])
+                                ->toArray()
                         )
                         ->searchable()
                         ->preload()
                         ->required()
-                        ->reactive()
+                        ->live()
                         ->afterStateUpdated(function ($state, Forms\Set $set) {
                             if (!$state) return;
-                            $ticket = \App\Models\Ticket::find($state);
+                            $ticket = \App\Models\Ticket::with(['artisan', 'contactParticulier'])->find($state);
                             if ($ticket) {
                                 $set('artisan_id', $ticket->artisan_id);
                                 $set('operateur_id', auth()->id());
@@ -77,11 +85,15 @@ class RapportSatisfactionP6Resource extends Resource
                         })
                         ->helperText('Seuls les tickets "Intervention réalisée" sont listés'),
 
+                    // ✅ Garder relationship() aussi pour artisan_id
                     Forms\Components\Select::make('artisan_id')
                         ->label('Artisan concerné')
                         ->relationship('artisan', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn($r) => $r->nom_complet)
-                        ->searchable()
+                        ->getOptionLabelFromRecordUsing(
+                            fn($record) =>
+                            $record->nom_complet . ($record->siret ? ' — ' . $record->siret : '')
+                        )
+                        ->searchable(['nom', 'prenom', 'siret'])
                         ->required(),
                 ]),
 
@@ -97,13 +109,17 @@ class RapportSatisfactionP6Resource extends Resource
                         ->maxDate(today()->addDays(3))
                         ->helperText('Dans les 72h suivant l\'intervention — SLA CDC'),
 
+                    // ✅ Garder relationship() pour operateur_id
                     Forms\Components\Select::make('operateur_id')
                         ->label('Agent Back-Office')
                         ->relationship('operateur', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn($r) => trim($r->prenom . ' ' . $r->nom))
+                        ->getOptionLabelFromRecordUsing(
+                            fn($record) =>
+                            trim($record->prenom . ' ' . $record->nom)
+                        )
+                        ->searchable(['nom', 'prenom'])
                         ->default(auth()->id())
-                        ->required()
-                        ->searchable(),
+                        ->required(),
                 ]),
 
             Forms\Components\Section::make('Score NPS')
@@ -118,18 +134,17 @@ class RapportSatisfactionP6Resource extends Resource
                         ->live()
                         ->afterStateUpdated(function ($state, Forms\Set $set) {
                             if ($state === null) return;
-                            $statut = match(true) {
+                            $set('statut_cloture', match (true) {
                                 $state >= 8 => 'satisfait',
                                 $state >= 6 => 'suivi_qualite_requis',
                                 default     => 'reclamation_ouverte',
-                            };
-                            $set('statut_cloture', $statut);
+                            });
                         })
-                        ->helperText(fn(Get $get) => match(true) {
-                            ($get('note_nps') ?? -1) >= 9  => '⭐ Promoteur — Client très satisfait',
-                            ($get('note_nps') ?? -1) >= 7  => '😐 Passif — Satisfaction neutre',
-                            ($get('note_nps') ?? -1) >= 6  => '⚠️ À surveiller — Suivi qualité P7',
-                            ($get('note_nps') ?? -1) >= 0  => '🚨 Détracteur — Réclamation P8 déclenchée automatiquement',
+                        ->helperText(fn(Get $get) => match (true) {
+                            ($get('note_nps') ?? -1) >= 9 => '⭐ Promoteur — Client très satisfait',
+                            ($get('note_nps') ?? -1) >= 7 => '😐 Passif — Satisfaction neutre',
+                            ($get('note_nps') ?? -1) >= 6 => '⚠️ À surveiller — Suivi qualité P7',
+                            ($get('note_nps') ?? -1) >= 0 => '🚨 Détracteur — Réclamation P8 déclenchée automatiquement',
                             default => 'Saisir une note de 0 à 10',
                         }),
 
@@ -147,12 +162,10 @@ class RapportSatisfactionP6Resource extends Resource
                     Forms\Components\Textarea::make('verbatim_client')
                         ->label('Verbatim client (mot à mot)')
                         ->rows(4)
-                        ->placeholder('Retranscription exacte des mots du client…')
-                        ->helperText('Utile pour alimenter le rapport P7 et traiter la P8 si nécessaire'),
+                        ->placeholder('Retranscription exacte des mots du client…'),
 
                     Forms\Components\Toggle::make('feedback_artisan')
                         ->label('Feedback transmis à l\'artisan')
-                        ->helperText('Obligatoire selon les règles non négociables du CDC')
                         ->default(false)
                         ->inline(false),
                 ]),
@@ -170,28 +183,28 @@ class RapportSatisfactionP6Resource extends Resource
                     ->label('Ticket')
                     ->searchable()
                     ->weight('semibold')
-                    ->url(fn($r) => $r->ticket_id
-                        ? TicketResource::getUrl('view', ['record' => $r->ticket_id])
+                    ->url(fn($record) => $record->ticket_id
+                        ? TicketResource::getUrl('view', ['record' => $record->ticket_id])
                         : null)
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('note_nps')
                     ->label('NPS')
                     ->badge()
-                    ->formatStateUsing(fn($s) => $s . ' / 10')
-                    ->color(fn($s) => match(true) {
-                        $s >= 9 => 'success',
-                        $s >= 7 => 'warning',
-                        $s >= 6 => 'orange',
+                    ->formatStateUsing(fn($state) => $state . ' / 10')
+                    ->color(fn($state) => match (true) {
+                        $state >= 9 => 'success',
+                        $state >= 7 => 'warning',
+                        $state >= 6 => 'orange',
                         default => 'danger',
                     })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('classification_nps')
                     ->label('Classification')
-                    ->getStateUsing(fn($r) => $r->getClassificationNPS())
+                    ->state(fn($record) => $record->getClassificationNPS())
                     ->badge()
-                    ->color(fn($s) => match($s) {
+                    ->color(fn($state) => match ($state) {
                         'Promoteur'   => 'success',
                         'Passif'      => 'warning',
                         'Détracteur'  => 'danger',
@@ -201,23 +214,23 @@ class RapportSatisfactionP6Resource extends Resource
                 Tables\Columns\TextColumn::make('statut_cloture')
                     ->label('Clôture')
                     ->badge()
-                    ->formatStateUsing(fn($s) => match($s instanceof \App\Enums\StatutClotureP6 ? $s->value : $s) {
+                    ->formatStateUsing(fn($state) => match ($state) {
                         'satisfait'            => 'Satisfait',
                         'suivi_qualite_requis' => 'Suivi qualité',
                         'reclamation_ouverte'  => 'Réclamation P8',
-                        default                => $s,
+                        default                => $state,
                     })
-                    ->color(fn($s) => match($s instanceof \App\Enums\StatutClotureP6 ? $s->value : $s) {
+                    ->color(fn($state) => match ($state) {
                         'satisfait'            => 'success',
                         'suivi_qualite_requis' => 'warning',
                         'reclamation_ouverte'  => 'danger',
                         default                => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('artisan.nom')
+                Tables\Columns\TextColumn::make('artisan_nom')
                     ->label('Artisan')
-                    ->formatStateUsing(fn($s, $r) => $r->artisan?->nom_complet ?? '—')
-                    ->description(fn($r) => $r->artisan?->corps_de_metier?->label()),
+                    ->getStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—')
+                    ->description(fn($record) => $record->artisan?->corps_de_metier?->label()),
 
                 Tables\Columns\TextColumn::make('verbatim_client')
                     ->label('Verbatim')
@@ -230,13 +243,14 @@ class RapportSatisfactionP6Resource extends Resource
                     ->boolean()
                     ->trueColor('success')
                     ->falseColor('danger')
-                    ->tooltip(fn($r) => $r->feedback_artisan ? 'Transmis' : '⚠️ Non transmis'),
+                    ->tooltip(fn($record) => $record->feedback_artisan ? 'Transmis' : '⚠️ Non transmis'),
 
-                Tables\Columns\TextColumn::make('reclamation.statut')
+                Tables\Columns\TextColumn::make('reclamation_statut')
                     ->label('P8')
+                    ->getStateUsing(fn($record) => $record->reclamation?->statut)
                     ->badge()
-                    ->formatStateUsing(fn($s) => $s ? ucfirst(str_replace('_', ' ', is_object($s) ? $s->value : $s)) : '—')
-                    ->color(fn($s) => $s ? 'danger' : 'gray')
+                    ->formatStateUsing(fn($state) => $state ? $state->label() : '—')
+                    ->color(fn($state) => $state ? $state->color() : 'gray')
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('date_appel_j1')
@@ -269,37 +283,38 @@ class RapportSatisfactionP6Resource extends Resource
             ])
 
             ->actions([
-                // ── Transmettre feedback artisan ──
                 Tables\Actions\Action::make('transmettre_feedback')
                     ->label('Feedback transmis')
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->color('info')
-                    ->visible(fn(RapportSatisfactionP6 $r) => !$r->feedback_artisan)
+                    ->visible(fn(RapportSatisfactionP6 $record) => !$record->feedback_artisan)
                     ->requiresConfirmation()
                     ->modalHeading('Confirmer la transmission du feedback à l\'artisan ?')
                     ->action(function (RapportSatisfactionP6 $record) {
                         $record->update(['feedback_artisan' => true]);
                         Notification::make()
                             ->title('Feedback marqué comme transmis')
-                            ->success()->send();
+                            ->success()
+                            ->send();
                     }),
 
-                // ── Ouvrir P8 manuellement si non auto-déclenché ──
                 Tables\Actions\Action::make('ouvrir_p8')
                     ->label('Ouvrir P8')
                     ->icon('heroicon-o-exclamation-triangle')
                     ->color('danger')
-                    ->visible(fn(RapportSatisfactionP6 $r) =>
-                        $r->declencheP8() && !$r->reclamation()->exists()
+                    ->visible(
+                        fn(RapportSatisfactionP6 $record) =>
+                        $record->declencheP8() && !$record->reclamation()->exists()
                     )
                     ->requiresConfirmation()
                     ->modalHeading('Ouvrir une réclamation P8 ?')
                     ->modalDescription('Une réclamation sera créée avec délai de résolution à J+5 ouvrés.')
                     ->action(function (RapportSatisfactionP6 $record) {
-                        $reclamation = $record->ouvrirReclamationP8();
+                        $record->ouvrirReclamationP8();
                         Notification::make()
                             ->title('Réclamation P8 ouverte — délai J+5')
-                            ->danger()->send();
+                            ->danger()
+                            ->send();
                     }),
 
                 Tables\Actions\ViewAction::make(),
@@ -322,20 +337,19 @@ class RapportSatisfactionP6Resource extends Resource
                 ->schema([
                     TextEntry::make('note_nps')
                         ->label('Note NPS')
-                        ->formatStateUsing(fn($s) => $s . ' / 10')
+                        ->formatStateUsing(fn($state) => $state . ' / 10')
                         ->badge()
-                        ->color(fn($s) => match(true) {
-                            $s >= 9 => 'success',
-                            $s >= 7 => 'warning',
+                        ->color(fn($state) => match (true) {
+                            $state >= 9 => 'success',
+                            $state >= 7 => 'warning',
                             default => 'danger',
-                        })
-                        ->size('xl'),
+                        }),
 
                     TextEntry::make('classification_nps')
                         ->label('Classification')
-                        ->getStateUsing(fn($r) => $r->getClassificationNPS())
+                        ->getStateUsing(fn($record) => $record->getClassificationNPS())
                         ->badge()
-                        ->color(fn($s) => match($s) {
+                        ->color(fn($state) => match ($state) {
                             'Promoteur'  => 'success',
                             'Passif'     => 'warning',
                             'Détracteur' => 'danger',
@@ -344,39 +358,51 @@ class RapportSatisfactionP6Resource extends Resource
 
                     TextEntry::make('statut_cloture')
                         ->label('Statut clôture')
-                        ->formatStateUsing(fn($s) => match(is_object($s) ? $s->value : $s) {
+                        ->formatStateUsing(fn($state) => match ($state) {
                             'satisfait'            => '✅ Satisfait',
                             'suivi_qualite_requis' => '⚠️ Suivi qualité',
                             'reclamation_ouverte'  => '🚨 Réclamation P8',
-                            default                => $s,
+                            default                => $state,
                         }),
 
                     IconEntry::make('feedback_artisan')
                         ->label('Feedback transmis')
                         ->boolean()
-                        ->trueColor('success')->falseColor('danger'),
+                        ->trueColor('success')
+                        ->falseColor('danger'),
                 ]),
 
             Section::make('Contexte')
                 ->columns(3)
                 ->schema([
-                    TextEntry::make('ticket.reference')->label('Ticket')
-                        ->url(fn($r) => $r->ticket_id
-                            ? TicketResource::getUrl('view', ['record' => $r->ticket_id])
+                    TextEntry::make('ticket.reference')
+                        ->label('Ticket')
+                        ->url(fn($record) => $record->ticket_id
+                            ? TicketResource::getUrl('view', ['record' => $record->ticket_id])
                             : null),
-                    TextEntry::make('artisan.nom')->label('Artisan')
-                        ->formatStateUsing(fn($s, $r) => $r->artisan?->nom_complet ?? '—'),
-                    TextEntry::make('operateur.prenom')->label('Agent Back-Office')
-                        ->formatStateUsing(fn($s, $r) =>
-                            trim(($r->operateur?->prenom ?? '') . ' ' . ($r->operateur?->nom ?? '')) ?: '—'
-                        ),
-                    TextEntry::make('date_appel_j1')->label('Date appel J+1')->date('d/m/Y'),
+
+                    TextEntry::make('artisan.nom')
+                        ->label('Artisan')
+                        ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—'),
+
+                    TextEntry::make('operateur')
+                        ->label('Agent Back-Office')
+                        ->formatStateUsing(fn($record) => $record->operateur
+                            ? trim($record->operateur->prenom . ' ' . $record->operateur->nom)
+                            : '—'),
+
+                    TextEntry::make('date_appel_j1')
+                        ->label('Date appel J+1')
+                        ->date('d/m/Y'),
                 ]),
 
             Section::make('Verbatim client')
                 ->collapsible()
                 ->schema([
-                    TextEntry::make('verbatim_client')->label('')->prose()->placeholder('Aucun verbatim'),
+                    TextEntry::make('verbatim_client')
+                        ->label('')
+                        ->prose()
+                        ->placeholder('Aucun verbatim'),
                 ]),
         ]);
     }

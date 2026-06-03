@@ -9,35 +9,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * Facture
- *
- * Document légal post-intervention. Émis par l'artisan après intervention réalisée.
- * Liée au BonDeCommande et à l'Affaire. Déclenche le suivi de paiement.
- * Le numéro est une séquence chronologique OBLIGATOIRE (conformité légale).
- *
- * Chaîne documentaire : Devis → BonDeCommande → Facture
- *
- * @property int         $id
- * @property string      $numero                   Format FAC-AAAA-NNNN — séquence chronologique (obligatoire légalement)
- * @property int         $bon_de_commande_id        FK → BonDeCommande
- * @property int         $ticket_id                FK → Ticket (Affaire)
- * @property int         $artisan_id               FK → Artisan (SIRET obligatoire)
- * @property int         $contact_particulier_id   FK → ContactParticulier (client facturé)
- * @property array       $lignes                   [{libelle, quantite, prix_unitaire_ht, taux_tva}]
- * @property float       $total_ht                 Calculé
- * @property float       $montant_tva              Calculé
- * @property float       $total_ttc                Calculé
- * @property float|null  $acompte_deja_verse       Déduit si applicable
- * @property float       $solde_restant_du          TTC − acompte versé (auto)
- * @property \Carbon\Carbon $date_echeance          Date limite de règlement (obligatoire)
- * @property ModePaiement $mode_paiement            Virement / CB / Chèque / Espèces
- * @property StatutPaiement $statut_paiement        En attente / Partiel / Payé / En retard / Litigieux
- * @property \Carbon\Carbon|null $date_paiement_effectif  À la réception du règlement (auto)
- * @property float       $penalites_retard          Calculées si dépassement échéance (auto)
- * @property int|null    $avoir_id                 FK → Facture (avoir) si remboursement partiel
- * @property string|null $fichier_pdf              Path vers le PDF généré (auto)
- */
 class Facture extends Model
 {
     use SoftDeletes;
@@ -82,9 +53,6 @@ class Facture extends Model
         'notes',
     ];
 
-    // ── Constantes ──────────────────────────────────────────────────
-
-    /** Taux de pénalités de retard légal (3× taux BCE soit ~10%) */
     const TAUX_PENALITES_RETARD = 0.10;
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -146,10 +114,10 @@ class Facture extends Model
         return !is_null($this->avoir_id);
     }
 
-    // ── Calculs financiers ───────────────────────────────────────────
+    // ── Calculs financiers (CORRIGÉS) ───────────────────────────────
 
     /**
-     * Recalcule totaux HT, TVA, TTC et solde restant dû depuis les lignes.
+     * Calcule totaux HT, TVA, TTC et solde sans forcer de requêtes SQL intermédiaires.
      */
     public function recalculerTotaux(): void
     {
@@ -166,24 +134,18 @@ class Facture extends Model
         $acompte         = $this->acompte_deja_verse ?? 0;
         $soldeRestantDu  = max(0, $totalTtc - $acompte);
 
-        $this->update([
-            'total_ht'        => round($totalHt, 2),
-            'montant_tva'     => round($totalTva, 2),
-            'total_ttc'       => round($totalTtc, 2),
-            'solde_restant_du'=> round($soldeRestantDu, 2),
-        ]);
+        // Correction : Modification directe des propriétés
+        $this->total_ht          = round($totalHt, 2);
+        $this->montant_tva       = round($totalTva, 2);
+        $this->total_ttc         = round($totalTtc, 2);
+        $this->solde_restant_du  = round($soldeRestantDu, 2);
     }
 
     /**
-     * Calcule et met à jour les pénalités de retard.
-     * Appelé automatiquement lors de la vérification de l'échéance.
+     * Calcule les pénalités sans appeler ->update()
      */
     public function calculerPenalites(): void
     {
-        if (!$this->est_en_retard || $this->est_payee) {
-            return;
-        }
-
         $joursRetard = $this->jours_retard;
         if ($joursRetard <= 0) {
             return;
@@ -193,22 +155,15 @@ class Facture extends Model
             * self::TAUX_PENALITES_RETARD
             * ($joursRetard / 365);
 
-        $this->update([
-            'penalites_retard' => round($penalites, 2),
-            'statut_paiement'  => StatutPaiement::EnRetard,
-        ]);
+        // Correction : Modification directe des propriétés
+        $this->penalites_retard = round($penalites, 2);
+        $this->statut_paiement  = StatutPaiement::EnRetard;
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
 
-    /**
-     * Enregistrer un paiement complet ou partiel.
-     */
-    public function enregistrerPaiement(
-        float $montant,
-        ModePaiement $mode,
-        ?\DateTime $datePaiement = null
-    ): void {
+    public function enregistrerPaiement(float $montant, ModePaiement $mode, ?\DateTime $datePaiement = null): void
+    {
         $solde  = $this->solde_restant_du;
         $date   = $datePaiement ?? now();
         $estTotal = abs($montant - $solde) < 0.01;
@@ -216,18 +171,11 @@ class Facture extends Model
         $this->update([
             'mode_paiement'          => $mode,
             'date_paiement_effectif' => $estTotal ? $date : $this->date_paiement_effectif,
-            'statut_paiement'        => $estTotal
-                ? StatutPaiement::Paye
-                : StatutPaiement::Partiel,
-            'solde_restant_du'       => $estTotal
-                ? 0
-                : round(max(0, $solde - $montant), 2),
+            'statut_paiement'        => $estTotal ? StatutPaiement::Paye : StatutPaiement::Partiel,
+            'solde_restant_du'       => $estTotal ? 0 : round(max(0, $solde - $montant), 2),
         ]);
     }
 
-    /**
-     * Marquer comme litigieuse (impayé contesté).
-     */
     public function marquerLitigieux(string $motif = null): void
     {
         $this->update([
@@ -238,9 +186,6 @@ class Facture extends Model
         ]);
     }
 
-    /**
-     * Associer un avoir (remboursement partiel).
-     */
     public function associerAvoir(Facture $avoir): void
     {
         if ($avoir->id === $this->id) {
@@ -249,9 +194,6 @@ class Facture extends Model
         $this->update(['avoir_id' => $avoir->id]);
     }
 
-    /**
-     * Relance automatique impayé.
-     */
     public function doitEtreRelancee(): bool
     {
         return $this->est_en_retard && !$this->est_payee && !$this->est_litigieux;
@@ -259,7 +201,6 @@ class Facture extends Model
 
     public static function genererNumero(): string
     {
-        // Séquence chronologique OBLIGATOIRE pour conformité légale
         $annee    = now()->year;
         $dernierN = static::whereYear('created_at', $annee)->count() + 1;
         return 'FAC-' . $annee . '-' . str_pad($dernierN, 4, '0', STR_PAD_LEFT);
@@ -267,21 +208,9 @@ class Facture extends Model
 
     // ── Scopes ──────────────────────────────────────────────────────
 
-    public function scopeEnAttente($query): Builder
-    {
-        return $query->where('statut_paiement', StatutPaiement::EnAttente);
-    }
-
-    public function scopePartielles($query): Builder
-    {
-        return $query->where('statut_paiement', StatutPaiement::Partiel);
-    }
-
-    public function scopePayees($query): Builder
-    {
-        return $query->where('statut_paiement', StatutPaiement::Paye);
-    }
-
+    public function scopeEnAttente($query): Builder { return $query->where('statut_paiement', StatutPaiement::EnAttente); }
+    public function scopePartielles($query): Builder { return $query->where('statut_paiement', StatutPaiement::Partiel); }
+    public function scopePayees($query): Builder { return $query->where('statut_paiement', StatutPaiement::Paye); }
     public function scopeEnRetard($query): Builder
     {
         return $query->where(function ($q) {
@@ -292,39 +221,12 @@ class Facture extends Model
               });
         });
     }
-
-    public function scopeLitigieuses($query): Builder
-    {
-        return $query->where('statut_paiement', StatutPaiement::Litigieux);
-    }
-
-    public function scopeNonPayees($query): Builder
-    {
-        return $query->whereNotIn('statut_paiement', [
-            StatutPaiement::Paye->value,
-        ]);
-    }
-
-    public function scopeARelancer($query): Builder
-    {
-        return $query->enRetard()->where('statut_paiement', '!=', StatutPaiement::Litigieux->value);
-    }
-
-    public function scopeParArtisan($query, int $artisanId): Builder
-    {
-        return $query->where('artisan_id', $artisanId);
-    }
-
-    public function scopeDuMois($query): Builder
-    {
-        return $query->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year);
-    }
-
-    public function scopeSansPdf($query): Builder
-    {
-        return $query->whereNull('fichier_pdf');
-    }
+    public function scopeLitigieuses($query): Builder { return $query->where('statut_paiement', StatutPaiement::Litigieux); }
+    public function scopeNonPayees($query): Builder { return $query->whereNotIn('statut_paiement', [StatutPaiement::Paye->value]); }
+    public function scopeARelancer($query): Builder { return $query->enRetard()->where('statut_paiement', '!=', StatutPaiement::Litigieux->value); }
+    public function scopeParArtisan($query, int $artisanId): Builder { return $query->where('artisan_id', $artisanId); }
+    public function scopeDuMois($query): Builder { return $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year); }
+    public function scopeSansPdf($query): Builder { return $query->whereNull('fichier_pdf'); }
 
     // ── KPIs ────────────────────────────────────────────────────────
 
@@ -346,26 +248,15 @@ class Facture extends Model
     public static function getTauxRecouvrement(): float
     {
         $total = static::count();
-        if ($total === 0) {
-            return 0;
-        }
-        return round((static::payees()->count() / $total) * 100, 1);
+        return $total === 0 ? 0 : round((static::payees()->count() / $total) * 100, 1);
     }
 
     public static function getDelaiMoyenPaiement(): float
     {
-        return round(
-            static::payees()
-                ->whereNotNull('date_paiement_effectif')
-                ->get()
-                ->avg(function ($f) {
-                    return $f->created_at->diffInDays($f->date_paiement_effectif);
-                }) ?? 0,
-            1
-        );
+        return round(static::payees()->whereNotNull('date_paiement_effectif')->get()->avg(fn($f) => $f->created_at->diffInDays($f->date_paiement_effectif)) ?? 0, 1);
     }
 
-    // ── Boot ────────────────────────────────────────────────────────
+    // ── Boot (CORRIGÉ) ──────────────────────────────────────────────
 
     protected static function booted(): void
     {
@@ -384,20 +275,15 @@ class Facture extends Model
             }
         });
 
-        static::created(function (Facture $facture) {
-            $facture->recalculerTotaux();
-        });
-
-        static::updated(function (Facture $facture) {
-            if ($facture->isDirty('lignes') || $facture->isDirty('acompte_deja_verse')) {
+        // Utilisation de SAVING pour centraliser les calculs proprement avant l'écriture en BDD
+        static::saving(function (Facture $facture) {
+            // On calcule si création OU si les données financières ont changé
+            if (!$facture->exists || $facture->isDirty('lignes') || $facture->isDirty('acompte_deja_verse')) {
                 $facture->recalculerTotaux();
             }
-            // Détection automatique du retard
-            if (
-                !$facture->isDirty('statut_paiement') &&
-                $facture->statut_paiement === StatutPaiement::EnAttente &&
-                $facture->date_echeance->isPast()
-            ) {
+
+            // Vérification et calcul automatique du retard avant la sauvegarde
+            if ($facture->statut_paiement === StatutPaiement::EnAttente && $facture->date_echeance?->isPast()) {
                 $facture->calculerPenalites();
             }
         });
@@ -405,35 +291,10 @@ class Facture extends Model
 
     // ── Relations ────────────────────────────────────────────────────
 
-    public function bonDeCommande()
-    {
-        return $this->belongsTo(BonDeCommande::class);
-    }
-
-    public function ticket()
-    {
-        return $this->belongsTo(Ticket::class);
-    }
-
-    public function artisan()
-    {
-        return $this->belongsTo(Artisan::class);
-    }
-
-    public function contactParticulier()
-    {
-        return $this->belongsTo(ContactParticulier::class);
-    }
-
-    /** Avoir associé (remboursement partiel) */
-    public function avoir()
-    {
-        return $this->belongsTo(Facture::class, 'avoir_id');
-    }
-
-    /** Factures dont cette facture est l'avoir */
-    public function factureOrigine()
-    {
-        return $this->hasOne(Facture::class, 'avoir_id');
-    }
+    public function bonDeCommande() { return $this->belongsTo(BonDeCommande::class); }
+    public function ticket() { return $this->belongsTo(Ticket::class); }
+    public function artisan() { return $this->belongsTo(Artisan::class); }
+    public function contactParticulier() { return $this->belongsTo(ContactParticulier::class); }
+    public function avoir() { return $this->belongsTo(Facture::class, 'avoir_id'); }
+    public function factureOrigine() { return $this->hasOne(Facture::class, 'avoir_id'); }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatutBonDeCommande;
+use App\Enums\TicketStatut;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,7 +45,7 @@ class BonDeCommande extends Model
         'montant_total_ttc'       => 'decimal:2',
         'acompte_montant'         => 'decimal:2',
         'acompte_encaisse'        => 'boolean',
-        'date_intervention_prevue'=> 'datetime',
+        'date_intervention_prevue' => 'datetime',
         'date_confirmation'       => 'datetime',
     ];
 
@@ -121,6 +122,8 @@ class BonDeCommande extends Model
     /**
      * L'artisan confirme le bon de commande (accusé réception).
      */
+    // Dans App/Models/BonDeCommande.php
+
     public function confirmerParArtisan(): void
     {
         if ($this->statut !== StatutBonDeCommande::EnAttente) {
@@ -132,12 +135,19 @@ class BonDeCommande extends Model
             'date_confirmation' => now(),
         ]);
 
-        // Synchronisation statut ticket
+        // Mettre à jour le statut du ticket
         if ($this->ticket) {
-            $this->ticket->changerStatut(
-                \App\Enums\TicketStatut::ArtisanConfirme,
-                "BC #{$this->numero} confirmé par l'artisan"
-            );
+            try {
+                // Faire progresser le ticket jusqu'à ArtisanConfirme
+                $this->ticket->progresserJusquA(TicketStatut::ArtisanConfirme);
+
+                $this->ticket->changerStatut(
+                    $this->ticket->statut,
+                    "BC #{$this->numero} confirmé par l'artisan"
+                );
+            } catch (\Exception $e) {
+                \Log::error("Erreur progression ticket lors confirmation BC: " . $e->getMessage());
+            }
         }
     }
 
@@ -161,6 +171,7 @@ class BonDeCommande extends Model
     /**
      * Marquer l'intervention comme réalisée — génère la facture automatiquement.
      */
+
     public function marquerRealise(): Facture
     {
         if (!in_array($this->statut, [StatutBonDeCommande::Confirme, StatutBonDeCommande::EnCours])) {
@@ -169,12 +180,19 @@ class BonDeCommande extends Model
 
         $this->update(['statut' => StatutBonDeCommande::Realise]);
 
-        // Clôture côté Ticket
+        // Mettre à jour le statut du ticket
         if ($this->ticket) {
-            $this->ticket->changerStatut(
-                \App\Enums\TicketStatut::InterventionRealisee,
-                "Intervention BC #{$this->numero} réalisée"
-            );
+            try {
+                // Faire progresser le ticket jusqu'à InterventionRealisee
+                $this->ticket->progresserJusquA(TicketStatut::InterventionRealisee);
+
+                $this->ticket->changerStatut(
+                    $this->ticket->statut,
+                    "Intervention BC #{$this->numero} réalisée"
+                );
+            } catch (\Exception $e) {
+                \Log::error("Erreur progression ticket lors réalisation: " . $e->getMessage());
+            }
         }
 
         // Génération automatique de la facture
@@ -219,7 +237,7 @@ class BonDeCommande extends Model
             'ticket_id'              => $this->ticket_id,
             'artisan_id'             => $this->artisan_id,
             'contact_particulier_id' => $this->contact_particulier_id,
-            'lignes'                 => $this->lignes,
+            'lignes'                 => $this->lignes ?? [], // Évite null
             'acompte_deja_verse'     => $this->acompte_encaisse ? $this->acompte_montant : null,
             'conditions_paiement'    => $this->conditions_paiement,
             'statut_paiement'        => 'en_attente',
@@ -315,7 +333,8 @@ class BonDeCommande extends Model
 
     // ── Boot ────────────────────────────────────────────────────────
 
-    protected static function booted(): void
+
+    public static function booted(): void
     {
         static::creating(function (BonDeCommande $bc) {
             if (empty($bc->numero)) {
@@ -323,6 +342,10 @@ class BonDeCommande extends Model
             }
             if (empty($bc->statut)) {
                 $bc->statut = StatutBonDeCommande::EnAttente;
+            }
+            // Ajoutez ceci : initialiser lignes à un tableau vide si non fourni
+            if (empty($bc->lignes)) {
+                $bc->lignes = [];
             }
         });
     }

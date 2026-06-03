@@ -45,7 +45,7 @@ class Ticket extends Model
         'date_creation'    => 'datetime',
         'date_cloture'     => 'datetime',
         'rdv_planifie_at'  => 'datetime',
-        'rappel_promise_at'=> 'datetime',
+        'rappel_promise_at' => 'datetime',
     ];
 
     // ── Accesseurs Nettoyés (Grâce au Cast d'Enum) ───────────────────
@@ -166,26 +166,26 @@ class Ticket extends Model
     public function scopeUrgents($query): Builder
     {
         return $query->where('niveau_priorite', NiveauPriorite::Urgence->value)
-                     ->whereNotIn('statut', [
-                         TicketStatut::DossierCloture->value,
-                         TicketStatut::ClotureSatisfait->value,
-                     ]);
+            ->whereNotIn('statut', [
+                TicketStatut::DossierCloture->value,
+                TicketStatut::ClotureSatisfait->value,
+            ]);
     }
 
     public function scopeEnRetard($query): Builder
     {
         return $query->where(function ($q) {
             $q->where(function ($q) {
-                    $q->where('niveau_priorite', NiveauPriorite::Urgence->value)
-                      ->where('date_creation', '<', now()->subMinutes(30));
-                })
+                $q->where('niveau_priorite', NiveauPriorite::Urgence->value)
+                    ->where('date_creation', '<', now()->subMinutes(30));
+            })
                 ->orWhere(function ($q) {
                     $q->where('niveau_priorite', NiveauPriorite::Prioritaire->value)
-                      ->where('date_creation', '<', now()->subMinutes(120));
+                        ->where('date_creation', '<', now()->subMinutes(120));
                 })
                 ->orWhere(function ($q) {
                     $q->where('niveau_priorite', NiveauPriorite::Standard->value)
-                      ->where('date_creation', '<', now()->subMinutes(480));
+                        ->where('date_creation', '<', now()->subMinutes(480));
                 });
         })->whereNotIn('statut', [
             TicketStatut::DossierCloture->value,
@@ -196,10 +196,10 @@ class Ticket extends Model
     public function scopeSansArtisan($query): Builder
     {
         return $query->whereNull('artisan_id')
-                     ->whereIn('statut', [
-                         TicketStatut::FicheComplete->value,
-                         TicketStatut::RdvPlanifie->value,
-                     ]);
+            ->whereIn('statut', [
+                TicketStatut::FicheComplete->value,
+                TicketStatut::RdvPlanifie->value,
+            ]);
     }
 
     public function scopeDuJour($query): Builder
@@ -260,7 +260,76 @@ class Ticket extends Model
 
         $this->update($data);
     }
+// Dans App/Models/Ticket.php
 
+    /**
+     * Fait progresser le ticket automatiquement jusqu'à un statut cible
+     */
+    public function progresserJusquA(TicketStatut $statutCible, array $donnees = []): void
+    {
+        $statutsPossibles = $this->getCheminVersStatut($statutCible);
+
+        foreach ($statutsPossibles as $etape) {
+            if ($this->statut === $etape) {
+                continue;
+            }
+
+            if (!$this->peutPasserA($etape)) {
+                throw new \Exception(
+                    "Impossible de passer de {$this->statut->value} à {$etape->value} " .
+                        "en progressant vers {$statutCible->value}"
+                );
+            }
+
+            // Si c'est RdvPlanifie, on peut avoir besoin d'une date
+            if ($etape === TicketStatut::RdvPlanifie && isset($donnees['date_rdv'])) {
+                $this->planifierRDV($donnees['date_rdv']);
+            } else {
+                $this->changerStatut($etape, "Progression automatique vers {$statutCible->label()}");
+            }
+        }
+    }
+
+    /**
+     * Retourne le chemin le plus court vers un statut
+     */
+    private function getCheminVersStatut(TicketStatut $statutCible): array
+    {
+        // Définition manuelle des chemins (ou algorithme de graphe)
+        $chemins = [
+            TicketStatut::InterventionRealisee->value => [
+                TicketStatut::EnQualification,
+                TicketStatut::FicheComplete,
+                TicketStatut::RdvPlanifie,
+                TicketStatut::EnAttenteConfirmationArtisan,
+                TicketStatut::ArtisanConfirme,
+                TicketStatut::DevisEnAttente,
+                TicketStatut::DevisAccepte,
+                TicketStatut::InterventionRealisee,
+            ],
+            // Ajoutez d'autres chemins si nécessaire
+        ];
+
+        $key = $statutCible->value;
+
+        if (!isset($chemins[$key])) {
+            throw new \Exception("Aucun chemin défini vers le statut {$statutCible->label()}");
+        }
+
+        // Filtrer pour ne garder que les étapes après le statut actuel
+        $statuts = array_map(
+            fn($value) => TicketStatut::from($value),
+            $chemins[$key]
+        );
+
+        $positionActuelle = array_search($this->statut, $statuts);
+
+        if ($positionActuelle === false) {
+            throw new \Exception("Position actuelle non trouvée dans le chemin");
+        }
+
+        return array_slice($statuts, $positionActuelle + 1);
+    }
     public function assignerArtisan(Artisan $artisan): void
     {
         if (!$artisan->estDisponible()) {
@@ -274,7 +343,7 @@ class Ticket extends Model
     {
         $this->update([
             'statut'          => TicketStatut::RdvPlanifie->value,
-            'rdv_planifie_at'=> $dateRdv,
+            'rdv_planifie_at' => $dateRdv,
         ]);
     }
 
@@ -282,7 +351,7 @@ class Ticket extends Model
     {
         $this->update([
             'statut'            => TicketStatut::RappelPromis->value,
-            'rappel_promise_at'=> $dateRappel,
+            'rappel_promise_at' => $dateRappel,
         ]);
     }
 
@@ -378,11 +447,13 @@ class Ticket extends Model
 
     public static function getTauxSatisfaction(): float
     {
-        $total = static::clotures()->whereHas('rapportSatisfaction')->count();
+        // ✅ Correction : on utilise 'rapportsSatisfaction' (au pluriel)
+        $total = static::clotures()->whereHas('rapportsSatisfaction')->count();
         if ($total === 0) return 0;
 
+        // ✅ Correction : ici aussi
         $satisfaits = static::clotures()
-            ->whereHas('rapportSatisfaction', function ($q) {
+            ->whereHas('rapportsSatisfaction', function ($q) {
                 $q->where('note_nps', '>=', 8);
             })->count();
 
@@ -418,9 +489,11 @@ class Ticket extends Model
         });
 
         static::updating(function (Ticket $ticket) {
-            if ($ticket->isDirty('statut') &&
+            if (
+                $ticket->isDirty('statut') &&
                 $ticket->estCloture() &&
-                !$ticket->date_cloture) {
+                !$ticket->date_cloture
+            ) {
                 $ticket->date_cloture = now();
             }
         });

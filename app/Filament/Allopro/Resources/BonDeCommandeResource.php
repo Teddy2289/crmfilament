@@ -20,6 +20,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Allopro\Resources\TicketResource;
 
 class BonDeCommandeResource extends Resource
 {
@@ -52,7 +53,8 @@ class BonDeCommandeResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('numero')
                         ->label('N° BC')
-                        ->disabled()->dehydrated(false)
+                        ->disabled()
+                        ->dehydrated(false)
                         ->placeholder('Généré automatiquement'),
 
                     Forms\Components\Select::make('statut')
@@ -60,13 +62,16 @@ class BonDeCommandeResource extends Resource
                         ->options(collect(StatutBonDeCommande::cases())
                             ->mapWithKeys(fn($e) => [$e->value => $e->label()])
                             ->toArray())
-                        ->native(false)->required()
+                        ->native(false)
+                        ->required()
                         ->default(StatutBonDeCommande::EnAttente->value),
 
                     Forms\Components\Select::make('devis_id')
                         ->label('Devis d\'origine')
                         ->relationship('devis', 'numero')
-                        ->searchable()->preload()->nullable()
+                        ->searchable()
+                        ->preload()
+                        ->nullable()
                         ->helperText('Lien vers le devis accepté'),
                 ]),
 
@@ -77,19 +82,23 @@ class BonDeCommandeResource extends Resource
                     Forms\Components\Select::make('ticket_id')
                         ->label('Affaire / Ticket')
                         ->relationship('ticket', 'reference')
-                        ->searchable()->preload()->required(),
+                        ->searchable()
+                        ->preload()
+                        ->required(),
 
                     Forms\Components\Select::make('artisan_id')
                         ->label('Artisan exécutant')
                         ->relationship('artisan', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn($r) => $r->nom_complet)
-                        ->searchable()->required(),
+                        ->getOptionLabelFromRecordUsing(fn($record) => $record->nom_complet)
+                        ->searchable(['nom', 'prenom'])
+                        ->required(),
 
                     Forms\Components\Select::make('contact_particulier_id')
                         ->label('Client')
                         ->relationship('contactParticulier', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn($r) => trim($r->prenom . ' ' . $r->nom))
-                        ->searchable()->required(),
+                        ->getOptionLabelFromRecordUsing(fn($record) => trim($record->prenom . ' ' . $record->nom))
+                        ->searchable(['nom', 'prenom'])
+                        ->required(),
                 ]),
 
             Forms\Components\Section::make('Intervention')
@@ -103,7 +112,9 @@ class BonDeCommandeResource extends Resource
 
                     Forms\Components\TextInput::make('duree_estimee_heures')
                         ->label('Durée estimée (heures)')
-                        ->numeric()->minValue(0.5)->step(0.5)
+                        ->numeric()
+                        ->minValue(0.5)
+                        ->step(0.5)
                         ->suffix('h'),
 
                     Forms\Components\Select::make('conditions_paiement')
@@ -113,7 +124,9 @@ class BonDeCommandeResource extends Resource
                             'solde_intervention' => 'Solde à l\'intervention',
                             '30_jours'           => 'Paiement à 30 jours',
                         ])
-                        ->native(false)->required()->default('solde_intervention'),
+                        ->native(false)
+                        ->required()
+                        ->default('solde_intervention'),
                 ]),
 
             Forms\Components\Section::make('Acompte')
@@ -122,11 +135,15 @@ class BonDeCommandeResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('acompte_montant')
                         ->label('Montant acompte (€)')
-                        ->numeric()->minValue(0)->prefix('€')->nullable(),
+                        ->numeric()
+                        ->minValue(0)
+                        ->prefix('€')
+                        ->nullable(),
 
                     Forms\Components\Toggle::make('acompte_encaisse')
                         ->label('Acompte encaissé')
-                        ->default(false)->inline(false),
+                        ->default(false)
+                        ->inline(false),
                 ]),
 
             Forms\Components\Section::make('Montant & Prestations')
@@ -135,7 +152,10 @@ class BonDeCommandeResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('montant_total_ttc')
                         ->label('Montant total TTC (€)')
-                        ->numeric()->minValue(0)->prefix('€')->required(),
+                        ->numeric()
+                        ->minValue(0)
+                        ->prefix('€')
+                        ->required(),
 
                     Forms\Components\Textarea::make('instructions_artisan')
                         ->label('Instructions spéciales pour l\'artisan')
@@ -154,63 +174,71 @@ class BonDeCommandeResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('numero')
                     ->label('N° BC')
-                    ->searchable()->weight('semibold')->copyable(),
+                    ->searchable()
+                    ->weight('semibold')
+                    ->copyable(),
 
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn($s) => $s instanceof StatutBonDeCommande ? $s->label() : $s)
-                    ->color(fn($s) => $s instanceof StatutBonDeCommande ? $s->color() : 'gray')
-                    ->icon(fn($s) => $s instanceof StatutBonDeCommande ? $s->icon() : null),
+                    ->formatStateUsing(fn($state) => $state instanceof StatutBonDeCommande ? $state->label() : $state)
+                    ->color(fn($state) => $state instanceof StatutBonDeCommande ? $state->color() : 'gray')
+                    ->icon(fn($state) => $state instanceof StatutBonDeCommande ? $state->icon() : null),
 
                 Tables\Columns\TextColumn::make('ticket.reference')
                     ->label('Ticket')
-                    ->url(fn($r) => $r->ticket_id
-                        ? TicketResource::getUrl('view', ['record' => $r->ticket_id])
+                    ->url(fn($record) => $record->ticket_id
+                        ? TicketResource::getUrl('view', ['record' => $record->ticket_id])
                         : null)
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('artisan.nom')
                     ->label('Artisan')
-                    ->formatStateUsing(fn($s, $r) => $r->artisan?->nom_complet ?? '—'),
+                    ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—'),
 
                 Tables\Columns\TextColumn::make('date_intervention_prevue')
                     ->label('Intervention prévue')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->color(fn($s, $r) => match(true) {
-                        $r->date_intervention_prevue?->isPast() && !$r->est_realise => 'danger',
-                        $r->date_intervention_prevue?->isToday()                    => 'warning',
+                    ->color(fn($record) => match(true) {
+                        $record->date_intervention_prevue?->isPast() && !$record->est_realise => 'danger',
+                        $record->date_intervention_prevue?->isToday()                    => 'warning',
                         default                                                      => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('montant_total_ttc')
                     ->label('Montant TTC')
-                    ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €')
-                    ->sortable()->weight('semibold'),
+                    ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
+                    ->sortable()
+                    ->weight('semibold'),
 
                 Tables\Columns\IconColumn::make('acompte_encaisse')
                     ->label('Acompte')
                     ->boolean()
-                    ->trueColor('success')->falseColor('gray')
-                    ->tooltip(fn($r) => $r->acompte_montant
-                        ? number_format($r->acompte_montant, 2, ',', ' ') . ' €'
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->tooltip(fn($record) => $record->acompte_montant
+                        ? number_format($record->acompte_montant, 2, ',', ' ') . ' €'
                         : 'Pas d\'acompte'),
 
                 Tables\Columns\IconColumn::make('facture')
                     ->label('Facture')
                     ->getStateUsing(fn($record) => $record->facture()->exists())
                     ->boolean()
-                    ->trueColor('success')->falseColor('gray')
+                    ->trueColor('success')
+                    ->falseColor('gray')
                     ->trueIcon('heroicon-o-document-check')
                     ->falseIcon('heroicon-o-document'),
             ])
 
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
+                    ->label('Statut')
                     ->options(collect(StatutBonDeCommande::cases())
-                        ->mapWithKeys(fn($e) => [$e->value => $e->label()])->toArray())
-                    ->native(false)->multiple(),
+                        ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                        ->toArray())
+                    ->native(false)
+                    ->multiple(),
 
                 Tables\Filters\Filter::make('intervention_aujourd_hui')
                     ->label('Intervention aujourd\'hui')
@@ -231,11 +259,14 @@ class BonDeCommandeResource extends Resource
                     ->label('Confirmer')
                     ->icon('heroicon-o-check')
                     ->color('info')
-                    ->visible(fn(BonDeCommande $r) => $r->statut === StatutBonDeCommande::EnAttente)
+                    ->visible(fn(BonDeCommande $record) => $record->statut === StatutBonDeCommande::EnAttente)
                     ->requiresConfirmation()
                     ->action(function (BonDeCommande $record) {
                         $record->confirmerParArtisan();
-                        Notification::make()->title('BC confirmé par l\'artisan')->success()->send();
+                        Notification::make()
+                            ->title('BC confirmé par l\'artisan')
+                            ->success()
+                            ->send();
                     }),
 
                 // ── Encaisser acompte ──
@@ -243,16 +274,21 @@ class BonDeCommandeResource extends Resource
                     ->label('Acompte encaissé')
                     ->icon('heroicon-o-banknotes')
                     ->color('warning')
-                    ->visible(fn(BonDeCommande $r) => $r->necessite_acompte && !$r->acompte_encaisse && $r->est_actif)
+                    ->visible(fn(BonDeCommande $record) => $record->necessite_acompte && !$record->acompte_encaisse && $record->est_actif)
                     ->form([
                         Forms\Components\TextInput::make('montant')
                             ->label('Montant encaissé (€)')
-                            ->numeric()->prefix('€')->required()
-                            ->default(fn(BonDeCommande $r) => $r->acompte_montant),
+                            ->numeric()
+                            ->prefix('€')
+                            ->required()
+                            ->default(fn(BonDeCommande $record) => $record->acompte_montant),
                     ])
                     ->action(function (BonDeCommande $record, array $data) {
                         $record->enregistrerAcompte($data['montant']);
-                        Notification::make()->title('Acompte enregistré')->success()->send();
+                        Notification::make()
+                            ->title('Acompte enregistré')
+                            ->success()
+                            ->send();
                     }),
 
                 // ── Marquer réalisé → génère la facture ──
@@ -260,8 +296,9 @@ class BonDeCommandeResource extends Resource
                     ->label('Marquer réalisé')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(BonDeCommande $r) => in_array($r->statut, [
-                        StatutBonDeCommande::Confirme, StatutBonDeCommande::EnCours
+                    ->visible(fn(BonDeCommande $record) => in_array($record->statut, [
+                        StatutBonDeCommande::Confirme,
+                        StatutBonDeCommande::EnCours
                     ]))
                     ->requiresConfirmation()
                     ->modalHeading('Marquer l\'intervention comme réalisée ?')
@@ -270,12 +307,13 @@ class BonDeCommandeResource extends Resource
                         $facture = $record->marquerRealise();
                         Notification::make()
                             ->title('Intervention réalisée — Facture ' . $facture->numero . ' générée')
-                            ->success()->send();
+                            ->success()
+                            ->send();
                     }),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
-                    ->visible(fn(BonDeCommande $r) => $r->statut === StatutBonDeCommande::EnAttente),
+                    ->visible(fn(BonDeCommande $record) => $record->statut === StatutBonDeCommande::EnAttente),
             ])
 
             ->bulkActions([
@@ -284,9 +322,13 @@ class BonDeCommandeResource extends Resource
                         ->visible(fn() => auth()->user()?->hasRole('responsable_plateau')),
                 ]),
             ])
+            ->emptyStateIcon('heroicon-o-clipboard-document-check')
+            ->emptyStateHeading('Aucun bon de commande')
+            ->emptyStateDescription('Les bons de commande sont générés automatiquement lors de l\'acceptation d\'un devis.')
             ->striped();
     }
 
+    // ── Infolist ─────────────────────────────────────────────────
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
@@ -295,41 +337,91 @@ class BonDeCommandeResource extends Resource
                 ->icon('heroicon-o-clipboard-document-check')
                 ->columns(4)
                 ->schema([
-                    TextEntry::make('numero')->label('N° BC')->weight('bold')->copyable(),
-                    TextEntry::make('statut')->label('Statut')->badge()
-                        ->formatStateUsing(fn($s) => $s instanceof StatutBonDeCommande ? $s->label() : $s)
-                        ->color(fn($s) => $s instanceof StatutBonDeCommande ? $s->color() : 'gray'),
-                    TextEntry::make('date_confirmation')->label('Confirmé le')->dateTime('d/m/Y H:i')->placeholder('—'),
-                    TextEntry::make('devis.numero')->label('Devis d\'origine')->placeholder('—'),
+                    TextEntry::make('numero')
+                        ->label('N° BC')
+                        ->weight('bold')
+                        ->copyable(),
+
+                    TextEntry::make('statut')
+                        ->label('Statut')
+                        ->badge()
+                        ->formatStateUsing(fn($state) => $state instanceof StatutBonDeCommande ? $state->label() : $state)
+                        ->color(fn($state) => $state instanceof StatutBonDeCommande ? $state->color() : 'gray'),
+
+                    TextEntry::make('date_confirmation')
+                        ->label('Confirmé le')
+                        ->dateTime('d/m/Y H:i')
+                        ->placeholder('—'),
+
+                    TextEntry::make('devis.numero')
+                        ->label('Devis d\'origine')
+                        ->placeholder('—'),
                 ]),
 
             Section::make('Parties')
+                ->icon('heroicon-o-users')
                 ->columns(3)
                 ->schema([
-                    TextEntry::make('ticket.reference')->label('Ticket'),
-                    TextEntry::make('artisan.nom')->label('Artisan')
-                        ->formatStateUsing(fn($s, $r) => $r->artisan?->nom_complet ?? '—'),
-                    TextEntry::make('contactParticulier.nom')->label('Client')
-                        ->formatStateUsing(fn($s, $r) =>
-                            trim(($r->contactParticulier?->prenom ?? '') . ' ' . ($r->contactParticulier?->nom ?? '')) ?: '—'
+                    TextEntry::make('ticket.reference')
+                        ->label('Ticket'),
+
+                    TextEntry::make('artisan.nom')
+                        ->label('Artisan')
+                        ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—'),
+
+                    TextEntry::make('contactParticulier.nom')
+                        ->label('Client')
+                        ->formatStateUsing(
+                            fn($record) =>
+                            trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
                         ),
                 ]),
 
             Section::make('Intervention & Financier')
+                ->icon('heroicon-o-calculator')
                 ->columns(4)
                 ->schema([
-                    TextEntry::make('date_intervention_prevue')->label('Intervention prévue')->dateTime('d/m/Y H:i'),
-                    TextEntry::make('duree_estimee_heures')->label('Durée estimée')->formatStateUsing(fn($s) => $s ? $s . ' h' : '—'),
-                    TextEntry::make('montant_total_ttc')->label('Montant TTC')
-                        ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €')->weight('bold'),
-                    TextEntry::make('solde_restant')->label('Solde restant')
-                        ->formatStateUsing(fn($s, $r) => number_format((float)$r->solde_restant, 2, ',', ' ') . ' €'),
+                    TextEntry::make('date_intervention_prevue')
+                        ->label('Intervention prévue')
+                        ->dateTime('d/m/Y H:i'),
+
+                    TextEntry::make('duree_estimee_heures')
+                        ->label('Durée estimée')
+                        ->formatStateUsing(fn($state) => $state ? $state . ' h' : '—'),
+
+                    TextEntry::make('montant_total_ttc')
+                        ->label('Montant TTC')
+                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
+                        ->weight('bold'),
+
+                    TextEntry::make('solde_restant')
+                        ->label('Solde restant')
+                        ->formatStateUsing(fn($record) => number_format((float)$record->solde_restant, 2, ',', ' ') . ' €'),
+                ]),
+
+            Section::make('Acompte')
+                ->icon('heroicon-o-banknotes')
+                ->columns(2)
+                ->schema([
+                    TextEntry::make('acompte_montant')
+                        ->label('Montant acompte')
+                        ->formatStateUsing(fn($state) => $state ? number_format((float)$state, 2, ',', ' ') . ' €' : '—'),
+
+                    TextEntry::make('acompte_encaisse')
+                        ->label('Acompte encaissé')
+                        ->badge()
+                        ->formatStateUsing(fn($state) => $state ? 'Oui' : 'Non')
+                        ->color(fn($state) => $state ? 'success' : 'gray'),
                 ]),
 
             Section::make('Instructions artisan')
+                ->icon('heroicon-o-information-circle')
                 ->collapsible()
                 ->schema([
-                    TextEntry::make('instructions_artisan')->label('')->prose()->placeholder('Aucune instruction'),
+                    TextEntry::make('instructions_artisan')
+                        ->label('')
+                        ->prose()
+                        ->placeholder('Aucune instruction'),
                 ]),
         ]);
     }

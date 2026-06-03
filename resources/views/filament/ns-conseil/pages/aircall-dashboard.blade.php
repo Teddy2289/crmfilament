@@ -1,4 +1,3 @@
-{{-- resources/views/filament/ns-conseil/pages/aircall-dashboard.blade.php --}}
 <x-filament-panels::page>
 
     @if (!$this->connexionOk)

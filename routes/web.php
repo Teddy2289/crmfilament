@@ -7,6 +7,7 @@ use App\Services\GoogleCalendarService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use GuzzleHttp\Client;
+use App\Http\Controllers\PdfController;
 
 
 Route::get('/', function () {
@@ -22,6 +23,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/google/redirect',    [GoogleOAuthController::class, 'redirect'])->name('google.redirect');
     Route::get('/google/callback',    [GoogleOAuthController::class, 'callback'])->name('google.callback');
     Route::get('/google/disconnect',  [GoogleOAuthController::class, 'disconnect'])->name('google.disconnect');
+
+    Route::get('/pdf/facture/{facture}',  [PdfController::class, 'facture'])->name('factures.pdf');
+    Route::get('/pdf/devis/{devis}',      [PdfController::class, 'devis'])->name('devis.pdf');
 });
 
 Route::get('/debug-calendar', function () {
@@ -83,6 +87,4 @@ Route::get('/debug-calendar', function () {
         'calendar_colors'   => array_values($calColors),
         'events'            => $allEvents,
     ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
 })->middleware(['web', 'auth']);
-

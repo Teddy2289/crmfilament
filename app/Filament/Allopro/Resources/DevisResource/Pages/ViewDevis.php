@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\DevisResource\Pages;
 
 use App\Enums\StatutDevis;
@@ -67,6 +68,12 @@ class ViewDevis extends ViewRecord
 
             Actions\EditAction::make()
                 ->visible(fn() => $this->record->statut === StatutDevis::Brouillon),
+            Actions\Action::make('telecharger_pdf')
+                ->label('Télécharger PDF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(fn() => route('devis.pdf', $this->record))
+                ->openUrlInNewTab(),
         ];
     }
 }

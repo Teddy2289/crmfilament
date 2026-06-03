@@ -23,6 +23,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Allopro\Resources\TicketResource;
 
 class DevisResource extends Resource
 {
@@ -88,7 +89,7 @@ class DevisResource extends Resource
                         ->searchable()
                         ->preload()
                         ->required()
-                        ->reactive()
+                        ->live()
                         ->afterStateUpdated(function ($state, Set $set) {
                             if (!$state) return;
                             $ticket = \App\Models\Ticket::find($state);
@@ -101,7 +102,7 @@ class DevisResource extends Resource
                     Forms\Components\Select::make('artisan_id')
                         ->label('Artisan (émetteur)')
                         ->relationship('artisan', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn($r) => $r->nom_complet . ' — ' . ($r->siret ?? 'SIRET manquant'))
+                        ->getOptionLabelFromRecordUsing(fn($record) => $record->nom_complet . ' — ' . ($record->siret ?? 'SIRET manquant'))
                         ->searchable(['nom', 'prenom'])
                         ->required()
                         ->helperText('SIRET obligatoire pour facturation'),
@@ -109,7 +110,7 @@ class DevisResource extends Resource
                     Forms\Components\Select::make('contact_particulier_id')
                         ->label('Client (destinataire)')
                         ->relationship('contactParticulier', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn($r) => trim($r->prenom . ' ' . $r->nom) . ' — ' . $r->telephone)
+                        ->getOptionLabelFromRecordUsing(fn($record) => trim($record->prenom . ' ' . $record->nom) . ' — ' . $record->telephone)
                         ->searchable(['nom', 'prenom', 'telephone'])
                         ->required(),
                 ]),
@@ -131,7 +132,6 @@ class DevisResource extends Resource
                                 ->minValue(0.01)
                                 ->default(1)
                                 ->required()
-                                ->reactive()
                                 ->live(debounce: 500),
 
                             Forms\Components\TextInput::make('prix_unitaire_ht')
@@ -246,15 +246,20 @@ class DevisResource extends Resource
 
                 Tables\Columns\TextColumn::make('artisan.nom')
                     ->label('Artisan')
-                    ->formatStateUsing(fn($state, $record) => $record->artisan?->nom_complet ?? '—')
-                    ->description(fn($record) => $record->artisan?->siret ? 'SIRET: ' . $record->artisan->siret : '⚠️ SIRET manquant'),
+                    ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—')
+                    ->description(fn($record) =>
+                        $record->artisan?->siret
+                            ? 'SIRET : ' . $record->artisan->siret
+                            : '⚠️ SIRET manquant'
+                    ),
 
                 Tables\Columns\TextColumn::make('contactParticulier.nom')
                     ->label('Client')
-                    ->formatStateUsing(fn($state, $record) =>
+                    ->formatStateUsing(
+                        fn($state, $record) =>
                         trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
                     )
-                    ->description(fn($record) => $record->contactParticulier?->telephone),
+                    ->suffix(fn($record) => $record->contactParticulier?->telephone ? " | {$record->contactParticulier->telephone}" : ''),
 
                 Tables\Columns\TextColumn::make('total_ttc')
                     ->label('Total TTC')
@@ -262,19 +267,19 @@ class DevisResource extends Resource
                     ->sortable()
                     ->weight('semibold'),
 
-                Tables\Columns\TextColumn::make('date_validite')
-                    ->label('Expire le')
-                    ->date('d/m/Y')
-                    ->color(fn($state, $record) => match(true) {
-                        $record->est_expire          => 'danger',
-                        $record->jours_avant_expiration <= 3 => 'warning',
-                        default                      => 'gray',
-                    })
-                    ->description(fn($record) => match(true) {
-                        $record->est_expire                  => 'Expiré',
-                        $record->jours_avant_expiration <= 7 => 'J-' . $record->jours_avant_expiration,
-                        default                              => null,
-                    }),
+            Tables\Columns\TextColumn::make('date_validite')
+    ->label('Expire le')
+    ->date('d/m/Y')
+    ->color(fn($state, $record) => match (true) {
+        $record->est_expire          => 'danger',
+        $record->jours_avant_expiration <= 3 => 'warning',
+        default                      => 'gray',
+    })
+    ->description(fn($record) => match (true) {
+        $record->est_expire                  => 'Expiré',
+        $record->jours_avant_expiration <= 7 => 'J-' . $record->jours_avant_expiration,
+        default                              => null,
+    }),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Créé le')
@@ -397,14 +402,14 @@ class DevisResource extends Resource
                     TextEntry::make('statut')
                         ->label('Statut')
                         ->badge()
-                        ->formatStateUsing(fn($s) => $s instanceof StatutDevis ? $s->label() : $s)
-                        ->color(fn($s) => $s instanceof StatutDevis ? $s->color() : 'gray'),
+                        ->formatStateUsing(fn($state) => $state instanceof StatutDevis ? $state->label() : $state)
+                        ->color(fn($state) => $state instanceof StatutDevis ? $state->color() : 'gray'),
 
                     TextEntry::make('date_validite')->label('Expire le')->date('d/m/Y'),
 
                     TextEntry::make('jours_avant_expiration')
                         ->label('Délai restant')
-                        ->formatStateUsing(fn($s, $r) => $r->est_expire ? '⚠️ Expiré' : "J-{$s}"),
+                        ->formatStateUsing(fn($record) => $record->est_expire ? '⚠️ Expiré' : "J-{$record->jours_avant_expiration}"),
                 ]),
 
             Section::make('Parties')
@@ -414,14 +419,16 @@ class DevisResource extends Resource
                     TextEntry::make('ticket.reference')->label('Ticket'),
                     TextEntry::make('artisan.nom')
                         ->label('Artisan')
-                        ->formatStateUsing(fn($s, $r) => $r->artisan?->nom_complet ?? '—')
-                        ->description(fn($r) => 'SIRET : ' . ($r->artisan?->siret ?? '⚠️ manquant')),
+                        ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—')
+                        ->hint(fn($record) => 'SIRET : ' . ($record->artisan?->siret ?? '⚠️ manquant'))
+                        ->hintColor(fn($record) => $record->artisan?->siret ? null : 'danger'),
                     TextEntry::make('contactParticulier.nom')
                         ->label('Client')
-                        ->formatStateUsing(fn($s, $r) =>
-                            trim(($r->contactParticulier?->prenom ?? '') . ' ' . ($r->contactParticulier?->nom ?? '')) ?: '—'
+                        ->formatStateUsing(
+                            fn($record) =>
+                            trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
                         )
-                        ->description(fn($r) => $r->contactParticulier?->telephone),
+                        ->suffix(fn($record) => $record->contactParticulier?->telephone ? " | {$record->contactParticulier->telephone}" : ''),
                 ]),
 
             Section::make('Montants')
@@ -430,13 +437,13 @@ class DevisResource extends Resource
                 ->schema([
                     TextEntry::make('total_ht')
                         ->label('Total HT')
-                        ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €'),
+                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €'),
                     TextEntry::make('montant_tva')
                         ->label('TVA')
-                        ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €'),
+                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €'),
                     TextEntry::make('total_ttc')
                         ->label('Total TTC')
-                        ->formatStateUsing(fn($s) => number_format((float)$s, 2, ',', ' ') . ' €')
+                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
                         ->weight('bold')
                         ->color('success'),
                     TextEntry::make('conditions_paiement')->label('Conditions'),
