@@ -4,282 +4,248 @@
 @push('styles')
 <style>
 /* ═══════════════════════════════════════════════════════════════════
-   PHONING WORKFLOW — styles custom
-   Utilise les variables CSS Filament pour compatibilité dark/light.
+   PHONING WORKFLOW — v2 — styles custom
 ════════════════════════════════════════════════════════════════════ */
-
-/* ─── Reset boîte ─── */
 .pw-wrap * { box-sizing: border-box; }
-
-/* ─── Layout global ─── */
 .pw-wrap { padding: 0; }
 
 /* ─── Barre de supervision ─── */
 .pw-supervision {
-    display: flex; align-items: center; gap: 0.75rem;
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
     padding: 0.5rem 1rem;
     background: rgb(239 246 255);
     border-bottom: 1px solid rgb(219 234 254);
     font-size: 0.8125rem; color: rgb(55 65 81);
 }
-.dark .pw-supervision {
-    background: rgb(23 37 84 / 0.2);
-    border-bottom-color: rgb(30 58 138 / 0.3);
-    color: rgb(147 197 253);
+.dark .pw-supervision { background: rgb(23 37 84 / 0.2); border-bottom-color: rgb(30 58 138 / 0.3); color: rgb(147 197 253); }
+
+.pw-sup-avatar {
+    width: 1.75rem; height: 1.75rem; border-radius: 0.375rem;
+    background: rgb(37 99 235); color: white;
+    font-weight: 700; font-size: 0.6875rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.15s;
 }
-.pw-supervision select {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid rgb(191 219 254);
-    border-radius: 0.375rem;
-    font-size: 0.8125rem;
-    background: white;
-    color: rgb(30 64 175);
+.pw-sup-avatar:hover { background: rgb(29 78 216); }
+.pw-sup-avatar.active {
+    background: rgb(37 99 235);
+    box-shadow: 0 0 0 2px white, 0 0 0 4px rgb(37 99 235);
 }
-.dark .pw-supervision select {
-    background: rgb(23 37 84 / 0.4);
-    color: rgb(147 197 253);
-    border-color: rgb(30 58 138);
-}
+.pw-sup-self { background: rgb(22 163 74); }
+.pw-sup-self:hover { background: rgb(15 118 65); }
+.pw-sup-divider { width: 1px; height: 1.25rem; background: rgb(191 219 254); margin: 0 0.25rem; }
 
 /* ─── Barre contact ─── */
 .pw-contact-bar {
     display: flex; align-items: center; justify-content: space-between;
     padding: 0.875rem 1.25rem;
-    background: white;
-    border-bottom: 1px solid rgb(229 231 235);
+    background: white; border-bottom: 1px solid rgb(229 231 235);
+    flex-wrap: wrap; gap: 0.75rem;
 }
-.dark .pw-contact-bar {
-    background: rgb(17 24 39);
-    border-bottom-color: rgb(31 41 55);
-}
+.dark .pw-contact-bar { background: rgb(17 24 39); border-bottom-color: rgb(31 41 55); }
 .pw-contact-avatar {
-    width: 2.25rem; height: 2.25rem;
-    border-radius: 0.5rem;
-    background: rgb(59 130 246);
-    color: white; font-weight: 700; font-size: 0.875rem;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    width: 2.5rem; height: 2.5rem; border-radius: 0.625rem;
+    background: rgb(59 130 246); color: white;
+    font-weight: 700; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.pw-contact-name { font-size: 1rem; font-weight: 700; margin: 0; }
-.pw-contact-sub  { font-size: 0.75rem; color: rgb(107 114 128); margin: 0; }
-.pw-badge-ac {
+.pw-contact-name { font-size: 1.0625rem; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+.pw-contact-sub  { font-size: 0.75rem; color: rgb(107 114 128); margin: 0; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
+
+.pw-badge {
     display: inline-flex; align-items: center;
-    padding: 0.125rem 0.5rem;
-    background: rgb(239 246 255); color: rgb(37 99 235);
-    border: 1px solid rgb(191 219 254);
-    border-radius: 0.25rem; font-size: 0.6875rem; font-weight: 700;
+    padding: 0.125rem 0.5rem; border-radius: 0.25rem;
+    font-size: 0.6875rem; font-weight: 700;
 }
-.pw-timer {
-    text-align: right;
-}
+.pw-badge-rpc       { background: rgb(204 251 241); color: rgb(17 94 89); }
+.pw-badge-rp        { background: rgb(220 252 231); color: rgb(20 83 45); }
+.pw-badge-std_joint { background: rgb(219 234 254); color: rgb(30 64 175); }
+.pw-badge-ac        { background: rgb(243 244 246); color: rgb(55 65 81); border: 1px solid rgb(229 231 235); }
+.pw-badge-std_nr    { background: rgb(243 244 246); color: rgb(107 114 128); }
+.pw-badge-cse_nr    { background: rgb(255 237 213); color: rgb(154 52 18); }
+.pw-badge-ko        { background: rgb(254 226 226); color: rgb(153 27 27); }
+.pw-badge-info      { background: rgb(219 234 254); color: rgb(30 64 175); }
+.pw-badge-gray      { background: rgb(243 244 246); color: rgb(55 65 81); }
+
+.pw-timer { text-align: right; }
 .pw-timer-label { font-size: 0.6875rem; color: rgb(107 114 128); text-transform: uppercase; }
 .pw-timer-value { font-size: 1.25rem; font-family: monospace; font-weight: 700; letter-spacing: 0.05em; }
-.pw-btn-demarrer {
+
+.pw-btn-call {
     display: inline-flex; align-items: center; gap: 0.5rem;
-    padding: 0.5rem 1.25rem;
-    background: rgb(34 197 94);
-    color: white; font-weight: 700; font-size: 0.875rem;
-    border-radius: 0.5rem; border: none; cursor: pointer;
-    white-space: nowrap;
+    padding: 0.5rem 1.375rem;
+    background: rgb(34 197 94); color: white;
+    font-weight: 700; font-size: 0.875rem;
+    border-radius: 0.5rem; border: none; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s; box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+.pw-btn-call:hover { background: rgb(22 163 74); }
+.pw-btn-call-alt {
+    display: inline-flex; align-items: center; gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    background: rgb(243 244 246); color: rgb(55 65 81);
+    font-weight: 600; font-size: 0.8125rem;
+    border-radius: 0.5rem; border: 1px solid rgb(229 231 235); cursor: pointer;
     transition: background 0.15s;
 }
-.pw-btn-demarrer:hover { background: rgb(22 163 74); }
+.pw-btn-call-alt:hover { background: rgb(229 231 235); }
+
 .pw-en-file {
     display: flex; flex-direction: column; align-items: center;
     background: rgb(249 250 251); border: 1px solid rgb(229 231 235);
-    border-radius: 0.5rem; padding: 0.5rem 0.875rem;
-    min-width: 3.5rem; text-align: center;
+    border-radius: 0.5rem; padding: 0.5rem 0.875rem; min-width: 3.5rem; text-align: center;
 }
 .dark .pw-en-file { background: rgb(31 41 55); border-color: rgb(55 65 81); }
 .pw-en-file-num { font-size: 1.25rem; font-weight: 700; }
 .pw-en-file-label { font-size: 0.625rem; text-transform: uppercase; color: rgb(107 114 128); }
 
-/* ─── Layout principal 2 colonnes ─── */
+/* ─── Layout 2 colonnes ─── */
 .pw-body {
-    display: grid;
-    grid-template-columns: 1fr 280px;
-    gap: 0;
-    height: calc(100vh - 160px);
-    overflow: hidden;
+    display: grid; grid-template-columns: 1fr 300px; gap: 0;
+    height: calc(100vh - 168px); overflow: hidden;
 }
-@media (max-width: 1024px) {
-    .pw-body { grid-template-columns: 1fr; height: auto; overflow: visible; }
-}
+@media (max-width: 1024px) { .pw-body { grid-template-columns: 1fr; height: auto; overflow: visible; } }
 
-/* ─── Colonne gauche (script + infos) ─── */
-.pw-left {
-    display: flex; flex-direction: column;
-    border-right: 1px solid rgb(229 231 235);
-    overflow: hidden;
-}
+/* ─── Colonne gauche ─── */
+.pw-left { display: flex; flex-direction: column; border-right: 1px solid rgb(229 231 235); overflow: hidden; }
 .dark .pw-left { border-right-color: rgb(31 41 55); }
 
-/* ─── Onglets script ─── */
-.pw-tabs {
-    display: flex; border-bottom: 1px solid rgb(229 231 235);
-    background: white; flex-shrink: 0;
-}
-.dark .pw-tabs {
-    background: rgb(17 24 39);
-    border-bottom-color: rgb(31 41 55);
-}
+/* ─── Onglets ─── */
+.pw-tabs { display: flex; border-bottom: 1px solid rgb(229 231 235); background: white; flex-shrink: 0; overflow-x: auto; }
+.dark .pw-tabs { background: rgb(17 24 39); border-bottom-color: rgb(31 41 55); }
 .pw-tab {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.875rem; font-weight: 500;
-    color: rgb(107 114 128);
-    border-bottom: 2px solid transparent;
+    padding: 0.75rem 1.125rem; font-size: 0.8125rem; font-weight: 500;
+    color: rgb(107 114 128); border-bottom: 2px solid transparent;
     background: none; border-top: none; border-left: none; border-right: none;
-    cursor: pointer; white-space: nowrap;
-    transition: color 0.15s;
+    cursor: pointer; white-space: nowrap; transition: color 0.15s;
 }
 .pw-tab:hover { color: rgb(55 65 81); }
 .dark .pw-tab:hover { color: rgb(209 213 219); }
-.pw-tab-active {
-    color: rgb(37 99 235) !important;
-    border-bottom-color: rgb(37 99 235) !important;
-}
-.dark .pw-tab-active {
-    color: rgb(96 165 250) !important;
-    border-bottom-color: rgb(96 165 250) !important;
-}
+.pw-tab.active { color: rgb(37 99 235) !important; border-bottom-color: rgb(37 99 235) !important; }
+.dark .pw-tab.active { color: rgb(96 165 250) !important; border-bottom-color: rgb(96 165 250) !important; }
 
 /* ─── Zone script ─── */
-.pw-script-area {
-    flex: 1; overflow-y: auto; padding: 1.25rem;
-    background: rgb(249 250 251);
-}
+.pw-script-area { flex: 1; overflow-y: auto; padding: 1.25rem; background: #e5e7eb; }
 .dark .pw-script-area { background: rgb(17 24 39 / 0.5); }
-
 .pw-script-empty {
-    border: 1px solid rgb(191 219 254);
-    border-left: 3px solid rgb(59 130 246);
-    border-radius: 0.375rem;
-    padding: 1rem 1.25rem;
-    background: rgb(239 246 255);
-    color: rgb(29 78 216); font-size: 0.875rem; font-style: italic;
+    border: 1px solid rgb(191 219 254); border-left: 3px solid rgb(59 130 246);
+    border-radius: 0.375rem; padding: 1rem 1.25rem;
+    background: rgb(239 246 255); color: rgb(29 78 216); font-size: 0.875rem; font-style: italic;
 }
-
-/* Script text */
-.pw-script-text {
-    line-height: 1.8; font-size: 0.9375rem;
-    color: rgb(31 41 55);
-    white-space: pre-wrap;
-}
+.pw-script-text { line-height: 1.8; font-size: 0.9375rem; color: rgb(31 41 55); white-space: pre-wrap; }
 .dark .pw-script-text { color: rgb(229 231 235); }
-.pw-script-text strong { font-weight: 700; }
-
-/* Conseil tip */
 .pw-conseil {
-    margin-top: 1rem;
-    background: rgb(255 251 235);
-    border-left: 4px solid rgb(251 191 36);
-    border-radius: 0.375rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.8125rem; color: rgb(146 64 14);
-    display: flex; gap: 0.5rem; align-items: flex-start;
+    margin-top: 1rem; background: rgb(255 251 235); border-left: 4px solid rgb(251 191 36);
+    border-radius: 0.375rem; padding: 0.75rem 1rem;
+    font-size: 0.8125rem; color: rgb(146 64 14); display: flex; gap: 0.5rem; align-items: flex-start;
 }
 .dark .pw-conseil { background: rgb(120 53 15 / 0.15); color: rgb(253 186 116); }
-
-/* Objections */
 .pw-objection {
-    border: 1px solid rgb(254 202 202);
-    border-left: 3px solid rgb(239 68 68);
-    border-radius: 0.375rem;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-    background: white;
+    border: 1px solid rgb(254 202 202); border-left: 3px solid rgb(239 68 68);
+    border-radius: 0.375rem; padding: 0.75rem 1rem; margin-bottom: 0.75rem; background: white;
 }
-.dark .pw-objection { background: rgb(127 29 29 / 0.1); border-color: rgb(185 28 28); }
+.dark .pw-objection { background: rgb(127 29 29 / 0.1); }
 .pw-objection-q { font-weight: 600; font-size: 0.875rem; color: rgb(185 28 28); margin: 0 0 0.375rem; }
 .pw-objection-r { font-size: 0.875rem; color: rgb(55 65 81); margin: 0; }
 .dark .pw-objection-r { color: rgb(209 213 219); }
-
-/* KPIs argumentaire */
 .pw-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-top: 1rem; }
-.pw-kpi {
-    background: white; border-radius: 0.5rem; padding: 0.875rem;
-    text-align: center; border: 1px solid rgb(229 231 235);
-}
+.pw-kpi { background: white; border-radius: 0.5rem; padding: 0.875rem; text-align: center; border: 1px solid rgb(229 231 235); }
 .dark .pw-kpi { background: rgb(31 41 55); border-color: rgb(55 65 81); }
 .pw-kpi-val { font-size: 1.375rem; font-weight: 700; }
 .pw-kpi-lbl { font-size: 0.75rem; color: rgb(107 114 128); margin-top: 0.125rem; }
 
-/* ─── Informations Prospect ─── */
-.pw-infos {
-    flex-shrink: 0;
-    border-top: 2px solid rgb(229 231 235);
-    background: white;
-}
+/* ─── Panneau infos prospect (bas gauche) ─── */
+.pw-infos { flex-shrink: 0; border-top: 2px solid rgb(229 231 235); background: white; max-height: 55%; overflow-y: auto; }
 .dark .pw-infos { background: rgb(17 24 39); border-top-color: rgb(31 41 55); }
+
 .pw-infos-header {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    background: rgb(249 250 251);
-    border-bottom: 1px solid rgb(229 231 235);
-    cursor: pointer; user-select: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.625rem 1.25rem;
+    background: rgb(249 250 251); border-bottom: 1px solid rgb(229 231 235);
+    position: sticky; top: 0; z-index: 1;
 }
 .dark .pw-infos-header { background: rgb(31 41 55); border-bottom-color: rgb(55 65 81); }
-.pw-infos-title { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgb(239 68 68); }
-.pw-infos-grid { padding: 1rem 1.25rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.875rem 1.25rem; }
+.pw-infos-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgb(239 68 68); }
+
+/* Grille infos en onglets */
+.pw-info-tabs { display: flex; border-bottom: 1px solid rgb(229 231 235); background: rgb(249 250 251); }
+.dark .pw-info-tabs { background: rgb(31 41 55); border-bottom-color: rgb(55 65 81); }
+.pw-info-tab {
+    padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 600;
+    color: rgb(107 114 128); cursor: pointer;
+    border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none;
+}
+.pw-info-tab.active { color: rgb(239 68 68); border-bottom-color: rgb(239 68 68); }
+
+.pw-info-panel { padding: 1rem 1.25rem; }
+
+/* Champs info */
+.pw-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem 1.25rem; }
+.pw-info-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem 1rem; }
 .pw-field-label { font-size: 0.6875rem; text-transform: uppercase; font-weight: 600; color: rgb(107 114 128); margin-bottom: 0.25rem; }
+.pw-field-value { font-size: 0.8125rem; font-weight: 500; }
+.pw-field-value.copyable { cursor: pointer; text-decoration: underline dotted; color: rgb(37 99 235); }
+.pw-field-value.copyable:hover { text-decoration: underline; }
 .pw-field-input {
     width: 100%; padding: 0.375rem 0.625rem;
     border: 1px solid rgb(209 213 219); border-radius: 0.375rem;
-    font-size: 0.8125rem; background: white; color: inherit;
-    outline: none;
+    font-size: 0.8125rem; background: white; color: inherit; outline: none;
 }
 .dark .pw-field-input { background: rgb(31 41 55); border-color: rgb(55 65 81); }
 .pw-field-full { grid-column: span 2; }
+.pw-field-full-3 { grid-column: span 3; }
 
-/* Contacts identifiés */
-.pw-contacts-section { padding: 0 1.25rem 1rem; }
-.pw-contacts-label { font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.75rem; color: rgb(55 65 81); }
-.dark .pw-contacts-label { color: rgb(209 213 219); }
-.pw-contacts-grid { display: grid; grid-template-columns: repeat(2, 1fr) 1fr 1fr; gap: 0.5rem 0.75rem; }
-
-/* ─── Colonne droite (panel issue de l'appel) ─── */
-.pw-right {
-    display: flex; flex-direction: column;
-    overflow-y: auto; background: white;
-    padding: 1rem;
+/* Bloc interlocuteur */
+.pw-interlocuteur-card {
+    border: 1px solid rgb(229 231 235); border-radius: 0.5rem;
+    padding: 0.875rem 1rem; background: rgb(249 250 251);
 }
+.dark .pw-interlocuteur-card { background: rgb(31 41 55); border-color: rgb(55 65 81); }
+
+/* Notes timeline */
+.pw-notes-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.pw-note-item {
+    background: rgb(249 250 251); border-radius: 0.375rem;
+    padding: 0.625rem 0.875rem; font-size: 0.8125rem;
+    border-left: 3px solid rgb(229 231 235);
+}
+.dark .pw-note-item { background: rgb(31 41 55); }
+.pw-note-date { font-size: 0.6875rem; color: rgb(107 114 128); margin-bottom: 0.25rem; }
+
+/* ─── Colonne droite ─── */
+.pw-right { display: flex; flex-direction: column; overflow-y: auto; background: white; padding: 1rem; }
 .dark .pw-right { background: rgb(17 24 39); }
 
-/* Sans réponse stats */
 .pw-nr-box {
-    background: rgb(249 250 251); border-radius: 0.5rem;
-    padding: 0.875rem 1rem; margin-bottom: 1.25rem;
-    border: 1px solid rgb(229 231 235);
+    background: rgb(249 250 251); border-radius: 0.5rem; padding: 0.875rem 1rem;
+    margin-bottom: 1.25rem; border: 1px solid rgb(229 231 235);
 }
 .dark .pw-nr-box { background: rgb(31 41 55); border-color: rgb(55 65 81); }
 .pw-nr-title { font-size: 0.75rem; font-weight: 600; color: rgb(107 114 128); }
-.pw-nr-subtitle { font-size: 0.6875rem; color: rgb(156 163 175); margin-left: 0.25rem; }
+.pw-nr-subtitle { font-size: 0.6875rem; color: rgb(156 163 175); }
 .pw-nr-count { font-size: 2rem; font-weight: 700; }
 .pw-nr-tentatives { font-size: 0.875rem; color: rgb(107 114 128); }
 
-/* Issue de l'appel */
-.pw-issue-title { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.875rem; }
+.pw-issue-title { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.75rem; }
 .pw-issue-option {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0.625rem 0.875rem; margin-bottom: 0.5rem;
+    padding: 0.5rem 0.875rem; margin-bottom: 0.4rem;
     border-radius: 0.375rem; cursor: pointer;
-    border: 1px solid rgb(229 231 235);
-    transition: all 0.15s;
+    border: 1px solid rgb(229 231 235); transition: all 0.15s;
 }
 .dark .pw-issue-option { border-color: rgb(55 65 81); }
 .pw-issue-option:hover { background: rgb(249 250 251); }
 .dark .pw-issue-option:hover { background: rgb(31 41 55); }
-.pw-issue-label { font-size: 0.875rem; font-weight: 600; }
-.pw-issue-sub   { font-size: 0.75rem; color: rgb(107 114 128); }
+.pw-issue-label { font-size: 0.8125rem; font-weight: 600; }
+.pw-issue-sub   { font-size: 0.6875rem; color: rgb(107 114 128); }
+.pw-opt-bar { width: 3px; height: 2rem; border-radius: 9999px; flex-shrink: 0; margin-right: 0.625rem; }
 
-/* Couleurs options actives */
 .pw-opt-active-gray   { border-color: rgb(107 114 128) !important; background: rgb(249 250 251); }
 .pw-opt-active-blue   { border-color: rgb(59 130 246)  !important; background: rgb(239 246 255); }
 .pw-opt-active-orange { border-color: rgb(249 115 22)  !important; background: rgb(255 247 237); }
 .pw-opt-active-green  { border-color: rgb(34 197 94)   !important; background: rgb(240 253 244); }
 .pw-opt-active-teal   { border-color: rgb(20 184 166)  !important; background: rgb(240 253 250); }
 .pw-opt-active-red    { border-color: rgb(239 68 68)   !important; background: rgb(254 242 242); }
-
 .dark .pw-opt-active-gray   { background: rgb(17 24 39 / 0.5); }
 .dark .pw-opt-active-blue   { background: rgb(23 37 84 / 0.3); }
 .dark .pw-opt-active-orange { background: rgb(124 45 18 / 0.3); }
@@ -287,149 +253,298 @@
 .dark .pw-opt-active-teal   { background: rgb(19 78 74 / 0.3); }
 .dark .pw-opt-active-red    { background: rgb(127 29 29 / 0.3); }
 
-/* Indicateur couleur gauche */
-.pw-opt-bar {
-    width: 3px; height: 2rem; border-radius: 9999px; flex-shrink: 0; margin-right: 0.625rem;
+/* Rappel conditionnel */
+.pw-rappel-box {
+    background: rgb(240 253 244); border: 1px solid rgb(187 247 208);
+    border-radius: 0.5rem; padding: 0.75rem; margin-top: 0.75rem;
+    display: none;
 }
+.pw-rappel-box.visible { display: block; }
+.pw-rappel-box-title { font-size: 0.75rem; font-weight: 700; color: rgb(22 101 52); margin-bottom: 0.5rem; }
 
-/* ─── Compte rendu textarea ─── */
 .pw-textarea {
     width: 100%; padding: 0.5rem 0.75rem;
     border: 1px solid rgb(229 231 235); border-radius: 0.5rem;
     font-size: 0.8125rem; background: rgb(249 250 251);
-    color: inherit; resize: vertical; outline: none;
-    margin-top: 1.25rem; transition: box-shadow 0.15s;
+    color: inherit; resize: vertical; outline: none; margin-top: 1rem;
+    transition: box-shadow 0.15s; min-height: 4rem;
 }
 .pw-textarea:focus { box-shadow: 0 0 0 2px rgb(59 130 246 / 0.4); border-color: rgb(59 130 246); }
 .dark .pw-textarea { background: rgb(31 41 55 / 0.5); border-color: rgb(55 65 81); }
 
-/* ─── Boutons bas ─── */
-.pw-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.pw-actions { display: flex; gap: 0.75rem; margin-top: 0.875rem; }
 .pw-btn-primary {
-    flex: 1; padding: 0.625rem;
-    background: rgb(34 197 94); color: white;
-    font-weight: 700; font-size: 0.8125rem;
-    border-radius: 0.5rem; border: none; cursor: pointer;
-    transition: background 0.15s;
+    flex: 1; padding: 0.625rem; background: rgb(34 197 94); color: white;
+    font-weight: 700; font-size: 0.8125rem; border-radius: 0.5rem; border: none;
+    cursor: pointer; transition: background 0.15s;
 }
 .pw-btn-primary:hover { background: rgb(22 163 74); }
 .pw-btn-secondary {
-    padding: 0.625rem 1rem;
-    background: rgb(229 231 235); color: rgb(55 65 81);
-    font-weight: 600; font-size: 0.8125rem;
-    border-radius: 0.5rem; border: none; cursor: pointer;
-    transition: background 0.15s;
+    padding: 0.625rem 1rem; background: rgb(229 231 235); color: rgb(55 65 81);
+    font-weight: 600; font-size: 0.8125rem; border-radius: 0.5rem; border: none; cursor: pointer;
 }
 .pw-btn-secondary:hover { background: rgb(209 213 219); }
 .dark .pw-btn-secondary { background: rgb(55 65 81); color: rgb(209 213 219); }
-.dark .pw-btn-secondary:hover { background: rgb(75 85 99); }
 </style>
+
+<script>
+// Timer d'appel
+let timerInterval = null;
+let timerSeconds  = 0;
+
+function startTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerSeconds = 0; }
+    timerInterval = setInterval(() => {
+        timerSeconds++;
+        const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+        const s = String(timerSeconds % 60).padStart(2, '0');
+        const el = document.querySelector('.pw-timer-value');
+        if (el) el.textContent = m + ' : ' + s;
+    }, 1000);
+}
+
+// Afficher/masquer le bloc rappel selon l'option choisie
+function toggleRappel(val) {
+    const box = document.getElementById('pw-rappel-box');
+    if (box) {
+        box.classList.toggle('visible', val === 'rp' || val === 'rpc');
+    }
+}
+
+// Copier dans le presse-papier
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        Livewire.dispatch('notify', { message: 'Copié !' });
+    });
+}
+
+// Onglets infos
+function switchInfoTab(tab) {
+    document.querySelectorAll('.pw-info-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.pw-info-panel[data-tab]').forEach(p => p.style.display = 'none');
+    document.querySelector(`.pw-info-tab[data-tab="${tab}"]`).classList.add('active');
+    document.querySelector(`.pw-info-panel[data-tab="${tab}"]`).style.display = 'block';
+}
+
+document.addEventListener('livewire:navigated', () => { switchInfoTab('contact'); });
+document.addEventListener('DOMContentLoaded', () => { switchInfoTab('contact'); });
+</script>
 @endpush
 
-@if($currentContact)
 @php
-    $info        = $this->getContactInfo();
-    $variables   = $this->getVariablesScript();
-    $contactName = trim(($info['prenom'] ?? '') . ' ' . ($info['nom'] ?? ''));
-    $phoneNumber = $info['telephone'] ?? '—';
-    $initials    = strtoupper(
-        substr($info['prenom'] ?? ($info['nom'] ?? 'C'), 0, 1) .
-        substr($info['nom']    ?? '?', 0, 1)
-    );
-    $statutLabel = $info['statut'] ?? 'AC';
+    $info = $this->getContactInfo();
+    $tel  = $info['telephone'] ?? null;
+    $teleprospecteurs = $this->getTeleprospecteurs();
+    $nbEnFile = count($this->contactQueue);
+    $progress = $this->progress;
 
-    // Scripts pour l'onglet actif
-    $scriptCourant = $this->getScriptCourant();
-
+    // Onglets script
     $onglets = \App\Models\ScriptAppel::ONGLETS;
+    $scriptCourant = $this->getScriptCourant();
+    $variables     = $this->getVariablesScript();
 
-    // Correspondance statut → classes couleur option
-    $optionColors = [
-        'std_nr'    => 'gray',
-        'std_joint' => 'blue',
-        'cse_nr'    => 'orange',
-        'rp'        => 'green',
-        'rpc'       => 'teal',
-        'ko'        => 'red',
-    ];
-
+    // Options issue
     $options = [
-        ['value' => 'std_nr',    'label' => 'STD-NR',    'sub' => 'Sans réponse',    'color' => 'gray'],
-        ['value' => 'std_joint', 'label' => 'STD-Joint', 'sub' => 'Joint',           'color' => 'blue'],
-        ['value' => 'cse_nr',    'label' => 'CSE-NR',    'sub' => 'CSE sans réponse','color' => 'orange'],
-        ['value' => 'rp',        'label' => 'RP',         'sub' => 'Rappel planifié', 'color' => 'green'],
-        ['value' => 'rpc',       'label' => 'RPC',        'sub' => 'RDV à planifier', 'color' => 'teal'],
-        ['value' => 'ko',        'label' => 'KO',         'sub' => 'Refus / KO',      'color' => 'red'],
+        ['value' => 'std_nr',    'label' => 'STD-NR',     'sub' => 'Sans réponse',     'color' => 'gray',   'bar' => 'background:rgb(156 163 175)'],
+        ['value' => 'std_joint', 'label' => 'STD-Joint',  'sub' => 'Standard joint',   'color' => 'blue',   'bar' => 'background:rgb(59 130 246)'],
+        ['value' => 'cse_nr',    'label' => 'CSE-NR',     'sub' => 'CSE sans réponse', 'color' => 'orange', 'bar' => 'background:rgb(249 115 22)'],
+        ['value' => 'rp',        'label' => 'RP',          'sub' => 'Rappel planifié',  'color' => 'green',  'bar' => 'background:rgb(34 197 94)'],
+        ['value' => 'rpc',       'label' => 'RPC',         'sub' => 'RDV à planifier',  'color' => 'teal',   'bar' => 'background:rgb(20 184 166)'],
+        ['value' => 'ko',        'label' => 'KO',          'sub' => 'Refus / pas int.', 'color' => 'red',    'bar' => 'background:rgb(239 68 68)'],
     ];
 
-    $barColors = [
-        'gray'   => 'background:rgb(107 114 128)',
-        'blue'   => 'background:rgb(59 130 246)',
-        'orange' => 'background:rgb(249 115 22)',
-        'green'  => 'background:rgb(34 197 94)',
-        'teal'   => 'background:rgb(20 184 166)',
-        'red'    => 'background:rgb(239 68 68)',
-    ];
+    // Statut badge class
+    $statutCls = 'pw-badge-' . ($info['statut'] ?? 'ac');
+    if (!isset($info['statut'])) $statutCls = 'pw-badge-gray';
+    $statutLabel = $info['statut_label'] ?? ($info['statut'] ?? 'AC');
+
+    // Préparer notes (parser les lignes horodatées)
+    $notes = $info['notes'] ?? null;
+    $noteLines = [];
+    if ($notes) {
+        foreach (explode("\n", $notes) as $line) {
+            $line = trim($line);
+            if (!$line) continue;
+            if (preg_match('/^\[(\d{2}\/\d{2}\/\d{4}[^\]]*)\]\s*(.+)$/', $line, $m)) {
+                $noteLines[] = ['date' => $m[1], 'text' => $m[2]];
+            } else {
+                $noteLines[] = ['date' => null, 'text' => $line];
+            }
+        }
+    }
 @endphp
 
 <div class="pw-wrap">
 
-    {{-- ── Barre supervision ── --}}
-    <div class="pw-supervision">
-        <span>Supervision — file de :</span>
-        <select>
-            <option>{{ Auth::user()?->name ?? 'NS Conseil (98)' }}</option>
+{{-- ═══ BARRE SUPERVISION ═══ --}}
+<div class="pw-supervision">
+
+    {{-- Label ── --}}
+    <span style="font-weight:600; white-space:nowrap;">File d'appels :</span>
+
+    {{-- SELECT téléprospecteur — visible pour tous, mais seul un superviseur peut changer --}}
+    <div style="display:flex; align-items:center; gap:0.5rem;">
+        <select
+            wire:change="selectSupervisedUser($event.target.value)"
+            style="padding:0.25rem 0.625rem;
+                   border:1px solid rgb(191 219 254); border-radius:0.375rem;
+                   font-size:0.8125rem; font-weight:600;
+                   background:white; color:rgb(30 64 175);
+                   cursor:pointer; outline:none; max-width:220px;"
+            {{ ! $isSupervisorMode ? 'disabled' : '' }}>
+
+            {{-- Option moi-même en premier --}}
+            @php $selfId = auth()->id(); $selfUser = auth()->user(); @endphp
+            <option
+                value="{{ $selfId }}"
+                {{ $supervisedUserId === $selfId ? 'selected' : '' }}>
+                {{ trim("{$selfUser->prenom} {$selfUser->nom}") }} (moi)
+            </option>
+
+            {{-- Séparateur si superviseur --}}
+            @if($isSupervisorMode && count($teleprospecteurs) > 0)
+                <option disabled>──────────────────</option>
+                @foreach($teleprospecteurs as $tp)
+                    @if($tp['id'] !== $selfId)
+                        <option
+                            value="{{ $tp['id'] }}"
+                            {{ $supervisedUserId === $tp['id'] ? 'selected' : '' }}>
+                            {{ $tp['nom_complet'] }}
+                            ({{ $tp['nb_prospects'] }} prospect{{ $tp['nb_prospects'] > 1 ? 's' : '' }})
+                        </option>
+                    @endif
+                @endforeach
+            @endif
         </select>
-        <span style="color:rgb(156 163 175); font-style:italic;">Mode lecture seule</span>
+
+        {{-- Indicateur utilisateur actif --}}
+        @php
+            $activeUser = collect($teleprospecteurs)->firstWhere('id', $supervisedUserId);
+            $nbFile     = count($this->contactQueue);
+        @endphp
+        @if($supervisedUserId && $supervisedUserId !== $selfId && $activeUser)
+            <span style="font-size:0.75rem; background:rgb(254 252 232); color:rgb(161 98 7);
+                         border:1px solid rgb(253 224 71); border-radius:9999px;
+                         padding:0.125rem 0.5rem; font-weight:700; white-space:nowrap;">
+                👁 Supervision
+            </span>
+        @endif
     </div>
 
-    {{-- ── Barre contact ── --}}
+    {{-- Barre de progression ── --}}
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-left:0.5rem;">
+        <div style="width:7rem; height:0.375rem; background:rgb(191 219 254); border-radius:9999px; overflow:hidden;">
+            <div style="height:100%; width:{{ $progress }}%;
+                        background:rgb(37 99 235); border-radius:9999px; transition:width 0.4s;">
+            </div>
+        </div>
+        <span style="font-size:0.75rem; font-weight:600; white-space:nowrap;">
+            {{ $completed }}/{{ $total }} · {{ $progress }}%
+        </span>
+    </div>
+
+    {{-- Lien back-office ── --}}
+    <div style="margin-left:auto;">
+        <a href="{{ route('filament.ns-conseil.pages.phoning-back-office') }}"
+           style="font-size:0.75rem; color:rgb(37 99 235); text-decoration:underline;
+                  font-weight:600; white-space:nowrap;">
+            ⚙ Prioriser la file
+        </a>
+    </div>
+
+</div>
+
+@if($currentContact)
+
+    {{-- ═══ BARRE CONTACT ═══ --}}
     <div class="pw-contact-bar">
-        <div style="display:flex; align-items:center; gap:0.875rem;">
-            <div class="pw-contact-avatar">{{ $initials }}</div>
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <div class="pw-contact-avatar">
+                {{ strtoupper(substr($info['prenom'] ?? ($info['nom'] ?? 'C'), 0, 1) . substr($info['nom'] ?? '?', 0, 1)) }}
+            </div>
             <div>
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <h2 class="pw-contact-name">{{ Str::upper($contactName) ?: 'CONTACT SANS NOM' }}</h2>
-                    <span class="pw-badge-ac">{{ $statutLabel }}</span>
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                    <h2 class="pw-contact-name">
+                        {{ Str::upper(trim(($info['prenom'] ?? '') . ' ' . ($info['nom'] ?? ''))) ?: 'CONTACT SANS NOM' }}
+                    </h2>
+                    <span class="pw-badge {{ $statutCls }}">{{ $statutLabel }}</span>
+                    @if(!empty($info['taux_engagement']))
+                        <span style="font-size:0.875rem;">{{ $info['taux_engagement'] }}</span>
+                    @endif
+                    @if(!empty($info['rappel_en_retard']) && $info['rappel_en_retard'])
+                        <span style="font-size:0.6875rem; background:rgb(254 226 226); color:rgb(153 27 27); padding:0.125rem 0.5rem; border-radius:9999px; font-weight:700; animation:pulse 2s infinite;">
+                            ⚠ RAPPEL EN RETARD
+                        </span>
+                    @endif
                 </div>
-                <p class="pw-contact-sub">
-                    @if(!empty($info['siret'])) #{{ $info['siret'] }} @endif
-                    @if(!empty($info['ville'])) &nbsp;{{ $info['ville'] }} @elseif(!empty($info['adresse'])) &nbsp;{{ Str::limit($info['adresse'], 40) }} @endif
-                </p>
+                <div class="pw-contact-sub">
+                    @if(!empty($info['siret']))
+                        <span>SIRET&nbsp;{{ $info['siret'] }}</span> ·
+                    @endif
+                    @if(!empty($info['ville']))
+                        <span>📍 {{ $info['ville'] }}{{ !empty($info['departement']) ? ' ('.$info['departement'].')' : '' }}</span>
+                    @endif
+                    @if(!empty($info['type_pressenti']) && $info['type_pressenti'] !== 'Non défini')
+                        · <span>🏢 {{ $info['type_pressenti'] }}</span>
+                    @endif
+                    @if(!empty($info['secteur_activite']))
+                        · <span>{{ $info['secteur_activite'] }}</span>
+                    @endif
+                    @if(!empty($info['nb_salaries']))
+                        · <span>👥 {{ $info['nb_salaries'] }} sal.</span>
+                    @endif
+                    @if(!empty($info['chiffre_affaires']))
+                        · <span>💰 {{ $info['chiffre_affaires'] }}</span>
+                    @endif
+                </div>
             </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:1.25rem;">
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
             <div class="pw-timer">
                 <div class="pw-timer-label">Durée</div>
                 <div class="pw-timer-value">00 : 00</div>
             </div>
-            <button wire:click="callNow" class="pw-btn-demarrer">
+
+            {{-- Téléphone alt --}}
+            @if(!empty($info['telephone_alt']))
+                <button
+                    onclick="copyToClipboard('{{ $info['telephone_alt'] }}')"
+                    class="pw-btn-call-alt">
+                    <svg style="width:0.875rem;height:0.875rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                    Alt.
+                </button>
+            @endif
+
+            <button wire:click="callNow" onclick="startTimer()" class="pw-btn-call">
                 <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                 </svg>
-                Démarrer l'appel
+                {{ $tel ?? 'Appeler' }}
             </button>
+
             <div class="pw-en-file">
-                <span class="pw-en-file-num">{{ $total - $completed }}</span>
+                <span class="pw-en-file-num">{{ $nbEnFile }}</span>
                 <span class="pw-en-file-label">EN FILE</span>
             </div>
         </div>
     </div>
 
-    {{-- ── Corps principal ── --}}
+    {{-- ═══ CORPS PRINCIPAL ═══ --}}
     <div class="pw-body">
 
         {{-- ═══ COLONNE GAUCHE ═══ --}}
         <div class="pw-left">
 
-            {{-- Onglets --}}
+            {{-- Onglets script --}}
             <div class="pw-tabs">
                 @foreach($onglets as $key => $label)
                     <button
                         wire:click="$set('activeScriptTab', '{{ $key }}')"
-                        class="pw-tab {{ $activeScriptTab === $key ? 'pw-tab-active' : '' }}">
+                        class="pw-tab {{ $activeScriptTab === $key ? 'active' : '' }}">
                         {{ $label }}
                     </button>
                 @endforeach
@@ -438,30 +553,21 @@
             {{-- Zone script --}}
             <div class="pw-script-area">
                 @if($scriptCourant)
-                    {{-- ─ Script principal ─ --}}
                     @if($scriptCourant->onglet === 'objections' && $scriptCourant->objections)
-                        {{-- Mode objections : liste de Q/R --}}
                         @foreach($scriptCourant->objections as $obj)
                             <div class="pw-objection">
                                 <p class="pw-objection-q">"{{ $obj['question'] }}"</p>
                                 <p class="pw-objection-r">→ {{ $obj['reponse'] }}</p>
                             </div>
                         @endforeach
-
                     @elseif($scriptCourant->onglet === 'argumentaire' && $scriptCourant->kpis)
-                        {{-- Mode argumentaire : texte + KPIs --}}
                         @if($scriptCourant->contenu)
                             <div class="pw-script-text">{!! nl2br(e($scriptCourant->interpoler($variables))) !!}</div>
                         @endif
                         <div class="pw-kpis">
                             @foreach($scriptCourant->kpis as $kpi)
                                 @php
-                                    $kpiColors = [
-                                        'purple' => 'color:rgb(147 51 234)',
-                                        'blue'   => 'color:rgb(37 99 235)',
-                                        'green'  => 'color:rgb(22 163 74)',
-                                        'orange' => 'color:rgb(234 88 12)',
-                                    ];
+                                    $kpiColors = ['purple'=>'color:rgb(147 51 234)','blue'=>'color:rgb(37 99 235)','green'=>'color:rgb(22 163 74)','orange'=>'color:rgb(234 88 12)'];
                                     $kpiColor = $kpiColors[$kpi['couleur'] ?? 'purple'] ?? $kpiColors['purple'];
                                 @endphp
                                 <div class="pw-kpi">
@@ -470,27 +576,21 @@
                                 </div>
                             @endforeach
                         </div>
-
                     @else
-                        {{-- Mode standard : texte --}}
                         @if($scriptCourant->contenu)
                             <div class="pw-script-text">{!! nl2br(e($scriptCourant->interpoler($variables))) !!}</div>
                         @endif
                     @endif
 
-                    {{-- Conseil / tip --}}
                     @if($scriptCourant->interpolerConseil($variables))
                         <div class="pw-conseil">
                             <svg style="width:1rem;height:1rem;flex-shrink:0;margin-top:0.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                             </svg>
                             <span>{{ $scriptCourant->interpolerConseil($variables) }}</span>
                         </div>
                     @endif
-
                 @else
-                    {{-- Aucun script --}}
                     <div class="pw-script-empty">
                         Aucun script disponible pour ce type de campagne.
                         <a href="{{ route('filament.ns-conseil.resources.script-appels.create') }}"
@@ -501,111 +601,252 @@
                 @endif
             </div>
 
-            {{-- ── Informations Prospect ── --}}
+            {{-- ═══ PANNEAU INFORMATIONS PROSPECT (onglets) ═══ --}}
             <div class="pw-infos">
                 <div class="pw-infos-header">
-                    <svg style="width:0.875rem;height:0.875rem;color:rgb(239 68 68);" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"/>
-                    </svg>
-                    <span class="pw-infos-title">Informations Prospect</span>
-                </div>
-                <div class="pw-infos-grid">
-                    <div class="pw-field-full">
-                        <div class="pw-field-label">Téléphone principal</div>
-                        <div style="display:flex; gap:0.5rem; align-items:center;">
-                            <select style="padding:0.375rem 0.5rem; border:1px solid rgb(209 213 219); border-radius:0.375rem; font-size:0.8125rem; background:white; color:inherit; min-width:7rem;">
-                                <option>France (+33)</option>
-                            </select>
-                            <input type="text" value="{{ $phoneNumber }}" readonly class="pw-field-input" style="flex:1;">
-                        </div>
-                    </div>
-                    @if(!empty($info['telephone_alt']))
-                    <div class="pw-field-full">
-                        <div class="pw-field-label">Tél. secondaire</div>
-                        <div style="display:flex; gap:0.5rem;">
-                            <select style="padding:0.375rem 0.5rem; border:1px solid rgb(209 213 219); border-radius:0.375rem; font-size:0.8125rem; background:white; min-width:7rem;">
-                                <option>France (+33)</option>
-                            </select>
-                            <input type="text" value="{{ $info['telephone_alt'] }}" readonly class="pw-field-input" style="flex:1;">
-                        </div>
-                    </div>
+                    <span class="pw-infos-title">🗂 Dossier Prospect</span>
+                    @if(!empty($info['id']) && $info['type'] === 'prospect')
+                        <a href="{{ route('filament.ns-conseil.resources.prospects.view', $info['id']) }}"
+                           target="_blank"
+                           style="font-size:0.75rem; color:rgb(37 99 235); text-decoration:underline;">
+                            Ouvrir le dossier complet →
+                        </a>
                     @endif
-                    <div>
-                        <div class="pw-field-label">Email</div>
-                        <input type="text" value="{{ $info['email'] ?? '' }}" readonly class="pw-field-input">
-                    </div>
-                    <div>
-                        <div class="pw-field-label">Entreprise / CSE</div>
-                        <input type="text" value="{{ $info['nom'] ?? '' }}" readonly class="pw-field-input">
-                    </div>
-                    @if(!empty($info['adresse']))
-                    <div class="pw-field-full">
-                        <div class="pw-field-label">Adresse</div>
-                        <input type="text" value="{{ $info['adresse'] }}" readonly class="pw-field-input">
-                    </div>
-                    @endif
-                    @if(!empty($info['ville']))
-                    <div>
-                        <div class="pw-field-label">Ville</div>
-                        <input type="text" value="{{ $info['ville'] }}" readonly class="pw-field-input">
-                    </div>
-                    @endif
-                    @if(!empty($info['code_postal']))
-                    <div>
-                        <div class="pw-field-label">Code postal</div>
-                        <input type="text" value="{{ $info['code_postal'] }}" readonly class="pw-field-input">
-                    </div>
-                    @endif
-
-                    {{-- Champs RDV --}}
-                    <div>
-                        <div class="pw-field-label">Date RDV</div>
-                        <input type="date" wire:model="rappel_date" class="pw-field-input" placeholder="jj/mm/aaaa">
-                    </div>
-                    <div>
-                        <div class="pw-field-label">Heure RDV</div>
-                        <input type="time" wire:model="rappel_heure" class="pw-field-input" placeholder="--:--">
-                    </div>
-                    <div class="pw-field-full">
-                        <div class="pw-field-label">Lieu RDV</div>
-                        <input type="text" class="pw-field-input" placeholder="Adresse du rendez-vous">
-                    </div>
                 </div>
 
-                {{-- Contacts identifiés --}}
-                @if(!empty($info['interlocuteur']) && $info['interlocuteur'] !== 'Non défini')
-                <div class="pw-contacts-section">
-                    <div class="pw-contacts-label">Contacts identifiés <span style="font-weight:400; font-size:0.75rem; color:rgb(107 114 128);">(si disponible lors de l'appel)</span></div>
-                    <div style="border:1px solid rgb(229 231 235); border-radius:0.5rem; padding:0.75rem 1rem;">
-                        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.625rem; font-size:0.8125rem;">
-                            <input type="checkbox" checked style="width:0.875rem;height:0.875rem;">
-                            <span style="font-weight:600;">Dirigeant</span>
-                        </label>
-                        <div class="pw-contacts-grid">
+                {{-- Mini onglets infos --}}
+                <div class="pw-info-tabs">
+                    <button class="pw-info-tab active" data-tab="contact" onclick="switchInfoTab('contact')">📞 Contact</button>
+                    <button class="pw-info-tab" data-tab="entreprise" onclick="switchInfoTab('entreprise')">🏢 Entreprise</button>
+                    @if(!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur']))
+                        <button class="pw-info-tab" data-tab="interlocuteur" onclick="switchInfoTab('interlocuteur')">👤 Interlocuteur</button>
+                    @endif
+                    <button class="pw-info-tab" data-tab="pipeline" onclick="switchInfoTab('pipeline')">📊 Pipeline</button>
+                    @if($info['type'] === 'prospect' && !empty($info['notes']))
+                        <button class="pw-info-tab" data-tab="notes" onclick="switchInfoTab('notes')">📝 Notes</button>
+                    @endif
+                    <button class="pw-info-tab" data-tab="rdv" onclick="switchInfoTab('rdv')">📅 RDV</button>
+                </div>
+
+                {{-- Panel : Contact --}}
+                <div class="pw-info-panel" data-tab="contact">
+                    <div class="pw-info-grid">
+                        <div class="pw-field-full">
+                            <div class="pw-field-label">Téléphone principal</div>
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <span style="padding:0.375rem 0.5rem; background:rgb(249 250 251); border:1px solid rgb(209 213 219); border-radius:0.375rem; font-size:0.75rem; color:rgb(107 114 128);">🇫🇷 +33</span>
+                                <input type="text" value="{{ $info['telephone'] ?? '' }}" readonly class="pw-field-input" style="flex:1; font-weight:600; font-size:0.9375rem; letter-spacing:0.025em;" onclick="this.select(); document.execCommand('copy');" title="Cliquer pour copier">
+                                @if(!empty($info['telephone']))
+                                    <a href="tel:{{ $info['telephone'] }}"
+                                       style="padding:0.375rem 0.625rem; background:rgb(34 197 94); color:white; border-radius:0.375rem; font-size:0.75rem; font-weight:600; text-decoration:none; white-space:nowrap;">
+                                        Appeler
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+
+                        @if(!empty($info['telephone_alt']))
+                            <div class="pw-field-full">
+                                <div class="pw-field-label">Téléphone secondaire</div>
+                                <input type="text" value="{{ $info['telephone_alt'] }}" readonly class="pw-field-input" onclick="this.select(); document.execCommand('copy');" title="Cliquer pour copier">
+                            </div>
+                        @endif
+
+                        <div>
+                            <div class="pw-field-label">Email</div>
+                            @if(!empty($info['email']))
+                                <a href="mailto:{{ $info['email'] }}" style="font-size:0.8125rem; color:rgb(37 99 235);">{{ $info['email'] }}</a>
+                            @else
+                                <span style="font-size:0.8125rem; color:rgb(156 163 175);">—</span>
+                            @endif
+                        </div>
+
+                        <div>
+                            <div class="pw-field-label">Localisation</div>
+                            <div class="pw-field-value">
+                                {{ collect([$info['ville'] ?? null, $info['code_postal'] ?? null, $info['departement'] ?? null])->filter()->implode(' · ') ?: '—' }}
+                            </div>
+                        </div>
+
+                        @if(!empty($info['adresse_complete']))
+                            <div class="pw-field-full">
+                                <div class="pw-field-label">Adresse complète</div>
+                                <div class="pw-field-value" style="font-size:0.8125rem;">{{ $info['adresse_complete'] }}</div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Panel : Entreprise --}}
+                <div class="pw-info-panel" data-tab="entreprise" style="display:none;">
+                    <div class="pw-info-grid">
+                        <div>
+                            <div class="pw-field-label">Raison sociale</div>
+                            <div class="pw-field-value" style="font-weight:700; font-size:0.9375rem;">{{ $info['nom'] ?? '—' }}</div>
+                        </div>
+                        <div>
+                            <div class="pw-field-label">SIRET</div>
+                            <div class="pw-field-value copyable" onclick="copyToClipboard('{{ $info['siret'] ?? '' }}')">
+                                {{ $info['siret'] ?? '—' }}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="pw-field-label">Type pressenti</div>
+                            <div class="pw-field-value">{{ $info['type_pressenti'] ?? '—' }}</div>
+                        </div>
+                        <div>
+                            <div class="pw-field-label">Secteur d'activité</div>
+                            <div class="pw-field-value">{{ $info['secteur_activite'] ?? '—' }}</div>
+                        </div>
+                        <div>
+                            <div class="pw-field-label">Nombre de salariés</div>
+                            <div class="pw-field-value">{{ $info['nb_salaries'] ? $info['nb_salaries'] . ' salariés' : '—' }}</div>
+                        </div>
+                        <div>
+                            <div class="pw-field-label">Chiffre d'affaires</div>
+                            <div class="pw-field-value">{{ $info['chiffre_affaires'] ?? '—' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Panel : Interlocuteur --}}
+                @if(!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur']))
+                <div class="pw-info-panel" data-tab="interlocuteur" style="display:none;">
+                    <div class="pw-interlocuteur-card">
+                        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.875rem;">
+                            <div style="width:2.5rem; height:2.5rem; border-radius:9999px; background:rgb(219 234 254); display:flex; align-items:center; justify-content:center; font-weight:700; color:rgb(37 99 235);">
+                                {{ strtoupper(substr($info['interlocuteur_nom'] ?? ($info['interlocuteur'] ?? '?'), 0, 1)) }}
+                            </div>
+                            <div>
+                                <div style="font-weight:700; font-size:0.9375rem;">
+                                    {{ $info['interlocuteur_nom'] ?? $info['interlocuteur'] ?? '—' }}
+                                </div>
+                                @if(!empty($info['interlocuteur_fonction']))
+                                    <div style="font-size:0.8125rem; color:rgb(107 114 128);">{{ $info['interlocuteur_fonction'] }}</div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="pw-info-grid">
+                            <div>
+                                <div class="pw-field-label">Téléphone direct</div>
+                                <div class="pw-field-value">{{ $info['interlocuteur_telephone'] ?? '—' }}</div>
+                            </div>
+                            <div>
+                                <div class="pw-field-label">Email direct</div>
+                                @if(!empty($info['interlocuteur_email']))
+                                    <a href="mailto:{{ $info['interlocuteur_email'] }}" style="font-size:0.8125rem; color:rgb(37 99 235);">{{ $info['interlocuteur_email'] }}</a>
+                                @else
+                                    <div class="pw-field-value">—</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Nouveau contact identifié à l'appel --}}
+                    <div style="margin-top:1rem;">
+                        <div class="pw-field-label" style="margin-bottom:0.5rem;">Nouveau contact identifié à l'appel</div>
+                        <div class="pw-info-grid">
                             <div>
                                 <div class="pw-field-label">Prénom</div>
-                                <input type="text" class="pw-field-input">
+                                <input type="text" class="pw-field-input" placeholder="Prénom">
                             </div>
                             <div>
                                 <div class="pw-field-label">Nom</div>
-                                <input type="text" value="{{ $info['interlocuteur'] ?? '' }}" class="pw-field-input">
+                                <input type="text" class="pw-field-input" placeholder="Nom">
                             </div>
                             <div>
                                 <div class="pw-field-label">Fonction</div>
-                                <input type="text" class="pw-field-input">
+                                <input type="text" class="pw-field-input" placeholder="Fonction">
                             </div>
                             <div>
                                 <div class="pw-field-label">Téléphone</div>
-                                <input type="text" value="{{ $phoneNumber }}" class="pw-field-input">
+                                <input type="text" class="pw-field-input" placeholder="Téléphone">
                             </div>
                             <div class="pw-field-full">
                                 <div class="pw-field-label">Email</div>
-                                <input type="text" value="{{ $info['email'] ?? '' }}" class="pw-field-input">
+                                <input type="email" class="pw-field-input" placeholder="email@domaine.fr">
                             </div>
                         </div>
                     </div>
                 </div>
                 @endif
+
+                {{-- Panel : Pipeline --}}
+                <div class="pw-info-panel" data-tab="pipeline" style="display:none;">
+                    <div class="pw-info-grid">
+                        <div>
+                            <div class="pw-field-label">Statut actuel</div>
+                            <span class="pw-badge {{ $statutCls }}" style="font-size:0.8125rem; padding:0.25rem 0.625rem;">
+                                {{ $statutLabel }}
+                            </span>
+                        </div>
+                        <div>
+                            <div class="pw-field-label">Téléprospecteur</div>
+                            <div class="pw-field-value">{{ $info['teleprospecteur'] ?? '—' }}</div>
+                        </div>
+                        <div>
+                            <div class="pw-field-label">Commercial</div>
+                            <div class="pw-field-value">{{ $info['commercial'] ?? '—' }}</div>
+                        </div>
+                        <div>
+                            <div class="pw-field-label">1er contact</div>
+                            <div class="pw-field-value">{{ $info['date_premier_contact'] ?? 'Jamais contacté' }}</div>
+                        </div>
+                        @if(!empty($info['rappel_planifie_at']))
+                        <div class="pw-field-full">
+                            <div class="pw-field-label">Rappel planifié</div>
+                            <div class="pw-field-value {{ $info['rappel_en_retard'] ? 'pbo-rappel-retard' : '' }}" style="{{ $info['rappel_en_retard'] ? 'color:rgb(239 68 68); font-weight:700;' : '' }}">
+                                🕐 {{ $info['rappel_planifie_at'] }}
+                                @if($info['rappel_en_retard']) — EN RETARD @endif
+                            </div>
+                        </div>
+                        @endif
+                        @if(!empty($info['statut_description']))
+                        <div class="pw-field-full">
+                            <div class="pw-field-label">Description statut</div>
+                            <div class="pw-field-value" style="font-size:0.8125rem; color:rgb(107 114 128);">{{ $info['statut_description'] }}</div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Panel : Notes --}}
+                @if(!empty($noteLines))
+                <div class="pw-info-panel" data-tab="notes" style="display:none;">
+                    <div class="pw-notes-list">
+                        @foreach(array_reverse($noteLines) as $note)
+                            <div class="pw-note-item">
+                                @if($note['date'])
+                                    <div class="pw-note-date">{{ $note['date'] }}</div>
+                                @endif
+                                <div style="font-size:0.8125rem;">{{ $note['text'] }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                {{-- Panel : RDV --}}
+                <div class="pw-info-panel" data-tab="rdv" style="display:none;">
+                    <div class="pw-info-grid">
+                        <div>
+                            <div class="pw-field-label">Date RDV</div>
+                            <input type="date" wire:model="rappel_date" class="pw-field-input">
+                        </div>
+                        <div>
+                            <div class="pw-field-label">Heure RDV</div>
+                            <input type="time" wire:model="rappel_heure" class="pw-field-input">
+                        </div>
+                        <div class="pw-field-full">
+                            <div class="pw-field-label">Lieu / Adresse du RDV</div>
+                            <input type="text" class="pw-field-input" placeholder="Adresse ou visioconférence">
+                        </div>
+                        <div class="pw-field-full">
+                            <div class="pw-field-label">Note RDV</div>
+                            <textarea class="pw-field-input" rows="2" placeholder="Précisions sur le rendez-vous..."></textarea>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </div>{{-- /pw-left --}}
@@ -613,15 +854,21 @@
         {{-- ═══ COLONNE DROITE ═══ --}}
         <div class="pw-right">
 
-            {{-- Sans réponse stats --}}
+            {{-- Tentatives --}}
             <div class="pw-nr-box">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.375rem;">
-                    <span class="pw-nr-title">Sans réponse (STD-NR)</span>
-                    <span class="pw-nr-subtitle">08:00 - 18:00</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                    <span class="pw-nr-title">Sans réponse</span>
+                    <span class="pw-nr-subtitle">08:00 – 18:00</span>
                 </div>
-                <div style="display:flex; align-items:baseline; gap:0.375rem;">
+                <div style="display:flex; align-items:baseline; gap:0.375rem; margin-bottom:0.5rem;">
                     <span class="pw-nr-count">0</span>
                     <span class="pw-nr-tentatives">/ 3 tentatives</span>
+                </div>
+                {{-- Mini barre tentatives --}}
+                <div style="display:flex; gap:0.25rem;">
+                    @for($i = 0; $i < 3; $i++)
+                        <div style="flex:1; height:0.25rem; border-radius:9999px; background:rgb(229 231 235);"></div>
+                    @endfor
                 </div>
             </div>
 
@@ -631,43 +878,67 @@
             @foreach($options as $option)
                 @php
                     $isActive  = $statut_resultat === $option['value'];
-                    $activeClass = $isActive ? 'pw-opt-active-' . $option['color'] : '';
+                    $activeCls = $isActive ? 'pw-opt-active-' . $option['color'] : '';
                 @endphp
-                <label
-                    class="pw-issue-option {{ $activeClass }}"
-                    style="cursor:pointer;">
-                    <div style="display:flex; align-items:center; gap:0;">
-                        <div class="pw-opt-bar" style="{{ $barColors[$option['color']] }}"></div>
+                <label class="pw-issue-option {{ $activeCls }}" wire:click="$set('statut_resultat', '{{ $option['value'] }}')" onclick="toggleRappel('{{ $option['value'] }}')">
+                    <div style="display:flex; align-items:center;">
+                        <div class="pw-opt-bar" style="{{ $option['bar'] }}"></div>
                         <div>
                             <div class="pw-issue-label">{{ $option['label'] }}</div>
                             <div class="pw-issue-sub">{{ $option['sub'] }}</div>
                         </div>
                     </div>
-                    <input
-                        type="radio"
-                        wire:model="statut_resultat"
-                        value="{{ $option['value'] }}"
-                        style="display:none;">
-                    <svg style="width:1rem;height:1rem;color:rgb(156 163 175);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        @if($isActive)
+                            <svg style="width:1rem;height:1rem;color:rgb(34 197 94);" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                        @else
+                            <svg style="width:1rem;height:1rem;color:rgb(209 213 219);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        @endif
+                    </div>
+                    <input type="radio" wire:model="statut_resultat" value="{{ $option['value'] }}" style="display:none;">
                 </label>
             @endforeach
+
+            {{-- Bloc rappel conditionnel --}}
+            <div id="pw-rappel-box" class="pw-rappel-box {{ in_array($statut_resultat, ['rp', 'rpc']) ? 'visible' : '' }}">
+                <div class="pw-rappel-box-title">📅 Planifier le rappel / RDV</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                    <div>
+                        <div class="pw-field-label">Date</div>
+                        <input type="date" wire:model="rappel_date" class="pw-field-input">
+                    </div>
+                    <div>
+                        <div class="pw-field-label">Heure</div>
+                        <input type="time" wire:model="rappel_heure" class="pw-field-input">
+                    </div>
+                </div>
+            </div>
 
             {{-- Compte rendu --}}
             <textarea
                 wire:model="commentaires"
                 rows="4"
-                placeholder="Compte rendu d'appel : interlocuteur joint, objections, prochaine étape..."
+                placeholder="Compte rendu : interlocuteur joint, objections, décision, prochaine étape..."
                 class="pw-textarea"></textarea>
+
+            {{-- Validation --}}
+            @if($statut_resultat && !$commentaires)
+                <div style="font-size:0.75rem; color:rgb(249 115 22); margin-top:0.5rem; display:flex; align-items:center; gap:0.25rem;">
+                    ⚠ Ajoutez un commentaire avant d'enregistrer.
+                </div>
+            @endif
 
             {{-- Actions --}}
             <div class="pw-actions">
-                <button wire:click="submitResult" class="pw-btn-primary">
-                    Enregistrer &amp; suivant
+                <button wire:click="submitResult" class="pw-btn-primary" {{ !$statut_resultat ? 'disabled style=opacity:.5;cursor:not-allowed' : '' }}>
+                    ✓ Enregistrer &amp; suivant
                 </button>
-                <button wire:click="skipCall" class="pw-btn-secondary">
-                    Passer
+                <button wire:click="skipCall" class="pw-btn-secondary" title="Repousser en fin de file">
+                    ↷ Passer
                 </button>
             </div>
 
@@ -675,26 +946,33 @@
 
     </div>{{-- /pw-body --}}
 
-</div>{{-- /pw-wrap --}}
-
 @else
-{{-- ── État vide ── --}}
-<div style="display:flex; align-items:center; justify-content:center; min-height:60vh;">
-    <div style="text-align:center;">
-        <div style="width:5rem; height:5rem; border-radius:9999px; background:rgb(243 244 246); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem auto;">
-            <svg style="width:2.25rem;height:2.25rem;color:rgb(156 163 175);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+    {{-- ── État vide ── --}}
+    <div style="display:flex; align-items:center; justify-content:center; min-height:60vh;">
+        <div style="text-align:center;">
+            <div style="width:5rem; height:5rem; border-radius:9999px; background:rgb(243 244 246); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem auto;">
+                <svg style="width:2.25rem;height:2.25rem;color:rgb(156 163 175);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                </svg>
+            </div>
+            <h3 style="font-size:1.125rem; font-weight:700; margin:0 0 0.5rem;">File vide</h3>
+            <p style="color:rgb(107 114 128); margin:0 0 1.5rem;">
+                Tous les contacts ont été traités ou aucun prospect n'est assigné à ce téléprospecteur.
+            </p>
+            <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+                <button wire:click="loadQueue" wire:then="loadNextContact"
+                    style="padding:0.5rem 1.5rem; background:rgb(37 99 235); color:white; border-radius:0.5rem; font-weight:600; border:none; cursor:pointer;">
+                    Rafraîchir
+                </button>
+                <a href="{{ route('filament.ns-conseil.pages.phoning-back-office') }}"
+                   style="padding:0.5rem 1.5rem; background:rgb(249 250 251); color:rgb(55 65 81); border-radius:0.5rem; font-weight:600; border:1px solid rgb(229 231 235); text-decoration:none;">
+                    ⚙ Gérer la file
+                </a>
+            </div>
         </div>
-        <h3 style="font-size:1.125rem; font-weight:700; margin:0 0 0.5rem;">Aucun contact à appeler</h3>
-        <p style="color:rgb(107 114 128); margin:0 0 1.5rem;">Tous les contacts ont été traités ou aucun contact n'est disponible.</p>
-        <button wire:click="$refresh"
-                style="padding:0.5rem 1.5rem; background:rgb(37 99 235); color:white; border-radius:0.5rem; font-weight:600; border:none; cursor:pointer;">
-            Rafraîchir
-        </button>
     </div>
-</div>
 @endif
+
+</div>{{-- /pw-wrap --}}
 
 </x-filament-panels::page>

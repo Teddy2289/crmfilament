@@ -73,6 +73,7 @@ class User extends Authenticatable implements FilamentUser
                 'commercial',
                 'superviseur',
                 'responsable',
+                'teleprospecteur',
             ]),
 
             'allopro' => $this->hasAnyRole([

@@ -56,10 +56,10 @@ class ListProspects extends ListRecords
     {
         return [
             Actions\Action::make('campagne')
-                ->label("Campagne d'appels")
+                ->label("Workflow Phoning")
                 ->icon('heroicon-o-phone-arrow-up-right')
                 ->url(PhoningWorkflow::getUrl())
-                ->color('success'),
+                ->color('warning'),
 
             Actions\CreateAction::make()->label('Nouveau prospect'),
 

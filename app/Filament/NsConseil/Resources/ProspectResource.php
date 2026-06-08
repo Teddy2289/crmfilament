@@ -14,6 +14,13 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -131,21 +138,15 @@ class ProspectResource extends Resource
 
                     Forms\Components\Select::make('teleprospecteur_id')
                         ->label('Téléprospecteur')
-                        ->relationship(
-                            'teleprospecteur',
-                            'nom'
-                        )
-                        ->getOptionLabelFromRecordUsing(fn (User $r) => "{$r->prenom} {$r->nom}")
+                        ->relationship('teleprospecteur', 'nom')
+                        ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
                         ->searchable()
                         ->preload(),
 
                     Forms\Components\Select::make('commercial_id')
                         ->label('Commercial (si QF)')
-                        ->relationship(
-                            'commercial',
-                            'nom'
-                        )
-                        ->getOptionLabelFromRecordUsing(fn (User $r) => "{$r->prenom} {$r->nom}")
+                        ->relationship('commercial', 'nom')
+                        ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
                         ->searchable()
                         ->preload()
                         ->nullable(),
@@ -170,7 +171,7 @@ class ProspectResource extends Resource
                     Forms\Components\Textarea::make('motif_ko')
                         ->label('Motif KO')
                         ->rows(2)
-                        ->visible(fn (Get $get) => $get('statut') === ProspectStatut::KO->value),
+                        ->visible(fn(Get $get) => $get('statut') === ProspectStatut::KO->value),
                 ]),
         ]);
     }
@@ -201,18 +202,20 @@ class ProspectResource extends Resource
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state instanceof ProspectStatut
-                        ? $state->label()
-                        : ProspectStatut::tryFrom($state)?->label() ?? $state
+                    ->formatStateUsing(
+                        fn($state) => $state instanceof ProspectStatut
+                            ? $state->label()
+                            : ProspectStatut::tryFrom($state)?->label() ?? $state
                     )
-                    ->color(fn ($state) => $state instanceof ProspectStatut
-                        ? $state->color()
-                        : ProspectStatut::tryFrom($state)?->color() ?? 'gray'
+                    ->color(
+                        fn($state) => $state instanceof ProspectStatut
+                            ? $state->color()
+                            : ProspectStatut::tryFrom($state)?->color() ?? 'gray'
                     ),
 
                 Tables\Columns\TextColumn::make('teleprospecteur.nom')
                     ->label('Téléprospecteur')
-                    ->formatStateUsing(fn ($record) => $record->teleprospecteur
+                    ->formatStateUsing(fn($record) => $record->teleprospecteur
                         ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}"
                         : '—'),
 
@@ -220,7 +223,7 @@ class ProspectResource extends Resource
                     ->label('Rappel le')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->color(fn ($state) => $state && $state instanceof \Carbon\Carbon && $state->isPast() ? 'danger' : null),
+                    ->color(fn($state) => $state && $state instanceof \Carbon\Carbon && $state->isPast() ? 'danger' : null),
 
                 Tables\Columns\IconColumn::make('qf_valide')
                     ->label('QF')
@@ -241,7 +244,7 @@ class ProspectResource extends Resource
 
                 Tables\Filters\Filter::make('a_relancer')
                     ->label('À relancer')
-                    ->query(fn (Builder $q) => $q->whereIn('statut', [
+                    ->query(fn(Builder $q) => $q->whereIn('statut', [
                         ProspectStatut::AC->value,
                         ProspectStatut::STD_NR->value,
                         ProspectStatut::CSE_NR->value,
@@ -250,13 +253,14 @@ class ProspectResource extends Resource
 
                 Tables\Filters\Filter::make('rappels_en_retard')
                     ->label('Rappels en retard')
-                    ->query(fn (Builder $q) => $q
-                        ->whereNotNull('rappel_planifie_at')
-                        ->where('rappel_planifie_at', '<', now())
-                        ->whereNotIn('statut', [
-                            ProspectStatut::KO->value,
-                            ProspectStatut::QF->value,
-                        ])
+                    ->query(
+                        fn(Builder $q) => $q
+                            ->whereNotNull('rappel_planifie_at')
+                            ->where('rappel_planifie_at', '<', now())
+                            ->whereNotIn('statut', [
+                                ProspectStatut::KO->value,
+                                ProspectStatut::QF->value,
+                            ])
                     )
                     ->toggle(),
 
@@ -270,7 +274,8 @@ class ProspectResource extends Resource
                     ->label('Qualifier QF')
                     ->icon('heroicon-o-check-badge')
                     ->color('success')
-                    ->visible(fn (Prospect $record) =>
+                    ->visible(
+                        fn(Prospect $record) =>
                         !in_array($record->statut, [ProspectStatut::KO, ProspectStatut::QF])
                     )
                     ->action(function (Prospect $record) {
@@ -286,7 +291,7 @@ class ProspectResource extends Resource
                     ->label('→ Partenaire')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->color('success')
-                    ->visible(fn (Prospect $record) => $record->statut === ProspectStatut::QF)
+                    ->visible(fn(Prospect $record) => $record->statut === ProspectStatut::QF)
                     ->action(function (Prospect $record) {
                         $record->convertirEnPartenaire();
                         Notification::make()
@@ -307,60 +312,322 @@ class ProspectResource extends Resource
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // INFOLIST
+    // INFOLIST COMPLET
     // ─────────────────────────────────────────────────────────────────
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
-            Infolists\Components\Section::make('Identification')
-                ->schema([
-                    Infolists\Components\TextEntry::make('nom')->weight('bold'),
-                    Infolists\Components\TextEntry::make('type_pressenti')->label('Type pressenti')->badge(),
-                    Infolists\Components\TextEntry::make('statut')
-                        ->label('Statut')
-                        ->badge()
-                        ->formatStateUsing(fn ($state) => $state instanceof ProspectStatut
-                            ? $state->label()
-                            : $state
-                        ),
-                    Infolists\Components\TextEntry::make('siret')->label('SIRET')->copyable(),
-                    Infolists\Components\TextEntry::make('departement')->label('Département'),
-                    Infolists\Components\TextEntry::make('secteur_activite')->label('Secteur'),
-                    Infolists\Components\TextEntry::make('nb_salaries')->label('Salariés'),
-                ])->columns(3),
 
-            Infolists\Components\Section::make('Contacts')
-                ->schema([
-                    Infolists\Components\TextEntry::make('telephone')->copyable(),
-                    Infolists\Components\TextEntry::make('email')->copyable(),
-                    Infolists\Components\TextEntry::make('interlocuteur_nom')->label('Interlocuteur'),
-                    Infolists\Components\TextEntry::make('interlocuteur_fonction')->label('Fonction'),
-                ])->columns(2),
+            // ── Ligne 1 : Statut + KPIs engagement ──
+            Split::make([
+                Section::make()
+                    ->schema([
+                        Grid::make(2)->schema([  // Changé de 3 à 2 colonnes
+                            TextEntry::make('statut')
+                                ->label('Statut pipeline')
+                                ->badge()
+                                ->formatStateUsing(
+                                    fn($state) => $state instanceof ProspectStatut
+                                        ? $state->label()
+                                        : ProspectStatut::tryFrom($state)?->label() ?? $state
+                                )
+                                ->color(
+                                    fn($state) => $state instanceof ProspectStatut
+                                        ? $state->color()
+                                        : ProspectStatut::tryFrom($state)?->color() ?? 'gray'
+                                )
+                                ->size(TextEntry\TextEntrySize::Large),
 
-            Infolists\Components\Section::make('Assignation')
-                ->schema([
-                    Infolists\Components\TextEntry::make('teleprospecteur.nom')
-                        ->label('Téléprospecteur')
-                        ->formatStateUsing(fn ($r) => $r->teleprospecteur
-                            ? "{$r->teleprospecteur->prenom} {$r->teleprospecteur->nom}"
-                            : '—'),
-                    Infolists\Components\TextEntry::make('commercial.nom')
-                        ->label('Commercial')
-                        ->formatStateUsing(fn ($r) => $r->commercial
-                            ? "{$r->commercial->prenom} {$r->commercial->nom}"
-                            : '—'),
-                    Infolists\Components\TextEntry::make('rappel_planifie_at')
-                        ->label('Rappel le')
-                        ->dateTime('d/m/Y H:i'),
-                    Infolists\Components\IconEntry::make('qf_valide')->label('QF Validé')->boolean(),
-                ])->columns(2),
+                            TextEntry::make('taux_engagement')
+                                ->label('Engagement')
+                                ->state(fn(Prospect $r) => $r->taux_engagement),
 
-            Infolists\Components\Section::make('Notes')
+                            TextEntry::make('statut_description')
+                                ->label('Description statut')
+                                ->state(fn(Prospect $r) => $r->statut_description)
+                                ->columnSpan(2)  // Prend les 2 colonnes sur la ligne suivante
+                                ->extraAttributes(['class' => 'mt-2']), // Petit espacement
+                        ]),
+                    ])
+                    ->grow(true),
+
+                Section::make()
+                    ->schema([
+                        Grid::make(2)->schema([
+                            TextEntry::make('jours_depuis_premier_contact')
+                                ->label('Jours depuis 1er contact')
+                                ->state(
+                                    fn(Prospect $r) => $r->jours_depuis_premier_contact
+                                        ? $r->jours_depuis_premier_contact . ' j'
+                                        : '—'
+                                )
+                                ->color(fn(Prospect $r) => ($r->jours_depuis_premier_contact ?? 0) > 30 ? 'warning' : 'success'),
+
+                            TextEntry::make('jours_avant_rappel')
+                                ->label('Rappel dans')
+                                ->state(fn(Prospect $r) => match (true) {
+                                    $r->rappel_planifie_at === null => '—',
+                                    $r->rappel_est_en_retard => 'En retard de ' . abs($r->jours_avant_rappel) . ' j',
+                                    default => $r->jours_avant_rappel . ' j',
+                                })
+                                ->color(fn(Prospect $r) => $r->rappel_est_en_retard ? 'danger' : 'success'),
+                        ]),
+                    ])
+                    ->grow(true),
+            ])
+                ->from('md'),
+
+            // ── Section 2 : Identification entreprise ──
+            Section::make('Identification')
+                ->icon('heroicon-o-building-office-2')
+                ->collapsible()
                 ->schema([
-                    Infolists\Components\TextEntry::make('description')
+                    Grid::make(3)->schema([
+                        TextEntry::make('nom')
+                            ->label("Nom de l'entité")
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(TextEntry\TextEntrySize::Large)
+                            ->columnSpan(2),
+
+                        TextEntry::make('type_pressenti_label')
+                            ->label('Type pressenti')
+                            ->state(fn(Prospect $r) => $r->type_pressenti_label)
+                            ->badge()
+                            ->color('info'),
+
+                        TextEntry::make('siret')
+                            ->label('SIRET')
+                            ->copyable()
+                            ->copyMessage('SIRET copié !')
+                            ->placeholder('—'),
+
+                        TextEntry::make('secteur_activite')
+                            ->label("Secteur d'activité")
+                            ->placeholder('—'),
+
+                        TextEntry::make('departement')
+                            ->label('Département')
+                            ->placeholder('—'),
+
+                        TextEntry::make('nb_salaries')
+                            ->label('Nombre de salariés')
+                            ->numeric()
+                            ->placeholder('—')
+                            ->suffix(' salariés'),
+
+                        TextEntry::make('chiffre_affaires')
+                            ->label("Chiffre d'affaires")
+                            ->money('EUR')
+                            ->placeholder('—'),
+
+                        TextEntry::make('adresse_complete')
+                            ->label('Adresse complète')
+                            ->state(fn(Prospect $r) => $r->adresse_complete ?: '—')
+                            ->copyable(),
+                    ]),
+                ]),
+
+            // ── Section 3 : Contacts ──
+            Section::make('Coordonnées & Interlocuteur')
+                ->icon('heroicon-o-phone')
+                ->collapsible()
+                ->schema([
+                    Grid::make(3)->schema([
+                        // Coordonnées entité
+                        Group::make([
+                            TextEntry::make('telephone')
+                                ->label('Téléphone principal')
+                                ->copyable()
+                                ->copyMessage('Numéro copié !')
+                                ->placeholder('—')
+                                ->icon('heroicon-m-phone'),
+
+                            TextEntry::make('telephone_alt')
+                                ->label('Téléphone alt.')
+                                ->copyable()
+                                ->placeholder('—')
+                                ->icon('heroicon-m-phone'),
+
+                            TextEntry::make('email')
+                                ->label('Email')
+                                ->copyable()
+                                ->copyMessage('Email copié !')
+                                ->placeholder('—')
+                                ->icon('heroicon-m-envelope'),
+                        ])->label('Entité'),
+
+                        // Interlocuteur
+                        Group::make([
+                            TextEntry::make('interlocuteur_complet')
+                                ->label('Interlocuteur')
+                                ->state(fn(Prospect $r) => $r->interlocuteur_complet)
+                                ->weight(\Filament\Support\Enums\FontWeight::SemiBold)
+                                ->placeholder('—'),
+
+                            TextEntry::make('interlocuteur_telephone')
+                                ->label('Tél. interlocuteur')
+                                ->copyable()
+                                ->placeholder('—')
+                                ->icon('heroicon-m-phone'),
+
+                            TextEntry::make('interlocuteur_email')
+                                ->label('Email interlocuteur')
+                                ->copyable()
+                                ->placeholder('—')
+                                ->icon('heroicon-m-envelope'),
+                        ])->label('Interlocuteur'),
+
+                        // Localisation
+                        Group::make([
+                            TextEntry::make('localisation')
+                                ->label('Localisation')
+                                ->state(fn(Prospect $r) => $r->localisation ?: '—')
+                                ->icon('heroicon-m-map-pin'),
+
+                            TextEntry::make('ville')
+                                ->label('Ville')
+                                ->placeholder('—'),
+
+                            TextEntry::make('code_postal')
+                                ->label('Code postal')
+                                ->placeholder('—'),
+                        ])->label('Localisation'),
+                    ]),
+                ]),
+
+            // ── Section 4 : Pipeline & Assignation ──
+            Section::make('Pipeline & Assignation')
+                ->icon('heroicon-o-chart-bar-square')
+                ->collapsible()
+                ->schema([
+                    Grid::make(3)->schema([
+                        TextEntry::make('teleprospecteur.nom')
+                            ->label('Téléprospecteur assigné')
+                            ->formatStateUsing(
+                                fn($record) => $record->teleprospecteur
+                                    ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}"
+                                    : '—'
+                            )
+                            ->icon('heroicon-m-user')
+                            ->placeholder('—'),
+
+                        TextEntry::make('commercial.nom')
+                            ->label('Commercial assigné')
+                            ->formatStateUsing(
+                                fn($record) => $record->commercial
+                                    ? "{$record->commercial->prenom} {$record->commercial->nom}"
+                                    : '—'
+                            )
+                            ->icon('heroicon-m-briefcase')
+                            ->placeholder('—'),
+
+                        TextEntry::make('date_premier_contact')
+                            ->label('Premier contact')
+                            ->date('d/m/Y')
+                            ->placeholder('Jamais contacté')
+                            ->icon('heroicon-m-calendar'),
+
+                        TextEntry::make('rappel_planifie_at')
+                            ->label('Rappel planifié')
+                            ->dateTime('d/m/Y à H:i')
+                            ->placeholder('Aucun rappel planifié')
+                            ->icon('heroicon-m-clock')
+                            ->color(fn(Prospect $r) => $r->rappel_est_en_retard ? 'danger' : null),
+
+                        TextEntry::make('dernier_contact')
+                            ->label('Dernier contact')
+                            ->state(fn(Prospect $r) => $r->dernier_contact ?? 'Jamais')
+                            ->icon('heroicon-m-arrow-path'),
+
+                        TextEntry::make('created_at')
+                            ->label('Créé le')
+                            ->dateTime('d/m/Y à H:i')
+                            ->icon('heroicon-m-plus-circle'),
+                    ]),
+                ]),
+
+            // ── Section 5 : Qualification QF ──
+            Section::make('Validation QF')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->collapsible()
+                ->visible(fn(Prospect $r) => $r->statut === ProspectStatut::QF || $r->qf_valide)
+                ->schema([
+                    Grid::make(3)->schema([
+                        IconEntry::make('qf_valide')
+                            ->label('QF Validé')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-check-badge')
+                            ->falseIcon('heroicon-o-clock')
+                            ->trueColor('success')
+                            ->falseColor('warning'),
+
+                        TextEntry::make('validePar.nom')
+                            ->label('Validé par')
+                            ->formatStateUsing(
+                                fn($record) => $record->validePar
+                                    ? "{$record->validePar->prenom} {$record->validePar->nom}"
+                                    : '—'
+                            )
+                            ->placeholder('—'),
+
+                        TextEntry::make('qf_valide_at')
+                            ->label('Validé le')
+                            ->dateTime('d/m/Y à H:i')
+                            ->placeholder('—'),
+                    ]),
+                ]),
+
+            // ── Section 6 : Motif KO ──
+            Section::make('Motif KO')
+                ->icon('heroicon-o-x-circle')
+                ->collapsible()
+                ->visible(fn(Prospect $r) => $r->statut === ProspectStatut::KO)
+                ->schema([
+                    TextEntry::make('motif_ko')
                         ->label('')
                         ->columnSpanFull()
+                        ->placeholder('Aucun motif enregistré')
+                        ->prose(),
+                ]),
+
+            // ── Section 7 : Notes / Description ──
+            Section::make('Notes & Historique')
+                ->icon('heroicon-o-document-text')
+                ->collapsible()
+                ->schema([
+                    TextEntry::make('description')
+                        ->label('')
+                        ->columnSpanFull()
+                        ->placeholder('Aucune note')
+                        ->prose()
                         ->html(),
+                ]),
+
+            // ── Section 8 : Métadonnées ──
+            Section::make('Métadonnées')
+                ->icon('heroicon-o-information-circle')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    Grid::make(3)->schema([
+                        TextEntry::make('id')
+                            ->label('ID')
+                            ->prefix('#'),
+
+                        TextEntry::make('created_at')
+                            ->label('Créé le')
+                            ->dateTime('d/m/Y à H:i'),
+
+                        TextEntry::make('updated_at')
+                            ->label('Mis à jour le')
+                            ->dateTime('d/m/Y à H:i'),
+
+                        TextEntry::make('deleted_at')
+                            ->label('Supprimé le')
+                            ->dateTime('d/m/Y à H:i')
+                            ->placeholder('—')
+                            ->visible(fn(Prospect $r) => $r->trashed()),
+                    ]),
                 ]),
         ]);
     }
@@ -377,10 +644,10 @@ class ProspectResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListProspects::route('/'),
+            'index'  => Pages\ListProspects::route('/'),
             'create' => Pages\CreateProspect::route('/create'),
-            'edit' => Pages\EditProspect::route('/{record}/edit'),
-            'view' => Pages\ViewProspect::route('/{record}'),
+            'edit'   => Pages\EditProspect::route('/{record}/edit'),
+            'view'   => Pages\ViewProspect::route('/{record}'),
         ];
     }
 }
