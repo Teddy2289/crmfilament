@@ -9,6 +9,7 @@ use App\Filament\Allopro\Resources\TicketResource\Pages\CreateTicket;
 use App\Filament\Allopro\Resources\TicketResource\Pages\EditTicket;
 use App\Filament\Allopro\Resources\TicketResource\Pages\ListTickets;
 use App\Filament\Allopro\Resources\TicketResource\Pages\ViewTicket;
+use App\Filament\Allopro\Resources\TicketResource\RelationManagers\AffairesInterventionsRelationManager;
 use App\Filament\Allopro\Resources\TicketResource\RelationManagers\DevisRelationManager;
 use App\Filament\Allopro\Resources\TicketResource\RelationManagers\FacturesRelationManager;
 use App\Filament\Allopro\Resources\TicketResource\RelationManagers\FicheP2RelationManager;
@@ -437,6 +438,7 @@ class TicketResource extends Resource
     {
         return [
             FicheP2RelationManager::class,
+            AffairesInterventionsRelationManager::class,
             RapportsSatisfactionRelationManager::class,
             ReclamationsRelationManager::class,
             DevisRelationManager::class,

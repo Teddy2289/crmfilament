@@ -123,7 +123,7 @@ class Ticket extends Model
 
     public function getProgressionPourcentageAttribute(): int
     {
-        return (int) round((($this->statut?->ordre() ?? 0) / 14) * 100);
+        return $this->statut?->progression() ?? 0;
     }
 
     // ── Scopes ──────────────────────────────────────────────────────
@@ -215,6 +215,17 @@ class Ticket extends Model
     public function scopeParSourceAppel($query, string $source): Builder
     {
         return $query->where('source_appel', $source);
+    }
+
+    public function scopeUrgencesNonPrisesEnCharge($query): Builder
+    {
+        return $query->where('statut', TicketStatut::UrgenceDetectee->value)
+            ->whereNull('artisan_id');
+    }
+
+    public function scopeAvecUrgenceDetectee($query): Builder
+    {
+        return $query->where('statut', TicketStatut::UrgenceDetectee->value);
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
@@ -418,7 +429,7 @@ class Ticket extends Model
      */
     public function validerInterventionRealisee(): void
     {
-        if ($this->statut === TicketStatut::ArtisanConfirme) {
+        if (in_array($this->statut, [TicketStatut::ArtisanConfirme, TicketStatut::DevisAccepte], true)) {
             $this->changerStatut(
                 TicketStatut::InterventionRealisee,
                 'Intervention réalisée par l\'artisan'
@@ -559,6 +570,27 @@ class Ticket extends Model
     /**
      * Relation avec les devis (un ticket peut avoir plusieurs devis)
      */
+    // ── Relations AffaireIntervention ───────────────────────────────
+
+    public function affairesInterventions(): HasMany
+    {
+        return $this->hasMany(AffaireIntervention::class);
+    }
+
+    public function affaireIntervention(): HasOne
+    {
+        return $this->hasOne(AffaireIntervention::class)->latestOfMany();
+    }
+
+    public function affaireActive(): HasOne
+    {
+        return $this->hasOne(AffaireIntervention::class)
+            ->whereIn('statut', ['en_attente', 'confirmee', 'en_cours'])
+            ->latestOfMany();
+    }
+
+    // ── Relations financières ────────────────────────────────────────
+
     public function devis(): HasMany
     {
         return $this->hasMany(Devis::class);

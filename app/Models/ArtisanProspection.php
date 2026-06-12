@@ -182,8 +182,8 @@ class ArtisanProspection extends Model
     public function donnerAccordVerbal(): void
     {
         $this->update([
-            'accord_verbal' => true,
-            'statut_campagne' => StatutCampagneProspection::RP,
+            'accord_verbal'        => true,
+            'statut_campagne'      => StatutCampagneProspection::SOC,
             'date_dernier_contact' => now(),
         ]);
     }
@@ -267,7 +267,7 @@ class ArtisanProspection extends Model
 
     public function scopeConvertibles($query): Builder
     {
-        return $query->where('statut_campagne', StatutCampagneProspection::RP)
+        return $query->where('statut_campagne', StatutCampagneProspection::SOC)
             ->where('accord_verbal', true)
             ->whereNull('artisan_id');
     }

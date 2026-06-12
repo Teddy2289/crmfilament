@@ -22,6 +22,7 @@ class Artisan extends Model
         'zone_intervention',
         'telephone_principal',
         'telephone_secondaire',
+        'numero_cti_transfert',
         'email',
         'canal_alerte',
         'statut_compte',
@@ -265,6 +266,16 @@ class Artisan extends Model
             'artisan_confirme',
             'en_attente_confirmation_artisan',
         ]);
+    }
+
+    public function affairesInterventions()
+    {
+        return $this->hasMany(AffaireIntervention::class);
+    }
+
+    public function affairesActives()
+    {
+        return $this->affairesInterventions()->whereIn('statut', ['en_attente', 'confirmee', 'en_cours']);
     }
 
     public function prospection()
