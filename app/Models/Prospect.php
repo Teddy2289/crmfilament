@@ -24,6 +24,7 @@ class Prospect extends Model
         'qf_valide_at' => 'datetime',
         'nb_salaries' => 'integer',
         'chiffre_affaires' => 'decimal:2',
+        'numero_ordre' => 'integer',
     ];
 
     protected $fillable = [
@@ -90,7 +91,11 @@ class Prospect extends Model
         'dirigeant_telephone',
         'dirigeant_email',
 
-        'ordre_priorite'
+        'ordre_priorite',
+        'numero_ordre',
+        'raison_sociale',
+        'campagne_id',
+        'converti_partenaire_id',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -657,5 +662,15 @@ class Prospect extends Model
     public function opportunite()
     {
         return $this->hasOne(Opportunite::class, 'converti_en_prospect_id');
+    }
+
+    public function campagne()
+    {
+        return $this->belongsTo(CampagnePhoning::class, 'campagne_id');
+    }
+
+    public function convertiEnPartenaire()
+    {
+        return $this->belongsTo(Partenaire::class, 'converti_partenaire_id');
     }
 }

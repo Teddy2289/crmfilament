@@ -3,34 +3,46 @@
 namespace App\Filament\NsConseil\Resources\ClientResource\Import;
 
 use App\Models\Client;
+use App\Models\Consultant;
+use App\Models\DossierFormation;
+use App\Models\EntiteCommerciale;
+use App\Models\HeuresFormation;
+use App\Models\Parrain;
+use App\Models\PlanningFormation;
 use Carbon\Carbon;
-use Illuminate\Support\Str;
 
 abstract class BaseClientImporter
 {
-    protected array $errors = [];
-    protected int $created = 0;
-    protected int $updated = 0;
-    protected int $skipped = 0;
+    protected array $errors  = [];
+    protected int   $created = 0;
+    protected int   $updated = 0;
+    protected int   $skipped = 0;
 
-    /**
-     * Retourne le nom du modèle (affiché dans l'UI)
-     */
+    // ── Cache par requête pour éviter N+1 sur firstOrCreate ────────────────
+    /** @var array<string, int|null> */
+    protected array $consultantCache = [];
+
+    /** @var array<string, int|null> */
+    protected array $entiteCache = [];
+
+    // ── Interface publique ──────────────────────────────────────────────────
+
     abstract public static function getName(): string;
 
-    /**
-     * Retourne les colonnes requises pour identifier ce modèle
-     */
     abstract public static function getRequiredColumns(): array;
 
     /**
-     * Mappe une ligne Excel vers les champs Client
+     * Mappe une ligne brute vers un tableau structuré :
+     * [
+     *   'client'   => [...],           // champs Client
+     *   'dossier'  => [...],           // champs DossierFormation
+     *   'heures'   => [...],           // champs HeuresFormation (optionnel)
+     *   'planning' => [...],           // champs PlanningFormation (optionnel)
+     *   'parrain'  => [...],           // champs Parrain (optionnel)
+     * ]
      */
     abstract protected function mapRow(array $row): array;
 
-    /**
-     * Vérifie si ce modèle correspond aux colonnes du fichier
-     */
     public static function matches(array $fileColumns): bool
     {
         $fileColumns = array_map(fn($c) => mb_strtolower(trim((string) $c)), $fileColumns);
@@ -42,66 +54,355 @@ abstract class BaseClientImporter
         return true;
     }
 
-    /**
-     * Importe un tableau de lignes (déjà parsées depuis Excel)
-     */
+    // ── Import principal ────────────────────────────────────────────────────
+
     public function import(array $rows, string $sourceSheet = ''): array
     {
         foreach ($rows as $index => $row) {
             try {
-                $data = $this->mapRow($row);
+                $mapped = $this->mapRow($row);
 
-                if (empty($data['nom_tiers'])) {
+                $clientData  = $mapped['client']   ?? [];
+                $dossierData = $mapped['dossier']  ?? [];
+                $heuresData  = $mapped['heures']   ?? [];
+                $planningData = $mapped['planning'] ?? [];
+                $parrainData = $mapped['parrain']  ?? [];
+
+                if (empty($clientData['nom_tiers'])) {
                     $this->skipped++;
                     continue;
                 }
 
-                $data['source_sheet'] = $sourceSheet ?: static::getName();
+                $clientData['source_sheet'] = $sourceSheet ?: static::getName();
 
-                // Upsert sur ref_client si présente, sinon sur email
-                $matchKey = ! empty($data['ref_client'])
-                    ? ['ref_client' => $data['ref_client']]
-                    : (! empty($data['email']) ? ['email' => $data['email']] : null);
+                // ── 1. Client ────────────────────────────────────────────
+                $client = $this->upsertClient($clientData, $parrainData);
 
-                if ($matchKey) {
-                    $client = Client::updateOrCreate($matchKey, $data);
-                    $client->wasRecentlyCreated ? $this->created++ : $this->updated++;
-                } else {
-                    Client::create($data);
-                    $this->created++;
+                // ── 2. DossierFormation ──────────────────────────────────
+                // Vérifier que le dossier a bien un ref_client
+                if (empty($dossierData['ref_client'])) {
+                    $this->errors[] = "Ligne " . ($index + 2) . " : ref_client manquant pour le dossier";
+                    continue;
+                }
+
+                $dossier = $this->upsertDossier($client, $dossierData);
+
+                // ⚠️ Vérification CRITIQUE : Le dossier doit avoir un ID
+                if (!$dossier || !$dossier->id) {
+                    $this->errors[] = "Ligne " . ($index + 2) . " : impossible de récupérer l'ID du dossier";
+                    continue;
+                }
+
+                // ── 3. HeuresFormation ───────────────────────────────
+                if (! empty($heuresData)) {
+                    $this->upsertHeures($dossier->id, $heuresData);
+                }
+
+                // ── 4. PlanningFormation ─────────────────────────────
+                if (! empty($planningData)) {
+                    $this->upsertPlanning($dossier->id, $planningData);
                 }
             } catch (\Throwable $e) {
-                $this->errors[] = "Ligne " . ($index + 2) . " : " . $e->getMessage();
+                $this->errors[] = 'Ligne ' . ($index + 2) . ' : ' . $e->getMessage();
             }
         }
 
         return $this->getResult();
     }
 
-    protected function getResult(): array
+    // ── Upserts ─────────────────────────────────────────────────────────────
+
+    protected function upsertClient(array $clientData, array $parrainData): Client
     {
-        return [
-            'created' => $this->created,
-            'updated' => $this->updated,
-            'skipped' => $this->skipped,
-            'errors'  => $this->errors,
-        ];
+        // Résoudre le parrain si présent
+        if (! empty($parrainData['nom_prenom'])) {
+            $parrain = $this->resolveParrain($parrainData);
+            if ($parrain) {
+                $clientData['parrain_id'] = $parrain->id;
+            }
+        }
+
+        // Clé de match : ref_client > email > création brute
+        $matchKey = ! empty($clientData['ref_client_client'])
+            ? ['ref_client' => $clientData['ref_client_client']]
+            : (! empty($clientData['email']) ? ['email' => $clientData['email']] : null);
+
+        // Nettoyer la clé temporaire
+        unset($clientData['ref_client_client']);
+
+        if ($matchKey) {
+            $client = Client::updateOrCreate($matchKey, $clientData);
+            $client->wasRecentlyCreated ? $this->created++ : $this->updated++;
+        } else {
+            $client = Client::create($clientData);
+            $this->created++;
+        }
+
+        return $client;
     }
 
-    // ─── Helpers ───────────────────────────────────────────────────────────────
+    protected function upsertDossier(Client $client, array $dossierData): DossierFormation
+    {
+        $dossierData['personne_id'] = $client->id;
+
+        // Résoudre les consultants
+        if (! empty($dossierData['_consultant_accueil_nom'])) {
+            $dossierData['consultant_accueil_id'] = $this->resolveConsultant(
+                $dossierData['_consultant_accueil_nom']
+            );
+        }
+        if (! empty($dossierData['_consultant_formateur_nom'])) {
+            $dossierData['consultant_formateur_id'] = $this->resolveConsultant(
+                $dossierData['_consultant_formateur_nom']
+            );
+        }
+        // Résoudre l'entité commerciale
+        if (! empty($dossierData['_entite_code'])) {
+            $dossierData['entite_id'] = $this->resolveEntite($dossierData['_entite_code']);
+        }
+
+        // Supprimer les clés temporaires
+        unset(
+            $dossierData['_consultant_accueil_nom'],
+            $dossierData['_consultant_formateur_nom'],
+            $dossierData['_entite_code']
+        );
+
+        // 🔴 Vérifier que 'ref_client' existe avant updateOrCreate
+        if (empty($dossierData['ref_client'])) {
+            throw new \Exception("Impossible de créer/mettre à jour le dossier : ref_client manquant");
+        }
+
+        /** @var DossierFormation $dossier */
+        $dossier = DossierFormation::updateOrCreate(
+            ['ref_client' => $dossierData['ref_client']],
+            $dossierData
+        );
+
+        // 🔴 Vérifier que le dossier a bien un ID
+        if (!$dossier || !$dossier->id) {
+            throw new \Exception("Le dossier a été créé mais n'a pas d'ID. ref_client: " . $dossierData['ref_client']);
+        }
+
+        return $dossier;
+    }
+
+    protected function upsertHeures(int $dossierId, array $heuresData): void
+    {
+        // 🔴 Vérification CRITIQUE : Ne pas exécuter si l'ID est invalide
+        if ($dossierId <= 0 || $dossierId === null) {
+            \Illuminate\Support\Facades\Log::error('upsertHeures : dossier_id invalide', [
+                'dossier_id' => $dossierId,
+                'heuresData' => $heuresData
+            ]);
+            return;
+        }
+
+        // Vérifier que le dossier existe réellement
+        $dossierExists = \App\Models\DossierFormation::query()->where('id', $dossierId)->exists();
+        if (!$dossierExists) {
+            \Illuminate\Support\Facades\Log::error('upsertHeures : dossier inexistant', [
+                'dossier_id' => $dossierId
+            ]);
+            return;
+        }
+
+        HeuresFormation::updateOrCreate(
+            ['dossier_id' => $dossierId],
+            $heuresData
+        );
+    }
+    protected function upsertPlanning(int $dossierId, array $planningData): void
+    {
+        PlanningFormation::updateOrCreate(
+            ['dossier_id' => $dossierId],
+            $planningData
+        );
+    }
+
+    // ── Résolution entités tierces ──────────────────────────────────────────
+
+    /**
+     * Résout ou crée un Consultant depuis un nom brut ("BENOIT", "LE CALVE Sonia").
+     * Split simple : dernier mot = prénom si le nom contient plusieurs mots,
+     * sinon tout va dans `nom`.
+     */
+    protected function resolveConsultant(string $nomBrut): ?int
+    {
+        $nomBrut = trim($nomBrut);
+        if ($nomBrut === '') {
+            return null;
+        }
+
+        if (isset($this->consultantCache[$nomBrut])) {
+            return $this->consultantCache[$nomBrut];
+        }
+
+        $parts = preg_split('/\s+/', $nomBrut, 2);
+        // Format "NOM Prenom" ou "NOM" seul
+        // prenom vaut '' si absent pour satisfaire la contrainte NOT NULL
+        $nom    = $parts[0] ?? $nomBrut;
+        $prenom = $parts[1] ?? '';
+
+        $consultant = Consultant::firstOrCreate(
+            ['nom' => $nom, 'prenom' => $prenom],
+            []
+        );
+
+        $this->consultantCache[$nomBrut] = $consultant->id;
+        return $consultant->id;
+    }
+
+    /**
+     * Résout ou crée une EntiteCommerciale depuis son code (LIKE, AOPIA-ABO, 01FC).
+     */
+    protected function resolveEntite(string $code): ?int
+    {
+        if (isset($this->entiteCache[$code])) {
+            return $this->entiteCache[$code];
+        }
+
+        $entite = EntiteCommerciale::firstOrCreate(
+            ['code' => $code],
+            ['nom' => $code]
+        );
+
+        $this->entiteCache[$code] = $entite->id;
+        return $entite->id;
+    }
+
+    /**
+     * Résout ou crée un Parrain depuis le bloc parrain de la ligne.
+     */
+    protected function resolveParrain(array $parrainData): ?Parrain
+    {
+        $nomPrenom = trim($parrainData['nom_prenom'] ?? '');
+        if ($nomPrenom === '') {
+            return null;
+        }
+
+        $fill = array_filter([
+            'telephone'     => $parrainData['telephone']     ?? null,
+            'email'         => $parrainData['email']         ?? null,
+            'adresse'       => $parrainData['adresse']       ?? null,
+            'code_postal'   => $parrainData['code_postal']   ?? null,
+            'ville'         => $parrainData['ville']         ?? null,
+            'super_parrain' => $parrainData['super_parrain'] ?? false,
+            'date_creation' => $parrainData['date_creation'] ?? null,
+        ], fn($v) => $v !== null && $v !== '');
+
+        return Parrain::firstOrCreate(
+            ['nom_prenom' => $nomPrenom],
+            $fill
+        );
+    }
+
+    // ── Extraction du programme ─────────────────────────────────────────────
+
+    /**
+     * Format LIKE / mixte :
+     * [AOPIA2|01FC] NOM_TIERS PROGRAMME [N°]
+     * => retire préfixe, nom du tiers, numéro final
+     */
+    protected function extractProgrammeLike(string $ref, string $tiers): string
+    {
+        $ref   = trim($ref);
+        $tiers = trim(preg_replace('/\s*\(.*?\)/', '', $tiers));
+
+        foreach (['AOPIA2 ', '01FC ', 'LIKE '] as $prefix) {
+            if (stripos($ref, $prefix) === 0) {
+                $ref = substr($ref, strlen($prefix));
+                break;
+            }
+        }
+
+        if (stripos($ref, $tiers) === 0) {
+            $ref = substr($ref, strlen($tiers));
+        }
+
+        $ref = rtrim(preg_replace('/\s+\d+$/', '', trim($ref)));
+
+        return $ref !== '' ? $ref : $this->fallbackProgramme($ref);
+    }
+
+    /**
+     * Format AOPIA-ABO :
+     * PROGRAMME NOM_TIERS AOPIA2
+     * => retire suffixe AOPIA2, puis nom du tiers en fin
+     */
+    protected function extractProgrammeAopia(string $ref, string $tiers): string
+    {
+        $ref   = trim($ref);
+        $tiers = trim(preg_replace('/\s*\(.*?\)/', '', $tiers));
+
+        foreach ([' AOPIA2', ' AOPIA', ' ABO'] as $suffix) {
+            if (stripos(substr($ref, -strlen($suffix)), $suffix) === 0) {
+                $ref = substr($ref, 0, strlen($ref) - strlen($suffix));
+                break;
+            }
+        }
+        $ref = trim($ref);
+
+        // Retirer le nom du tiers en fin (peut y avoir des variantes avec "/")
+        $tiersNom = explode('/', $tiers)[0]; // "HADAK/MARTIN" => "HADAK"
+        $parts    = preg_split('/\s+/', trim($tiersNom));
+
+        for ($i = count($parts); $i > 0; $i--) {
+            $candidate = implode(' ', array_slice($parts, 0, $i));
+            $len       = strlen($candidate);
+            if (stripos(substr($ref, -$len), $candidate) === 0) {
+                $ref = trim(substr($ref, 0, strlen($ref) - $len));
+                break;
+            }
+        }
+
+        return $ref !== '' ? $ref : 'Programme inconnu';
+    }
+
+    /**
+     * Format 01FC :
+     * PROGRAMME [NOM_TIERS]?
+     * => le programme est en tête ; on retire le nom s'il apparaît en fin
+     */
+    protected function extractProgramme01Fc(string $ref, string $tiers): string
+    {
+        $ref   = trim($ref);
+        $tiers = trim(preg_replace('/\s*\(.*?\)/', '', $tiers));
+
+        if ($tiers !== '') {
+            $parts = preg_split('/\s+/', $tiers);
+            for ($i = count($parts); $i > 0; $i--) {
+                $candidate = implode(' ', array_slice($parts, 0, $i));
+                $len       = strlen($candidate);
+                if (stripos(substr($ref, -$len), $candidate) === 0) {
+                    $ref = trim(substr($ref, 0, strlen($ref) - $len));
+                    break;
+                }
+            }
+        }
+
+        return $ref !== '' ? $ref : 'Programme inconnu';
+    }
+
+    protected function fallbackProgramme(string $ref): string
+    {
+        return $ref !== '' ? $ref : 'Programme inconnu';
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
 
     protected function parseDate(mixed $value): ?string
     {
-        if (empty($value)) return null;
-
-        // openpyxl / PhpSpreadsheet renvoie parfois un timestamp Excel (float)
+        if (empty($value)) {
+            return null;
+        }
         if (is_numeric($value)) {
             try {
                 return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value)
                     ->format('Y-m-d');
-            } catch (\Throwable) {}
+            } catch (\Throwable) {
+            }
         }
-
         try {
             return Carbon::parse($value)->format('Y-m-d');
         } catch (\Throwable) {
@@ -111,37 +412,65 @@ abstract class BaseClientImporter
 
     protected function parseFloat(mixed $value): ?float
     {
-        if ($value === null || $value === '') return null;
+        if ($value === null || $value === '') {
+            return null;
+        }
         $clean = str_replace([' ', '€', ','], ['', '', '.'], (string) $value);
         return is_numeric($clean) ? (float) $clean : null;
     }
 
     protected function parseBool(mixed $value): bool
     {
-        if (is_bool($value)) return $value;
+        if (is_bool($value)) {
+            return $value;
+        }
         return in_array(strtolower(trim((string) $value)), ['1', 'oui', 'yes', 'true', 'o', 'x']);
     }
 
     protected function mapEtat(mixed $value): ?string
     {
         $map = [
-            'prospect'   => 'prospect',
+            'prospect'  => 'prospect',
+            'en cours'  => 'en_cours',
+            'à venir'   => 'prospect',
+            'a venir'   => 'prospect',
+            'terminé'   => 'termine',
+            'termine'   => 'termine',
+            'certifié'  => 'certifie',
+            'certifie'  => 'certifie',
+            'abandonné' => 'abandonne',
+            'abandonne' => 'abandonne',
+            'signée'    => 'en_cours',
+            'signee'    => 'en_cours',
+            'facturée'  => 'termine',
+            'facturee'  => 'termine',
+        ];
+        return $map[mb_strtolower(trim((string) $value))] ?? null;
+    }
+
+    protected function mapStatutFormation(mixed $value): ?string
+    {
+        $map = [
+            'à venir'    => 'a_venir',
+            'a venir'    => 'a_venir',
             'en cours'   => 'en_cours',
-            'à venir'    => 'prospect',
-            'a venir'    => 'prospect',
             'terminé'    => 'termine',
             'termine'    => 'termine',
-            'certifié'   => 'certifie',
-            'certifie'   => 'certifie',
-            'abandonné'  => 'abandonne',
-            'abandonne'  => 'abandonne',
-            'signée'     => 'en_cours',
-            'signee'     => 'en_cours',
-            'facturée'   => 'termine',
-            'facturee'   => 'termine',
+            'interrompu' => 'interrompu',
+            'abandon'    => 'abandon',
         ];
+        return $map[mb_strtolower(trim((string) $value))] ?? null;
+    }
 
-        $normalized = mb_strtolower(trim((string) $value));
-        return $map[$normalized] ?? null;
+    // ── Résultat ────────────────────────────────────────────────────────────
+
+    protected function getResult(): array
+    {
+        return [
+            'created' => $this->created,
+            'updated' => $this->updated,
+            'skipped' => $this->skipped,
+            'errors'  => $this->errors,
+        ];
     }
 }

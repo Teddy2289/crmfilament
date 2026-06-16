@@ -6,6 +6,7 @@ use App\Enums\EventType;
 use App\Enums\EventResult;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\CampagnePhoning;
 
 class Appel extends Model
 {
@@ -36,8 +37,8 @@ class Appel extends Model
         'numero_appelant',
         'aircall_user_id',
         'aircall_email',
-        'aircall_agent_nom'
-
+        'aircall_agent_nom',
+        'campagne_id',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -408,5 +409,10 @@ class Appel extends Model
     {
         return $this->belongsTo(ContactParticulier::class, 'appelable_id')
             ->where('appelable_type', ContactParticulier::class);
+    }
+
+    public function campagne()
+    {
+        return $this->belongsTo(CampagnePhoning::class, 'campagne_id');
     }
 }

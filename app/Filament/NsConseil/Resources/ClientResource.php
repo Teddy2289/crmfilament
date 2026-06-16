@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
 use App\Filament\NsConseil\Resources\ClientResource\Pages;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DossierFormationsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\PropositionsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Models\Client;
@@ -72,6 +73,18 @@ class ClientResource extends Resource
                         ->label('Réf. Client')
                         ->disabled()
                         ->helperText('Généré automatiquement'),
+
+                    Forms\Components\Select::make('partenaire_id')
+                        ->label('Partenaire')
+                        ->relationship('partenaire', 'nom')
+                        ->searchable()
+                        ->preload(),
+
+                    Forms\Components\Select::make('parrain_id')
+                        ->label('Parrain')
+                        ->relationship('parrain', 'nom_prenom')
+                        ->searchable()
+                        ->preload(),
                 ])->columns(3),
 
             Forms\Components\Section::make('Adresse')
@@ -136,42 +149,66 @@ class ClientResource extends Resource
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // TABLE
+    // TABLE - Version optimisée
     // ─────────────────────────────────────────────────────────────────
     public static function table(Table $table): Table
     {
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                // ✅ Colonnes réelles DB uniquement — pas d'accesseurs virtuels en searchable/sortable
+                // 🔵 Colonne principale : Nom + Civilité
                 Tables\Columns\TextColumn::make('nom_tiers')
-                    ->label('Nom')
-                    ->searchable()
+                    ->label('Client')
+                    ->searchable(['nom_tiers', 'email', 'telephone'])
                     ->sortable()
                     ->weight('bold')
-                    ->formatStateUsing(fn($state, Client $record) => trim(($record->civilite ? $record->civilite . ' ' : '') . $state)),
-
-                Tables\Columns\TextColumn::make('telephone')
-                    ->label('Téléphone')
-                    ->copyable()
+                    ->formatStateUsing(fn($state, Client $record) =>
+                        trim(($record->civilite ? $record->civilite . ' ' : '') . $state)
+                    )
+                    ->description(fn(Client $record) => $record->email ?? $record->telephone)
                     ->toggleable(),
+
+                // 📞 Contact
+                Tables\Columns\TextColumn::make('telephone')
+                    ->label('Tél.')
+                    ->copyable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
 
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
-                    ->searchable()
                     ->copyable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
 
+                // 📍 Localisation
                 Tables\Columns\TextColumn::make('ville')
                     ->label('Ville')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('departement')
                     ->label('Dép.')
-                    ->alignCenter()
-                    ->sortable(),
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
 
+                // 🤝 Relations
+                Tables\Columns\TextColumn::make('partenaire.nom')
+                    ->label('Partenaire')
+                    ->searchable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+
+                Tables\Columns\TextColumn::make('parrain.nom_prenom')
+                    ->label('Parrain')
+                    ->searchable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+
+                // 📊 État & Formation
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
@@ -190,27 +227,35 @@ class ClientResource extends Resource
                         'certifie'  => 'success',
                         'abandonne' => 'danger',
                         default     => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('montant_cpf')
                     ->label('CPF')
                     ->money('EUR')
                     ->sortable()
-                    ->alignRight(),
+                    ->alignRight()
+                    ->toggleable(),
 
+                // 🚫 Ne plus contacter
                 Tables\Columns\IconColumn::make('ne_plus_contacter')
                     ->label('NPC')
                     ->boolean()
                     ->trueColor('danger')
-                    ->falseColor('gray'),
+                    ->falseColor('gray')
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
 
+                // 📅 Dates
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Créé le')
                     ->dateTime('d/m/Y')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
             ])
             ->filters([
+                // 📊 Filtres principaux
                 Tables\Filters\SelectFilter::make('etat')
                     ->label('État')
                     ->options([
@@ -219,8 +264,25 @@ class ClientResource extends Resource
                         'termine'   => 'Terminé',
                         'certifie'  => 'Certifié',
                         'abandonne' => 'Abandonné',
-                    ]),
+                    ])
+                    ->placeholder('Tous les états'),
 
+                // 🤝 Filtres relations
+                Tables\Filters\SelectFilter::make('partenaire_id')
+                    ->label('Partenaire')
+                    ->relationship('partenaire', 'nom')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Tous les partenaires'),
+
+                Tables\Filters\SelectFilter::make('parrain_id')
+                    ->label('Parrain')
+                    ->relationship('parrain', 'nom_prenom')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Tous les parrains'),
+
+                // 📍 Filtres géographiques
                 Tables\Filters\SelectFilter::make('region')
                     ->label('Région')
                     ->options(
@@ -229,9 +291,10 @@ class ClientResource extends Resource
                             ->distinct()
                             ->orderBy('region')
                             ->pluck('region', 'region')
-                            ->filter()
                             ->toArray()
-                    ),
+                    )
+                    ->placeholder('Toutes les régions')
+                    ->searchable(),
 
                 Tables\Filters\SelectFilter::make('departement')
                     ->label('Département')
@@ -241,10 +304,12 @@ class ClientResource extends Resource
                             ->distinct()
                             ->orderBy('departement')
                             ->pluck('departement', 'departement')
-                            ->filter()
                             ->toArray()
-                    ),
+                    )
+                    ->placeholder('Tous les départements')
+                    ->searchable(),
 
+                // 🎯 Filtres booléens
                 Tables\Filters\Filter::make('contactables')
                     ->label('Contactables')
                     ->query(
@@ -260,11 +325,19 @@ class ClientResource extends Resource
                     ->query(fn(Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
                     ->toggle(),
 
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\Filter::make('sans_proposition')
+                    ->label('Sans proposition')
+                    ->query(fn(Builder $q) => $q->doesntHave('propositions')),
+
+                // 🗑️ Corbeille
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Corbeille'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label(''),
+                Tables\Actions\EditAction::make()
+                    ->label(''),
 
                 Tables\Actions\Action::make('toggle_contact')
                     ->label(fn(Client $record) => $record->ne_plus_contacter ? 'Réactiver' : 'Bloquer')
@@ -285,7 +358,13 @@ class ClientResource extends Resource
                 ]),
             ])
             ->emptyStateHeading('Aucun client')
-            ->emptyStateDescription('Importez des clients depuis un fichier CSV.');
+            ->emptyStateDescription('Importez des clients depuis un fichier CSV.')
+            ->emptyStateActions([
+                Tables\Actions\Action::make('import')
+                    ->label('Importer des clients')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->url(ImportClientsAction::class),
+            ]);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -312,6 +391,12 @@ class ClientResource extends Resource
                         ->suffix(' ans'),
                     Infolists\Components\TextEntry::make('entreprise')
                         ->label('Entreprise'),
+                    Infolists\Components\TextEntry::make('partenaire.nom')
+                        ->label('Partenaire')
+                        ->placeholder('Aucun'),
+                    Infolists\Components\TextEntry::make('parrain.nom_prenom')
+                        ->label('Parrain')
+                        ->placeholder('Aucun'),
                 ])->columns(3),
 
             Infolists\Components\Section::make('Coordonnées')
@@ -332,7 +417,23 @@ class ClientResource extends Resource
                 ->schema([
                     Infolists\Components\TextEntry::make('etat')
                         ->label('État')
-                        ->badge(),
+                        ->badge()
+                        ->formatStateUsing(fn($state) => match ($state) {
+                            'prospect'  => 'Prospect',
+                            'en_cours'  => 'En cours',
+                            'termine'   => 'Terminé',
+                            'certifie'  => 'Certifié',
+                            'abandonne' => 'Abandonné',
+                            default     => $state ?? '—',
+                        })
+                        ->color(fn($state) => match ($state) {
+                            'prospect'  => 'gray',
+                            'en_cours'  => 'primary',
+                            'termine'   => 'success',
+                            'certifie'  => 'success',
+                            'abandonne' => 'danger',
+                            default     => 'gray',
+                        }),
                     Infolists\Components\TextEntry::make('montant_cpf')
                         ->label('Montant CPF')
                         ->money('EUR'),
@@ -342,6 +443,31 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('source_sheet')
                         ->label('Fichier source'),
                 ])->columns(2),
+
+            Infolists\Components\Section::make('Statistiques formation')
+                ->schema([
+                    Infolists\Components\TextEntry::make('total_heures_formation')
+                        ->label('Total heures formation')
+                        ->numeric()
+                        ->placeholder('0'),
+                    Infolists\Components\TextEntry::make('total_heures_realisees')
+                        ->label('Heures réalisées')
+                        ->numeric()
+                        ->placeholder('0'),
+                    Infolists\Components\TextEntry::make('total_heures_restantes')
+                        ->label('Heures restantes')
+                        ->numeric()
+                        ->placeholder('0'),
+                    Infolists\Components\TextEntry::make('progression_formation')
+                        ->label('Progression')
+                        ->suffix('%')
+                        ->numeric()
+                        ->placeholder('0'),
+                    Infolists\Components\TextEntry::make('montant_total_cpf')
+                        ->label('Montant total CPF')
+                        ->money('EUR')
+                        ->placeholder('0,00 €'),
+                ])->columns(3),
         ]);
     }
 
@@ -351,6 +477,7 @@ class ClientResource extends Resource
             PropositionsRelationManager::class,
             DocumentsRelationManager::class,
             RendezVousRelationManager::class,
+            DossierFormationsRelationManager::class,
         ];
     }
 

@@ -24,6 +24,7 @@ class ScriptAppel extends Model
         'titre',
         'slug',
         'type_contact',
+        'campagne_id',
         'onglet',
         'contenu',
         'conseil',
@@ -127,37 +128,67 @@ class ScriptAppel extends Model
         return $query->orderBy('ordre')->orderBy('id');
     }
 
+    // ── Relation ─────────────────────────────────────────────────────
+
+    public function campagne()
+    {
+        return $this->belongsTo(CampagnePhoning::class, 'campagne_id');
+    }
+
     // ── Méthode principale ───────────────────────────────────────────
 
     /**
-     * Récupère tous les scripts organisés par onglet pour un type de contact.
-     * Retourne: ['accroche' => ScriptAppel|null, 'decouverte' => ..., ...]
+     * Récupère les scripts par onglet pour un type de contact et une campagne.
      *
-     * Si plusieurs scripts matchent un onglet, on prend le plus spécifique
-     * (type_contact non null > null), puis le premier par ordre.
+     * Priorité (du plus au moins spécifique) :
+     *  1. Script lié à la campagne exacte
+     *  2. Script lié au type de contact (sans campagne)
+     *  3. Script universel (pas de campagne, pas de type)
      */
-    public static function parOngletPourContact(?string $typeContact): array
+    public static function parOngletPourContact(?string $typeContact, ?int $campagneId = null): array
     {
+        // Récupère les scripts candidats : ceux de la campagne + les génériques
         $scripts = static::actif()
-            ->pourTypeContact($typeContact)
+            ->where(function (Builder $q) use ($typeContact, $campagneId) {
+                // Scripts liés à cette campagne spécifique
+                if ($campagneId) {
+                    $q->orWhere('campagne_id', $campagneId);
+                }
+                // Scripts génériques (pas de campagne) applicables au type de contact
+                $q->orWhere(function (Builder $sub) use ($typeContact) {
+                    $sub->whereNull('campagne_id')
+                        ->where(function (Builder $inner) use ($typeContact) {
+                            $inner->whereNull('type_contact')
+                                  ->orWhere('type_contact', $typeContact);
+                        });
+                });
+            })
             ->ordonnes()
             ->get();
 
         $result = [];
 
         foreach (array_keys(self::ONGLETS) as $onglet) {
-            // Priorité : script spécifique au type > universel
-            $scriptSpecifique = $scripts
+            // 1. Script de la campagne pour cet onglet
+            $scriptCampagne = $campagneId
+                ? $scripts->where('onglet', $onglet)->where('campagne_id', $campagneId)->first()
+                : null;
+
+            // 2. Script spécifique au type (sans campagne)
+            $scriptType = $scripts
                 ->where('onglet', $onglet)
+                ->whereNull('campagne_id')
                 ->where('type_contact', $typeContact)
                 ->first();
 
+            // 3. Script universel (sans campagne, sans type)
             $scriptUniversel = $scripts
                 ->where('onglet', $onglet)
+                ->whereNull('campagne_id')
                 ->whereNull('type_contact')
                 ->first();
 
-            $result[$onglet] = $scriptSpecifique ?? $scriptUniversel;
+            $result[$onglet] = $scriptCampagne ?? $scriptType ?? $scriptUniversel;
         }
 
         return $result;

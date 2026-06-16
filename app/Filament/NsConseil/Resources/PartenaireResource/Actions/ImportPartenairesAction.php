@@ -5,7 +5,8 @@ namespace App\Filament\NsConseil\Resources\PartenaireResource\Actions;
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
 use App\Filament\NsConseil\Resources\PartenaireResource\Import\PartenaireImportResolver;
-use App\Models\User;
+use App\Models\Consultant;
+use App\Models\EntiteCommerciale;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -26,8 +27,11 @@ class ImportPartenairesAction extends Action
             ->label('Importer Excel')
             ->icon('heroicon-o-arrow-up-tray')
             ->color('success')
-            ->modalHeading('Importer des partenaires depuis Excel')
-            ->modalDescription("Format attendu : colonnes Raison sociale, Siret, CP, Ville, Adresse, nbr salariés, telephone 1, Chiffre d'affaires.")
+            ->modalHeading('Importer depuis Excel — feuille « MAJ »')
+            ->modalDescription(
+                'Seule la feuille "MAJ" est importée. '
+                . 'Les valeurs ci-dessous sont utilisées en fallback si une colonne est absente ou vide.'
+            )
             ->modalWidth('xl')
             ->form([
                 Forms\Components\FileUpload::make('file')
@@ -41,14 +45,23 @@ class ImportPartenairesAction extends Action
                     ->storeFiles(false)
                     ->columnSpanFull(),
 
-                Forms\Components\Section::make('Valeurs par défaut appliquées à toutes les lignes')
+                Forms\Components\Section::make('Valeurs par défaut (fallback)')
                     ->icon('heroicon-o-adjustments-horizontal')
-                    ->description('Ces valeurs seront utilisées pour chaque partenaire importé.')
                     ->schema([
+                        Forms\Components\Select::make('entite_id')
+                            ->label('Entité commerciale')
+                            ->options(fn () => EntiteCommerciale::orderBy('nom')
+                                ->pluck('nom', 'id')
+                                ->toArray()
+                            )
+                            ->searchable()
+                            ->nullable()
+                            ->helperText('Utilisé si la colonne "Entité" est vide.'),
+
                         Forms\Components\Select::make('type')
                             ->label("Type d'organisation")
                             ->options(OrganizationType::class)
-                            ->default(OrganizationType::EntrepriseDirecte->value)
+                            ->default(OrganizationType::CSE->value)
                             ->required()
                             ->native(false),
 
@@ -59,18 +72,18 @@ class ImportPartenairesAction extends Action
                             ->required()
                             ->native(false),
 
-                        // ✅ ->options() direct, pas ->relationship() qui nécessite un modèle parent
-                        Forms\Components\Select::make('commercial_id')
-                            ->label('Commercial assigné')
-                            ->options(function () {
-                                return User::whereIn('role_cache', ['commercial', 'team_leader', 'administrateur'])
-                                    ->orderBy('nom')
-                                    ->get()
-                                    ->mapWithKeys(fn(User $u) => [$u->id => "{$u->prenom} {$u->nom}"])
-                                    ->toArray();
-                            })
+                        Forms\Components\Select::make('conseiller_id')
+                            ->label('Conseiller (fallback)')
+                            ->options(fn () => Consultant::orderBy('nom')
+                                ->get()
+                                ->mapWithKeys(fn (Consultant $c) => [
+                                    $c->id => trim("{$c->prenom} {$c->nom}"),
+                                ])
+                                ->toArray()
+                            )
                             ->searchable()
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('Utilisé si le conseiller n\'est pas trouvé en base.'),
 
                         Forms\Components\Select::make('nomenclature_interne')
                             ->label('Nomenclature interne')
@@ -83,15 +96,9 @@ class ImportPartenairesAction extends Action
                                 'ENT_DIRECTE'   => 'Entreprise directe',
                                 'ASSOC'         => 'Association',
                             ])
-                            ->default('ENT_DIRECTE')
-                            ->required(),
-
-                        Forms\Components\TextInput::make('secteur_activite')
-                            ->label("Secteur d'activité par défaut")
-                            ->default('Non renseigné')
-                            ->placeholder('ex: Industrie, Commerce…'),
+                            ->nullable(),
                     ])
-                    ->columns(3),
+                    ->columns(2),
             ])
             ->action(function (array $data): void {
                 $upload = $data['file'];
@@ -112,22 +119,22 @@ class ImportPartenairesAction extends Action
                 if (! $resolvedPath || ! file_exists($resolvedPath)) {
                     Notification::make()
                         ->title('Fichier introuvable')
-                        ->body("Chemin résolu : " . ($resolvedPath ?? 'null'))
+                        ->body('Chemin résolu : ' . ($resolvedPath ?? 'null'))
                         ->danger()
                         ->send();
                     return;
                 }
 
-                $defaults = [
+                $defaults = array_filter([
+                    'entite_id'            => $data['entite_id'] ?? null,
                     'type'                 => $data['type'],
                     'statut'               => $data['statut'],
-                    'commercial_id'        => $data['commercial_id'] ?? null,
-                    'nomenclature_interne' => $data['nomenclature_interne'],
-                    'secteur_activite'     => $data['secteur_activite'] ?? 'Non renseigné',
-                ];
+                    'conseiller_id'        => $data['conseiller_id'] ?? null,
+                    'nomenclature_interne' => $data['nomenclature_interne'] ?? null,
+                ], fn ($v) => $v !== null);
 
                 try {
-                    $results = PartenaireImportResolver::importFile($resolvedPath, $defaults);
+                    $result = PartenaireImportResolver::importFile($resolvedPath, $defaults);
                 } catch (\Throwable $e) {
                     Notification::make()
                         ->title('Erreur lors de la lecture du fichier')
@@ -137,34 +144,26 @@ class ImportPartenairesAction extends Action
                     return;
                 }
 
-                $totalCreated = 0;
-                $totalUpdated = 0;
-                $totalSkipped = 0;
-                $allErrors    = [];
-
-                foreach ($results as $sheetName => $result) {
-                    $totalCreated += $result['created'];
-                    $totalUpdated += $result['updated'];
-                    $totalSkipped += $result['skipped'];
-                    foreach ($result['errors'] as $err) {
-                        $allErrors[] = "[{$sheetName}] {$err}";
-                    }
-                }
-
                 Notification::make()
-                    ->title('Import terminé')
-                    ->body("Créés : {$totalCreated} | Mis à jour : {$totalUpdated} | Ignorés : {$totalSkipped}")
+                    ->title('Import terminé — feuille MAJ')
+                    ->body(
+                        "Créés : {$result['created']} | "
+                        . "Mis à jour : {$result['updated']} | "
+                        . "Ignorés : {$result['skipped']}"
+                    )
                     ->success()
                     ->send();
 
-                if (! empty($allErrors)) {
-                    $preview   = array_slice($allErrors, 0, 5);
-                    $more      = count($allErrors) - 5;
+                if (! empty($result['errors'])) {
+                    $preview   = array_slice($result['errors'], 0, 5);
+                    $more      = count($result['errors']) - 5;
                     $errorBody = implode("\n", $preview);
-                    if ($more > 0) $errorBody .= "\n… et {$more} autre(s) erreur(s).";
+                    if ($more > 0) {
+                        $errorBody .= "\n… et {$more} autre(s) erreur(s).";
+                    }
 
                     Notification::make()
-                        ->title(count($allErrors) . ' ligne(s) en erreur')
+                        ->title(count($result['errors']) . ' ligne(s) en erreur')
                         ->body($errorBody)
                         ->warning()
                         ->persistent()

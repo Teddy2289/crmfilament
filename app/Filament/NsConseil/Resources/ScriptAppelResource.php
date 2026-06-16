@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Filament\NsConseil\Resources\ScriptAppelResource\Pages\CreateScriptAppel;
 use App\Filament\NsConseil\Resources\ScriptAppelResource\Pages\EditScriptAppel;
 use App\Filament\NsConseil\Resources\ScriptAppelResource\Pages\ListScriptAppels;
+use App\Models\CampagnePhoning;
 use App\Models\ScriptAppel;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -63,6 +64,16 @@ class ScriptAppelResource extends Resource
                         ->nullable()
                         ->native(false)
                         ->helperText('Laisser vide pour un script applicable à tous les types de contact.'),
+
+                    Select::make('campagne_id')
+                        ->label('Campagne liée')
+                        ->options(fn () => CampagnePhoning::orderBy('nom')->pluck('nom', 'id'))
+                        ->searchable()
+                        ->nullable()
+                        ->native(false)
+                        ->placeholder('Aucune — script générique')
+                        ->helperText('Si renseigné, ce script n\'apparaît que lors des appels de cette campagne.')
+                        ->columnSpanFull(),
 
                     Forms\Components\TextInput::make('ordre')
                         ->label('Ordre d\'affichage')
@@ -200,6 +211,13 @@ class ScriptAppelResource extends Resource
                     ->label('Type contact')
                     ->colors(['gray' => null, 'info' => fn ($state) => $state !== null])
                     ->formatStateUsing(fn ($state) => $state ? (ScriptAppel::TYPES_CONTACT[$state] ?? $state) : 'Universel'),
+
+                Tables\Columns\TextColumn::make('campagne.nom')
+                    ->label('Campagne')
+                    ->placeholder('Générique')
+                    ->badge()
+                    ->color('primary')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('contenu')
                     ->label('Aperçu')

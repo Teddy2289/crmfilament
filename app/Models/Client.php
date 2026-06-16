@@ -23,6 +23,7 @@ class Client extends Model
         'source_sheet',
         'ref_client',
         'civilite',
+        'prenom',
         'nom_tiers',
         'email',
         'telephone',
@@ -33,9 +34,13 @@ class Client extends Model
         'departement',
         'date_naissance',
         'entreprise',
+        'type_tiers',
+        'avis_google',
         'etat',
         'montant_cpf',
         'ne_plus_contacter',
+        'partenaire_id',
+        'parrain_id',
         'extra_data',
     ];
 
@@ -273,6 +278,21 @@ class Client extends Model
     public function partenaires()
     {
         return $this->belongsToMany(Partenaire::class);
+    }
+
+    public function partenaire()
+    {
+        return $this->belongsTo(Partenaire::class);
+    }
+
+    public function parrain()
+    {
+        return $this->belongsTo(Parrain::class);
+    }
+
+    public function dossierFormations()
+    {
+        return $this->hasMany(DossierFormation::class, 'personne_id');
     }
 
     public function rendezVous()

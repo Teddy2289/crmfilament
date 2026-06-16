@@ -4,10 +4,11 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
+use App\Filament\NsConseil\Resources\PartenaireResource\Actions\ImportPartenairesAction;
 use App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 use App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
+use App\Models\Consultant;
 use App\Models\Partenaire;
-use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -20,8 +21,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PartenaireResource extends Resource
 {
-    protected static ?string $model          = Partenaire::class;
-    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+    protected static ?string $model           = Partenaire::class;
+    protected static ?string $navigationIcon  = 'heroicon-o-building-office-2';
     protected static ?string $navigationGroup = 'Pipeline';
     protected static ?string $navigationLabel = 'Partenaires';
     protected static ?int    $navigationSort  = 1;
@@ -69,13 +70,13 @@ class PartenaireResource extends Resource
                             'ENT_DIRECTE'   => 'Entreprise directe',
                             'ASSOC'         => 'Association',
                         ])
-                        ->required()->searchable(),
+                        ->searchable()->nullable(),
                     Forms\Components\TextInput::make('departement')
-                        ->label('Département')->maxLength(3)->required()->placeholder('ex: 75'),
+                        ->label('Département')->maxLength(3)->placeholder('ex: 75'),
                     Forms\Components\TextInput::make('code_postal')
                         ->label('Code postal')->maxLength(5),
                     Forms\Components\TextInput::make('secteur_activite')
-                        ->label("Secteur d'activité")->required(),
+                        ->label("Secteur d'activité"),
                     Forms\Components\TextInput::make('nb_salaries')
                         ->label('Nombre de salariés')->numeric()->minValue(0),
                     Forms\Components\TextInput::make('chiffre_affaires')
@@ -95,29 +96,49 @@ class PartenaireResource extends Resource
                         ->enum(OrganizationStatus::class)
                         ->default(OrganizationStatus::AProspecter)
                         ->native(false),
-                    Forms\Components\Select::make('commercial_id')
-                        ->label('Commercial assigné')
-                        ->relationship(
-                            'commercial',
-                            'nom',
-                            fn(Builder $query) => $query->whereIn('role_cache', ['commercial', 'team_leader', 'administrateur'])
+
+                    // CORRECTIF : conseiller_id → Consultant (pas User/commercial)
+                    Forms\Components\Select::make('conseiller_id')
+                        ->label('Conseiller assigné')
+                        ->options(
+                            fn() => Consultant::orderBy('nom')
+                                ->get()
+                                ->mapWithKeys(fn(Consultant $c) => [
+                                    $c->id => trim("{$c->prenom} {$c->nom}"),
+                                ])
+                                ->toArray()
                         )
-                        ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
-                        ->searchable()->preload()->required(),
+                        ->searchable()->preload()->nullable(),
+
+                    Forms\Components\DatePicker::make('date_signature')
+                        ->label('Date de signature')->displayFormat('d/m/Y'),
                     Forms\Components\DatePicker::make('date_convention')
                         ->label('Date de convention')->displayFormat('d/m/Y'),
                     Forms\Components\Select::make('origine_contact')
                         ->label('Origine du contact')
-                        ->options(['Salon' => 'Salon', 'Démarchage' => 'Démarchage', 'Parrainage' => 'Parrainage', 'Réseau' => 'Réseau', 'Autre' => 'Autre']),
-                    Forms\Components\TextInput::make('parrain_marraine')->label('Parrain / Marraine'),
-                    Forms\Components\TextInput::make('nombre_ventes_liees')
-                        ->label('Ventes liées')->numeric()->default(0)->minValue(0),
+                        ->options([
+                            'Salon'      => 'Salon',
+                            'Démarchage' => 'Démarchage',
+                            'Parrainage' => 'Parrainage',
+                            'Réseau'     => 'Réseau',
+                            'Autre'      => 'Autre',
+                        ]),
+                    Forms\Components\TextInput::make('parrain_marraine_texte')
+                        ->label('Parrain / Marraine'),
+                    Forms\Components\Toggle::make('parrainage_entreprise')
+                        ->label('Parrainage entreprise'),
+                    Forms\Components\TextInput::make('syndicat_majoritaire')
+                        ->label('Syndicat majoritaire'),
+                    Forms\Components\Textarea::make('possibilite_permanence')
+                        ->label('Possibilité de permanence')->rows(1),
+                    Forms\Components\Textarea::make('replicable')
+                        ->label('Réplicable')->rows(1),
                 ])->columns(3),
 
             Forms\Components\Section::make('Coordonnées')
                 ->icon('heroicon-o-map-pin')
                 ->schema([
-                    Forms\Components\TextInput::make('telephone')->label('Téléphone standard')->tel(),
+                    Forms\Components\TextInput::make('telephone')->label('Téléphone')->tel(),
                     Forms\Components\TextInput::make('email')->label('Email générique')->email(),
                     Forms\Components\Textarea::make('adresse')->label('Adresse')->rows(2)->columnSpan(2),
                     Forms\Components\TextInput::make('ville')->label('Ville'),
@@ -144,7 +165,7 @@ class PartenaireResource extends Resource
                     ])->columns(3),
                     Forms\Components\TextInput::make('cse_nb_elus')->label("Nombre d'élus")->numeric(),
                     Forms\Components\DatePicker::make('cse_date_fin_mandat')->label('Fin de mandat')->displayFormat('d/m/Y'),
-                    Forms\Components\Toggle::make('cse_existence_juridique')->label('Existence juridique (personnalité morale)'),
+                    Forms\Components\Toggle::make('cse_existence_juridique')->label('Existence juridique'),
                     Forms\Components\Textarea::make('cse_notes')->label('Notes CSE')->rows(2)->columnSpanFull(),
                 ])
                 ->columns(2)->collapsible()->collapsed()
@@ -182,7 +203,8 @@ class PartenaireResource extends Resource
             Forms\Components\Section::make('Notes commerciales')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
-                    Forms\Components\Textarea::make('notes')->label('Notes')->rows(4)->columnSpanFull(),
+                    Forms\Components\Textarea::make('commentaires')->label('Commentaires')->rows(3)->columnSpanFull(),
+                    Forms\Components\Textarea::make('notes')->label('Notes internes')->rows(3)->columnSpanFull(),
                 ]),
         ]);
     }
@@ -194,17 +216,13 @@ class PartenaireResource extends Resource
     {
         return $table
             ->defaultSort('date_modification_statut', 'desc')
+
             ->columns([
                 Tables\Columns\TextColumn::make('nom')
                     ->label('Nom légal')->searchable()->sortable()->weight('bold'),
 
-                Tables\Columns\TextColumn::make('siret')
-                    ->label('SIRET')->searchable()->copyable()->toggleable(),
-
                 Tables\Columns\TextColumn::make('type')
-                    ->label('Type')
-                    ->badge()
-                    // ✅ ->value sur l'enum, pas ->label()
+                    ->label('Type')->badge()
                     ->formatStateUsing(
                         fn($state) => $state instanceof OrganizationType
                             ? $state->value
@@ -222,13 +240,11 @@ class PartenaireResource extends Resource
                     ->label('Dép.')->sortable()->alignCenter(),
 
                 Tables\Columns\TextColumn::make('statut')
-                    ->label('Statut')
-                    ->badge()
-                    // ✅ ->value sur l'enum, pas ->label()
+                    ->label('Statut')->badge()
                     ->formatStateUsing(
                         fn($state) => $state instanceof OrganizationStatus
-                            ? $state->value
-                            : OrganizationStatus::tryFrom((string) $state)?->value ?? $state
+                            ? $state->label()
+                            : OrganizationStatus::tryFrom((string) $state)?->label() ?? $state
                     )
                     ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
                         OrganizationStatus::AProspecter          => 'gray',
@@ -249,15 +265,14 @@ class PartenaireResource extends Resource
                         default                                  => null,
                     }),
 
-                Tables\Columns\TextColumn::make('commercial.nom')
-                    ->label('Commercial')->sortable()
-                    ->getStateUsing(fn($record) => $record->commercial
-                        ? "{$record->commercial->prenom} {$record->commercial->nom}" : '—'),
+                // CORRECTIF : conseiller (Consultant) au lieu de commercial (User)
+                Tables\Columns\TextColumn::make('conseiller.nom')
+                    ->label('Conseiller')->sortable()
+                    ->getStateUsing(fn($record) => $record->conseiller
+                        ? trim("{$record->conseiller->prenom} {$record->conseiller->nom}") : '—'),
 
-                Tables\Columns\TextColumn::make('nombre_ventes_liees')
-                    ->label('Ventes')->sortable()->alignCenter()
-                    ->badge()
-                    ->color(fn($state) => $state > 0 ? 'success' : 'gray'),
+                Tables\Columns\TextColumn::make('date_signature')
+                    ->label('Signature')->date('d/m/Y')->sortable()->toggleable(),
 
                 Tables\Columns\TextColumn::make('date_modification_statut')
                     ->label('Modifié le')->dateTime('d/m/Y')->sortable()
@@ -270,14 +285,24 @@ class PartenaireResource extends Resource
                     ->options(OrganizationStatus::class)->label('Statut')->multiple(),
                 Tables\Filters\SelectFilter::make('type')
                     ->options(OrganizationType::class)->multiple(),
-                Tables\Filters\SelectFilter::make('commercial_id')
-                    ->relationship('commercial', 'nom')
-                    ->label('Commercial')
-                    ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
-                    ->searchable()->preload(),
+
+                // CORRECTIF : filtre sur conseiller_id → Consultant
+                Tables\Filters\SelectFilter::make('conseiller_id')
+                    ->label('Conseiller')
+                    ->options(
+                        fn() => Consultant::orderBy('nom')
+                            ->get()
+                            ->mapWithKeys(fn(Consultant $c) => [
+                                $c->id => trim("{$c->prenom} {$c->nom}"),
+                            ])
+                            ->toArray()
+                    )
+                    ->searchable(),
+
                 Tables\Filters\SelectFilter::make('departement')
                     ->options(fn() => Partenaire::distinct()->pluck('departement', 'departement')->filter()->sort())
                     ->label('Département')->searchable(),
+
                 Tables\Filters\Filter::make('rdv_90_jours')
                     ->label('⚠️ RDV > 90 jours')
                     ->query(
@@ -285,10 +310,14 @@ class PartenaireResource extends Resource
                             ->where('statut', OrganizationStatus::RdvEnCours->value)
                             ->where('date_modification_statut', '<', now()->subDays(90))
                     )->toggle(),
+
                 Tables\Filters\Filter::make('convention_active')
                     ->label('Conventions signées')
-                    ->query(fn($q) => $q->where('statut', OrganizationStatus::ConventionEngagement->value))
-                    ->toggle(),
+                    ->query(fn($q) => $q->whereIn('statut', [
+                        OrganizationStatus::SigneAccordCadre->value,
+                        OrganizationStatus::ConventionEngagement->value,
+                    ]))->toggle(),
+
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
@@ -305,23 +334,26 @@ class PartenaireResource extends Resource
                         Forms\Components\Textarea::make('commentaire')
                             ->label('Commentaire (optionnel)')->rows(2),
                     ])
-                    ->action(fn(Partenaire $record, array $data) => $record->update(['statut' => $data['statut']]))
+                    ->action(fn(Partenaire $record, array $data) => $record->changerStatut(
+                        OrganizationStatus::from($data['statut'])
+                    ))
                     ->modalHeading('Changer le statut du partenaire')
                     ->modalWidth('md'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\BulkAction::make('assigner_commercial')
-                        ->label('Assigner un commercial')->icon('heroicon-o-user-plus')
+                    Tables\Actions\BulkAction::make('assigner_conseiller')
+                        ->label('Assigner un conseiller')->icon('heroicon-o-user-plus')
                         ->form([
-                            Forms\Components\Select::make('commercial_id')
-                                ->label('Commercial')
+                            Forms\Components\Select::make('conseiller_id')
+                                ->label('Conseiller')
                                 ->options(
-                                    fn() => User::whereIn('role_cache', ['commercial', 'team_leader'])
-                                        ->orderBy('nom')
+                                    fn() => Consultant::orderBy('nom')
                                         ->get()
-                                        ->mapWithKeys(fn(User $u) => [$u->id => "{$u->prenom} {$u->nom}"])
+                                        ->mapWithKeys(fn(Consultant $c) => [
+                                            $c->id => trim("{$c->prenom} {$c->nom}"),
+                                        ])
                                         ->toArray()
                                 )
                                 ->required(),
@@ -341,7 +373,7 @@ class PartenaireResource extends Resource
                 ]),
             ])
             ->emptyStateHeading('Aucun partenaire')
-            ->emptyStateDescription('Créez votre premier partenaire ou importez un fichier CSV.');
+            ->emptyStateDescription('Créez votre premier partenaire ou importez un fichier Excel.');
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -351,163 +383,549 @@ class PartenaireResource extends Resource
     {
         return $infolist->schema([
 
-            Infolists\Components\Section::make('Identification')->schema([
-                Infolists\Components\TextEntry::make('nom')->label('Nom légal')->weight('bold'),
-                Infolists\Components\TextEntry::make('siret')->label('SIRET')->copyable(),
-                Infolists\Components\TextEntry::make('type')->label('Type')->badge()
-                    ->formatStateUsing(
-                        fn($state) => $state instanceof OrganizationType
-                            ? $state->value
-                            : OrganizationType::tryFrom((string) $state)?->value ?? $state
-                    )
-                    ->color(fn($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
-                        OrganizationType::CSE               => 'primary',
-                        OrganizationType::Syndicat          => 'warning',
-                        OrganizationType::EntrepriseDirecte => 'info',
-                        OrganizationType::Association       => 'success',
-                        default                             => 'gray',
-                    }),
-                Infolists\Components\TextEntry::make('statut')->label('Statut')->badge()
-                    ->formatStateUsing(
-                        fn($state) => $state instanceof OrganizationStatus
-                            ? $state->value
-                            : OrganizationStatus::tryFrom((string) $state)?->value ?? $state
-                    )
-                    ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
-                        OrganizationStatus::AProspecter          => 'gray',
-                        OrganizationStatus::EnCoursProspection   => 'blue',
-                        OrganizationStatus::RdvEnCours           => 'warning',
-                        OrganizationStatus::SigneAccordCadre,
-                        OrganizationStatus::ConventionEngagement => 'success',
-                        OrganizationStatus::Refus                => 'danger',
-                        default                                  => 'gray',
-                    }),
-                Infolists\Components\TextEntry::make('nomenclature_interne')->label('Nomenclature'),
-                Infolists\Components\TextEntry::make('secteur_activite')->label('Secteur'),
-                Infolists\Components\TextEntry::make('departement')->label('Département'),
-                Infolists\Components\TextEntry::make('nb_salaries')->label('Salariés'),
-                Infolists\Components\TextEntry::make('chiffre_affaires')->label("CA (€)")->money('EUR'),
-            ])->columns(3),
-
-            Infolists\Components\Section::make('Pipeline')->schema([
-                Infolists\Components\TextEntry::make('commercial.nom')->label('Commercial')
-                    ->getStateUsing(fn($record) => $record->commercial
-                        ? "{$record->commercial->prenom} {$record->commercial->nom}" : '—'),
-                Infolists\Components\TextEntry::make('date_convention')->label('Date convention')->date('d/m/Y'),
-                Infolists\Components\TextEntry::make('origine_contact')->label('Origine'),
-                Infolists\Components\TextEntry::make('parrain_marraine')->label('Parrain / Marraine'),
-                Infolists\Components\TextEntry::make('nombre_ventes_liees')->label('Ventes liées'),
-                Infolists\Components\TextEntry::make('date_modification_statut')
-                    ->label('Statut modifié le')->dateTime('d/m/Y à H:i'),
-            ])->columns(3),
-
-            Infolists\Components\Section::make('Coordonnées')->schema([
-                Infolists\Components\TextEntry::make('telephone')->label('Téléphone')->copyable()->placeholder('—'),
-                Infolists\Components\TextEntry::make('email')->label('Email')->copyable()->placeholder('—'),
-                Infolists\Components\TextEntry::make('adresse')->label('Adresse')->placeholder('—'),
-                Infolists\Components\TextEntry::make('ville')->label('Ville')->placeholder('—'),
-                Infolists\Components\TextEntry::make('code_postal')->label('CP')->placeholder('—'),
-            ])->columns(3),
-
-            // ── Dirigeant ──────────────────────────────────────────────────
-            Infolists\Components\Section::make('Dirigeant')
-                ->icon('heroicon-o-user')
-                ->collapsible()->collapsed()
-                ->visible(fn(Partenaire $r) => $r->dirigeant_nom || $r->dirigeant_email || $r->dirigeant_telephone)
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 1 : IDENTIFICATION
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make(' Identification')
+                ->icon('heroicon-o-identification')
                 ->schema([
                     Infolists\Components\Grid::make(3)->schema([
-                        Infolists\Components\TextEntry::make('dirigeant_nom')->label('Nom')->placeholder('—'),
-                        Infolists\Components\TextEntry::make('dirigeant_prenom')->label('Prénom')->placeholder('—'),
-                        Infolists\Components\TextEntry::make('dirigeant_fonction')->label('Fonction')->placeholder('—'),
-                        Infolists\Components\TextEntry::make('dirigeant_telephone')
-                            ->label('Téléphone')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
-                        Infolists\Components\TextEntry::make('dirigeant_email')
-                            ->label('Email')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                        Infolists\Components\TextEntry::make('entite.nom')
+                            ->label('Entité')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-building-storefront')
+                            ->color('info')
+                            ->badge(),
+                        Infolists\Components\TextEntry::make('nom')
+                            ->label('Nom légal')
+                            ->weight('bold')
+                            ->size('lg')
+                            ->copyable(),
+
+                        Infolists\Components\TextEntry::make('nom_retenu')
+                            ->label('Nom retenu')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->weight('semibold')
+                            ->color('primary'),
+
+                        Infolists\Components\TextEntry::make('siret')
+                            ->label('SIRET')
+                            ->copyable()
+                            ->placeholder('—')
+                            ->extraAttributes(['style' => 'font-family: monospace;']),
+
+                        Infolists\Components\TextEntry::make('type')
+                            ->label('Type')
+                            ->badge()
+                            ->formatStateUsing(
+                                fn($state) => $state instanceof OrganizationType
+                                    ? $state->value
+                                    : OrganizationType::tryFrom((string) $state)?->value ?? $state
+                            )
+                            ->color(fn($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
+                                OrganizationType::CSE               => 'primary',
+                                OrganizationType::Syndicat          => 'warning',
+                                OrganizationType::EntrepriseDirecte => 'info',
+                                OrganizationType::Association       => 'success',
+                                default                             => 'gray',
+                            }),
+
+                        Infolists\Components\TextEntry::make('statut')
+                            ->label('Statut')
+                            ->badge()
+                            ->formatStateUsing(
+                                fn($state) => $state instanceof OrganizationStatus
+                                    ? $state->label()
+                                    : OrganizationStatus::tryFrom((string) $state)?->label() ?? $state
+                            )
+                            ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
+                                OrganizationStatus::AProspecter          => 'gray',
+                                OrganizationStatus::EnCoursProspection   => 'blue',
+                                OrganizationStatus::RdvEnCours           => 'warning',
+                                OrganizationStatus::SigneAccordCadre,
+                                OrganizationStatus::ConventionEngagement => 'success',
+                                OrganizationStatus::Refus                => 'danger',
+                                default                                  => 'gray',
+                            }),
+
+                        Infolists\Components\TextEntry::make('nomenclature_interne')
+                            ->label('Nomenclature interne')
+                            ->placeholder('—')
+                            ->formatStateUsing(fn($state) => match ($state) {
+                                'CSE_PME'       => 'CSE PME (< 50 salariés)',
+                                'CSE_ETI'       => 'CSE ETI (50–299 salariés)',
+                                'CSE_GE'        => 'CSE Grande entreprise (300+)',
+                                'SYND_BRANCHE'  => 'Syndicat de branche',
+                                'SYND_INTERPRO' => 'Syndicat interprofessionnel',
+                                'ENT_DIRECTE'   => 'Entreprise directe',
+                                'ASSOC'         => 'Association',
+                                default         => $state ?? '—',
+                            }),
                     ]),
                 ]),
 
-            // ── CSE ────────────────────────────────────────────────────────
-            Infolists\Components\Section::make('Contacts CSE')
-                ->icon('heroicon-o-user-group')
-                ->collapsible()->collapsed()
-                ->visible(fn(Partenaire $r) => $r->type === OrganizationType::CSE)
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 2 : INFORMATIONS GÉNÉRALES
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make(' Informations générales')
+                ->icon('heroicon-o-building-office-2')
                 ->schema([
                     Infolists\Components\Grid::make(3)->schema([
-                        // Secrétaire
-                        Infolists\Components\TextEntry::make('cse_secretaire_nom')
-                            ->label('Secrétaire — Nom')->placeholder('—'),
-                        Infolists\Components\TextEntry::make('cse_secretaire_prenom')
-                            ->label('Secrétaire — Prénom')->placeholder('—'),
-                        Infolists\Components\TextEntry::make('cse_secretaire_tel_direct')
-                            ->label('Tél. direct')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
-                        Infolists\Components\TextEntry::make('cse_secretaire_tel_perso')
-                            ->label('Tél. perso')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
-                        Infolists\Components\TextEntry::make('cse_secretaire_email_pro')
-                            ->label('Email pro')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
-                        Infolists\Components\TextEntry::make('cse_secretaire_email_perso')
-                            ->label('Email perso')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                        Infolists\Components\TextEntry::make('secteur_activite')
+                            ->label("Secteur d'activité")
+                            ->placeholder('—')
+                            ->icon('heroicon-o-briefcase'),
+
+                        Infolists\Components\TextEntry::make('nb_salaries')
+                            ->label('Nombre de salariés')
+                            ->placeholder('—')
+                            ->numeric()
+                            ->suffix(' salariés')
+                            ->icon('heroicon-o-users'),
+
+                        Infolists\Components\TextEntry::make('chiffre_affaires')
+                            ->label("Chiffre d'affaires")
+                            ->placeholder('—')
+                            ->money('EUR')
+                            ->icon('heroicon-o-currency-euro'),
+
+                        Infolists\Components\TextEntry::make('entrepriseMere.nom')
+                            ->label('Entreprise mère')
+                            ->placeholder('—')
+                            ->url(
+                                fn($record) => $record->entrepriseMere ?
+                                    PartenaireResource::getUrl('view', ['record' => $record->entrepriseMere]) : null
+                            )
+                            ->icon('heroicon-o-arrow-up-circle'),
+
+                        Infolists\Components\TextEntry::make('filiales_count')
+                            ->label('Filiales')
+                            ->placeholder('0')
+                            ->state(fn($record) => $record->filiales()->count())
+                            ->badge()
+                            ->color('info')
+                            ->icon('heroicon-o-squares-2x2'),
+                    ]),
+                ]),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 3 : PIPELINE & SUIVI
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make(' Pipeline & Suivi')
+                ->icon('heroicon-o-chart-bar')
+                ->schema([
+                    Infolists\Components\Grid::make(3)->schema([
+                        Infolists\Components\TextEntry::make('conseiller.nom')
+                            ->label('Conseiller assigné')
+                            ->getStateUsing(
+                                fn($record) => $record->conseiller
+                                    ? trim("{$record->conseiller->prenom} {$record->conseiller->nom}")
+                                    : '—'
+                            )
+                            ->icon('heroicon-o-user')
+                            ->badge()
+                            ->color('primary'),
+
+                        Infolists\Components\TextEntry::make('commercial.nom')
+                            ->label('Commercial')
+                            ->getStateUsing(
+                                fn($record) => $record->commercial
+                                    ? trim("{$record->commercial->prenom} {$record->commercial->nom}")
+                                    : '—'
+                            )
+                            ->placeholder('—')
+                            ->icon('heroicon-o-user-group'),
+
+                        Infolists\Components\TextEntry::make('entite.nom')
+                            ->label('Entité commerciale')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-building-storefront'),
+
+                        Infolists\Components\TextEntry::make('date_signature')
+                            ->label('Date de signature')
+                            ->date('d/m/Y')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-calendar')
+                            ->color(fn($state) => $state ? 'success' : 'gray'),
+
+                        Infolists\Components\TextEntry::make('date_convention')
+                            ->label('Date de convention')
+                            ->date('d/m/Y')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-calendar-days')
+                            ->color(fn($state) => $state ? 'success' : 'gray'),
+
+                        Infolists\Components\TextEntry::make('date_modification_statut')
+                            ->label('Statut modifié le')
+                            ->dateTime('d/m/Y à H:i')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-clock')
+                            ->since(),
+
+                        Infolists\Components\TextEntry::make('origine_contact')
+                            ->label('Origine du contact')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('gray')
+                            ->icon('heroicon-o-arrow-trending-up'),
+
+                        Infolists\Components\TextEntry::make('parrain_marraine_texte')
+                            ->label('Parrain / Marraine')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-user-plus'),
+
+                        Infolists\Components\IconEntry::make('parrainage_entreprise')
+                            ->label('Parrainage entreprise')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->trueColor('success')
+                            ->falseColor('gray'),
+
+                        Infolists\Components\TextEntry::make('syndicat_majoritaire')
+                            ->label('Syndicat majoritaire')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('warning'),
+
+                        Infolists\Components\TextEntry::make('possibilite_permanence')
+                            ->label('Possibilité de permanence')
+                            ->placeholder('—')
+                            ->columnSpan(1),
+
+                        Infolists\Components\TextEntry::make('replicable')
+                            ->label('Réplicable')
+                            ->placeholder('—')
+                            ->columnSpan(1),
+                    ]),
+                ]),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 4 : COORDONNÉES
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make(' Coordonnées')
+                ->icon('heroicon-o-map-pin')
+                ->schema([
+                    Infolists\Components\Grid::make(3)->schema([
+                        Infolists\Components\TextEntry::make('adresse')
+                            ->label('Adresse')
+                            ->placeholder('—')
+                            ->columnSpan(2)
+                            ->icon('heroicon-o-home'),
+
+                        Infolists\Components\TextEntry::make('ville')
+                            ->label('Ville')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-building-office'),
+
+                        Infolists\Components\TextEntry::make('code_postal')
+                            ->label('Code postal')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-map-pin'),
+
+                        Infolists\Components\TextEntry::make('departement')
+                            ->label('Département')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('gray'),
+
+                        Infolists\Components\TextEntry::make('telephone')
+                            ->label('Téléphone')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->icon('heroicon-o-phone')
+                            ->url(fn($state) => $state ? 'tel:' . $state : null),
+
+                        Infolists\Components\TextEntry::make('email')
+                            ->label('Email')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->icon('heroicon-o-envelope')
+                            ->url(fn($state) => $state ? 'mailto:' . $state : null),
+                    ]),
+                ]),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 5 : DIRIGEANT
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make(' Dirigeant')
+                ->icon('heroicon-o-user')
+                ->collapsible()
+                ->collapsed(fn(Partenaire $record) => !$record->dirigeant_nom && !$record->dirigeant_email)
+                ->schema([
+                    Infolists\Components\Grid::make(3)->schema([
+                        Infolists\Components\TextEntry::make('dirigeant_nom')
+                            ->label('Nom')
+                            ->placeholder('—')
+                            ->weight('semibold'),
+
+                        Infolists\Components\TextEntry::make('dirigeant_prenom')
+                            ->label('Prénom')
+                            ->placeholder('—'),
+
+                        Infolists\Components\TextEntry::make('dirigeant_fonction')
+                            ->label('Fonction')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('info'),
+
+                        Infolists\Components\TextEntry::make('dirigeant_telephone')
+                            ->label('Téléphone')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->icon('heroicon-o-phone')
+                            ->url(fn($state) => $state ? 'tel:' . $state : null),
+
+                        Infolists\Components\TextEntry::make('dirigeant_email')
+                            ->label('Email')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->icon('heroicon-o-envelope')
+                            ->url(fn($state) => $state ? 'mailto:' . $state : null),
+                    ]),
+                ]),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 6 : CONTACTS CSE
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make(' Contacts CSE')
+                ->icon('heroicon-o-user-group')
+                ->collapsible()
+                ->collapsed()
+                ->visible(fn(Partenaire $record) => $record->type === OrganizationType::CSE)
+                ->schema([
+                    // Secrétaire
+                    Infolists\Components\Grid::make(2)->schema([
+                        Infolists\Components\Fieldset::make('Secrétaire')
+                            ->schema([
+                                Infolists\Components\Grid::make(2)->schema([
+                                    Infolists\Components\TextEntry::make('cse_secretaire_nom')
+                                        ->label('Nom')
+                                        ->placeholder('—')
+                                        ->weight('semibold'),
+                                    Infolists\Components\TextEntry::make('cse_secretaire_prenom')
+                                        ->label('Prénom')
+                                        ->placeholder('—'),
+                                    Infolists\Components\TextEntry::make('cse_secretaire_tel_direct')
+                                        ->label('Tél. direct')
+                                        ->placeholder('—')
+                                        ->copyable()
+                                        ->icon('heroicon-o-phone'),
+                                    Infolists\Components\TextEntry::make('cse_secretaire_tel_perso')
+                                        ->label('Tél. perso')
+                                        ->placeholder('—')
+                                        ->copyable()
+                                        ->icon('heroicon-o-device-phone-mobile'),
+                                    Infolists\Components\TextEntry::make('cse_secretaire_email_pro')
+                                        ->label('Email pro')
+                                        ->placeholder('—')
+                                        ->copyable()
+                                        ->icon('heroicon-o-envelope'),
+                                    Infolists\Components\TextEntry::make('cse_secretaire_email_perso')
+                                        ->label('Email perso')
+                                        ->placeholder('—')
+                                        ->copyable()
+                                        ->icon('heroicon-o-at-symbol'),
+                                ]),
+                            ]),
 
                         // Trésorier
-                        Infolists\Components\TextEntry::make('cse_tresorier_nom')
-                            ->label('Trésorier — Nom')->placeholder('—'),
-                        Infolists\Components\TextEntry::make('cse_tresorier_prenom')
-                            ->label('Trésorier — Prénom')->placeholder('—'),
-                        Infolists\Components\TextEntry::make('cse_tresorier_tel_direct')
-                            ->label('Tél. direct')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
-                        Infolists\Components\TextEntry::make('cse_tresorier_tel_perso')
-                            ->label('Tél. perso')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
-                        Infolists\Components\TextEntry::make('cse_tresorier_email_pro')
-                            ->label('Email pro')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
-                        Infolists\Components\TextEntry::make('cse_tresorier_email_perso')
-                            ->label('Email perso')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                        Infolists\Components\Fieldset::make('Trésorier')
+                            ->schema([
+                                Infolists\Components\Grid::make(2)->schema([
+                                    Infolists\Components\TextEntry::make('cse_tresorier_nom')
+                                        ->label('Nom')
+                                        ->placeholder('—')
+                                        ->weight('semibold'),
+                                    Infolists\Components\TextEntry::make('cse_tresorier_prenom')
+                                        ->label('Prénom')
+                                        ->placeholder('—'),
+                                    Infolists\Components\TextEntry::make('cse_tresorier_tel_direct')
+                                        ->label('Tél. direct')
+                                        ->placeholder('—')
+                                        ->copyable()
+                                        ->icon('heroicon-o-phone'),
+                                    Infolists\Components\TextEntry::make('cse_tresorier_tel_perso')
+                                        ->label('Tél. perso')
+                                        ->placeholder('—')
+                                        ->copyable()
+                                        ->icon('heroicon-o-device-phone-mobile'),
+                                    Infolists\Components\TextEntry::make('cse_tresorier_email_pro')
+                                        ->label('Email pro')
+                                        ->placeholder('—')
+                                        ->copyable()
+                                        ->icon('heroicon-o-envelope'),
+                                    Infolists\Components\TextEntry::make('cse_tresorier_email_perso')
+                                        ->label('Email perso')
+                                        ->placeholder('—')
+                                        ->copyable()
+                                        ->icon('heroicon-o-at-symbol'),
+                                ]),
+                            ]),
+                    ]),
 
-                        // Infos CSE
+                    // Informations complémentaires CSE
+                    Infolists\Components\Grid::make(3)->schema([
                         Infolists\Components\TextEntry::make('cse_nb_elus')
-                            ->label("Nombre d'élus")->placeholder('—')->suffix(' élus'),
+                            ->label("Nombre d'élus")
+                            ->placeholder('—')
+                            ->numeric()
+                            ->suffix(' élus')
+                            ->icon('heroicon-o-user-group'),
+
                         Infolists\Components\TextEntry::make('cse_date_fin_mandat')
-                            ->label('Fin de mandat')->date('d/m/Y')->placeholder('—'),
+                            ->label('Fin de mandat')
+                            ->date('d/m/Y')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-calendar')
+                            ->color(fn($state) => $state && $state->isPast() ? 'danger' : 'success'),
+
                         Infolists\Components\IconEntry::make('cse_existence_juridique')
-                            ->label('Existence juridique')->boolean(),
+                            ->label('Existence juridique')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->trueColor('success')
+                            ->falseColor('gray'),
+
                         Infolists\Components\TextEntry::make('cse_notes')
-                            ->label('Notes CSE')->placeholder('—')->columnSpanFull()->prose(),
+                            ->label('Notes CSE')
+                            ->placeholder('—')
+                            ->columnSpanFull()
+                            ->prose()
+                            ->html(),
                     ]),
                 ]),
 
-            // ── Syndicat ───────────────────────────────────────────────────
-            Infolists\Components\Section::make('Informations syndicales')
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 7 : INFORMATIONS SYNDICALES
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make(' Informations syndicales')
                 ->icon('heroicon-o-users')
-                ->collapsible()->collapsed()
-                ->visible(fn(Partenaire $r) => $r->type === OrganizationType::Syndicat)
+                ->collapsible()
+                ->collapsed()
+                ->visible(fn(Partenaire $record) => $record->type === OrganizationType::Syndicat)
                 ->schema([
                     Infolists\Components\Grid::make(3)->schema([
                         Infolists\Components\TextEntry::make('syndicat_appartenance')
-                            ->label('Appartenance')->placeholder('—'),
+                            ->label('Appartenance')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('warning'),
+
                         Infolists\Components\TextEntry::make('syndicat_nom_organisation')
-                            ->label('Organisation')->placeholder('—'),
+                            ->label("Nom de l'organisation")
+                            ->placeholder('—')
+                            ->weight('semibold'),
+
                         Infolists\Components\TextEntry::make('syndicat_responsable_nom')
-                            ->label('Responsable — Nom')->placeholder('—'),
+                            ->label('Responsable - Nom')
+                            ->placeholder('—'),
+
                         Infolists\Components\TextEntry::make('syndicat_responsable_prenom')
-                            ->label('Responsable — Prénom')->placeholder('—'),
+                            ->label('Responsable - Prénom')
+                            ->placeholder('—'),
+
                         Infolists\Components\TextEntry::make('syndicat_responsable_fonction')
-                            ->label('Fonction')->placeholder('—'),
+                            ->label('Fonction')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('info'),
+
                         Infolists\Components\TextEntry::make('syndicat_tel_direct')
-                            ->label('Tél. direct')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
+                            ->label('Tél. direct')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->icon('heroicon-o-phone'),
+
                         Infolists\Components\TextEntry::make('syndicat_tel_perso')
-                            ->label('Tél. perso')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
+                            ->label('Tél. perso')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->icon('heroicon-o-device-phone-mobile'),
+
                         Infolists\Components\TextEntry::make('syndicat_email_pro')
-                            ->label('Email pro')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                            ->label('Email pro')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->icon('heroicon-o-envelope'),
+
                         Infolists\Components\TextEntry::make('syndicat_email_perso')
-                            ->label('Email perso')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                            ->label('Email perso')
+                            ->placeholder('—')
+                            ->copyable()
+                            ->icon('heroicon-o-at-symbol'),
+
                         Infolists\Components\TextEntry::make('syndicat_perimetre')
-                            ->label('Périmètre')->placeholder('—')->columnSpanFull()->prose(),
+                            ->label('Périmètre')
+                            ->placeholder('—')
+                            ->columnSpanFull()
+                            ->prose(),
+
                         Infolists\Components\TextEntry::make('syndicat_notes')
-                            ->label('Notes syndicat')->placeholder('—')->columnSpanFull()->prose(),
+                            ->label('Notes syndicat')
+                            ->placeholder('—')
+                            ->columnSpanFull()
+                            ->prose()
+                            ->html(),
                     ]),
                 ]),
 
-            Infolists\Components\Section::make('Notes commerciales')->schema([
-                Infolists\Components\TextEntry::make('notes')->label('')->columnSpanFull()->html(),
-            ]),
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 8 : NOTES
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make('Notes')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Infolists\Components\Grid::make(2)->schema([
+                        Infolists\Components\TextEntry::make('commentaires')
+                            ->label('Commentaires')
+                            ->placeholder('—')
+                            ->columnSpanFull()
+                            ->prose()
+                            ->html()
+                            ->size('sm'),
+
+                        Infolists\Components\TextEntry::make('notes')
+                            ->label('Notes internes')
+                            ->placeholder('—')
+                            ->columnSpanFull()
+                            ->prose()
+                            ->html()
+                            ->size('sm')
+                            ->color('gray'),
+                    ]),
+                ]),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 9 : MÉTADONNÉES
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make('Métadonnées')
+                ->icon('heroicon-o-cog-6-tooth')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    Infolists\Components\Grid::make(3)->schema([
+                        Infolists\Components\TextEntry::make('created_at')
+                            ->label('Créé le')
+                            ->dateTime('d/m/Y à H:i')
+                            ->icon('heroicon-o-calendar'),
+
+                        Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Modifié le')
+                            ->dateTime('d/m/Y à H:i')
+                            ->icon('heroicon-o-clock'),
+
+                        Infolists\Components\TextEntry::make('deleted_at')
+                            ->label('Supprimé le')
+                            ->dateTime('d/m/Y à H:i')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-trash')
+                            ->color('danger')
+                            ->visible(fn($record) => $record->trashed()),
+                    ]),
+                ]),
         ]);
     }
 

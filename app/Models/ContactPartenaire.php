@@ -11,10 +11,15 @@ class ContactPartenaire extends Model
 
     protected $table = 'contact_partenaires';
 
-    protected $casts = [
-        'date_naissance' => 'date',
-        'est_principal' => 'boolean',
-        'est_decisionnaire' => 'boolean',
+    /**
+     * Rôles discriminants issus du MEA (onglet PARTENAIRES & PROSPECTIONS COMM).
+     * Permet de retrouver directement le Secrétaire CSE, Trésorier CSE et DS.
+     */
+    public const ROLES = [
+        'SECRETAIRE'   => 'Secrétaire CSE',
+        'TRESORIER'    => 'Trésorier CSE',
+        'SYNDICAT_DS'  => 'Délégué syndical (DS)',
+        'AUTRE'        => 'Autre',
     ];
 
     protected $fillable = [
@@ -23,12 +28,16 @@ class ContactPartenaire extends Model
         'nom',
         'prenom',
         'fonction',
+        // ✅ Ajout MEA : rôle discriminant et syndicat associé
+        'role',
+        'nom_syndicat',
         'service',
         'email',
         'telephone_direct',
         'telephone_mobile',
         'telephone_perso',
         'email_perso',
+        'preference_contact',
         'date_naissance',
         'notes',
         'est_principal',
@@ -37,7 +46,14 @@ class ContactPartenaire extends Model
         'canal_prefere',
     ];
 
+    protected $casts = [
+        'date_naissance'    => 'date',
+        'est_principal'     => 'boolean',
+        'est_decisionnaire' => 'boolean',
+    ];
+
     // ── Accesseurs ──────────────────────────────────────────────────
+
     public function getNomCompletAttribute(): string
     {
         return trim(
@@ -60,18 +76,16 @@ class ContactPartenaire extends Model
         );
     }
 
+    public function getRoleLabelAttribute(): string
+    {
+        return self::ROLES[$this->role] ?? 'Autre';
+    }
+
     public function getFonctionCompleteAttribute(): string
     {
         $parts = [];
-
-        if ($this->fonction) {
-            $parts[] = $this->fonction;
-        }
-
-        if ($this->service) {
-            $parts[] = $this->service;
-        }
-
+        if ($this->fonction) $parts[] = $this->fonction;
+        if ($this->service)  $parts[] = $this->service;
         return implode(' - ', $parts);
     }
 
@@ -117,9 +131,9 @@ class ContactPartenaire extends Model
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
+
     public function definirCommePrincipal(): void
     {
-        // Retirer le statut principal des autres contacts du même partenaire
         static::where('partenaire_id', $this->partenaire_id)
             ->where('id', '!=', $this->id)
             ->update(['est_principal' => false]);
@@ -131,7 +145,7 @@ class ContactPartenaire extends Model
     {
         $this->update([
             'est_decisionnaire' => true,
-            'niveau_influence' => 5,
+            'niveau_influence'  => 5,
         ]);
     }
 
@@ -141,7 +155,6 @@ class ContactPartenaire extends Model
             'email', 'telephone_direct', 'telephone_mobile',
             'telephone_perso', 'email_perso',
         ];
-
         $this->update(array_intersect_key($data, array_flip($allowedFields)));
     }
 
@@ -155,6 +168,7 @@ class ContactPartenaire extends Model
     }
 
     // ── Scopes ──────────────────────────────────────────────────────
+
     public function scopePrincipaux($query)
     {
         return $query->where('est_principal', true);
@@ -165,14 +179,29 @@ class ContactPartenaire extends Model
         return $query->where('est_decisionnaire', true);
     }
 
+    public function scopeParRole($query, string $role)
+    {
+        return $query->where('role', $role);
+    }
+
+    public function scopeSecretaires($query)
+    {
+        return $query->where('role', 'SECRETAIRE');
+    }
+
+    public function scopeTresoriers($query)
+    {
+        return $query->where('role', 'TRESORIER');
+    }
+
+    public function scopeDelegueSyndicaux($query)
+    {
+        return $query->where('role', 'SYNDICAT_DS');
+    }
+
     public function scopeParFonction($query, string $fonction)
     {
         return $query->where('fonction', 'like', "%{$fonction}%");
-    }
-
-    public function scopeParService($query, string $service)
-    {
-        return $query->where('service', $service);
     }
 
     public function scopeContactables($query)
@@ -184,21 +213,16 @@ class ContactPartenaire extends Model
         });
     }
 
-    public function scopeParNiveauInfluence($query, int $niveau)
-    {
-        return $query->where('niveau_influence', '>=', $niveau);
-    }
-
     public function scopePourPartenaire($query, int $partenaireId)
     {
         return $query->where('partenaire_id', $partenaireId);
     }
 
     // ── Boot ────────────────────────────────────────────────────────
+
     protected static function booted(): void
     {
         static::creating(function (ContactPartenaire $contact) {
-            // Si premier contact du partenaire, le définir comme principal
             if (!static::where('partenaire_id', $contact->partenaire_id)->exists()) {
                 $contact->est_principal = true;
             }
@@ -206,6 +230,7 @@ class ContactPartenaire extends Model
     }
 
     // ── Relations ────────────────────────────────────────────────────
+
     public function partenaire()
     {
         return $this->belongsTo(Partenaire::class);

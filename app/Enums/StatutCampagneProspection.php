@@ -10,6 +10,7 @@ enum StatutCampagneProspection: string
     case OBJ = 'OBJ';  // Objection (à lever)
     case SOC = 'SOC';  // Souscrit (accord verbal, prêt à convertir)
     case HC  = 'HC';   // Hors cible
+    case KO  = 'KO';
 
     public function label(): string
     {
@@ -20,6 +21,7 @@ enum StatutCampagneProspection: string
             self::OBJ => 'Objection',
             self::SOC => 'Souscrit',
             self::HC  => 'Hors cible',
+            self::KO  => 'K.O',
         };
     }
 

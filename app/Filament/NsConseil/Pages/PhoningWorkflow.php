@@ -3,11 +3,16 @@
 namespace App\Filament\NsConseil\Pages;
 
 use App\Models\ArtisanProspection;
+use App\Models\Appel;
+use App\Models\CampagnePhoning;
+use App\Models\Client;
 use App\Models\ContactPartenaire;
 use App\Models\ContactParticulier;
 use App\Models\Prospect;
 use App\Models\ScriptAppel;
 use App\Models\User;
+use App\Enums\EventResult;
+use App\Enums\EventType;
 use App\Enums\StatutCampagneProspection;
 use App\Enums\ProspectStatut;
 use Filament\Pages\Page;
@@ -42,9 +47,10 @@ class PhoningWorkflow extends Page
 
     public array $scripts = [];
 
-    public ?int  $supervisedUserId = null;
-    public bool  $isSupervisorMode = false;
-    public array $contactQueue     = [];
+    public ?int  $supervisedUserId  = null;
+    public bool  $isSupervisorMode  = false;
+    public array $contactQueue      = [];
+    public ?int  $currentCampagneId = null;
 
     // ── Mount ────────────────────────────────────────────────────────
     public function mount(): void
@@ -52,10 +58,18 @@ class PhoningWorkflow extends Page
         $user = Auth::user();
 
         $this->isSupervisorMode = $user?->hasAnyRole([
-            'super_admin', 'administrateur', 'responsable_plateau', 'superviseur',
+            'super_admin',
+            'administrateur',
+            'responsable_plateau',
+            'superviseur',
         ]) ?? false;
 
         $this->supervisedUserId = $user?->id;
+
+        // Filtrer sur une campagne spécifique si passée en URL
+        if ($campagneId = request()->query('campagne_id')) {
+            $this->currentCampagneId = (int) $campagneId;
+        }
 
         $this->loadQueue();
         $this->loadNextContact();
@@ -66,9 +80,9 @@ class PhoningWorkflow extends Page
     protected function queryTeleprospecteurs()
     {
         return User::where(function ($q) {
-                $q->whereHas('roles', fn ($r) => $r->where('name', User::ROLE_TELEPROSPECTEUR))
-                  ->orWhere('role_cache', User::ROLE_TELEPROSPECTEUR);
-            })
+            $q->whereHas('roles', fn($r) => $r->where('name', User::ROLE_TELEPROSPECTEUR))
+                ->orWhere('role_cache', User::ROLE_TELEPROSPECTEUR);
+        })
             ->where('actif', true)
             ->orderBy('nom')
             ->orderBy('prenom');
@@ -109,50 +123,45 @@ class PhoningWorkflow extends Page
     protected function filterValidQueue(array $queue): array
     {
         return collect($queue)->filter(function ($item) {
-            if ($item['type'] === 'prospect') {
-                return Prospect::where('id', $item['id'])
+            return match ($item['type']) {
+                'prospect' => Prospect::where('id', $item['id'])
                     ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
                     ->whereNull('deleted_at')
-                    ->exists();
-            }
-            return true;
+                    ->exists(),
+                'partenaire' => ContactPartenaire::where('id', $item['id'])
+                    ->whereNull('deleted_at')
+                    ->exists(),
+                'client' => Client::where('id', $item['id'])
+                    ->whereNull('deleted_at')
+                    ->where(fn($q) => $q->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false))
+                    ->exists(),
+                default => true,
+            };
         })->values()->toArray();
     }
 
     protected function buildDefaultQueue(int $userId): array
     {
         $queue = [];
+        $seen  = [];
 
-        $prospects = Prospect::query()
-            ->where('teleprospecteur_id', $userId)
-            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
-            ->whereNull('deleted_at')
-            ->orderByRaw("CASE
-                WHEN statut = 'rpc'       THEN 1
-                WHEN statut = 'rp'        THEN 2
-                WHEN statut = 'std_joint' THEN 3
-                WHEN statut = 'ac'        THEN 4
-                WHEN statut = 'std_nr'    THEN 5
-                WHEN statut = 'cse_nr'    THEN 6
-                ELSE 7 END")
-            ->orderBy('rappel_planifie_at', 'asc')
-            ->get();
+        $query = CampagnePhoning::active()->forUser($userId);
 
-        foreach ($prospects as $p) {
-            $queue[] = ['type' => 'prospect', 'id' => $p->id];
+        // Si une campagne spécifique est demandée, ne charger que celle-là
+        if ($this->currentCampagneId) {
+            $query->where('id', $this->currentCampagneId);
         }
 
-        $artisans = ArtisanProspection::query()
-            ->where('teleprospecteur_id', $userId)
-            ->whereIn('statut_campagne', [
-                StatutCampagneProspection::AC->value,
-                StatutCampagneProspection::NR->value,
-                StatutCampagneProspection::OBJ->value,
-            ])
-            ->get();
+        $campagnes = $query->get();
 
-        foreach ($artisans as $a) {
-            $queue[] = ['type' => 'artisan', 'id' => $a->id];
+        foreach ($campagnes as $campagne) {
+            foreach ($campagne->getContactsQueue() as $contact) {
+                $key = $contact['type'] . '_' . $contact['id'];
+                if (! isset($seen[$key])) {
+                    $seen[$key] = true;
+                    $queue[] = $contact;
+                }
+            }
         }
 
         return $queue;
@@ -192,6 +201,7 @@ class PhoningWorkflow extends Page
 
         $this->currentContact     = $model;
         $this->contactType        = $next['type'];
+        $this->currentCampagneId  = $next['campagne_id'] ?? null;
         $this->currentContactData = $this->buildContactData($model, $next['type']);
         $this->loadScripts();
 
@@ -206,6 +216,7 @@ class PhoningWorkflow extends Page
             'artisan'     => ArtisanProspection::find($id),
             'partenaire'  => ContactPartenaire::find($id),
             'particulier' => ContactParticulier::find($id),
+            'client'      => Client::find($id),
             default       => null,
         };
     }
@@ -272,7 +283,7 @@ class PhoningWorkflow extends Page
                 'notes'          => $model->notes,
                 'id'             => $model->id,
                 'type'           => 'artisan',
-                'adresse_complete'=> null,
+                'adresse_complete' => null,
                 'interlocuteur'  => null,
             ],
             'partenaire' => [
@@ -302,8 +313,23 @@ class PhoningWorkflow extends Page
                 'notes'          => $model->adresse_complete,
                 'id'             => $model->id,
                 'type'           => 'particulier',
-                'adresse_complete'=> $model->adresse_complete ?? null,
+                'adresse_complete' => $model->adresse_complete ?? null,
                 'interlocuteur'  => null,
+            ],
+            'client' => [
+                'nom'             => $model->nom_tiers,
+                'prenom'          => $model->prenom,
+                'telephone'       => $model->telephone,
+                'telephone_alt'   => null,
+                'email'           => $model->email,
+                'statut'          => $model->etat ?? 'Client',
+                'statut_color'    => 'success',
+                'priorite'        => $model->type_tiers ?? 'Standard',
+                'notes'           => $model->entreprise,
+                'adresse_complete' => $model->adresse_complete ?? null,
+                'interlocuteur'   => null,
+                'id'              => $model->id,
+                'type'            => 'client',
             ],
             default => [],
         };
@@ -311,7 +337,7 @@ class PhoningWorkflow extends Page
 
     protected function loadScripts(): void
     {
-        $this->scripts = ScriptAppel::parOngletPourContact($this->contactType);
+        $this->scripts = ScriptAppel::parOngletPourContact($this->contactType, $this->currentCampagneId);
     }
 
     public function getScriptCourant(): ?ScriptAppel
@@ -346,8 +372,12 @@ class PhoningWorkflow extends Page
     {
         if (! $this->currentContact) return;
 
+        $statutsValides = $this->contactType === 'client'
+            ? 'required|in:std_nr,rp,ko'
+            : 'required|in:std_nr,std_joint,cse_nr,rp,rpc,ko';
+
         $this->validate([
-            'statut_resultat' => 'required|in:std_nr,std_joint,cse_nr,rp,rpc,ko',
+            'statut_resultat' => $statutsValides,
             'commentaires'    => 'nullable|string|max:2000',
         ]);
 
@@ -356,8 +386,11 @@ class PhoningWorkflow extends Page
             'partenaire'  => $this->updatePartenaire(),
             'particulier' => $this->updateParticulier(),
             'prospect'    => $this->updateProspect(),
+            'client'      => $this->updateClient(),
             default       => null,
         };
+
+        $this->enregistrerAppel();
 
         Notification::make()
             ->title('Contact enregistré')
@@ -405,13 +438,29 @@ class PhoningWorkflow extends Page
         $note .= match ($this->statut_resultat) {
             'std_joint', 'rp', 'rpc' => "✅ Joint",
             'std_nr', 'cse_nr'        => "❌ Non joignable",
-            'ko'                      => "🚫 KO",
+            'ko'                      => "🚫 K.O",
             default                   => "Appel",
         };
         if ($this->commentaires) $note .= " - {$this->commentaires}";
         $this->currentContact->update([
             'notes' => ($this->currentContact->notes ? $this->currentContact->notes . "\n" : '') . $note,
         ]);
+    }
+
+    protected function updateClient(): void
+    {
+        $note = "[Appel du " . now()->format('d/m/Y H:i') . "] ";
+        $note .= match ($this->statut_resultat) {
+            'std_joint', 'rp', 'rpc' => "✅ Joint",
+            'std_nr', 'cse_nr'        => "❌ Non joignable",
+            'ko'                      => "🚫 KO",
+            default                   => "Appel effectué",
+        };
+        if ($this->commentaires) $note .= " — {$this->commentaires}";
+        // Stocké dans extra_data car Client n'a pas de champ notes dédié
+        $extra = $this->currentContact->extra_data ?? [];
+        $extra['historique_appels'][] = $note;
+        $this->currentContact->update(['extra_data' => $extra]);
     }
 
     protected function updateProspect(): void
@@ -450,8 +499,59 @@ class PhoningWorkflow extends Page
                 $val = $this->rappel_date . ($this->rappel_heure ? ' ' . $this->rappel_heure : '');
                 $dt  = \DateTime::createFromFormat($fmt, $val);
                 if ($dt) $prospect->programmerRappel($dt);
-            } catch (\Exception) {}
+            } catch (\Exception) {
+            }
         }
+    }
+
+    // ── Journal d'appel ───────────────────────────────────────────────
+    protected function enregistrerAppel(): void
+    {
+        if (! $this->currentContact) return;
+
+        $eventResult = match ($this->statut_resultat) {
+            'std_nr', 'cse_nr' => EventResult::NonAbouti,
+            'ko'               => EventResult::Annule,
+            'rp'               => EventResult::Rappel,
+            default            => EventResult::Realise,
+        };
+
+        Appel::create([
+            'appelable_type'       => get_class($this->currentContact),
+            'appelable_id'         => $this->currentContact->id,
+            'user_id'              => Auth::id(),
+            'type'                 => EventType::Appel,
+            'date_heure'           => now(),
+            'resultat'             => $eventResult,
+            'commentaire'          => $this->commentaires ?: null,
+            'phoning_status'       => $this->statut_resultat,
+            'phoning_result'       => $this->getResultLabel(),
+            'phoning_notes'        => $this->commentaires ?: null,
+            'phoning_completed_at' => now(),
+            'phoning_agent_id'     => Auth::id(),
+            'campagne_id'          => $this->currentCampagneId,
+        ]);
+    }
+
+    public function getCallHistory(): array
+    {
+        if (! $this->currentContact) return [];
+
+        return Appel::where('appelable_type', get_class($this->currentContact))
+            ->where('appelable_id', $this->currentContact->id)
+            ->with('user')
+            ->orderBy('date_heure', 'desc')
+            ->limit(15)
+            ->get()
+            ->map(fn($a) => [
+                'date'       => $a->date_heure->format('d/m/Y H:i'),
+                'agent'      => $a->user ? trim("{$a->user->prenom} {$a->user->nom}") : 'Système',
+                'statut'     => $a->phoning_status ?? $a->resultat?->value,
+                'statut_label' => $a->phoning_result ?? $a->resultat?->label() ?? '—',
+                'notes'      => $a->phoning_notes ?? $a->commentaire,
+                'campagne'   => $a->campagne?->nom,
+            ])
+            ->toArray();
     }
 
     // ── Passer ────────────────────────────────────────────────────────
@@ -482,7 +582,7 @@ class PhoningWorkflow extends Page
     {
         return $this->queryTeleprospecteurs()
             ->get()
-            ->map(fn ($u) => [
+            ->map(fn($u) => [
                 'id'           => $u->id,
                 'nom_complet'  => trim("{$u->prenom} {$u->nom}"),
                 'initiales'    => $u->initiales,
@@ -514,7 +614,7 @@ class PhoningWorkflow extends Page
                 ->label('Prioriser la file')
                 ->icon('heroicon-o-queue-list')
                 ->color('warning')
-                ->url(fn () => route('filament.ns-conseil.pages.phoning-back-office')),
+                ->url(fn() => route('filament.ns-conseil.pages.phoning-back-office')),
         ];
     }
 }
