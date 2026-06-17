@@ -12,7 +12,7 @@ enum EventResult: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Realise => 'Réalisé',
             self::Annule => 'Annulé',
             self::Decale => 'Décalé',
@@ -23,7 +23,7 @@ enum EventResult: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Realise => 'success',
             self::Annule => 'danger',
             self::Decale => 'warning',
@@ -34,7 +34,7 @@ enum EventResult: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Realise => 'heroicon-o-check-circle',
             self::Annule => 'heroicon-o-x-circle',
             self::Decale => 'heroicon-o-arrow-right-circle',

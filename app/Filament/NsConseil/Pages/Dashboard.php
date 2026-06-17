@@ -2,21 +2,23 @@
 
 namespace App\Filament\NsConseil\Pages;
 
-use App\Filament\NsConseil\Widgets\StatsOverviewWidget;
+use App\Filament\NsConseil\Widgets\MesPartenairesRecentWidget;
 use App\Filament\NsConseil\Widgets\PipelinePartenairesWidget;
 use App\Filament\NsConseil\Widgets\RappelsDuJourWidget;
-use App\Filament\NsConseil\Widgets\MesPartenairesRecentWidget;
-use Filament\Pages\Dashboard as BaseDashboard;
-use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use App\Filament\NsConseil\Widgets\StatsOverviewWidget;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
+use Filament\Pages\Dashboard as BaseDashboard;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 
 class Dashboard extends BaseDashboard
 {
     use HasFiltersForm;
 
     protected static ?string $navigationIcon = 'heroicon-o-home';
+
     protected static ?string $navigationLabel = 'Tableau de bord';
+
     protected static ?string $title = 'Tableau de bord NS CONSEIL';
 
     public function filtersForm(Form $form): Form

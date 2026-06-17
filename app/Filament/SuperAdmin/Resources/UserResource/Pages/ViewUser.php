@@ -19,13 +19,19 @@ class ViewUser extends ViewRecord
     protected static string $view = 'filament.super-admin.resources.user-resource.pages.view-user';
 
     // ── Propriétés Livewire publiques ────────────────────────────────
-    public bool   $showAssignPanel     = false;
-    public array  $selectedProspectIds = [];
-    public int    $assignLimit         = 40;
-    public string $filterStatut        = '';
-    public string $filterDepartement   = '';
-    public string $filterType          = '';
-    public string $filterSearch        = '';
+    public bool $showAssignPanel = false;
+
+    public array $selectedProspectIds = [];
+
+    public int $assignLimit = 40;
+
+    public string $filterStatut = '';
+
+    public string $filterDepartement = '';
+
+    public string $filterType = '';
+
+    public string $filterSearch = '';
 
     // ── Exposer les données calculées à la vue via getViewData() ─────
     // Filament appelle cette méthode et merge le résultat avec les données
@@ -35,19 +41,19 @@ class ViewUser extends ViewRecord
         $hasProspectRole = $this->computeHasProspectRole();
 
         return [
-            'hasProspectRole'    => $hasProspectRole,
-            'kpis'               => $hasProspectRole ? $this->computeKpis() : [],
-            'prospectsAssignes'  => $hasProspectRole ? $this->computeProspectsAssignes() : [],
-            'nbNonAssignes'      => $hasProspectRole ? $this->computeNonAssignesCount() : 0,
-            'fieldLabel'         => $hasProspectRole ? $this->computeFieldLabel() : '',
+            'hasProspectRole' => $hasProspectRole,
+            'kpis' => $hasProspectRole ? $this->computeKpis() : [],
+            'prospectsAssignes' => $hasProspectRole ? $this->computeProspectsAssignes() : [],
+            'nbNonAssignes' => $hasProspectRole ? $this->computeNonAssignesCount() : 0,
+            'fieldLabel' => $hasProspectRole ? $this->computeFieldLabel() : '',
             // Données du panneau (seulement si ouvert pour éviter les requêtes inutiles)
-            'disponibles'        => ($hasProspectRole && $this->showAssignPanel)
+            'disponibles' => ($hasProspectRole && $this->showAssignPanel)
                 ? $this->computeProspectsNonAssignes()
                 : [],
             'departementsDispos' => ($hasProspectRole && $this->showAssignPanel)
                 ? $this->computeDepartementsDisponibles()
                 : [],
-            'typesDispos'        => ($hasProspectRole && $this->showAssignPanel)
+            'typesDispos' => ($hasProspectRole && $this->showAssignPanel)
                 ? $this->computeTypesDisponibles()
                 : [],
         ];
@@ -99,12 +105,12 @@ class ViewUser extends ViewRecord
 
     public function closeAssignPanel(): void
     {
-        $this->showAssignPanel     = false;
+        $this->showAssignPanel = false;
         $this->selectedProspectIds = [];
-        $this->filterStatut        = '';
-        $this->filterDepartement   = '';
-        $this->filterType          = '';
-        $this->filterSearch        = '';
+        $this->filterStatut = '';
+        $this->filterDepartement = '';
+        $this->filterType = '';
+        $this->filterSearch = '';
     }
 
     public function toggleProspect(int $id): void
@@ -119,6 +125,7 @@ class ViewUser extends ViewRecord
                     ->title("Limite de {$this->assignLimit} atteinte")
                     ->warning()
                     ->send();
+
                 return;
             }
             $this->selectedProspectIds[] = $id;
@@ -144,6 +151,7 @@ class ViewUser extends ViewRecord
     {
         if (empty($this->selectedProspectIds)) {
             Notification::make()->title('Aucun prospect sélectionné')->warning()->send();
+
             return;
         }
 
@@ -216,9 +224,9 @@ class ViewUser extends ViewRecord
         if ($this->filterSearch) {
             $query->where(function ($q) {
                 $q->where('nom', 'like', "%{$this->filterSearch}%")
-                  ->orWhere('ville', 'like', "%{$this->filterSearch}%")
-                  ->orWhere('telephone', 'like', "%{$this->filterSearch}%")
-                  ->orWhere('siret', 'like', "%{$this->filterSearch}%");
+                    ->orWhere('ville', 'like', "%{$this->filterSearch}%")
+                    ->orWhere('telephone', 'like', "%{$this->filterSearch}%")
+                    ->orWhere('siret', 'like', "%{$this->filterSearch}%");
             });
         }
 
@@ -238,22 +246,22 @@ class ViewUser extends ViewRecord
             ->limit(200)
             ->get()
             ->map(fn (Prospect $p) => [
-                'id'              => $p->id,
-                'nom'             => $p->nom,
-                'statut'          => $p->statut->value,
-                'statut_label'    => $p->statut_label,
-                'telephone'       => $p->telephone,
-                'ville'           => $p->ville,
-                'departement'     => $p->departement,
-                'type_pressenti'  => $p->type_pressenti_label,
-                'secteur_activite'=> $p->secteur_activite,
-                'nb_salaries'     => $p->nb_salaries,
+                'id' => $p->id,
+                'nom' => $p->nom,
+                'statut' => $p->statut->value,
+                'statut_label' => $p->statut_label,
+                'telephone' => $p->telephone,
+                'ville' => $p->ville,
+                'departement' => $p->departement,
+                'type_pressenti' => $p->type_pressenti_label,
+                'secteur_activite' => $p->secteur_activite,
+                'nb_salaries' => $p->nb_salaries,
                 'taux_engagement' => $p->taux_engagement,
-                'interlocuteur'   => $p->interlocuteur_complet !== 'Non défini'
+                'interlocuteur' => $p->interlocuteur_complet !== 'Non défini'
                     ? $p->interlocuteur_complet : null,
-                'description'     => $p->description
+                'description' => $p->description
                     ? \Str::limit(strip_tags($p->description), 60) : null,
-                'selected'        => in_array($p->id, $this->selectedProspectIds),
+                'selected' => in_array($p->id, $this->selectedProspectIds),
             ])
             ->toArray();
     }
@@ -261,6 +269,7 @@ class ViewUser extends ViewRecord
     private function computeNonAssignesCount(): int
     {
         $field = $this->computeField();
+
         return Prospect::whereNull($field)
             ->whereNull('deleted_at')
             ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
@@ -285,19 +294,19 @@ class ViewUser extends ViewRecord
                 ELSE 9 END")
             ->get()
             ->map(fn (Prospect $p) => [
-                'id'             => $p->id,
-                'nom'            => $p->nom,
-                'statut'         => $p->statut->value,
-                'statut_label'   => $p->statut_label,
-                'telephone'      => $p->telephone,
-                'ville'          => $p->ville,
-                'departement'    => $p->departement,
+                'id' => $p->id,
+                'nom' => $p->nom,
+                'statut' => $p->statut->value,
+                'statut_label' => $p->statut_label,
+                'telephone' => $p->telephone,
+                'ville' => $p->ville,
+                'departement' => $p->departement,
                 'type_pressenti' => $p->type_pressenti_label,
-                'taux_engagement'=> $p->taux_engagement,
-                'rappel_retard'  => $p->rappel_est_en_retard,
-                'rappel_at'      => $p->rappel_planifie_at?->format('d/m/Y H:i'),
-                'est_qualifie'   => $p->est_qualifie,
-                'est_ko'         => $p->est_ko,
+                'taux_engagement' => $p->taux_engagement,
+                'rappel_retard' => $p->rappel_est_en_retard,
+                'rappel_at' => $p->rappel_planifie_at?->format('d/m/Y H:i'),
+                'est_qualifie' => $p->est_qualifie,
+                'est_ko' => $p->est_ko,
             ])
             ->toArray();
     }
@@ -305,6 +314,7 @@ class ViewUser extends ViewRecord
     private function computeProspectsAssignesCount(): int
     {
         $field = $this->computeField();
+
         return Prospect::where($field, $this->record->id)
             ->whereNull('deleted_at')
             ->count();
@@ -313,35 +323,36 @@ class ViewUser extends ViewRecord
     private function computeKpis(): array
     {
         $field = $this->computeField();
-        $base  = Prospect::where($field, $this->record->id)->whereNull('deleted_at');
+        $base = Prospect::where($field, $this->record->id)->whereNull('deleted_at');
         $userId = $this->record->hasRole(User::ROLE_TELEPROSPECTEUR)
             ? $this->record->id
             : null;
 
         return [
-            'total'    => (clone $base)->count(),
-            'actifs'   => (clone $base)->whereNotIn('statut', [
+            'total' => (clone $base)->count(),
+            'actifs' => (clone $base)->whereNotIn('statut', [
                 ProspectStatut::KO->value,
                 ProspectStatut::QF->value,
             ])->count(),
-            'qualifies'=> (clone $base)->where('statut', ProspectStatut::QF->value)->count(),
-            'ko'       => (clone $base)->where('statut', ProspectStatut::KO->value)->count(),
-            'rp_rpc'   => (clone $base)->whereIn('statut', [
+            'qualifies' => (clone $base)->where('statut', ProspectStatut::QF->value)->count(),
+            'ko' => (clone $base)->where('statut', ProspectStatut::KO->value)->count(),
+            'rp_rpc' => (clone $base)->whereIn('statut', [
                 ProspectStatut::RP->value,
                 ProspectStatut::RPC->value,
             ])->count(),
-            'retards'  => (clone $base)
+            'retards' => (clone $base)
                 ->whereNotNull('rappel_planifie_at')
                 ->where('rappel_planifie_at', '<', now())
                 ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
                 ->count(),
-            'taux_qf'  => Prospect::getTauxQualification($userId),
+            'taux_qf' => Prospect::getTauxQualification($userId),
         ];
     }
 
     private function computeDepartementsDisponibles(): array
     {
         $field = $this->computeField();
+
         return Prospect::whereNull($field)
             ->whereNull('deleted_at')
             ->whereNotNull('departement')
@@ -354,6 +365,7 @@ class ViewUser extends ViewRecord
     private function computeTypesDisponibles(): array
     {
         $field = $this->computeField();
+
         return Prospect::whereNull($field)
             ->whereNull('deleted_at')
             ->whereNotNull('type_pressenti')

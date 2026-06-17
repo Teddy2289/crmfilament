@@ -17,7 +17,7 @@ class RemboursementEmployeur extends Model
 
     protected $casts = [
         'date_demande' => 'date',
-        'montant'      => 'decimal:2',
+        'montant' => 'decimal:2',
     ];
 
     // ── Relations ────────────────────────────────────────────────────

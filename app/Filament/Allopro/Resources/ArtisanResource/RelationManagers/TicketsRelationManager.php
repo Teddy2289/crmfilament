@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\ArtisanResource\RelationManagers;
 
 use App\Enums\NiveauPriorite;
@@ -10,8 +11,10 @@ use Filament\Tables\Table;
 class TicketsRelationManager extends RelationManager
 {
     protected static string $relationship = 'tickets';
+
     protected static ?string $title = 'Tickets d\'intervention';
-    protected static ?string $icon  = 'heroicon-o-ticket';
+
+    protected static ?string $icon = 'heroicon-o-ticket';
 
     public function table(Table $table): Table
     {
@@ -22,22 +25,21 @@ class TicketsRelationManager extends RelationManager
                     ->label('Référence')
                     ->searchable()
                     ->weight('semibold')
-                    ->url(fn($record) => route('filament.allopro.resources.tickets.view', $record)),
+                    ->url(fn ($record) => route('filament.allopro.resources.tickets.view', $record)),
 
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')
-                    ->formatStateUsing(fn($state) => $state->label())
-                    ->color(fn($state) => $state->color()),
+                    ->formatStateUsing(fn ($state) => $state->label())
+                    ->color(fn ($state) => $state->color()),
 
                 Tables\Columns\TextColumn::make('niveau_priorite')
                     ->label('Priorité')
-                    ->formatStateUsing(fn($state) => $state?->label() ?? '—')
-                    ->color(fn($state) => $state?->color() ?? 'gray'),
+                    ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
+                    ->color(fn ($state) => $state?->color() ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('contactParticulier.nom')
                     ->label('Client')
-                    ->formatStateUsing(fn($state, $record) =>
-                        trim($record->contactParticulier?->prenom . ' ' . $record->contactParticulier?->nom) ?: '—'
+                    ->formatStateUsing(fn ($state, $record) => trim($record->contactParticulier?->prenom.' '.$record->contactParticulier?->nom) ?: '—'
                     ),
 
                 Tables\Columns\TextColumn::make('date_creation')
@@ -63,7 +65,7 @@ class TicketsRelationManager extends RelationManager
             ->headerActions([])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->url(fn($record) => route('filament.allopro.resources.tickets.view', $record)),
+                    ->url(fn ($record) => route('filament.allopro.resources.tickets.view', $record)),
             ]);
     }
 }

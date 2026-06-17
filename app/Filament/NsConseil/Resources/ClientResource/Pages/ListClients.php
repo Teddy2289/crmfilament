@@ -35,7 +35,7 @@ class ListClients extends ListRecords
                         ->whereNotNull('email')
                         ->orWhere(function (Builder $q) {
                             $q->where('ne_plus_contacter', false)
-                              ->whereNotNull('telephone');
+                                ->whereNotNull('telephone');
                         })
                         ->count()
                 )

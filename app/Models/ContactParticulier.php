@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\TypeLogement;
 use App\Enums\StatutOccupant;
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\TypeLogement;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class ContactParticulier extends Model
 {
@@ -29,13 +29,13 @@ class ContactParticulier extends Model
     // ── Accesseurs ──────────────────────────────────────────────────
     public function getNomCompletAttribute(): string
     {
-        return trim(($this->prenom ? $this->prenom . ' ' : '') . $this->nom);
+        return trim(($this->prenom ? $this->prenom.' ' : '').$this->nom);
     }
 
     public function getInitialesAttribute(): string
     {
         return strtoupper(
-            ($this->prenom ? substr($this->prenom, 0, 1) : '') .
+            ($this->prenom ? substr($this->prenom, 0, 1) : '').
                 substr($this->nom, 0, 1)
         );
     }
@@ -98,6 +98,7 @@ class ContactParticulier extends Model
     public function getDernierContactAttribute(): ?string
     {
         $dernierTicket = $this->dernier_ticket;
+
         return $dernierTicket?->date_creation?->diffForHumans();
     }
 
@@ -107,7 +108,7 @@ class ContactParticulier extends Model
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
-    public function mettreAJourLogement(TypeLogement $type, StatutOccupant $statut = null): void
+    public function mettreAJourLogement(TypeLogement $type, ?StatutOccupant $statut = null): void
     {
         $data = ['type_logement' => $type];
 

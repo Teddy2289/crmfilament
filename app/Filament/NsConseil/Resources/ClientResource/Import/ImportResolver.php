@@ -19,6 +19,7 @@ class ImportResolver
         foreach (static::$importers as $class) {
             $options[$class] = $class::getName();
         }
+
         return $options;
     }
 
@@ -30,6 +31,7 @@ class ImportResolver
                 return $class;
             }
         }
+
         return null;
     }
 
@@ -73,13 +75,15 @@ class ImportResolver
             $rows = [];
             for ($i = $headerRowIndex + 1; $i < count($data); $i++) {
                 $rawRow = $data[$i];
-                if (empty(array_filter($rawRow, fn($v) => $v !== null && $v !== ''))) {
+                if (empty(array_filter($rawRow, fn ($v) => $v !== null && $v !== ''))) {
                     continue;
                 }
 
                 $row = [];
                 foreach ($headers as $colIdx => $header) {
-                    if ($header === '') continue;
+                    if ($header === '') {
+                        continue;
+                    }
                     $row[$header] = $rawRow[$colIdx] ?? null;
                 }
                 $rows[] = $row;
@@ -88,7 +92,7 @@ class ImportResolver
             if (! empty($rows)) {
                 $result[$sheetName] = [
                     'headers' => $headers,
-                    'rows'    => $rows,
+                    'rows' => $rows,
                 ];
             }
         }
@@ -111,13 +115,14 @@ class ImportResolver
                     'created' => 0,
                     'updated' => 0,
                     'skipped' => 0,
-                    'errors'  => ["Modèle non reconnu pour « {$sheetName} ». Colonnes : {$sample}…"],
+                    'errors' => ["Modèle non reconnu pour « {$sheetName} ». Colonnes : {$sample}…"],
                 ];
+
                 continue;
             }
 
             /** @var BaseClientImporter $importer */
-            $importer = new $class();
+            $importer = new $class;
             $results[$sheetName] = $importer->import($sheetData['rows'], $sheetName);
             $results[$sheetName]['model'] = $class::getName();
         }

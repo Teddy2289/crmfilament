@@ -2,14 +2,15 @@
 
 namespace App\Filament\NsConseil\Resources\ClientResource\RelationManagers;
 
+use App\Models\DossierFormation;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use App\Models\DossierFormation;
 
 class DossierFormationsRelationManager extends RelationManager
 {
     protected static string $relationship = 'dossierFormations';
+
     protected static ?string $recordTitleAttribute = 'intitule_programme';
 
     public function table(Table $table): Table
@@ -42,7 +43,7 @@ class DossierFormationsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('statut_formation')
                     ->label('Statut')
                     ->badge()
-                    ->color(fn($state) => match ($state) {
+                    ->color(fn ($state) => match ($state) {
                         'En attente' => 'gray',
                         'Validé' => 'primary',
                         'En cours' => 'warning',
@@ -59,18 +60,15 @@ class DossierFormationsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->url(fn(DossierFormation $record) =>
-                        route('filament.ns-conseil.resources.dossier-formations.view', ['record' => $record])
+                    ->url(fn (DossierFormation $record) => route('filament.ns-conseil.resources.dossier-formations.view', ['record' => $record])
                     ),
                 Tables\Actions\EditAction::make()
-                    ->url(fn(DossierFormation $record) =>
-                        route('filament.ns-conseil.resources.dossier-formations.edit', ['record' => $record])
+                    ->url(fn (DossierFormation $record) => route('filament.ns-conseil.resources.dossier-formations.edit', ['record' => $record])
                     ),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->url(fn() =>
-                        route('filament.ns-conseil.resources.dossier-formations.create')
+                    ->url(fn () => route('filament.ns-conseil.resources.dossier-formations.create')
                     ),
             ]);
     }

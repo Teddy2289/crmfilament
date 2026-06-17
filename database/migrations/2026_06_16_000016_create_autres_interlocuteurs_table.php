@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('partenaire_id')
-                  ->constrained('partenaires')
-                  ->cascadeOnDelete();
+                ->constrained('partenaires')
+                ->cascadeOnDelete();
 
             // Champ texte libre non normalisable — volontairement non structuré
             $table->text('texte_libre')->nullable();

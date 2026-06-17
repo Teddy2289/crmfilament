@@ -1,10 +1,9 @@
 <?php
 
+use App\Enums\StatutReclamation;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Enums\StatutReclamation;
-
 
 return new class extends Migration
 {

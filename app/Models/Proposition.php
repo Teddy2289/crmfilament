@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class Proposition extends Model
 {
@@ -44,7 +44,7 @@ class Proposition extends Model
     // ── Accesseurs ──────────────────────────────────────────────────
     public function getProgressionAttribute(): float
     {
-        if (!$this->nb_heures_formation || $this->nb_heures_formation === 0) {
+        if (! $this->nb_heures_formation || $this->nb_heures_formation === 0) {
             return 0;
         }
 
@@ -58,7 +58,7 @@ class Proposition extends Model
 
     public function getDureeFormationJoursAttribute(): ?int
     {
-        if (!$this->date_debut_formation || !$this->date_fin_formation) {
+        if (! $this->date_debut_formation || ! $this->date_fin_formation) {
             return null;
         }
 
@@ -67,7 +67,7 @@ class Proposition extends Model
 
     public function getDureeDepuisLancementJoursAttribute(): ?int
     {
-        if (!$this->date_lancement) {
+        if (! $this->date_lancement) {
             return null;
         }
 
@@ -91,7 +91,7 @@ class Proposition extends Model
 
     public function getEstEnRetardAttribute(): bool
     {
-        if (!$this->date_fin_formation || $this->estTerminee || $this->estAnnulee) {
+        if (! $this->date_fin_formation || $this->estTerminee || $this->estAnnulee) {
             return false;
         }
 
@@ -100,7 +100,7 @@ class Proposition extends Model
 
     public function getTauxRemplissageAttribute(): float
     {
-        if (!$this->nb_heures_formation || $this->nb_heures_formation === 0) {
+        if (! $this->nb_heures_formation || $this->nb_heures_formation === 0) {
             return 0;
         }
 
@@ -112,13 +112,22 @@ class Proposition extends Model
 
     public function getStatutFormationAttribute(): string
     {
-        if ($this->estTerminee) return 'Terminée';
-        if ($this->estAnnulee) return 'Annulée';
-        if ($this->estEnRetard) return 'En retard';
-        if ($this->progression > 0) return 'En cours';
+        if ($this->estTerminee) {
+            return 'Terminée';
+        }
+        if ($this->estAnnulee) {
+            return 'Annulée';
+        }
+        if ($this->estEnRetard) {
+            return 'En retard';
+        }
+        if ($this->progression > 0) {
+            return 'En cours';
+        }
         if ($this->date_debut_formation && now()->lt($this->date_debut_formation)) {
             return 'Planifiée';
         }
+
         return 'En attente';
     }
 
@@ -159,7 +168,7 @@ class Proposition extends Model
         ]);
     }
 
-    public function annuler(string $motif = null): void
+    public function annuler(?string $motif = null): void
     {
         $this->update([
             'etat' => 'Annulée',
@@ -170,7 +179,7 @@ class Proposition extends Model
         ]);
     }
 
-    public function certifier(\DateTime $date = null): void
+    public function certifier(?\DateTime $date = null): void
     {
         $this->update([
             'date_certification' => $date ?? now(),
@@ -215,8 +224,8 @@ class Proposition extends Model
     public function scopeEnRetard($query): Builder
     {
         return $query->whereNotIn('etat', ['Terminée', 'Annulée'])
-                     ->where('date_fin_formation', '<', now())
-                     ->where('heures_restantes', '>', 0);
+            ->where('date_fin_formation', '<', now())
+            ->where('heures_restantes', '>', 0);
     }
 
     public function scopeParFormateur($query, string $formateur): Builder
@@ -242,13 +251,13 @@ class Proposition extends Model
     public function scopeNonCertifiees($query): Builder
     {
         return $query->whereNull('date_certification')
-                     ->where('etat', 'Terminée');
+            ->where('etat', 'Terminée');
     }
 
     public function scopeDuMois($query): Builder
     {
         return $query->whereMonth('date_lancement', now()->month)
-                     ->whereYear('date_lancement', now()->year);
+            ->whereYear('date_lancement', now()->year);
     }
 
     // ── Méthodes statiques KPIs ─────────────────────────────────────
@@ -271,7 +280,9 @@ class Proposition extends Model
     public static function getTauxCompletion(): float
     {
         $total = static::count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         return round((static::terminees()->count() / $total) * 100, 1);
     }

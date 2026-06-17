@@ -1,6 +1,8 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\TicketResource\RelationManagers;
 
+use App\Enums\TicketStatut;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -10,8 +12,10 @@ use Filament\Tables\Table;
 class RapportsSatisfactionRelationManager extends RelationManager
 {
     protected static string $relationship = 'rapportsSatisfaction';
+
     protected static ?string $title = 'Rapport satisfaction P6';
-    protected static ?string $icon  = 'heroicon-o-star';
+
+    protected static ?string $icon = 'heroicon-o-star';
 
     public function form(Form $form): Form
     {
@@ -28,9 +32,9 @@ class RapportsSatisfactionRelationManager extends RelationManager
                 ->required()
                 ->native(false)
                 ->live()
-                ->helperText(fn($state) => match(true) {
-                    $state >= 9  => '😊 Promoteur',
-                    $state >= 7  => '😐 Passif',
+                ->helperText(fn ($state) => match (true) {
+                    $state >= 9 => '😊 Promoteur',
+                    $state >= 7 => '😐 Passif',
                     $state !== null => '😞 Détracteur — ouvrira une réclamation P8',
                     default => '',
                 }),
@@ -38,9 +42,9 @@ class RapportsSatisfactionRelationManager extends RelationManager
             Forms\Components\Select::make('statut_cloture')
                 ->label('Statut de clôture')
                 ->options([
-                    'satisfait'            => 'Satisfait',
-                    'suivi_qualite_requis'  => 'Suivi qualité requis',
-                    'reclamation_ouverte'   => 'Réclamation ouverte',
+                    'satisfait' => 'Satisfait',
+                    'suivi_qualite_requis' => 'Suivi qualité requis',
+                    'reclamation_ouverte' => 'Réclamation ouverte',
                 ])
                 ->required()
                 ->native(false),
@@ -63,21 +67,21 @@ class RapportsSatisfactionRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('note_nps')
                     ->label('NPS')
                     ->badge()
-                    ->formatStateUsing(fn($state) => $state . ' / 10')
-                    ->color(fn($state) => match(true) {
+                    ->formatStateUsing(fn ($state) => $state.' / 10')
+                    ->color(fn ($state) => match (true) {
                         $state >= 9 => 'success',
                         $state >= 7 => 'warning',
-                        default     => 'danger',
+                        default => 'danger',
                     }),
 
                 Tables\Columns\TextColumn::make('statut_cloture')
                     ->label('Statut')
                     ->badge()
-                    ->color(fn($state) => match($state) {
-                        'satisfait'            => 'success',
+                    ->color(fn ($state) => match ($state) {
+                        'satisfait' => 'success',
                         'suivi_qualite_requis' => 'warning',
-                        'reclamation_ouverte'  => 'danger',
-                        default                => 'gray',
+                        'reclamation_ouverte' => 'danger',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\IconColumn::make('feedback_artisan')
@@ -96,8 +100,7 @@ class RapportsSatisfactionRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Ajouter rapport P6')
-                    ->visible(fn() =>
-                        $this->getOwnerRecord()->statut === \App\Enums\TicketStatut::InterventionRealisee
+                    ->visible(fn () => $this->getOwnerRecord()->statut === TicketStatut::InterventionRealisee
                     ),
             ])
             ->actions([

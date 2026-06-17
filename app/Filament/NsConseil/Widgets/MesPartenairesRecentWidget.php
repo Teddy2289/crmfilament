@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Widgets;
 
 use App\Enums\OrganizationStatus;
+use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Models\Partenaire;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -11,7 +12,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class MesPartenairesRecentWidget extends BaseWidget
 {
     protected static ?string $heading = '🏢 Derniers partenaires modifiés';
+
     protected static ?int $sort = 4;
+
     protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
@@ -54,7 +57,7 @@ class MesPartenairesRecentWidget extends BaseWidget
                 Tables\Actions\Action::make('voir')
                     ->label('Voir')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => \App\Filament\NsConseil\Resources\PartenaireResource::getUrl('view', ['record' => $record])),
+                    ->url(fn ($record) => PartenaireResource::getUrl('view', ['record' => $record])),
             ])
             ->paginated(false);
     }

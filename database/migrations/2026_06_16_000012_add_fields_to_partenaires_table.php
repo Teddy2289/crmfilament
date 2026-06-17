@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Complète la table partenaires avec les colonnes MEA et corrige les types.
@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('partenaires', function (Blueprint $table) {
             // prospect_id — ajouté ici car prospects n'existait pas encore lors du create
-            if (!Schema::hasColumn('partenaires', 'prospect_id')) {
+            if (! Schema::hasColumn('partenaires', 'prospect_id')) {
                 $table->foreignId('prospect_id')
                     ->nullable()
                     ->constrained('prospects')
@@ -24,15 +24,15 @@ return new class extends Migration
             }
 
             // possibilite_permanence et replicable (TEXT, pas VARCHAR)
-            if (!Schema::hasColumn('partenaires', 'possibilite_permanence')) {
+            if (! Schema::hasColumn('partenaires', 'possibilite_permanence')) {
                 $table->string('possibilite_permanence')->nullable();
             }
-            if (!Schema::hasColumn('partenaires', 'replicable')) {
+            if (! Schema::hasColumn('partenaires', 'replicable')) {
                 $table->text('replicable')->nullable();
             }
 
             // commentaire_import
-            if (!Schema::hasColumn('partenaires', 'commentaire_import')) {
+            if (! Schema::hasColumn('partenaires', 'commentaire_import')) {
                 $table->text('commentaire_import')->nullable();
             }
         });

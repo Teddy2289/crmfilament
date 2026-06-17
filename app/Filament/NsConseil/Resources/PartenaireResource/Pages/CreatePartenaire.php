@@ -18,6 +18,7 @@ class CreatePartenaire extends CreateRecord
     {
         // Forcer date_modification_statut à la création
         $data['date_modification_statut'] = now();
+
         return $data;
     }
 }

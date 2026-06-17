@@ -21,20 +21,20 @@ class DiagnosticSeeder extends Seeder
 
         // ── 2. Tous les rôles présents ──────────────────────────────
         $tousLesRoles = Role::pluck('name')->toArray();
-        $this->command->info('Rôles en base : ' . implode(', ', $tousLesRoles));
+        $this->command->info('Rôles en base : '.implode(', ', $tousLesRoles));
 
         // ── 3. Vérifier Alex FLOREK ─────────────────────────────────
         $alex = User::where('email', 'a.florek@ns-conseil.com')->first();
 
-        if (!$alex) {
+        if (! $alex) {
             $this->command->error('❌ Alex FLOREK introuvable — recréation...');
             $alex = User::create([
-                'nom'        => 'FLOREK',
-                'prenom'     => 'Alex',
-                'email'      => 'a.florek@ns-conseil.com',
-                'password'   => Hash::make('changeme123'),
-                'secteur'    => 'National',
-                'actif'      => true,
+                'nom' => 'FLOREK',
+                'prenom' => 'Alex',
+                'email' => 'a.florek@ns-conseil.com',
+                'password' => Hash::make('changeme123'),
+                'secteur' => 'National',
+                'actif' => true,
                 'role_cache' => 'administrateur',
             ]);
         } else {
@@ -43,13 +43,13 @@ class DiagnosticSeeder extends Seeder
 
         // ── 4. Forcer le mot de passe ───────────────────────────────
         $alex->update([
-            'password'   => Hash::make('changeme123'),
-            'actif'      => true,
+            'password' => Hash::make('changeme123'),
+            'actif' => true,
             'role_cache' => 'administrateur',
         ]);
         $alex->syncRoles(['administrateur']);
         $this->command->line("  ✓ Mot de passe réinitialisé → 'changeme123'");
-        $this->command->line("  ✓ Rôle administrateur assigné");
+        $this->command->line('  ✓ Rôle administrateur assigné');
 
         // ── 5. Résumé de tous les users ─────────────────────────────
         $this->command->info('');

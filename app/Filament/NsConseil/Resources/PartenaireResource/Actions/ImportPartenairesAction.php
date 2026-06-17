@@ -30,7 +30,7 @@ class ImportPartenairesAction extends Action
             ->modalHeading('Importer depuis Excel — feuille « MAJ »')
             ->modalDescription(
                 'Seule la feuille "MAJ" est importée. '
-                . 'Les valeurs ci-dessous sont utilisées en fallback si une colonne est absente ou vide.'
+                .'Les valeurs ci-dessous sont utilisées en fallback si une colonne est absente ou vide.'
             )
             ->modalWidth('xl')
             ->form([
@@ -88,13 +88,13 @@ class ImportPartenairesAction extends Action
                         Forms\Components\Select::make('nomenclature_interne')
                             ->label('Nomenclature interne')
                             ->options([
-                                'CSE_PME'       => 'CSE PME (< 50 salariés)',
-                                'CSE_ETI'       => 'CSE ETI (50–299 salariés)',
-                                'CSE_GE'        => 'CSE Grande entreprise (300+)',
-                                'SYND_BRANCHE'  => 'Syndicat de branche',
+                                'CSE_PME' => 'CSE PME (< 50 salariés)',
+                                'CSE_ETI' => 'CSE ETI (50–299 salariés)',
+                                'CSE_GE' => 'CSE Grande entreprise (300+)',
+                                'SYND_BRANCHE' => 'Syndicat de branche',
                                 'SYND_INTERPRO' => 'Syndicat interprofessionnel',
-                                'ENT_DIRECTE'   => 'Entreprise directe',
-                                'ASSOC'         => 'Association',
+                                'ENT_DIRECTE' => 'Entreprise directe',
+                                'ASSOC' => 'Association',
                             ])
                             ->nullable(),
                     ])
@@ -113,23 +113,25 @@ class ImportPartenairesAction extends Action
                         ->body('Le fichier uploadé est introuvable ou dans un format inattendu.')
                         ->danger()
                         ->send();
+
                     return;
                 }
 
                 if (! $resolvedPath || ! file_exists($resolvedPath)) {
                     Notification::make()
                         ->title('Fichier introuvable')
-                        ->body('Chemin résolu : ' . ($resolvedPath ?? 'null'))
+                        ->body('Chemin résolu : '.($resolvedPath ?? 'null'))
                         ->danger()
                         ->send();
+
                     return;
                 }
 
                 $defaults = array_filter([
-                    'entite_id'            => $data['entite_id'] ?? null,
-                    'type'                 => $data['type'],
-                    'statut'               => $data['statut'],
-                    'conseiller_id'        => $data['conseiller_id'] ?? null,
+                    'entite_id' => $data['entite_id'] ?? null,
+                    'type' => $data['type'],
+                    'statut' => $data['statut'],
+                    'conseiller_id' => $data['conseiller_id'] ?? null,
                     'nomenclature_interne' => $data['nomenclature_interne'] ?? null,
                 ], fn ($v) => $v !== null);
 
@@ -141,6 +143,7 @@ class ImportPartenairesAction extends Action
                         ->body($e->getMessage())
                         ->danger()
                         ->send();
+
                     return;
                 }
 
@@ -148,22 +151,22 @@ class ImportPartenairesAction extends Action
                     ->title('Import terminé — feuille MAJ')
                     ->body(
                         "Créés : {$result['created']} | "
-                        . "Mis à jour : {$result['updated']} | "
-                        . "Ignorés : {$result['skipped']}"
+                        ."Mis à jour : {$result['updated']} | "
+                        ."Ignorés : {$result['skipped']}"
                     )
                     ->success()
                     ->send();
 
                 if (! empty($result['errors'])) {
-                    $preview   = array_slice($result['errors'], 0, 5);
-                    $more      = count($result['errors']) - 5;
+                    $preview = array_slice($result['errors'], 0, 5);
+                    $more = count($result['errors']) - 5;
                     $errorBody = implode("\n", $preview);
                     if ($more > 0) {
                         $errorBody .= "\n… et {$more} autre(s) erreur(s).";
                     }
 
                     Notification::make()
-                        ->title(count($result['errors']) . ' ligne(s) en erreur')
+                        ->title(count($result['errors']).' ligne(s) en erreur')
                         ->body($errorBody)
                         ->warning()
                         ->persistent()

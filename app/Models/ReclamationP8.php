@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use App\Enums\StatutReclamation;
-use App\Enums\TicketStatut;
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 class ReclamationP8 extends Model
 {
@@ -53,6 +52,7 @@ class ReclamationP8 extends Model
         if ($this->estCloturee()) {
             return 0;
         }
+
         return (int) now()->startOfDay()->diffInDays($this->date_resolution_cible, false);
     }
 
@@ -65,7 +65,7 @@ class ReclamationP8 extends Model
         }
 
         if ($jours < 0) {
-            return abs($jours) . ' jour(s) de retard';
+            return abs($jours).' jour(s) de retard';
         }
 
         if ($jours === 0) {
@@ -82,9 +82,10 @@ class ReclamationP8 extends Model
 
     public function getDelaiResolutionJoursAttribute(): ?int
     {
-        if (!$this->date_resolution_effective) {
+        if (! $this->date_resolution_effective) {
             return null;
         }
+
         return $this->date_ouverture->diffInDays($this->date_resolution_effective);
     }
 
@@ -106,7 +107,7 @@ class ReclamationP8 extends Model
 
     public function getEstDansLesTempsAttribute(): bool
     {
-        return !$this->estCloturee() && $this->delai_restant_jours >= 0;
+        return ! $this->estCloturee() && $this->delai_restant_jours >= 0;
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
@@ -148,7 +149,7 @@ class ReclamationP8 extends Model
 
     public function changerStatut(StatutReclamation $nouveauStatut, ?string $notes = null): void
     {
-        if (!$this->peutPasserA($nouveauStatut)) {
+        if (! $this->peutPasserA($nouveauStatut)) {
             throw new \Exception(
                 "Transition impossible de {$this->statut->value} à {$nouveauStatut->value}"
             );
@@ -158,12 +159,12 @@ class ReclamationP8 extends Model
 
         if ($notes) {
             $data['notes_resolution'] = $this->notes_resolution
-                ? $this->notes_resolution . "\n[" . now()->format('d/m/Y H:i') . "] {$notes}"
+                ? $this->notes_resolution."\n[".now()->format('d/m/Y H:i')."] {$notes}"
                 : $notes;
         }
 
         // Si clôture, enregistrer la date
-        if ($nouveauStatut === StatutReclamation::Cloturee && !$this->date_resolution_effective) {
+        if ($nouveauStatut === StatutReclamation::Cloturee && ! $this->date_resolution_effective) {
             $data['date_resolution_effective'] = now();
         }
 
@@ -172,8 +173,8 @@ class ReclamationP8 extends Model
 
     public function validerParSuperviseur(User $superviseur, ?string $notes = null): void
     {
-        if (!$this->estEnTraitement()) {
-            throw new \Exception("La réclamation doit être en traitement pour être validée");
+        if (! $this->estEnTraitement()) {
+            throw new \Exception('La réclamation doit être en traitement pour être validée');
         }
 
         $data = [
@@ -184,8 +185,8 @@ class ReclamationP8 extends Model
 
         if ($notes) {
             $data['notes_resolution'] = $this->notes_resolution
-                ? $this->notes_resolution . "\n[Superviseur - " . now()->format('d/m/Y H:i') . "] {$notes}"
-                : "[Superviseur - " . now()->format('d/m/Y H:i') . "] {$notes}";
+                ? $this->notes_resolution."\n[Superviseur - ".now()->format('d/m/Y H:i')."] {$notes}"
+                : '[Superviseur - '.now()->format('d/m/Y H:i')."] {$notes}";
         }
 
         $this->update($data);
@@ -197,7 +198,7 @@ class ReclamationP8 extends Model
         $this->changerStatut(StatutReclamation::Cloturee, $notes);
 
         if ($this->ticket) {
-            $this->ticket->cloturer("Réclamation P8 clôturée");
+            $this->ticket->cloturer('Réclamation P8 clôturée');
         }
     }
 
@@ -214,6 +215,7 @@ class ReclamationP8 extends Model
 
         if ($this->estEnRetard()) {
             $joursRetard = abs($this->delai_restant_jours);
+
             return "En retard de {$joursRetard} jour(s)";
         }
 
@@ -292,7 +294,7 @@ class ReclamationP8 extends Model
             static::cloturees()
                 ->whereNotNull('date_resolution_effective')
                 ->get()
-                ->avg(fn($r) => $r->date_ouverture->diffInDays($r->date_resolution_effective)) ?? 0,
+                ->avg(fn ($r) => $r->date_ouverture->diffInDays($r->date_resolution_effective)) ?? 0,
             1
         );
     }
@@ -300,7 +302,9 @@ class ReclamationP8 extends Model
     public static function getTauxResolutionSLA(): float
     {
         $total = static::cloturees()->count();
-        if ($total === 0) return 100;
+        if ($total === 0) {
+            return 100;
+        }
 
         $dansLesTemps = static::cloturees()
             ->whereNotNull('date_resolution_effective')
@@ -318,7 +322,7 @@ class ReclamationP8 extends Model
 
         while ($joursAjoutes < 5) {
             $date->addDay();
-            if (!$date->isWeekend()) {
+            if (! $date->isWeekend()) {
                 $joursAjoutes++;
             }
         }
@@ -331,17 +335,17 @@ class ReclamationP8 extends Model
     {
         static::creating(function (ReclamationP8 $reclamation) {
             // ✅ Du modèle 2 : Dates auto
-            if (!$reclamation->date_ouverture) {
+            if (! $reclamation->date_ouverture) {
                 $reclamation->date_ouverture = now();
             }
 
-            if (!$reclamation->date_resolution_cible) {
+            if (! $reclamation->date_resolution_cible) {
                 $reclamation->date_resolution_cible = static::calculerDateResolutionCible(
                     $reclamation->date_ouverture
                 );
             }
 
-            if (!$reclamation->statut) {
+            if (! $reclamation->statut) {
                 $reclamation->statut = StatutReclamation::Ouverte;
             }
         });
@@ -351,7 +355,7 @@ class ReclamationP8 extends Model
             if (
                 $reclamation->isDirty('statut') &&
                 $reclamation->statut === StatutReclamation::Cloturee &&
-                !$reclamation->date_resolution_effective
+                ! $reclamation->date_resolution_effective
             ) {
                 $reclamation->date_resolution_effective = now();
             }
@@ -382,9 +386,9 @@ class ReclamationP8 extends Model
                     ->exists();
 
                 // ── Dans booted() updating ──
-                if (!$autresActives) {
+                if (! $autresActives) {
                     $reclamation->ticket->cloturer(
-                        "Toutes les réclamations P8 sont clôturées"
+                        'Toutes les réclamations P8 sont clôturées'
                     );
                 }
             }

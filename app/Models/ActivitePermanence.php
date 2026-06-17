@@ -26,11 +26,11 @@ class ActivitePermanence extends Model
 
     protected $casts = [
         'derniere_permanence' => 'date',
-        'nbre_2025'           => 'integer',
-        'nbre_2026'           => 'integer',
-        'prc_2026'            => 'integer',
-        'rdv_physique'        => 'integer',
-        'rdv_telephonique'    => 'integer',
+        'nbre_2025' => 'integer',
+        'nbre_2026' => 'integer',
+        'prc_2026' => 'integer',
+        'rdv_physique' => 'integer',
+        'rdv_telephonique' => 'integer',
     ];
 
     public function partenaire()

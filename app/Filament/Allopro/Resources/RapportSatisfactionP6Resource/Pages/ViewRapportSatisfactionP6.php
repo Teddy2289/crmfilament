@@ -1,12 +1,12 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\RapportSatisfactionP6Resource\Pages;
 
 use App\Filament\Allopro\Resources\RapportSatisfactionP6Resource;
-
 use Filament\Actions;
 use Filament\Notifications\Notification;
-
 use Filament\Resources\Pages\ViewRecord;
+
 class ViewRapportSatisfactionP6 extends ViewRecord
 {
     protected static string $resource = RapportSatisfactionP6Resource::class;
@@ -18,7 +18,7 @@ class ViewRapportSatisfactionP6 extends ViewRecord
                 ->label('Marquer feedback transmis')
                 ->icon('heroicon-o-chat-bubble-left-right')
                 ->color('info')
-                ->visible(fn() => !$this->record->feedback_artisan)
+                ->visible(fn () => ! $this->record->feedback_artisan)
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->record->update(['feedback_artisan' => true]);
@@ -30,7 +30,7 @@ class ViewRapportSatisfactionP6 extends ViewRecord
                 ->label('Ouvrir P8 manuellement')
                 ->icon('heroicon-o-exclamation-triangle')
                 ->color('danger')
-                ->visible(fn() => $this->record->declencheP8() && !$this->record->reclamation()->exists())
+                ->visible(fn () => $this->record->declencheP8() && ! $this->record->reclamation()->exists())
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->record->ouvrirReclamationP8();

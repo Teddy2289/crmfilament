@@ -11,7 +11,7 @@ enum StatutReclamation: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Ouverte => 'Ouverte',
             self::EnTraitement => 'En traitement',
             self::ValideeSuperviseur => 'Validée superviseur',
@@ -21,7 +21,7 @@ enum StatutReclamation: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Ouverte => 'danger',
             self::EnTraitement => 'warning',
             self::ValideeSuperviseur => 'info',
@@ -31,7 +31,7 @@ enum StatutReclamation: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Ouverte => 'heroicon-o-exclamation-circle',
             self::EnTraitement => 'heroicon-o-cog-6-tooth',
             self::ValideeSuperviseur => 'heroicon-o-check-badge',
@@ -46,7 +46,7 @@ enum StatutReclamation: string
 
     public function statutsSuivants(): array
     {
-        return match($this) {
+        return match ($this) {
             self::Ouverte => [self::EnTraitement],
             self::EnTraitement => [self::ValideeSuperviseur, self::Cloturee],
             self::ValideeSuperviseur => [self::Cloturee],

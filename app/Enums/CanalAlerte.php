@@ -15,7 +15,7 @@ enum CanalAlerte: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::SMS => 'info',
             self::Appel => 'success',
             self::LesDeux => 'primary',
@@ -24,7 +24,7 @@ enum CanalAlerte: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::SMS => 'heroicon-o-chat-bubble-left',
             self::Appel => 'heroicon-o-phone',
             self::LesDeux => 'heroicon-o-bell-alert',

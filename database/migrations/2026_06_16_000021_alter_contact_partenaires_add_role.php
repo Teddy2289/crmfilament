@@ -13,19 +13,19 @@ return new class extends Migration
             // ── Rôle discriminant ─────────────────────────────────────────
             // Permet de retrouver directement Secrétaire / Trésorier / DS
             // sans parser la colonne `fonction` (texte libre)
-            if (!Schema::hasColumn('contact_partenaires', 'role')) {
+            if (! Schema::hasColumn('contact_partenaires', 'role')) {
                 $table->enum('role', ['SECRETAIRE', 'TRESORIER', 'SYNDICAT_DS', 'AUTRE'])
-                      ->default('AUTRE')
-                      ->after('fonction')
-                      ->comment('Rôle structuré issu des blocs distincts du fichier Excel');
+                    ->default('AUTRE')
+                    ->after('fonction')
+                    ->comment('Rôle structuré issu des blocs distincts du fichier Excel');
             }
 
             // ── Syndicat associé au DS ────────────────────────────────────
-            if (!Schema::hasColumn('contact_partenaires', 'nom_syndicat')) {
+            if (! Schema::hasColumn('contact_partenaires', 'nom_syndicat')) {
                 $table->string('nom_syndicat')
-                      ->nullable()
-                      ->after('role')
-                      ->comment('Nom du syndicat — renseigné uniquement si role = SYNDICAT_DS');
+                    ->nullable()
+                    ->after('role')
+                    ->comment('Nom du syndicat — renseigné uniquement si role = SYNDICAT_DS');
             }
         });
     }

@@ -2,16 +2,17 @@
 
 namespace App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers;
 
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Carbon\Carbon;
 
 class PlanningRelationManager extends RelationManager
 {
     protected static string $relationship = 'planning';
+
     protected static ?string $recordTitleAttribute = 'dossier_id';
 
     public function form(Form $form): Form
@@ -58,8 +59,10 @@ class PlanningRelationManager extends RelationManager
                             $fin = $get('date_fin_theorique');
                             if ($debut && $fin) {
                                 $diff = Carbon::parse($debut)->diffInDays(Carbon::parse($fin));
+
                                 return "{$diff} jours";
                             }
+
                             return 'Non calculée';
                         }),
 
@@ -70,10 +73,16 @@ class PlanningRelationManager extends RelationManager
                             $fin = $get('date_fin_theorique');
                             if ($debut && $fin) {
                                 $now = Carbon::now();
-                                if ($now->lt(Carbon::parse($debut))) return '🔵 À venir';
-                                if ($now->between(Carbon::parse($debut), Carbon::parse($fin))) return '🟡 En cours';
+                                if ($now->lt(Carbon::parse($debut))) {
+                                    return '🔵 À venir';
+                                }
+                                if ($now->between(Carbon::parse($debut), Carbon::parse($fin))) {
+                                    return '🟡 En cours';
+                                }
+
                                 return '✅ Terminé';
                             }
+
                             return 'Non défini';
                         }),
                 ])->columns(2),
@@ -120,6 +129,7 @@ class PlanningRelationManager extends RelationManager
                             return Carbon::parse($record->date_debut)
                                 ->diffInDays(Carbon::parse($record->date_fin_theorique));
                         }
+
                         return null;
                     })
                     ->numeric(0)
@@ -132,6 +142,7 @@ class PlanningRelationManager extends RelationManager
                         if ($record->date_debut && $record->date_fin_theorique) {
                             return $now->between(Carbon::parse($record->date_debut), Carbon::parse($record->date_fin_theorique));
                         }
+
                         return false;
                     })
                     ->boolean()
@@ -150,6 +161,7 @@ class PlanningRelationManager extends RelationManager
                     ->label('En cours')
                     ->query(function ($query) {
                         $now = Carbon::now();
+
                         return $query->where('date_debut', '<=', $now)
                             ->where('date_fin_theorique', '>=', $now);
                     }),

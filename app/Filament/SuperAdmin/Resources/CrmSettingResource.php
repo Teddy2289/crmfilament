@@ -16,11 +16,17 @@ use Filament\Tables\Table;
 class CrmSettingResource extends Resource
 {
     protected static ?string $model = CrmSetting::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
+
     protected static ?string $navigationLabel = 'Paramètres CRM';
+
     protected static ?string $navigationGroup = 'Paramétrage CRM';
+
     protected static ?int $navigationSort = 2;
+
     protected static ?string $modelLabel = 'Paramètre';
+
     protected static ?string $pluralModelLabel = 'Paramètres CRM';
 
     public static function form(Form $form): Form

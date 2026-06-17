@@ -2,8 +2,8 @@
 
 namespace App\Filament\NsConseil\Resources\ProspectResource\RelationManagers;
 
-use App\Enums\RendezVousType;
 use App\Enums\RendezVousStatut;
+use App\Enums\RendezVousType;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -13,7 +13,9 @@ use Filament\Tables\Table;
 class RendezVousRelationManager extends RelationManager
 {
     protected static string $relationship = 'rendezVous';
+
     protected static ?string $title = 'Rendez-vous';
+
     protected static ?string $icon = 'heroicon-o-calendar';
 
     public function form(Form $form): Form

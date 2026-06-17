@@ -2,16 +2,17 @@
 
 namespace App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers;
 
+use App\Models\HeuresFormation;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use App\Models\HeuresFormation;
 
 class HeuresRelationManager extends RelationManager
 {
     protected static string $relationship = 'heures';
+
     protected static ?string $recordTitleAttribute = 'dossier_id';
 
     public function form(Form $form): Form
@@ -117,8 +118,7 @@ class HeuresRelationManager extends RelationManager
                     ->numeric(2)
                     ->suffix(' h')
                     ->sortable()
-                    ->color(fn($state, HeuresFormation $record) =>
-                        $state > $record->total_heures ? 'danger' : 'success'
+                    ->color(fn ($state, HeuresFormation $record) => $state > $record->total_heures ? 'danger' : 'success'
                     ),
 
                 Tables\Columns\TextColumn::make('heures_restantes')
@@ -126,7 +126,7 @@ class HeuresRelationManager extends RelationManager
                     ->numeric(2)
                     ->suffix(' h')
                     ->sortable()
-                    ->color(fn($state) => $state > 0 ? 'warning' : 'success'),
+                    ->color(fn ($state) => $state > 0 ? 'warning' : 'success'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Créé le')
@@ -138,7 +138,7 @@ class HeuresRelationManager extends RelationManager
             ->filters([
                 Tables\Filters\Filter::make('heures_restantes')
                     ->label('Heures restantes > 0')
-                    ->query(fn($query) => $query->where('heures_restantes', '>', 0)),
+                    ->query(fn ($query) => $query->where('heures_restantes', '>', 0)),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()

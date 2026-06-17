@@ -12,10 +12,15 @@ use Filament\Pages\Page;
 class AircallDashboard extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-phone';
+
     protected static ?string $navigationLabel = 'Dashboard Aircall';
+
     protected static ?string $navigationGroup = 'Activités';
+
     protected static ?int $navigationSort = 1;
+
     protected static ?string $title = 'Dashboard Aircall';
+
     protected static string $view = 'filament.ns-conseil.pages.aircall-dashboard';
 
     public bool $connexionOk = false;

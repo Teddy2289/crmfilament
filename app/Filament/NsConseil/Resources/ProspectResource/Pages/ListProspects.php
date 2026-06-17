@@ -7,8 +7,8 @@ use App\Filament\NsConseil\Resources\ProspectResource;
 use App\Filament\NsConseil\Resources\ProspectResource\Actions\ImportProspectsAction;
 use App\Models\Prospect;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
+use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListProspects extends ListRecords
@@ -56,7 +56,7 @@ class ListProspects extends ListRecords
                 )
                 ->badgeColor($statut->color())
                 ->modifyQueryUsing(
-                    fn(Builder $query) => $query->where('statut', $statut->value)
+                    fn (Builder $query) => $query->where('statut', $statut->value)
                 );
         }
 

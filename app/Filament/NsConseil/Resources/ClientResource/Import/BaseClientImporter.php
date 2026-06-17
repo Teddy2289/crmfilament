@@ -10,13 +10,18 @@ use App\Models\HeuresFormation;
 use App\Models\Parrain;
 use App\Models\PlanningFormation;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 abstract class BaseClientImporter
 {
-    protected array $errors  = [];
-    protected int   $created = 0;
-    protected int   $updated = 0;
-    protected int   $skipped = 0;
+    protected array $errors = [];
+
+    protected int $created = 0;
+
+    protected int $updated = 0;
+
+    protected int $skipped = 0;
 
     // ── Cache par requête pour éviter N+1 sur firstOrCreate ────────────────
     /** @var array<string, int|null> */
@@ -45,12 +50,13 @@ abstract class BaseClientImporter
 
     public static function matches(array $fileColumns): bool
     {
-        $fileColumns = array_map(fn($c) => mb_strtolower(trim((string) $c)), $fileColumns);
+        $fileColumns = array_map(fn ($c) => mb_strtolower(trim((string) $c)), $fileColumns);
         foreach (static::getRequiredColumns() as $required) {
             if (! in_array(mb_strtolower(trim($required)), $fileColumns)) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -62,14 +68,15 @@ abstract class BaseClientImporter
             try {
                 $mapped = $this->mapRow($row);
 
-                $clientData  = $mapped['client']   ?? [];
-                $dossierData = $mapped['dossier']  ?? [];
-                $heuresData  = $mapped['heures']   ?? [];
+                $clientData = $mapped['client'] ?? [];
+                $dossierData = $mapped['dossier'] ?? [];
+                $heuresData = $mapped['heures'] ?? [];
                 $planningData = $mapped['planning'] ?? [];
-                $parrainData = $mapped['parrain']  ?? [];
+                $parrainData = $mapped['parrain'] ?? [];
 
                 if (empty($clientData['nom_tiers'])) {
                     $this->skipped++;
+
                     continue;
                 }
 
@@ -81,15 +88,17 @@ abstract class BaseClientImporter
                 // ── 2. DossierFormation ──────────────────────────────────
                 // Vérifier que le dossier a bien un ref_client
                 if (empty($dossierData['ref_client'])) {
-                    $this->errors[] = "Ligne " . ($index + 2) . " : ref_client manquant pour le dossier";
+                    $this->errors[] = 'Ligne '.($index + 2).' : ref_client manquant pour le dossier';
+
                     continue;
                 }
 
                 $dossier = $this->upsertDossier($client, $dossierData);
 
                 // ⚠️ Vérification CRITIQUE : Le dossier doit avoir un ID
-                if (!$dossier || !$dossier->id) {
-                    $this->errors[] = "Ligne " . ($index + 2) . " : impossible de récupérer l'ID du dossier";
+                if (! $dossier || ! $dossier->id) {
+                    $this->errors[] = 'Ligne '.($index + 2)." : impossible de récupérer l'ID du dossier";
+
                     continue;
                 }
 
@@ -103,7 +112,7 @@ abstract class BaseClientImporter
                     $this->upsertPlanning($dossier->id, $planningData);
                 }
             } catch (\Throwable $e) {
-                $this->errors[] = 'Ligne ' . ($index + 2) . ' : ' . $e->getMessage();
+                $this->errors[] = 'Ligne '.($index + 2).' : '.$e->getMessage();
             }
         }
 
@@ -170,7 +179,7 @@ abstract class BaseClientImporter
 
         // 🔴 Vérifier que 'ref_client' existe avant updateOrCreate
         if (empty($dossierData['ref_client'])) {
-            throw new \Exception("Impossible de créer/mettre à jour le dossier : ref_client manquant");
+            throw new \Exception('Impossible de créer/mettre à jour le dossier : ref_client manquant');
         }
 
         /** @var DossierFormation $dossier */
@@ -180,8 +189,8 @@ abstract class BaseClientImporter
         );
 
         // 🔴 Vérifier que le dossier a bien un ID
-        if (!$dossier || !$dossier->id) {
-            throw new \Exception("Le dossier a été créé mais n'a pas d'ID. ref_client: " . $dossierData['ref_client']);
+        if (! $dossier || ! $dossier->id) {
+            throw new \Exception("Le dossier a été créé mais n'a pas d'ID. ref_client: ".$dossierData['ref_client']);
         }
 
         return $dossier;
@@ -191,19 +200,21 @@ abstract class BaseClientImporter
     {
         // 🔴 Vérification CRITIQUE : Ne pas exécuter si l'ID est invalide
         if ($dossierId <= 0 || $dossierId === null) {
-            \Illuminate\Support\Facades\Log::error('upsertHeures : dossier_id invalide', [
+            Log::error('upsertHeures : dossier_id invalide', [
                 'dossier_id' => $dossierId,
-                'heuresData' => $heuresData
+                'heuresData' => $heuresData,
             ]);
+
             return;
         }
 
         // Vérifier que le dossier existe réellement
-        $dossierExists = \App\Models\DossierFormation::query()->where('id', $dossierId)->exists();
-        if (!$dossierExists) {
-            \Illuminate\Support\Facades\Log::error('upsertHeures : dossier inexistant', [
-                'dossier_id' => $dossierId
+        $dossierExists = DossierFormation::query()->where('id', $dossierId)->exists();
+        if (! $dossierExists) {
+            Log::error('upsertHeures : dossier inexistant', [
+                'dossier_id' => $dossierId,
             ]);
+
             return;
         }
 
@@ -212,6 +223,7 @@ abstract class BaseClientImporter
             $heuresData
         );
     }
+
     protected function upsertPlanning(int $dossierId, array $planningData): void
     {
         PlanningFormation::updateOrCreate(
@@ -241,7 +253,7 @@ abstract class BaseClientImporter
         $parts = preg_split('/\s+/', $nomBrut, 2);
         // Format "NOM Prenom" ou "NOM" seul
         // prenom vaut '' si absent pour satisfaire la contrainte NOT NULL
-        $nom    = $parts[0] ?? $nomBrut;
+        $nom = $parts[0] ?? $nomBrut;
         $prenom = $parts[1] ?? '';
 
         $consultant = Consultant::firstOrCreate(
@@ -250,6 +262,7 @@ abstract class BaseClientImporter
         );
 
         $this->consultantCache[$nomBrut] = $consultant->id;
+
         return $consultant->id;
     }
 
@@ -268,6 +281,7 @@ abstract class BaseClientImporter
         );
 
         $this->entiteCache[$code] = $entite->id;
+
         return $entite->id;
     }
 
@@ -282,14 +296,14 @@ abstract class BaseClientImporter
         }
 
         $fill = array_filter([
-            'telephone'     => $parrainData['telephone']     ?? null,
-            'email'         => $parrainData['email']         ?? null,
-            'adresse'       => $parrainData['adresse']       ?? null,
-            'code_postal'   => $parrainData['code_postal']   ?? null,
-            'ville'         => $parrainData['ville']         ?? null,
+            'telephone' => $parrainData['telephone'] ?? null,
+            'email' => $parrainData['email'] ?? null,
+            'adresse' => $parrainData['adresse'] ?? null,
+            'code_postal' => $parrainData['code_postal'] ?? null,
+            'ville' => $parrainData['ville'] ?? null,
             'super_parrain' => $parrainData['super_parrain'] ?? false,
             'date_creation' => $parrainData['date_creation'] ?? null,
-        ], fn($v) => $v !== null && $v !== '');
+        ], fn ($v) => $v !== null && $v !== '');
 
         return Parrain::firstOrCreate(
             ['nom_prenom' => $nomPrenom],
@@ -306,7 +320,7 @@ abstract class BaseClientImporter
      */
     protected function extractProgrammeLike(string $ref, string $tiers): string
     {
-        $ref   = trim($ref);
+        $ref = trim($ref);
         $tiers = trim(preg_replace('/\s*\(.*?\)/', '', $tiers));
 
         foreach (['AOPIA2 ', '01FC ', 'LIKE '] as $prefix) {
@@ -332,7 +346,7 @@ abstract class BaseClientImporter
      */
     protected function extractProgrammeAopia(string $ref, string $tiers): string
     {
-        $ref   = trim($ref);
+        $ref = trim($ref);
         $tiers = trim(preg_replace('/\s*\(.*?\)/', '', $tiers));
 
         foreach ([' AOPIA2', ' AOPIA', ' ABO'] as $suffix) {
@@ -345,11 +359,11 @@ abstract class BaseClientImporter
 
         // Retirer le nom du tiers en fin (peut y avoir des variantes avec "/")
         $tiersNom = explode('/', $tiers)[0]; // "HADAK/MARTIN" => "HADAK"
-        $parts    = preg_split('/\s+/', trim($tiersNom));
+        $parts = preg_split('/\s+/', trim($tiersNom));
 
         for ($i = count($parts); $i > 0; $i--) {
             $candidate = implode(' ', array_slice($parts, 0, $i));
-            $len       = strlen($candidate);
+            $len = strlen($candidate);
             if (stripos(substr($ref, -$len), $candidate) === 0) {
                 $ref = trim(substr($ref, 0, strlen($ref) - $len));
                 break;
@@ -366,14 +380,14 @@ abstract class BaseClientImporter
      */
     protected function extractProgramme01Fc(string $ref, string $tiers): string
     {
-        $ref   = trim($ref);
+        $ref = trim($ref);
         $tiers = trim(preg_replace('/\s*\(.*?\)/', '', $tiers));
 
         if ($tiers !== '') {
             $parts = preg_split('/\s+/', $tiers);
             for ($i = count($parts); $i > 0; $i--) {
                 $candidate = implode(' ', array_slice($parts, 0, $i));
-                $len       = strlen($candidate);
+                $len = strlen($candidate);
                 if (stripos(substr($ref, -$len), $candidate) === 0) {
                     $ref = trim(substr($ref, 0, strlen($ref) - $len));
                     break;
@@ -398,7 +412,7 @@ abstract class BaseClientImporter
         }
         if (is_numeric($value)) {
             try {
-                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value)
+                return Date::excelToDateTimeObject((float) $value)
                     ->format('Y-m-d');
             } catch (\Throwable) {
             }
@@ -416,6 +430,7 @@ abstract class BaseClientImporter
             return null;
         }
         $clean = str_replace([' ', '€', ','], ['', '', '.'], (string) $value);
+
         return is_numeric($clean) ? (float) $clean : null;
     }
 
@@ -424,41 +439,44 @@ abstract class BaseClientImporter
         if (is_bool($value)) {
             return $value;
         }
+
         return in_array(strtolower(trim((string) $value)), ['1', 'oui', 'yes', 'true', 'o', 'x']);
     }
 
     protected function mapEtat(mixed $value): ?string
     {
         $map = [
-            'prospect'  => 'prospect',
-            'en cours'  => 'en_cours',
-            'à venir'   => 'prospect',
-            'a venir'   => 'prospect',
-            'terminé'   => 'termine',
-            'termine'   => 'termine',
-            'certifié'  => 'certifie',
-            'certifie'  => 'certifie',
+            'prospect' => 'prospect',
+            'en cours' => 'en_cours',
+            'à venir' => 'prospect',
+            'a venir' => 'prospect',
+            'terminé' => 'termine',
+            'termine' => 'termine',
+            'certifié' => 'certifie',
+            'certifie' => 'certifie',
             'abandonné' => 'abandonne',
             'abandonne' => 'abandonne',
-            'signée'    => 'en_cours',
-            'signee'    => 'en_cours',
-            'facturée'  => 'termine',
-            'facturee'  => 'termine',
+            'signée' => 'en_cours',
+            'signee' => 'en_cours',
+            'facturée' => 'termine',
+            'facturee' => 'termine',
         ];
+
         return $map[mb_strtolower(trim((string) $value))] ?? null;
     }
 
     protected function mapStatutFormation(mixed $value): ?string
     {
         $map = [
-            'à venir'    => 'a_venir',
-            'a venir'    => 'a_venir',
-            'en cours'   => 'en_cours',
-            'terminé'    => 'termine',
-            'termine'    => 'termine',
+            'à venir' => 'a_venir',
+            'a venir' => 'a_venir',
+            'en cours' => 'en_cours',
+            'terminé' => 'termine',
+            'termine' => 'termine',
             'interrompu' => 'interrompu',
-            'abandon'    => 'abandon',
+            'abandon' => 'abandon',
         ];
+
         return $map[mb_strtolower(trim((string) $value))] ?? null;
     }
 
@@ -470,7 +488,7 @@ abstract class BaseClientImporter
             'created' => $this->created,
             'updated' => $this->updated,
             'skipped' => $this->skipped,
-            'errors'  => $this->errors,
+            'errors' => $this->errors,
         ];
     }
 }

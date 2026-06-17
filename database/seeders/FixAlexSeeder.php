@@ -13,9 +13,9 @@ class FixAlexSeeder extends Seeder
         // ── Afficher tous les users existants ──────────────────────
         $this->command->info('=== Users en base ===');
         User::withTrashed()->get()->each(function ($u) {
-            $roles      = $u->roles->pluck('name')->implode(', ') ?: 'AUCUN';
-            $actif      = $u->actif ? 'actif' : 'INACTIF';
-            $deleted    = $u->deleted_at ? ' [SOFT DELETED]' : '';
+            $roles = $u->roles->pluck('name')->implode(', ') ?: 'AUCUN';
+            $actif = $u->actif ? 'actif' : 'INACTIF';
+            $deleted = $u->deleted_at ? ' [SOFT DELETED]' : '';
             $this->command->line("  id:{$u->id} | {$u->email} | actif:{$actif} | rôles:{$roles}{$deleted}");
         });
 
@@ -23,18 +23,18 @@ class FixAlexSeeder extends Seeder
 
         // ── Forcer Alex ────────────────────────────────────────────
         $alex = User::withTrashed()
-                    ->where('email', 'a.florek@ns-conseil.com')
-                    ->first();
+            ->where('email', 'a.florek@ns-conseil.com')
+            ->first();
 
-        if (!$alex) {
+        if (! $alex) {
             $this->command->warn('Alex introuvable → création...');
             $alex = User::create([
-                'nom'        => 'FLOREK',
-                'prenom'     => 'Alex',
-                'email'      => 'a.florek@ns-conseil.com',
-                'password'   => Hash::make('changeme123'),
-                'secteur'    => 'National',
-                'actif'      => true,
+                'nom' => 'FLOREK',
+                'prenom' => 'Alex',
+                'email' => 'a.florek@ns-conseil.com',
+                'password' => Hash::make('changeme123'),
+                'secteur' => 'National',
+                'actif' => true,
                 'role_cache' => 'administrateur',
             ]);
         }
@@ -47,18 +47,18 @@ class FixAlexSeeder extends Seeder
 
         // Forcer les valeurs
         $alex->forceFill([
-            'password'   => Hash::make('changeme123'),
-            'actif'      => true,
+            'password' => Hash::make('changeme123'),
+            'actif' => true,
             'role_cache' => 'administrateur',
         ])->save();
 
         $alex->syncRoles(['administrateur']);
 
-        $this->command->info("✓ Alex corrigé");
-        $this->command->line("  email    : a.florek@ns-conseil.com");
-        $this->command->line("  password : changeme123");
-        $this->command->line("  actif    : true");
-        $this->command->line("  rôle     : administrateur");
-        $this->command->line("  panel    : /ns-conseil");
+        $this->command->info('✓ Alex corrigé');
+        $this->command->line('  email    : a.florek@ns-conseil.com');
+        $this->command->line('  password : changeme123');
+        $this->command->line('  actif    : true');
+        $this->command->line('  rôle     : administrateur');
+        $this->command->line('  panel    : /ns-conseil');
     }
 }

@@ -16,7 +16,7 @@ enum OrganizationType: string
     public static function pourSelect(): array
     {
         return collect(self::cases())
-            ->mapWithKeys(fn($case) => [$case->value => $case->label()])
+            ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
             ->toArray();
     }
 
@@ -25,7 +25,7 @@ enum OrganizationType: string
      */
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::CSE => 'CSE',
             self::Syndicat => 'Syndicat',
             self::EntrepriseDirecte => 'Entreprise directe',

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\TicketResource\Pages;
 
 use App\Enums\TicketStatut;
@@ -6,7 +7,6 @@ use App\Filament\Allopro\Resources\TicketResource;
 use App\Models\Artisan;
 use Filament\Actions;
 use Filament\Forms;
-use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -25,16 +25,15 @@ class ViewTicket extends ViewRecord
                 ->label('Changer statut')
                 ->icon('heroicon-o-arrow-right-circle')
                 ->color('primary')
-                ->visible(fn() =>
-                    $this->record->estActif() &&
+                ->visible(fn () => $this->record->estActif() &&
                     count($this->record->statut->statutsSuivants()) > 0
                 )
-                ->form(fn() => [
+                ->form(fn () => [
                     Forms\Components\Select::make('nouveau_statut')
                         ->label('Nouveau statut')
                         ->options(
                             collect($this->record->statut->statutsSuivants())
-                                ->mapWithKeys(fn($s) => [$s->value => $s->label()])
+                                ->mapWithKeys(fn ($s) => [$s->value => $s->label()])
                                 ->toArray()
                         )
                         ->required()
@@ -48,7 +47,7 @@ class ViewTicket extends ViewRecord
                     $this->record->changerStatut($nouveau, $data['notes'] ?? null);
                     $this->refreshFormData(['statut', 'notes']);
                     Notification::make()
-                        ->title('→ ' . $nouveau->label())
+                        ->title('→ '.$nouveau->label())
                         ->success()
                         ->send();
                 }),
@@ -57,14 +56,14 @@ class ViewTicket extends ViewRecord
                 ->label('Assigner artisan')
                 ->icon('heroicon-o-wrench-screwdriver')
                 ->color('warning')
-                ->visible(fn() => is_null($this->record->artisan_id) && $this->record->estActif())
+                ->visible(fn () => is_null($this->record->artisan_id) && $this->record->estActif())
                 ->form([
                     Forms\Components\Select::make('artisan_id')
                         ->label('Artisan disponible')
                         ->options(
                             Artisan::disponibles()->get()
-                                ->mapWithKeys(fn($a) => [
-                                    $a->id => $a->nom_complet . ' — ' . $a->corps_de_metier->label()
+                                ->mapWithKeys(fn ($a) => [
+                                    $a->id => $a->nom_complet.' — '.$a->corps_de_metier->label(),
                                 ])
                         )
                         ->required()
@@ -76,7 +75,7 @@ class ViewTicket extends ViewRecord
                     $this->record->assignerArtisan($artisan);
                     $this->refreshFormData(['artisan_id']);
                     Notification::make()
-                        ->title('Artisan assigné : ' . $artisan->nom_complet)
+                        ->title('Artisan assigné : '.$artisan->nom_complet)
                         ->success()
                         ->send();
                 }),
@@ -95,19 +94,19 @@ class ViewTicket extends ViewRecord
                     TextEntry::make('statut')
                         ->label('Statut actuel')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state instanceof TicketStatut ? $state->label() : $state)
-                        ->color(fn($state) => $state instanceof TicketStatut ? $state->color() : 'gray')
-                        ->icon(fn($state) => $state instanceof TicketStatut ? $state->icon() : null),
+                        ->formatStateUsing(fn ($state) => $state instanceof TicketStatut ? $state->label() : $state)
+                        ->color(fn ($state) => $state instanceof TicketStatut ? $state->color() : 'gray')
+                        ->icon(fn ($state) => $state instanceof TicketStatut ? $state->icon() : null),
 
                     TextEntry::make('niveau_priorite')
                         ->label('Priorité')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state?->label() ?? 'Non défini')
-                        ->color(fn($state) => $state?->color() ?? 'gray'),
+                        ->formatStateUsing(fn ($state) => $state?->label() ?? 'Non défini')
+                        ->color(fn ($state) => $state?->color() ?? 'gray'),
 
                     TextEntry::make('progression_pourcentage')
                         ->label('Progression')
-                        ->formatStateUsing(fn($state) => $state . '%'),
+                        ->formatStateUsing(fn ($state) => $state.'%'),
 
                     TextEntry::make('duree_traitement_formatee')
                         ->label('Durée de traitement'),
@@ -126,8 +125,7 @@ class ViewTicket extends ViewRecord
                 ->schema([
                     TextEntry::make('contactParticulier.nom')
                         ->label('Nom')
-                        ->formatStateUsing(fn($state, $record) =>
-                            trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
+                        ->formatStateUsing(fn ($state, $record) => trim(($record->contactParticulier?->prenom ?? '').' '.($record->contactParticulier?->nom ?? '')) ?: '—'
                         ),
 
                     TextEntry::make('contactParticulier.telephone')
@@ -141,12 +139,12 @@ class ViewTicket extends ViewRecord
 
                     TextEntry::make('contactParticulier.type_logement')
                         ->label('Logement')
-                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
+                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
                         ->badge(),
 
                     TextEntry::make('contactParticulier.statut_occupant')
                         ->label('Occupant')
-                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
+                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
                         ->badge(),
                 ]),
 
@@ -156,8 +154,7 @@ class ViewTicket extends ViewRecord
                 ->schema([
                     TextEntry::make('artisan.nom')
                         ->label('Artisan')
-                        ->formatStateUsing(fn($state, $record) =>
-                            $record->artisan?->nom_complet ?? '—'
+                        ->formatStateUsing(fn ($state, $record) => $record->artisan?->nom_complet ?? '—'
                         )
                         ->placeholder('Non assigné'),
 
@@ -168,7 +165,7 @@ class ViewTicket extends ViewRecord
 
                     TextEntry::make('artisan.corps_de_metier')
                         ->label('Métier')
-                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
+                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
                         ->badge(),
 
                     TextEntry::make('rdv_planifie_at')
@@ -203,8 +200,7 @@ class ViewTicket extends ViewRecord
 
                     TextEntry::make('operateur.prenom')
                         ->label('Opérateur')
-                        ->formatStateUsing(fn($state, $record) =>
-                            trim(($record->operateur?->prenom ?? '') . ' ' . ($record->operateur?->nom ?? '')) ?: '—'
+                        ->formatStateUsing(fn ($state, $record) => trim(($record->operateur?->prenom ?? '').' '.($record->operateur?->nom ?? '')) ?: '—'
                         ),
 
                     TextEntry::make('aircall_call_id')

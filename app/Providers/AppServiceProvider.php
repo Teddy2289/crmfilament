@@ -2,11 +2,12 @@
 
 namespace App\Providers;
 
-use App\Services\AircallService;
 use App\Models\CrmSetting;
+use App\Services\AircallService;
 use App\Services\Crm\CrmSettingsService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Telescope\TelescopeServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
         // l'enregistre qu'en local pour ne jamais casser
         // `composer install --no-dev` en production/CI.
         if ($this->app->environment('local')) {
-            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
             $this->app->register(\App\Providers\TelescopeServiceProvider::class);
         }
     }

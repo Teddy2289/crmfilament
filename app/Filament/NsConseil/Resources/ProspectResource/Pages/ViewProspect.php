@@ -4,11 +4,12 @@ namespace App\Filament\NsConseil\Resources\ProspectResource\Pages;
 
 use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\ProspectResource;
-use App\Models\Partenaire;
 use Filament\Actions;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Actions\Action;
 
 class ViewProspect extends ViewRecord
 {
@@ -25,7 +26,7 @@ class ViewProspect extends ViewRecord
                 ->label('Qualifier QF')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->visible(fn () => !in_array($this->record->statut, [
+                ->visible(fn () => ! in_array($this->record->statut, [
                     ProspectStatut::KO,
                     ProspectStatut::QF,
                 ]))
@@ -45,12 +46,12 @@ class ViewProspect extends ViewRecord
                 ->label('Marquer KO')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
-                ->visible(fn () => !in_array($this->record->statut, [
+                ->visible(fn () => ! in_array($this->record->statut, [
                     ProspectStatut::KO,
                     ProspectStatut::QF,
                 ]))
                 ->form([
-                    \Filament\Forms\Components\Textarea::make('motif')
+                    Textarea::make('motif')
                         ->label('Motif KO')
                         ->required()
                         ->rows(3)
@@ -71,9 +72,9 @@ class ViewProspect extends ViewRecord
                 ->label('Planifier rappel')
                 ->icon('heroicon-o-clock')
                 ->color('warning')
-                ->visible(fn () => !in_array($this->record->statut, [ProspectStatut::KO]))
+                ->visible(fn () => ! in_array($this->record->statut, [ProspectStatut::KO]))
                 ->form([
-                    \Filament\Forms\Components\DateTimePicker::make('rappel_at')
+                    DateTimePicker::make('rappel_at')
                         ->label('Date et heure du rappel')
                         ->required()
                         ->seconds(false)
@@ -93,7 +94,7 @@ class ViewProspect extends ViewRecord
                 ->icon('heroicon-o-chat-bubble-left-ellipsis')
                 ->color('gray')
                 ->form([
-                    \Filament\Forms\Components\Textarea::make('note')
+                    Textarea::make('note')
                         ->label('Note')
                         ->required()
                         ->rows(4)

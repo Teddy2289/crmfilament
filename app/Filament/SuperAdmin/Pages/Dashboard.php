@@ -1,41 +1,47 @@
 <?php
+
 namespace App\Filament\SuperAdmin\Pages;
 
-use App\Models\User;
 use App\Models\ImportLog;
+use App\Models\User;
 use Filament\Pages\Page;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class Dashboard extends Page
 {
-    protected static ?string $navigationIcon  = 'heroicon-o-home';
+    protected static ?string $navigationIcon = 'heroicon-o-home';
+
     protected static ?string $navigationLabel = 'Tableau de bord';
-    protected static ?int    $navigationSort  = 0;
-    protected static string  $view            = 'filament.super-admin.pages.dashboard';
+
+    protected static ?int $navigationSort = 0;
+
+    protected static string $view = 'filament.super-admin.pages.dashboard';
 
     public function getStats(): array
     {
         $tables = DB::select('SHOW TABLES');
 
         return [
-            'users'       => User::count(),
-            'actifs'      => User::where('actif', true)->count(),
-            'tables'      => count($tables),
-            'roles'       => \Spatie\Permission\Models\Role::count(),
-            'permissions' => \Spatie\Permission\Models\Permission::count(),
-            'imports'     => class_exists(ImportLog::class) ? ImportLog::count() : 0,
-            'db_size'     => $this->getDatabaseSize(),
+            'users' => User::count(),
+            'actifs' => User::where('actif', true)->count(),
+            'tables' => count($tables),
+            'roles' => Role::count(),
+            'permissions' => Permission::count(),
+            'imports' => class_exists(ImportLog::class) ? ImportLog::count() : 0,
+            'db_size' => $this->getDatabaseSize(),
         ];
     }
 
-    public function getRolesDistribution(): \Illuminate\Support\Collection
+    public function getRolesDistribution(): Collection
     {
-        return \Spatie\Permission\Models\Role::withCount('users')
+        return Role::withCount('users')
             ->orderByDesc('users_count')->get();
     }
 
-    public function getRecentUsers(): \Illuminate\Support\Collection
+    public function getRecentUsers(): Collection
     {
         return User::latest()->take(5)->get();
     }
@@ -43,12 +49,13 @@ class Dashboard extends Page
     protected function getDatabaseSize(): string
     {
         try {
-            $size = DB::select("
+            $size = DB::select('
                 SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb
                 FROM information_schema.tables
                 WHERE table_schema = DATABASE()
-            ")[0]->size_mb ?? 0;
-            return $size . ' MB';
+            ')[0]->size_mb ?? 0;
+
+            return $size.' MB';
         } catch (\Exception $e) {
             return '—';
         }

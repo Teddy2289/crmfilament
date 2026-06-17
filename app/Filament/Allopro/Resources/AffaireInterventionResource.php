@@ -3,14 +3,12 @@
 namespace App\Filament\Allopro\Resources;
 
 use App\Enums\CanalContactPreferentiel;
-use App\Enums\CorpsDeMetier;
 use App\Enums\StatutAffaireIntervention;
 use App\Filament\Allopro\Resources\AffaireInterventionResource\Pages\CreateAffaireIntervention;
 use App\Filament\Allopro\Resources\AffaireInterventionResource\Pages\EditAffaireIntervention;
 use App\Filament\Allopro\Resources\AffaireInterventionResource\Pages\ListAffaireInterventions;
 use App\Filament\Allopro\Resources\AffaireInterventionResource\Pages\ViewAffaireIntervention;
 use App\Models\AffaireIntervention;
-use App\Models\Artisan;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -21,11 +19,16 @@ use Illuminate\Database\Eloquent\Builder;
 
 class AffaireInterventionResource extends Resource
 {
-    protected static ?string $model                = AffaireIntervention::class;
-    protected static ?string $navigationIcon       = 'heroicon-o-wrench-screwdriver';
-    protected static ?string $navigationLabel      = 'Affaires / Interventions';
-    protected static ?string $navigationGroup      = 'Tickets';
-    protected static ?int    $navigationSort       = 2;
+    protected static ?string $model = AffaireIntervention::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
+
+    protected static ?string $navigationLabel = 'Affaires / Interventions';
+
+    protected static ?string $navigationGroup = 'Tickets';
+
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $recordTitleAttribute = 'reference';
 
     // ── Badge navigation ─────────────────────────────────────────
@@ -33,12 +36,14 @@ class AffaireInterventionResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $count = AffaireIntervention::actives()->count();
+
         return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): string
     {
         $enAttente = AffaireIntervention::enAttente()->count();
+
         return $enAttente > 0 ? 'warning' : 'primary';
     }
 
@@ -62,7 +67,7 @@ class AffaireInterventionResource extends Resource
                         ->label('Statut')
                         ->options(
                             collect(StatutAffaireIntervention::cases())
-                                ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                                ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                                 ->toArray()
                         )
                         ->native(false)
@@ -85,8 +90,8 @@ class AffaireInterventionResource extends Resource
                         ->label('Ticket')
                         ->relationship('ticket', 'reference')
                         ->getOptionLabelFromRecordUsing(
-                            fn($record) => $record
-                                ? $record->reference . ' — ' . ($record->contactParticulier?->nom ?? '—')
+                            fn ($record) => $record
+                                ? $record->reference.' — '.($record->contactParticulier?->nom ?? '—')
                                 : '—'
                         )
                         ->searchable(['reference'])
@@ -98,12 +103,15 @@ class AffaireInterventionResource extends Resource
                         ->relationship(
                             name: 'artisan',
                             titleAttribute: 'nom',
-                            modifyQueryUsing: fn(Builder $query) => $query->where('statut_compte', 'actif')
+                            modifyQueryUsing: fn (Builder $query) => $query->where('statut_compte', 'actif')
 
                         )
                         ->getOptionLabelFromRecordUsing(function ($record) {
-                            if (!$record) return '—';
-                            return $record->nom_complet . ' — ' . ($record->corps_de_metier?->label() ?? '');
+                            if (! $record) {
+                                return '—';
+                            }
+
+                            return $record->nom_complet.' — '.($record->corps_de_metier?->label() ?? '');
                         })
                         ->searchable(['nom', 'prenom'])
                         ->preload()
@@ -112,18 +120,18 @@ class AffaireInterventionResource extends Resource
                         ->label('Opérateur dispatch')
                         ->relationship('operateurDispatch', 'name') // ← 'name' et non 'nom'
                         ->getOptionLabelFromRecordUsing(
-                            fn($record) => $record
-                                ? trim(($record->prenom ?? $record->name ?? '') . ' ' . ($record->nom ?? ''))
+                            fn ($record) => $record
+                                ? trim(($record->prenom ?? $record->name ?? '').' '.($record->nom ?? ''))
                                 : '—'
                         )
                         ->searchable()
-                        ->default(fn() => auth()->id()),
+                        ->default(fn () => auth()->id()),
 
                     Forms\Components\Select::make('canal_notification')
                         ->label('Canal de notification artisan')
                         ->options(
                             collect(CanalContactPreferentiel::cases())
-                                ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                                ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                                 ->toArray()
                         )
                         ->native(false)
@@ -266,9 +274,9 @@ class AffaireInterventionResource extends Resource
                     ->label('Statut')
                     ->sortable()
                     ->badge()
-                    ->formatStateUsing(fn($state) => $state instanceof StatutAffaireIntervention ? $state->label() : $state)
-                    ->color(fn($state) => $state instanceof StatutAffaireIntervention ? $state->color() : 'gray')
-                    ->icon(fn($state) => $state instanceof StatutAffaireIntervention ? $state->icon() : null),
+                    ->formatStateUsing(fn ($state) => $state instanceof StatutAffaireIntervention ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof StatutAffaireIntervention ? $state->color() : 'gray')
+                    ->icon(fn ($state) => $state instanceof StatutAffaireIntervention ? $state->icon() : null),
 
                 Tables\Columns\TextColumn::make('ticket.reference')
                     ->label('Ticket')
@@ -276,15 +284,15 @@ class AffaireInterventionResource extends Resource
                     ->badge()
                     ->color('gray')
                     ->url(
-                        fn($record) => $record->ticket_id
+                        fn ($record) => $record->ticket_id
                             ? TicketResource::getUrl('view', ['record' => $record->ticket_id])
                             : null
                     ),
 
                 Tables\Columns\TextColumn::make('artisan.nom')
                     ->label('Artisan')
-                    ->formatStateUsing(fn($state, $record) => $record->artisan?->nom_complet ?? '—')
-                    ->description(fn($record) => $record->artisan?->corps_de_metier?->label())
+                    ->formatStateUsing(fn ($state, $record) => $record->artisan?->nom_complet ?? '—')
+                    ->description(fn ($record) => $record->artisan?->corps_de_metier?->label())
                     ->searchable(['artisan.nom', 'artisan.prenom'])
                     ->placeholder('—'),
 
@@ -293,8 +301,8 @@ class AffaireInterventionResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->description(
-                        fn($record) => $record->creneau_debut && $record->creneau_fin
-                            ? $record->creneau_debut . ' – ' . $record->creneau_fin
+                        fn ($record) => $record->creneau_debut && $record->creneau_fin
+                            ? $record->creneau_debut.' – '.$record->creneau_fin
                             : null
                     )
                     ->placeholder('—'),
@@ -306,42 +314,41 @@ class AffaireInterventionResource extends Resource
                     ->falseIcon('heroicon-o-exclamation-circle')
                     ->trueColor('success')
                     ->falseColor('danger')
-                    ->tooltip(fn($record) => $record->delai_confirmation_formate),
+                    ->tooltip(fn ($record) => $record->delai_confirmation_formate),
 
                 Tables\Columns\TextColumn::make('delai_confirmation_minutes')
                     ->label('Délai confirm.')
-                    ->formatStateUsing(fn($state) => $state ? $state . ' min' : '—')
-                    ->color(fn($state) => match (true) {
-                        $state === null       => 'gray',
-                        $state <= 5           => 'success',
-                        $state <= 30          => 'warning',
-                        default               => 'danger',
+                    ->formatStateUsing(fn ($state) => $state ? $state.' min' : '—')
+                    ->color(fn ($state) => match (true) {
+                        $state === null => 'gray',
+                        $state <= 5 => 'success',
+                        $state <= 30 => 'warning',
+                        default => 'danger',
                     })
                     ->badge(),
 
                 Tables\Columns\TextColumn::make('numero_tentative')
                     ->label('Tentative')
                     ->badge()
-                    ->color(fn($state) => $state > 1 ? 'warning' : 'gray')
+                    ->color(fn ($state) => $state > 1 ? 'warning' : 'gray')
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('satisfaction_immediate')
                     ->label('Satisfaction')
-                    ->formatStateUsing(fn($state) => $state ? $state . '/5' : '—')
+                    ->formatStateUsing(fn ($state) => $state ? $state.'/5' : '—')
                     ->badge()
-                    ->color(fn($state) => match (true) {
-                        $state === null  => 'gray',
-                        $state >= 4      => 'success',
-                        $state === 3     => 'warning',
-                        default          => 'danger',
+                    ->color(fn ($state) => match (true) {
+                        $state === null => 'gray',
+                        $state >= 4 => 'success',
+                        $state === 3 => 'warning',
+                        default => 'danger',
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('operateurDispatch.prenom')
                     ->label('Dispatcher')
                     ->formatStateUsing(
-                        fn($state, $record) =>
-                        trim(($record->operateurDispatch?->prenom ?? '') . ' ' . ($record->operateurDispatch?->nom ?? '')) ?: '—'
+                        fn ($state, $record) => trim(($record->operateurDispatch?->prenom ?? '').' '.($record->operateurDispatch?->nom ?? '')) ?: '—'
                     )
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -351,7 +358,7 @@ class AffaireInterventionResource extends Resource
                     ->label('Statut')
                     ->options(
                         collect(StatutAffaireIntervention::cases())
-                            ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                            ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                             ->toArray()
                     )
                     ->native(false)
@@ -360,18 +367,18 @@ class AffaireInterventionResource extends Resource
                 Tables\Filters\Filter::make('en_retard_confirmation')
                     ->label('En retard confirmation (>30 min)')
                     ->query(
-                        fn(Builder $q) => $q
+                        fn (Builder $q) => $q
                             ->where('statut', StatutAffaireIntervention::EnAttente->value)
                             ->where('date_notification_artisan', '<', now()->subMinutes(30))
                     ),
 
                 Tables\Filters\Filter::make('du_jour')
                     ->label("Aujourd'hui")
-                    ->query(fn(Builder $q) => $q->whereDate('date_rdv_prevue', today())),
+                    ->query(fn (Builder $q) => $q->whereDate('date_rdv_prevue', today())),
 
                 Tables\Filters\Filter::make('echec_ou_annulee')
                     ->label('Échecs & Annulations')
-                    ->query(fn(Builder $q) => $q->whereIn('statut', [
+                    ->query(fn (Builder $q) => $q->whereIn('statut', [
                         StatutAffaireIntervention::Annulee->value,
                         StatutAffaireIntervention::Echec->value,
                     ])),
@@ -382,7 +389,7 @@ class AffaireInterventionResource extends Resource
                     ->label('Confirmer')
                     ->icon('heroicon-o-check-circle')
                     ->color('primary')
-                    ->visible(fn(AffaireIntervention $r) => $r->statut === StatutAffaireIntervention::EnAttente)
+                    ->visible(fn (AffaireIntervention $r) => $r->statut === StatutAffaireIntervention::EnAttente)
                     ->requiresConfirmation()
                     ->modalHeading("Confirmer la venue de l'artisan ?")
                     ->action(function (AffaireIntervention $record) {
@@ -394,7 +401,7 @@ class AffaireInterventionResource extends Resource
                     ->label('Démarrer')
                     ->icon('heroicon-o-play')
                     ->color('info')
-                    ->visible(fn(AffaireIntervention $r) => $r->statut === StatutAffaireIntervention::Confirmee)
+                    ->visible(fn (AffaireIntervention $r) => $r->statut === StatutAffaireIntervention::Confirmee)
                     ->requiresConfirmation()
                     ->modalHeading("Démarrer l'intervention ?")
                     ->action(function (AffaireIntervention $record) {
@@ -406,7 +413,7 @@ class AffaireInterventionResource extends Resource
                     ->label('Finaliser')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('teal')
-                    ->visible(fn(AffaireIntervention $r) => $r->statut === StatutAffaireIntervention::EnCours)
+                    ->visible(fn (AffaireIntervention $r) => $r->statut === StatutAffaireIntervention::EnCours)
                     ->form([
                         Forms\Components\Textarea::make('compte_rendu_artisan')
                             ->label("Compte-rendu de l'artisan")
@@ -428,7 +435,7 @@ class AffaireInterventionResource extends Resource
                     ->label('Annuler')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn(AffaireIntervention $r) => $r->statut?->estActive())
+                    ->visible(fn (AffaireIntervention $r) => $r->statut?->estActive())
                     ->form([
                         Forms\Components\Textarea::make('motif')
                             ->label("Motif d'annulation")
@@ -447,7 +454,7 @@ class AffaireInterventionResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()?->hasRole('responsable_plateau')),
+                        ->visible(fn () => auth()->user()?->hasRole('responsable_plateau')),
                 ]),
             ])
 
@@ -465,10 +472,10 @@ class AffaireInterventionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListAffaireInterventions::route('/'),
+            'index' => ListAffaireInterventions::route('/'),
             'create' => CreateAffaireIntervention::route('/create'),
-            'view'   => ViewAffaireIntervention::route('/{record}'),
-            'edit'   => EditAffaireIntervention::route('/{record}/edit'),
+            'view' => ViewAffaireIntervention::route('/{record}'),
+            'edit' => EditAffaireIntervention::route('/{record}/edit'),
         ];
     }
 

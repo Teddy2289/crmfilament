@@ -10,7 +10,7 @@ enum NiveauPriorite: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Urgence => 'Urgence',
             self::Prioritaire => 'Prioritaire',
             self::Standard => 'Standard',
@@ -19,7 +19,7 @@ enum NiveauPriorite: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Urgence => 'danger',
             self::Prioritaire => 'warning',
             self::Standard => 'info',
@@ -28,7 +28,7 @@ enum NiveauPriorite: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Urgence => 'heroicon-o-exclamation-circle',
             self::Prioritaire => 'heroicon-o-arrow-up-circle',
             self::Standard => 'heroicon-o-flag',
@@ -37,12 +37,10 @@ enum NiveauPriorite: string
 
     public function delaiMaxMinutes(): int
     {
-        return match($this) {
+        return match ($this) {
             self::Urgence => 30,
             self::Prioritaire => 120,
             self::Standard => 480,
         };
     }
-
-
 }

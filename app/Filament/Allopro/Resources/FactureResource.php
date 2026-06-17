@@ -18,20 +18,25 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Allopro\Resources\TicketResource;
 
 class FactureResource extends Resource
 {
-    protected static ?string $model               = Facture::class;
-    protected static ?string $navigationIcon      = 'heroicon-o-receipt-percent';
-    protected static ?string $navigationLabel     = 'Factures';
-    protected static ?string $navigationGroup     = 'Facturation';
-    protected static ?int    $navigationSort      = 3;
+    protected static ?string $model = Facture::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
+
+    protected static ?string $navigationLabel = 'Factures';
+
+    protected static ?string $navigationGroup = 'Facturation';
+
+    protected static ?int $navigationSort = 3;
+
     protected static ?string $recordTitleAttribute = 'numero';
 
     public static function getNavigationBadge(): ?string
     {
         $enRetard = Facture::enRetard()->count();
+
         return $enRetard > 0 ? (string) $enRetard : null;
     }
 
@@ -58,7 +63,7 @@ class FactureResource extends Resource
                     Forms\Components\Select::make('statut_paiement')
                         ->label('Statut paiement')
                         ->options(collect(StatutPaiement::cases())
-                            ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                            ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                             ->toArray())
                         ->native(false)
                         ->required()
@@ -93,8 +98,7 @@ class FactureResource extends Resource
                         ->label('Artisan (SIRET requis)')
                         ->relationship('artisan', 'nom')
                         ->getOptionLabelFromRecordUsing(
-                            fn($record) =>
-                            $record->nom_complet . ($record->siret ? ' — ' . $record->siret : ' ⚠️ SIRET manquant')
+                            fn ($record) => $record->nom_complet.($record->siret ? ' — '.$record->siret : ' ⚠️ SIRET manquant')
                         )
                         ->searchable(['nom', 'prenom', 'siret'])
                         ->required(),
@@ -103,8 +107,7 @@ class FactureResource extends Resource
                         ->label('Client facturé')
                         ->relationship('contactParticulier', 'nom')
                         ->getOptionLabelFromRecordUsing(
-                            fn($record) =>
-                            trim($record->prenom . ' ' . $record->nom)
+                            fn ($record) => trim($record->prenom.' '.$record->nom)
                         )
                         ->searchable(['nom', 'prenom'])
                         ->required(),
@@ -142,7 +145,7 @@ class FactureResource extends Resource
                                 ->options([
                                     5.5 => '5,5 %',
                                     10.0 => '10 %',
-                                    20.0 => '20 %'
+                                    20.0 => '20 %',
                                 ])
                                 ->default(10.0)
                                 ->native(false)
@@ -171,7 +174,7 @@ class FactureResource extends Resource
                     Forms\Components\Select::make('mode_paiement')
                         ->label('Mode de paiement')
                         ->options(collect(ModePaiement::cases())
-                            ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                            ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                             ->toArray())
                         ->native(false)
                         ->nullable(),
@@ -204,58 +207,57 @@ class FactureResource extends Resource
                 Tables\Columns\TextColumn::make('statut_paiement')
                     ->label('Paiement')
                     ->badge()
-                    ->formatStateUsing(fn($state) => $state instanceof StatutPaiement ? $state->label() : $state)
-                    ->color(fn($state) => $state instanceof StatutPaiement ? $state->color() : 'gray')
-                    ->icon(fn($state) => $state instanceof StatutPaiement ? $state->icon() : null),
+                    ->formatStateUsing(fn ($state) => $state instanceof StatutPaiement ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof StatutPaiement ? $state->color() : 'gray')
+                    ->icon(fn ($state) => $state instanceof StatutPaiement ? $state->icon() : null),
 
                 Tables\Columns\TextColumn::make('ticket.reference')
                     ->label('Ticket')
-                    ->url(fn($record) => $record->ticket_id
+                    ->url(fn ($record) => $record->ticket_id
                         ? TicketResource::getUrl('view', ['record' => $record->ticket_id])
                         : null)
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('artisan.nom')
                     ->label('Artisan')
-                    ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—')
-                    ->description(fn($record) => $record->artisan?->siret ?? '⚠️ SIRET manquant'),
+                    ->formatStateUsing(fn ($record) => $record->artisan?->nom_complet ?? '—')
+                    ->description(fn ($record) => $record->artisan?->siret ?? '⚠️ SIRET manquant'),
 
                 Tables\Columns\TextColumn::make('contactParticulier.nom')
                     ->label('Client')
                     ->formatStateUsing(
-                        fn($record) =>
-                        trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
+                        fn ($record) => trim(($record->contactParticulier?->prenom ?? '').' '.($record->contactParticulier?->nom ?? '')) ?: '—'
                     ),
 
                 Tables\Columns\TextColumn::make('total_ttc')
                     ->label('Total TTC')
-                    ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €')
                     ->sortable()
                     ->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('solde_restant_du')
                     ->label('Solde dû')
-                    ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
-                    ->color(fn($state) => (float)$state > 0 ? 'danger' : 'success'),
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €')
+                    ->color(fn ($state) => (float) $state > 0 ? 'danger' : 'success'),
 
                 Tables\Columns\TextColumn::make('date_echeance')
                     ->label('Échéance')
                     ->date('d/m/Y')
                     ->sortable()
-                    ->color(fn($record) => match (true) {
-                        $record->est_payee           => 'success',
-                        $record->est_en_retard       => 'danger',
+                    ->color(fn ($record) => match (true) {
+                        $record->est_payee => 'success',
+                        $record->est_en_retard => 'danger',
                         $record->date_echeance && $record->date_echeance->diffInDays(now()) <= 7 => 'warning',
-                        default                      => 'gray',
+                        default => 'gray',
                     })
-                    ->description(fn($record) => $record->est_en_retard
-                        ? 'Retard : ' . $record->jours_retard . ' j'
+                    ->description(fn ($record) => $record->est_en_retard
+                        ? 'Retard : '.$record->jours_retard.' j'
                         : null),
 
                 Tables\Columns\TextColumn::make('penalites_retard')
                     ->label('Pénalités')
-                    ->formatStateUsing(fn($state) => (float)$state > 0
-                        ? number_format((float)$state, 2, ',', ' ') . ' €'
+                    ->formatStateUsing(fn ($state) => (float) $state > 0
+                        ? number_format((float) $state, 2, ',', ' ').' €'
                         : '—')
                     ->color('danger')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -265,26 +267,26 @@ class FactureResource extends Resource
                 Tables\Filters\SelectFilter::make('statut_paiement')
                     ->label('Statut paiement')
                     ->options(collect(StatutPaiement::cases())
-                        ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                        ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                         ->toArray())
                     ->native(false)
                     ->multiple(),
 
                 Tables\Filters\Filter::make('en_retard')
                     ->label('En retard')
-                    ->query(fn(Builder $q) => $q->enRetard()),
+                    ->query(fn (Builder $q) => $q->enRetard()),
 
                 Tables\Filters\Filter::make('litigieuses')
                     ->label('Litigieuses')
-                    ->query(fn(Builder $q) => $q->litigieuses()),
+                    ->query(fn (Builder $q) => $q->litigieuses()),
 
                 Tables\Filters\Filter::make('a_relancer')
                     ->label('À relancer')
-                    ->query(fn(Builder $q) => $q->aRelancer()),
+                    ->query(fn (Builder $q) => $q->aRelancer()),
 
                 Tables\Filters\Filter::make('du_mois')
                     ->label('Ce mois')
-                    ->query(fn(Builder $q) => $q->duMois()),
+                    ->query(fn (Builder $q) => $q->duMois()),
             ])
 
             ->actions([
@@ -293,18 +295,18 @@ class FactureResource extends Resource
                     ->label('Enregistrer paiement')
                     ->icon('heroicon-o-banknotes')
                     ->color('success')
-                    ->visible(fn(Facture $record) => !$record->est_payee && !$record->est_litigieux)
+                    ->visible(fn (Facture $record) => ! $record->est_payee && ! $record->est_litigieux)
                     ->form([
                         Forms\Components\TextInput::make('montant')
                             ->label('Montant reçu (€)')
                             ->numeric()
                             ->prefix('€')
                             ->required()
-                            ->default(fn(Facture $record) => $record->solde_restant_du),
+                            ->default(fn (Facture $record) => $record->solde_restant_du),
                         Forms\Components\Select::make('mode')
                             ->label('Mode de paiement')
                             ->options(collect(ModePaiement::cases())
-                                ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                                ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                                 ->toArray())
                             ->native(false)
                             ->required(),
@@ -328,7 +330,7 @@ class FactureResource extends Resource
                     ->label('Litige')
                     ->icon('heroicon-o-shield-exclamation')
                     ->color('danger')
-                    ->visible(fn(Facture $record) => $record->est_en_retard && !$record->est_litigieux)
+                    ->visible(fn (Facture $record) => $record->est_en_retard && ! $record->est_litigieux)
                     ->form([
                         Forms\Components\Textarea::make('motif')
                             ->label('Motif du litige')
@@ -349,14 +351,14 @@ class FactureResource extends Resource
                     ->label('PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
-                    ->url(fn(Facture $record) => route('factures.pdf', $record))
+                    ->url(fn (Facture $record) => route('factures.pdf', $record))
                     ->openUrlInNewTab(),
             ])
 
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()?->hasRole('responsable_plateau')),
+                        ->visible(fn () => auth()->user()?->hasRole('responsable_plateau')),
                 ]),
             ])
 
@@ -383,8 +385,8 @@ class FactureResource extends Resource
                     TextEntry::make('statut_paiement')
                         ->label('Statut paiement')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state instanceof StatutPaiement ? $state->label() : $state)
-                        ->color(fn($state) => $state instanceof StatutPaiement ? $state->color() : 'gray'),
+                        ->formatStateUsing(fn ($state) => $state instanceof StatutPaiement ? $state->label() : $state)
+                        ->color(fn ($state) => $state instanceof StatutPaiement ? $state->color() : 'gray'),
 
                     TextEntry::make('date_echeance')
                         ->label('Échéance')
@@ -405,15 +407,14 @@ class FactureResource extends Resource
 
                     TextEntry::make('artisan.nom')
                         ->label('Artisan émetteur')
-                        ->formatStateUsing(fn($record) => $record->artisan?->nom_complet ?? '—')
-                        ->hint(fn($record) => 'SIRET : ' . ($record->artisan?->siret ?? '⚠️ manquant'))
-                        ->hintColor(fn($record) => $record->artisan?->siret ? null : 'danger'),
+                        ->formatStateUsing(fn ($record) => $record->artisan?->nom_complet ?? '—')
+                        ->hint(fn ($record) => 'SIRET : '.($record->artisan?->siret ?? '⚠️ manquant'))
+                        ->hintColor(fn ($record) => $record->artisan?->siret ? null : 'danger'),
 
                     TextEntry::make('contactParticulier.nom')
                         ->label('Client facturé')
                         ->formatStateUsing(
-                            fn($record) =>
-                            trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
+                            fn ($record) => trim(($record->contactParticulier?->prenom ?? '').' '.($record->contactParticulier?->nom ?? '')) ?: '—'
                         ),
                 ]),
 
@@ -422,25 +423,25 @@ class FactureResource extends Resource
                 ->schema([
                     TextEntry::make('total_ht')
                         ->label('HT')
-                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €'),
+                        ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €'),
 
                     TextEntry::make('montant_tva')
                         ->label('TVA')
-                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €'),
+                        ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €'),
 
                     TextEntry::make('total_ttc')
                         ->label('TTC')
-                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
+                        ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €')
                         ->weight('bold'),
 
                     TextEntry::make('acompte_deja_verse')
                         ->label('Acompte versé')
-                        ->formatStateUsing(fn($state) => $state ? number_format((float)$state, 2, ',', ' ') . ' €' : '—'),
+                        ->formatStateUsing(fn ($state) => $state ? number_format((float) $state, 2, ',', ' ').' €' : '—'),
 
                     TextEntry::make('solde_restant_du')
                         ->label('Solde dû')
-                        ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
-                        ->color(fn($state) => (float)$state > 0 ? 'danger' : 'success'),
+                        ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €')
+                        ->color(fn ($state) => (float) $state > 0 ? 'danger' : 'success'),
                 ]),
 
             Section::make('Pénalités & Litiges')
@@ -449,14 +450,14 @@ class FactureResource extends Resource
                 ->schema([
                     TextEntry::make('penalites_retard')
                         ->label('Pénalités de retard')
-                        ->formatStateUsing(fn($state) => (float)$state > 0
-                            ? number_format((float)$state, 2, ',', ' ') . ' €'
+                        ->formatStateUsing(fn ($state) => (float) $state > 0
+                            ? number_format((float) $state, 2, ',', ' ').' €'
                             : 'Aucune')
-                        ->color(fn($state) => (float)$state > 0 ? 'danger' : 'success'),
+                        ->color(fn ($state) => (float) $state > 0 ? 'danger' : 'success'),
 
                     TextEntry::make('jours_retard')
                         ->label('Retard')
-                        ->formatStateUsing(fn($state) => $state > 0 ? $state . ' jour(s)' : 'Dans les délais'),
+                        ->formatStateUsing(fn ($state) => $state > 0 ? $state.' jour(s)' : 'Dans les délais'),
                 ]),
 
             Section::make('Notes')
@@ -473,9 +474,9 @@ class FactureResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListFactures::route('/'),
+            'index' => ListFactures::route('/'),
             'create' => CreateFacture::route('/create'),
-            'view'   => ViewFacture::route('/{record}'),
+            'view' => ViewFacture::route('/{record}'),
         ];
     }
 

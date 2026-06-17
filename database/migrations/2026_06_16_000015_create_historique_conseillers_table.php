@@ -12,18 +12,18 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('partenaire_id')
-                  ->constrained('partenaires')
-                  ->cascadeOnDelete();
+                ->constrained('partenaires')
+                ->cascadeOnDelete();
 
             $table->foreignId('ancien_conseiller_id')
-                  ->nullable()
-                  ->constrained('consultants')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('consultants')
+                ->nullOnDelete();
 
             $table->foreignId('nouveau_conseiller_id')
-                  ->nullable()
-                  ->constrained('consultants')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('consultants')
+                ->nullOnDelete();
 
             $table->date('date_changement');
             $table->string('motif')->nullable();

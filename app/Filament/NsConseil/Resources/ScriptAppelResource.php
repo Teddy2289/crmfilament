@@ -7,35 +7,36 @@ use App\Filament\NsConseil\Resources\ScriptAppelResource\Pages\EditScriptAppel;
 use App\Filament\NsConseil\Resources\ScriptAppelResource\Pages\ListScriptAppels;
 use App\Models\CampagnePhoning;
 use App\Models\ScriptAppel;
-use Filament\Forms;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\ColorPicker;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 
 class ScriptAppelResource extends Resource
 {
     protected static ?string $model = ScriptAppel::class;
 
-    protected static ?string $navigationIcon    = 'heroicon-o-document-text';
-    protected static ?string $navigationLabel   = 'Scripts d\'appel';
-    protected static ?string $navigationGroup   = 'Configuration';
-    protected static ?int    $navigationSort    = 10;
-    protected static ?string $modelLabel        = 'Script d\'appel';
-    protected static ?string $pluralModelLabel  = 'Scripts d\'appel';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
+    protected static ?string $navigationLabel = 'Scripts d\'appel';
+
+    protected static ?string $navigationGroup = 'Configuration';
+
+    protected static ?int $navigationSort = 10;
+
+    protected static ?string $modelLabel = 'Script d\'appel';
+
+    protected static ?string $pluralModelLabel = 'Scripts d\'appel';
 
     // ── Formulaire ───────────────────────────────────────────────────
     public static function form(Form $form): Form
@@ -75,7 +76,7 @@ class ScriptAppelResource extends Resource
                         ->helperText('Si renseigné, ce script n\'apparaît que lors des appels de cette campagne.')
                         ->columnSpanFull(),
 
-                    Forms\Components\TextInput::make('ordre')
+                    TextInput::make('ordre')
                         ->label('Ordre d\'affichage')
                         ->numeric()
                         ->default(0)
@@ -150,8 +151,8 @@ class ScriptAppelResource extends Resource
                                 ->label('Couleur')
                                 ->options([
                                     'purple' => 'Violet',
-                                    'blue'   => 'Bleu',
-                                    'green'  => 'Vert',
+                                    'blue' => 'Bleu',
+                                    'green' => 'Vert',
                                     'orange' => 'Orange',
                                 ])
                                 ->default('purple')
@@ -196,30 +197,30 @@ class ScriptAppelResource extends Resource
                     ->sortable()
                     ->weight('bold'),
 
-                Tables\Columns\BadgeColumn::make('onglet')
+                BadgeColumn::make('onglet')
                     ->label('Onglet')
                     ->colors([
-                        'primary'   => 'accroche',
-                        'success'   => 'decouverte',
-                        'warning'   => 'argumentaire',
-                        'danger'    => 'objections',
+                        'primary' => 'accroche',
+                        'success' => 'decouverte',
+                        'warning' => 'argumentaire',
+                        'danger' => 'objections',
                         'secondary' => 'closing',
                     ])
                     ->formatStateUsing(fn ($state) => ScriptAppel::ONGLETS[$state] ?? $state),
 
-                Tables\Columns\BadgeColumn::make('type_contact')
+                BadgeColumn::make('type_contact')
                     ->label('Type contact')
                     ->colors(['gray' => null, 'info' => fn ($state) => $state !== null])
                     ->formatStateUsing(fn ($state) => $state ? (ScriptAppel::TYPES_CONTACT[$state] ?? $state) : 'Universel'),
 
-                Tables\Columns\TextColumn::make('campagne.nom')
+                TextColumn::make('campagne.nom')
                     ->label('Campagne')
                     ->placeholder('Générique')
                     ->badge()
                     ->color('primary')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('contenu')
+                TextColumn::make('contenu')
                     ->label('Aperçu')
                     ->limit(60)
                     ->color('gray'),
@@ -264,8 +265,8 @@ class ScriptAppelResource extends Resource
                 Tables\Actions\ReplicateAction::make()
                     ->label('Dupliquer')
                     ->beforeReplicaSaved(function (ScriptAppel $replica) {
-                        $replica->titre = 'Copie de ' . $replica->titre;
-                        $replica->slug  = null; // sera regénéré
+                        $replica->titre = 'Copie de '.$replica->titre;
+                        $replica->slug = null; // sera regénéré
                     }),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -288,9 +289,9 @@ class ScriptAppelResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListScriptAppels::route('/'),
+            'index' => ListScriptAppels::route('/'),
             'create' => CreateScriptAppel::route('/create'),
-            'edit'   => EditScriptAppel::route('/{record}/edit'),
+            'edit' => EditScriptAppel::route('/{record}/edit'),
         ];
     }
 }

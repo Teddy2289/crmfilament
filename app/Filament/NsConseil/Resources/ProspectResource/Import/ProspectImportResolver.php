@@ -11,7 +11,7 @@ class ProspectImportResolver
      */
     public static function importFile(string $filePath, array $defaults = []): array
     {
-        $results     = [];
+        $results = [];
         $spreadsheet = IOFactory::load($filePath);
 
         foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
@@ -28,17 +28,19 @@ class ProspectImportResolver
                 $results[$sheetName] = self::emptyResult(
                     "Feuille '{$sheetName}' ignorée (vide ou moins de 2 lignes)"
                 );
+
                 continue;
             }
 
-            if (!self::sheetHasProspectHeader($rows)) {
+            if (! self::sheetHasProspectHeader($rows)) {
                 $results[$sheetName] = self::emptyResult(
                     "Feuille '{$sheetName}' ignorée : aucune colonne reconnue (Nom, Téléphone…)"
                 );
+
                 continue;
             }
 
-            $importer          = new ProspectImporter();
+            $importer = new ProspectImporter;
             $results[$sheetName] = $importer->import($rows, $sheetName, $defaults);
         }
 
@@ -53,15 +55,22 @@ class ProspectImportResolver
     {
         $keywords = ['nom', 'telephone', 'téléphone', 'raison sociale', 'entreprise'];
         foreach ($rows as $row) {
-            if (empty($row)) continue;
+            if (empty($row)) {
+                continue;
+            }
             foreach ($row as $cell) {
-                if (!is_string($cell)) continue;
+                if (! is_string($cell)) {
+                    continue;
+                }
                 $lower = mb_strtolower(trim($cell));
                 foreach ($keywords as $kw) {
-                    if (str_contains($lower, $kw)) return true;
+                    if (str_contains($lower, $kw)) {
+                        return true;
+                    }
                 }
             }
         }
+
         return false;
     }
 

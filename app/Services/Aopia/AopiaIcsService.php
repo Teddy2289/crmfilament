@@ -16,7 +16,7 @@ class AopiaIcsService
 
         $start = Carbon::parse($rdv->date_heure);
         $end = (clone $start)->addHour();
-        $summary = '[RDV AOPIA] ' . ($prospect?->raison_sociale ?: $prospect?->nom ?: 'Prospect');
+        $summary = '[RDV AOPIA] '.($prospect?->raison_sociale ?: $prospect?->nom ?: 'Prospect');
         $location = trim((string) ($rdv->lieu ?: $rdv->adresse_lieu));
         $description = trim(strip_tags((string) $rdv->notes));
 
@@ -27,13 +27,13 @@ class AopiaIcsService
             'CALSCALE:GREGORIAN',
             'METHOD:REQUEST',
             'BEGIN:VEVENT',
-            'UID:' . $this->escape('aopia-rdv-' . $rdv->id . '@crmfilament'),
-            'DTSTAMP:' . now()->utc()->format('Ymd\THis\Z'),
-            'DTSTART:' . $start->utc()->format('Ymd\THis\Z'),
-            'DTEND:' . $end->utc()->format('Ymd\THis\Z'),
-            'SUMMARY:' . $this->escape($summary),
-            'LOCATION:' . $this->escape($location),
-            'DESCRIPTION:' . $this->escape($description),
+            'UID:'.$this->escape('aopia-rdv-'.$rdv->id.'@crmfilament'),
+            'DTSTAMP:'.now()->utc()->format('Ymd\THis\Z'),
+            'DTSTART:'.$start->utc()->format('Ymd\THis\Z'),
+            'DTEND:'.$end->utc()->format('Ymd\THis\Z'),
+            'SUMMARY:'.$this->escape($summary),
+            'LOCATION:'.$this->escape($location),
+            'DESCRIPTION:'.$this->escape($description),
             'END:VEVENT',
             'END:VCALENDAR',
             '',
@@ -42,6 +42,6 @@ class AopiaIcsService
 
     private function escape(string $value): string
     {
-        return str_replace(["\\", ";", ",", "\n", "\r"], ["\\\\", "\\;", "\\,", "\\n", ''], $value);
+        return str_replace(['\\', ';', ',', "\n", "\r"], ['\\\\', '\\;', '\\,', '\\n', ''], $value);
     }
 }

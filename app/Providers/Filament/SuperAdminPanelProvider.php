@@ -4,8 +4,8 @@ namespace App\Providers\Filament;
 
 use App\Filament\SuperAdmin\Pages\Dashboard;
 use App\Filament\SuperAdmin\Pages\DatabaseManager;
+use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SetLocale;
-use App\Models\User;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -35,9 +35,9 @@ class SuperAdminPanelProvider extends PanelProvider
                 'primary' => Color::Violet,
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
-                'danger'  => Color::Rose,
-                'info'    => Color::Cyan,
-                'gray'    => Color::Zinc,
+                'danger' => Color::Rose,
+                'info' => Color::Cyan,
+                'gray' => Color::Zinc,
             ])
             ->navigationGroups([
                 NavigationGroup::make('Utilisateurs & Accès')
@@ -82,7 +82,7 @@ class SuperAdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                \App\Http\Middleware\EnsureSuperAdmin::class,
+                EnsureSuperAdmin::class,
             ])
             ->authGuard('web')
             ->sidebarCollapsibleOnDesktop()

@@ -1,9 +1,9 @@
 <?php
 
+use App\Enums\ProspectStatut;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Enums\ProspectStatut;
 
 return new class extends Migration
 {

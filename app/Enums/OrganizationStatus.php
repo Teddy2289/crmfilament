@@ -49,7 +49,7 @@ enum OrganizationStatus: string
 
     public function estActif(): bool
     {
-        return !in_array($this, [self::Refus, self::ConventionEngagement]);
+        return ! in_array($this, [self::Refus, self::ConventionEngagement]);
     }
 
     public function estBloque(): bool
@@ -77,7 +77,7 @@ enum OrganizationStatus: string
     public static function pourSelect(): array
     {
         return collect(self::cases())
-            ->mapWithKeys(fn($case) => [$case->value => $case->label()])
+            ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
             ->toArray();
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\DevisResource\Pages;
 
 use App\Enums\StatutDevis;
@@ -30,32 +31,32 @@ class ListDevis extends ListRecords
             'brouillons' => Tab::make('Brouillons')
                 ->badge(Devis::where('statut', StatutDevis::Brouillon)->count())
                 ->badgeColor('gray')
-                ->modifyQueryUsing(fn($q) => $q->brouillons()),
+                ->modifyQueryUsing(fn ($q) => $q->brouillons()),
 
             'en_attente' => Tab::make('En attente')
                 ->badge(Devis::enAttente()->count())
                 ->badgeColor('info')
-                ->modifyQueryUsing(fn($q) => $q->enAttente()),
+                ->modifyQueryUsing(fn ($q) => $q->enAttente()),
 
             'a_relancer' => Tab::make('À relancer')
                 ->badge(Devis::aRelancer()->count())
                 ->badgeColor('warning')
-                ->modifyQueryUsing(fn($q) => $q->aRelancer()),
+                ->modifyQueryUsing(fn ($q) => $q->aRelancer()),
 
             'acceptes' => Tab::make('Acceptés')
                 ->badge(Devis::acceptes()->count())
                 ->badgeColor('success')
-                ->modifyQueryUsing(fn($q) => $q->acceptes()),
+                ->modifyQueryUsing(fn ($q) => $q->acceptes()),
 
             'refuses' => Tab::make('Refusés')
                 ->badge(Devis::refuses()->count())
                 ->badgeColor('danger')
-                ->modifyQueryUsing(fn($q) => $q->refuses()),
+                ->modifyQueryUsing(fn ($q) => $q->refuses()),
 
             'expires' => Tab::make('Expirés')
                 ->badge(Devis::expires()->count())
                 ->badgeColor('danger')
-                ->modifyQueryUsing(fn($q) => $q->expires()),
+                ->modifyQueryUsing(fn ($q) => $q->expires()),
         ];
     }
 }

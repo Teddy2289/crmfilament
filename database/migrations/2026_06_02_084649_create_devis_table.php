@@ -57,28 +57,28 @@ return new class extends Migration
         $driver = $connection->getDriverName();
 
         // Index simple sur statut
-        if (!$this->indexExists('devis_statut_index', $table)) {
+        if (! $this->indexExists('devis_statut_index', $table)) {
             Schema::table($table, function (Blueprint $table) {
                 $table->index('statut');
             });
         }
 
         // Index simple sur date_validite
-        if (!$this->indexExists('devis_date_validite_index', $table)) {
+        if (! $this->indexExists('devis_date_validite_index', $table)) {
             Schema::table($table, function (Blueprint $table) {
                 $table->index('date_validite');
             });
         }
 
         // Index composite sur artisan_id et statut
-        if (!$this->indexExists('devis_artisan_id_statut_index', $table)) {
+        if (! $this->indexExists('devis_artisan_id_statut_index', $table)) {
             Schema::table($table, function (Blueprint $table) {
                 $table->index(['artisan_id', 'statut']);
             });
         }
 
         // Index composite sur contact_particulier_id et statut
-        if (!$this->indexExists('devis_contact_particulier_id_statut_index', $table)) {
+        if (! $this->indexExists('devis_contact_particulier_id_statut_index', $table)) {
             Schema::table($table, function (Blueprint $table) {
                 $table->index(['contact_particulier_id', 'statut']);
             });
@@ -96,13 +96,14 @@ return new class extends Migration
         try {
             switch ($driver) {
                 case 'mysql':
-                    $result = $connection->select("
+                    $result = $connection->select('
                         SELECT COUNT(*) as count
                         FROM information_schema.statistics
                         WHERE table_schema = DATABASE()
                         AND table_name = ?
                         AND index_name = ?
-                    ", [$table, $indexName]);
+                    ', [$table, $indexName]);
+
                     return $result[0]->count > 0;
 
                 case 'pgsql':
@@ -113,6 +114,7 @@ return new class extends Migration
                         AND tablename = ?
                         AND indexname = ?
                     ", [$table, $indexName]);
+
                     return $result[0]->count > 0;
 
                 case 'sqlite':
@@ -123,12 +125,13 @@ return new class extends Migration
                         AND tbl_name = ?
                         AND name = ?
                     ", [$table, $indexName]);
+
                     return $result[0]->count > 0;
 
                 default:
                     return false;
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Si la table n'existe pas encore, retourner false
             return false;
         }

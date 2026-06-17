@@ -1,8 +1,11 @@
 <?php
+
 namespace App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 
 use App\Filament\NsConseil\Resources\PartenaireResource;
+use App\Models\Partenaire;
 use Filament\Actions;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewPartenaire extends ViewRecord
@@ -19,9 +22,9 @@ class ViewPartenaire extends ViewRecord
                 ->icon('heroicon-o-arrow-path')
                 ->color('gray')
                 ->form([
-                    \Filament\Forms\Components\Select::make('statut')
+                    Select::make('statut')
                         ->label('Nouveau statut')
-                        ->options(\App\Models\Partenaire::STATUTS)
+                        ->options(Partenaire::STATUTS)
                         ->required()
                         ->native(false),
                 ])
