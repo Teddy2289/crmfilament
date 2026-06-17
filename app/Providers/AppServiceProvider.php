@@ -14,6 +14,14 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AircallService::class);
+
+        // Telescope reste un paquet dev (composer require-dev) : on ne
+        // l'enregistre qu'en local pour ne jamais casser
+        // `composer install --no-dev` en production/CI.
+        if ($this->app->environment('local')) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        }
     }
 
     /**
