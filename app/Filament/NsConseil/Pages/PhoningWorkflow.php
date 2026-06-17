@@ -16,6 +16,7 @@ use App\Models\Prospect;
 use App\Models\ScriptAppel;
 use App\Models\StatutPhoning;
 use App\Models\User;
+use App\Services\Aopia\FicheGenerationService;
 use App\Services\Crm\CrmProfileService;
 use App\Services\Crm\CrmSettingsService;
 use App\Support\CsePhoningWorkflow;
@@ -532,6 +533,28 @@ class PhoningWorkflow extends Page
         };
 
         $this->enregistrerAppel();
+
+        // Auto-génération des fiches Word liées au statut phoning
+        if ($this->contactType === 'prospect' && $this->currentContact instanceof Prospect) {
+            try {
+                $ficheService = app(FicheGenerationService::class);
+                $docs = $ficheService->genererAutoParStatut(
+                    $this->statut_resultat,
+                    $this->currentContact,
+                    $this->currentContact->rendezVous()->latest('date_heure')->first()
+                );
+                if (! empty($docs)) {
+                    $noms = collect($docs)->pluck('nom_fichier')->implode(', ');
+                    Notification::make()
+                        ->title('Fiches générées automatiquement')
+                        ->body($noms)
+                        ->info()
+                        ->send();
+                }
+            } catch (\Throwable) {
+                // Ne pas bloquer le workflow si la génération échoue
+            }
+        }
 
         Notification::make()
             ->title('Contact enregistré')
