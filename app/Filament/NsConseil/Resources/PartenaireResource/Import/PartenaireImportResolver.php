@@ -21,7 +21,9 @@ class PartenaireImportResolver
      */
     public static function importFile(string $filePath, array $defaults = []): array
     {
-        $spreadsheet = IOFactory::load($filePath);
+        $reader = IOFactory::createReaderForFile($filePath);
+        $reader->setReadDataOnly(true);
+        $spreadsheet = $reader->load($filePath);
 
         // ── Chercher la feuille cible ─────────────────────────────────
         $worksheet = null;
