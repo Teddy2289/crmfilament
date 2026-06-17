@@ -15,6 +15,7 @@
         "laravel/vonage-notification-channel": "^3.3",
         "league/oauth2-google": "^5.0",
         "phpoffice/phpspreadsheet": "^5.7",
+        "phpoffice/phpword": "^1.4",
         "saade/filament-fullcalendar": "^3.2",
         "spatie/laravel-model-states": "^2.12",
         "spatie/laravel-permission": "^7.4"
