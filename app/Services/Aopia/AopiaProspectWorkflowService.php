@@ -4,12 +4,15 @@ namespace App\Services\Aopia;
 
 use App\Enums\ProspectStatut;
 use App\Models\Appel;
+use App\Models\Document;
+use App\Models\FicheTemplate;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use App\Models\User;
 use App\Services\Crm\CrmProfileService;
 use App\Services\Crm\CrmSettingsService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class AopiaProspectWorkflowService
@@ -215,5 +218,33 @@ class AopiaProspectWorkflowService
         if ($count > 0 && $count < $max) {
             throw new RuntimeException("STD-NR nécessite {$max} tentatives à des horaires différents. Tentatives actuelles : {$count}.");
         }
+    }
+
+    /**
+     * Déclenche la génération automatique des fiches Word liées à un code statut phoning.
+     *
+     * @return list<Document>
+     */
+    public function genererFichesAutoPourStatut(string $statutPhoningCode, Prospect $prospect): array
+    {
+        $templates = FicheTemplate::autoGenerationPourStatut($statutPhoningCode);
+
+        if ($templates->isEmpty()) {
+            return [];
+        }
+
+        $ficheService = app(FicheGenerationService::class);
+        $rdv = $this->dernierRendezVous($prospect);
+        $documents = [];
+
+        foreach ($templates as $template) {
+            try {
+                $documents[] = $ficheService->generer($template, $prospect, $rdv);
+            } catch (\Throwable $e) {
+                Log::warning("Échec auto-génération fiche [{$template->nom}] pour prospect #{$prospect->id}: {$e->getMessage()}");
+            }
+        }
+
+        return $documents;
     }
 }

@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             AlloproUsersSeeder::class,
             ArtisanSeeder::class,
             StatutPhoningSeeder::class,
+            FicheTemplateSeeder::class,
         ]);
     }
 }
