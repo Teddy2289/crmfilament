@@ -32,7 +32,9 @@ class ImportLog extends Model
     public function getTauxReussiteAttribute(): float
     {
         $total = $this->rows_imported + $this->rows_skipped + $this->rows_failed;
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         return round(($this->rows_imported / $total) * 100, 1);
     }
@@ -53,8 +55,13 @@ class ImportLog extends Model
 
     public function getImportStatusAttribute(): string
     {
-        if ($this->rows_failed > 0) return 'danger';
-        if ($this->rows_skipped > 0) return 'warning';
+        if ($this->rows_failed > 0) {
+            return 'danger';
+        }
+        if ($this->rows_skipped > 0) {
+            return 'warning';
+        }
+
         return 'success';
     }
 

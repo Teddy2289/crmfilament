@@ -36,8 +36,8 @@ return [
     ],
 
     'google' => [
-        'client_id'     => env('CLI_ID'),
+        'client_id' => env('CLI_ID'),
         'client_secret' => env('CLI_SECRET'),
-        'redirect'      => env('APP_URL') . '/google/callback',
+        'redirect' => env('APP_URL').'/google/callback',
     ],
 ];

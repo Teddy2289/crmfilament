@@ -4,9 +4,9 @@ namespace App\Providers\Filament;
 
 use App\Filament\NsConseil\Pages\AircallDashboard;
 use App\Filament\NsConseil\Pages\Auth\Login as NsConseilLogin;
-use App\Http\Responses\NsConseil\LoginResponse;
 use App\Filament\NsConseil\Pages\Dashboard;
 use App\Http\Middleware\SetLocale;
+use App\Http\Responses\NsConseil\LoginResponse;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -48,9 +48,9 @@ class NsConseilPanelProvider extends PanelProvider
                 'primary' => Color::Blue,
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
-                'danger'  => Color::Rose,
-                'info'    => Color::Sky,
-                'gray'    => Color::Slate,
+                'danger' => Color::Rose,
+                'info' => Color::Sky,
+                'gray' => Color::Slate,
             ])
             ->navigationGroups([
                 NavigationGroup::make('Pipeline')
@@ -113,21 +113,21 @@ class NsConseilPanelProvider extends PanelProvider
             ->spa()
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn() => view('filament.ns-conseil.auth.login-styles'),
+                fn () => view('filament.ns-conseil.auth.login-styles'),
                 scopes: [NsConseilLogin::class],
             )
             ->renderHook(
                 PanelsRenderHook::BODY_START,
-                fn() => view('filament.ns-conseil.auth.login-sidebar'),
+                fn () => view('filament.ns-conseil.auth.login-sidebar'),
                 scopes: [NsConseilLogin::class],
             )
             ->renderHook(
                 PanelsRenderHook::BODY_START,
-                fn() => view('filament.loading-overlay'),
+                fn () => view('filament.loading-overlay'),
             )
             ->renderHook(
                 PanelsRenderHook::TOPBAR_END,
-                fn() => auth()->user()?->isSuperAdmin()
+                fn () => auth()->user()?->isSuperAdmin()
                     ? view('filament.shared.admin-button')
                     : '',
             );

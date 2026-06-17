@@ -61,7 +61,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::TOPBAR_END,
-                fn() => auth()->user()?->isSuperAdmin()
+                fn () => auth()->user()?->isSuperAdmin()
                     ? view('filament.shared.admin-button')
                     : '',
             );

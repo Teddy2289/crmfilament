@@ -1,4 +1,5 @@
 <?php
+
 // ── app/Filament/NsConseil/Resources/RendezVousResource/Pages/CreateRendezVous.php
 
 namespace App\Filament\NsConseil\Resources\RendezVousResource\Pages;
@@ -21,6 +22,7 @@ class CreateRendezVous extends CreateRecord
         if (empty($data['commercial_id'])) {
             $data['commercial_id'] = auth()->id();
         }
+
         return $data;
     }
 }

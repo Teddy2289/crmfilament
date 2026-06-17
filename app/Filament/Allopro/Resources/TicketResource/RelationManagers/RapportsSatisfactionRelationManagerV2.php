@@ -1,9 +1,11 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\TicketResource\RelationManagers;
-;
+
 use App\Enums\TicketStatut;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -16,8 +18,10 @@ use Filament\Tables\Table;
 class RapportsSatisfactionRelationManagerV2 extends RelationManager
 {
     protected static string $relationship = 'rapportsSatisfaction';
+
     protected static ?string $title = 'Rapport satisfaction P6';
-    protected static ?string $icon  = 'heroicon-o-star';
+
+    protected static ?string $icon = 'heroicon-o-star';
 
     public function form(Form $form): Form
     {
@@ -33,14 +37,16 @@ class RapportsSatisfactionRelationManagerV2 extends RelationManager
                 ->options(array_combine(range(0, 10), range(0, 10)))
                 ->required()->native(false)->live()
                 ->afterStateUpdated(function ($state, Forms\Set $set) {
-                    if ($state === null) return;
-                    $set('statut_cloture', match(true) {
+                    if ($state === null) {
+                        return;
+                    }
+                    $set('statut_cloture', match (true) {
                         $state >= 8 => 'satisfait',
                         $state >= 6 => 'suivi_qualite_requis',
-                        default     => 'reclamation_ouverte',
+                        default => 'reclamation_ouverte',
                     });
                 })
-                ->helperText(fn(\Filament\Forms\Get $get) => match(true) {
+                ->helperText(fn (Get $get) => match (true) {
                     ($get('note_nps') ?? -1) >= 9 => '⭐ Promoteur',
                     ($get('note_nps') ?? -1) >= 7 => '😐 Passif',
                     ($get('note_nps') ?? -1) >= 6 => '⚠️ Suivi qualité requis (P7)',
@@ -51,9 +57,9 @@ class RapportsSatisfactionRelationManagerV2 extends RelationManager
             Forms\Components\Select::make('statut_cloture')
                 ->label('Statut de clôture')
                 ->options([
-                    'satisfait'            => '✅ Satisfait',
+                    'satisfait' => '✅ Satisfait',
                     'suivi_qualite_requis' => '⚠️ Suivi qualité requis',
-                    'reclamation_ouverte'  => '🚨 Réclamation ouverte (P8)',
+                    'reclamation_ouverte' => '🚨 Réclamation ouverte (P8)',
                 ])
                 ->required()->native(false),
 
@@ -74,23 +80,23 @@ class RapportsSatisfactionRelationManagerV2 extends RelationManager
             ->defaultSort('date_appel_j1', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('note_nps')->label('NPS')->badge()
-                    ->formatStateUsing(fn($s) => $s . ' / 10')
-                    ->color(fn($s) => match(true) {
+                    ->formatStateUsing(fn ($s) => $s.' / 10')
+                    ->color(fn ($s) => match (true) {
                         $s >= 9 => 'success', $s >= 7 => 'warning', $s >= 6 => 'orange', default => 'danger',
                     }),
 
                 Tables\Columns\TextColumn::make('statut_cloture')->label('Résultat')->badge()
-                    ->formatStateUsing(fn($s) => match(is_object($s) ? $s->value : $s) {
-                        'satisfait'            => '✅ Satisfait',
+                    ->formatStateUsing(fn ($s) => match (is_object($s) ? $s->value : $s) {
+                        'satisfait' => '✅ Satisfait',
                         'suivi_qualite_requis' => '⚠️ Suivi qualité',
-                        'reclamation_ouverte'  => '🚨 Réclamation P8',
-                        default                => $s,
+                        'reclamation_ouverte' => '🚨 Réclamation P8',
+                        default => $s,
                     })
-                    ->color(fn($s) => match(is_object($s) ? $s->value : $s) {
-                        'satisfait'            => 'success',
+                    ->color(fn ($s) => match (is_object($s) ? $s->value : $s) {
+                        'satisfait' => 'success',
                         'suivi_qualite_requis' => 'warning',
-                        'reclamation_ouverte'  => 'danger',
-                        default                => 'gray',
+                        'reclamation_ouverte' => 'danger',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\IconColumn::make('feedback_artisan')->label('Feedback')
@@ -104,16 +110,15 @@ class RapportsSatisfactionRelationManagerV2 extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Saisir rapport P6')
-                    ->visible(fn() =>
-                        $this->getOwnerRecord()->statut === TicketStatut::InterventionRealisee
+                    ->visible(fn () => $this->getOwnerRecord()->statut === TicketStatut::InterventionRealisee
                     )
                     ->after(function ($record) {
                         // Mise à jour statut ticket après saisie NPS
                         $ticket = $this->getOwnerRecord();
-                        $nouveauStatut = match(true) {
+                        $nouveauStatut = match (true) {
                             $record->note_nps >= 8 => TicketStatut::ClotureSatisfait,
                             $record->note_nps >= 6 => TicketStatut::SuiviQualiteRequis,
-                            default                => TicketStatut::ReclamationOuverte,
+                            default => TicketStatut::ReclamationOuverte,
                         };
                         $ticket->update(['statut' => $nouveauStatut->value]);
                         if ($record->note_nps <= 5) {
@@ -128,7 +133,7 @@ class RapportsSatisfactionRelationManagerV2 extends RelationManager
                     ->label('Feedback transmis')
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn($r) => !$r->feedback_artisan)
+                    ->visible(fn ($r) => ! $r->feedback_artisan)
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update(['feedback_artisan' => true]);

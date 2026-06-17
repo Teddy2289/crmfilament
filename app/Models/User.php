@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
+use App\Services\Crm\CrmProfileService;
+use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use App\Services\Crm\CrmProfileService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, HasRoles;
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'nom',
@@ -38,9 +39,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'google_token'      => 'array',
-            'actif'             => 'boolean',
+            'password' => 'hashed',
+            'google_token' => 'array',
+            'actif' => 'boolean',
         ];
     }
 
@@ -49,7 +50,7 @@ class User extends Authenticatable implements FilamentUser
      */
     public function getFilamentName(): string
     {
-        return trim($this->prenom . ' ' . $this->nom) ?: $this->email;
+        return trim($this->prenom.' '.$this->nom) ?: $this->email;
     }
 
     /**
@@ -59,6 +60,7 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->getFilamentName();
     }
+
     /**
      * Determine if the user can access the given Filament panel.
      */
@@ -66,7 +68,6 @@ class User extends Authenticatable implements FilamentUser
     {
         return app(CrmProfileService::class)->userCanAccessPanel($this, $panel->getId());
     }
-
 
     public function hasRoleCache(string $role): bool
     {
@@ -78,45 +79,50 @@ class User extends Authenticatable implements FilamentUser
         return in_array($this->role_cache, $roles);
     }
 
-
     // ── Constantes de rôles ─────────────────────────────────────────
-    const ROLE_SUPER_ADMIN       = 'super_admin';
-    const ROLE_ADMIN             = 'administrateur';
-    const ROLE_COMMERCIAL        = 'commercial';
-    const ROLE_TELEPROSPECTEUR   = 'teleprospecteur';
-    const ROLE_OPERATEUR         = 'operateur_n1';
-    const ROLE_BACK_OFFICE       = 'back_office';
-    const ROLE_SUPERVISEUR       = 'responsable_plateau';
+    const ROLE_SUPER_ADMIN = 'super_admin';
+
+    const ROLE_ADMIN = 'administrateur';
+
+    const ROLE_COMMERCIAL = 'commercial';
+
+    const ROLE_TELEPROSPECTEUR = 'teleprospecteur';
+
+    const ROLE_OPERATEUR = 'operateur_n1';
+
+    const ROLE_BACK_OFFICE = 'back_office';
+
+    const ROLE_SUPERVISEUR = 'responsable_plateau';
 
     const ROLES = [
-        self::ROLE_SUPER_ADMIN     => 'Super Administrateur',
-        self::ROLE_ADMIN           => 'Administrateur',
-        self::ROLE_COMMERCIAL      => 'Commercial',
+        self::ROLE_SUPER_ADMIN => 'Super Administrateur',
+        self::ROLE_ADMIN => 'Administrateur',
+        self::ROLE_COMMERCIAL => 'Commercial',
         self::ROLE_TELEPROSPECTEUR => 'Téléprospecteur',
-        self::ROLE_OPERATEUR       => 'Opérateur N1',
-        self::ROLE_BACK_OFFICE     => 'Back-Office',
-        self::ROLE_SUPERVISEUR     => 'Responsable Plateau',
+        self::ROLE_OPERATEUR => 'Opérateur N1',
+        self::ROLE_BACK_OFFICE => 'Back-Office',
+        self::ROLE_SUPERVISEUR => 'Responsable Plateau',
     ];
 
     const SECTEURS = [
-        'nord'     => 'Nord',
-        'sud'      => 'Sud',
-        'est'      => 'Est',
-        'ouest'    => 'Ouest',
-        'idf'      => 'Île-de-France',
+        'nord' => 'Nord',
+        'sud' => 'Sud',
+        'est' => 'Est',
+        'ouest' => 'Ouest',
+        'idf' => 'Île-de-France',
         'national' => 'National',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
     public function getNomCompletAttribute(): string
     {
-        return trim($this->prenom . ' ' . $this->nom);
+        return trim($this->prenom.' '.$this->nom);
     }
 
     public function getInitialesAttribute(): string
     {
         return strtoupper(
-            substr($this->prenom, 0, 1) .
+            substr($this->prenom, 0, 1).
                 substr($this->nom, 0, 1)
         );
     }
@@ -129,14 +135,14 @@ class User extends Authenticatable implements FilamentUser
     public function getRoleColorAttribute(): string
     {
         return match ($this->role_cache) {
-            self::ROLE_SUPER_ADMIN     => 'danger',
-            self::ROLE_ADMIN           => 'warning',
-            self::ROLE_COMMERCIAL      => 'success',
+            self::ROLE_SUPER_ADMIN => 'danger',
+            self::ROLE_ADMIN => 'warning',
+            self::ROLE_COMMERCIAL => 'success',
             self::ROLE_TELEPROSPECTEUR => 'info',
-            self::ROLE_OPERATEUR       => 'primary',
-            self::ROLE_BACK_OFFICE     => 'gray',
-            self::ROLE_SUPERVISEUR     => 'warning',
-            default                    => 'gray',
+            self::ROLE_OPERATEUR => 'primary',
+            self::ROLE_BACK_OFFICE => 'gray',
+            self::ROLE_SUPERVISEUR => 'warning',
+            default => 'gray',
         };
     }
 
@@ -152,7 +158,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function getGoogleConnecteAttribute(): bool
     {
-        return !empty($this->google_token);
+        return ! empty($this->google_token);
     }
 
     // ── Helpers rôles — délèguent à Spatie HasRoles ────────────────
@@ -170,26 +176,32 @@ class User extends Authenticatable implements FilamentUser
             ->intersect(['super_admin', 'administrateur'])
             ->isNotEmpty();
     }
+
     public function isAdmin(): bool
     {
         return $this->hasRoleCache(self::ROLE_ADMIN) || $this->isSuperAdmin();
     }
+
     public function isCommercial(): bool
     {
         return $this->hasRoleCache(self::ROLE_COMMERCIAL);
     }
+
     public function isTeleprospecteur(): bool
     {
         return $this->hasRoleCache(self::ROLE_TELEPROSPECTEUR);
     }
+
     public function isOperateur(): bool
     {
         return $this->hasRoleCache(self::ROLE_OPERATEUR);
     }
+
     public function isBackOffice(): bool
     {
         return $this->hasRoleCache(self::ROLE_BACK_OFFICE);
     }
+
     public function isSuperviseur(): bool
     {
         return $this->hasRoleCache(self::ROLE_SUPERVISEUR);
@@ -207,6 +219,7 @@ class User extends Authenticatable implements FilamentUser
     {
         $this->update(['actif' => true]);
     }
+
     public function desactiver(): void
     {
         $this->update(['actif' => false]);
@@ -214,7 +227,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function changerRole(string $role): void
     {
-        if (!array_key_exists($role, self::ROLES)) {
+        if (! array_key_exists($role, self::ROLES)) {
             throw new \InvalidArgumentException("Rôle invalide : {$role}");
         }
         $this->assignRoleWithCache($role);
@@ -224,6 +237,7 @@ class User extends Authenticatable implements FilamentUser
     {
         $this->update(['google_token' => $token]);
     }
+
     public function deconnecterGoogle(): void
     {
         $this->update(['google_token' => null]);
@@ -278,7 +292,7 @@ class User extends Authenticatable implements FilamentUser
     protected static function booted(): void
     {
         static::creating(function (User $user) {
-            if (!isset($user->actif)) {
+            if (! isset($user->actif)) {
                 $user->actif = true;
             }
         });

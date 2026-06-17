@@ -11,7 +11,9 @@ use Filament\Tables\Table;
 class PropositionsRelationManager extends RelationManager
 {
     protected static string $relationship = 'propositions';
+
     protected static ?string $title = 'Propositions';
+
     protected static ?string $icon = 'heroicon-o-document-text';
 
     public function form(Form $form): Form
@@ -101,7 +103,7 @@ class PropositionsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
-                    ->color(fn ($state) => match($state) {
+                    ->color(fn ($state) => match ($state) {
                         'Lancée' => 'info',
                         'En cours' => 'primary',
                         'Planifiée' => 'warning',

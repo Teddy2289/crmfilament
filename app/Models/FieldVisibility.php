@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class FieldVisibility extends Model
 {
@@ -31,7 +32,7 @@ class FieldVisibility extends Model
             ->value('visible') ?? true; // visible par défaut si pas de règle
     }
 
-    public static function getRulesForTable(string $table): \Illuminate\Support\Collection
+    public static function getRulesForTable(string $table): Collection
     {
         return static::where('table_name', $table)->get();
     }

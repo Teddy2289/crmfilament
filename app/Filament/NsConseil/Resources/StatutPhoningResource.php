@@ -5,7 +5,9 @@ namespace App\Filament\NsConseil\Resources;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\CreateStatutPhoning;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\EditStatutPhoning;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\ListStatutPhonings;
+use App\Models\PipelineStatut;
 use App\Models\StatutPhoning;
+use App\Models\WorkflowGroupe;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -16,11 +18,16 @@ class StatutPhoningResource extends Resource
 {
     protected static ?string $model = StatutPhoning::class;
 
-    protected static ?string $navigationIcon   = 'heroicon-o-tag';
-    protected static ?string $navigationLabel  = 'Statuts Phoning';
-    protected static ?string $navigationGroup  = 'Configuration';
-    protected static ?int    $navigationSort   = 11;
-    protected static ?string $modelLabel       = 'Statut Phoning';
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
+
+    protected static ?string $navigationLabel = 'Statuts Phoning';
+
+    protected static ?string $navigationGroup = 'Configuration';
+
+    protected static ?int $navigationSort = 11;
+
+    protected static ?string $modelLabel = 'Statut Phoning';
+
     protected static ?string $pluralModelLabel = 'Statuts Phoning';
 
     public static function form(Form $form): Form
@@ -83,13 +90,13 @@ class StatutPhoningResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('groupe')
                         ->label('Groupe / Cas')
-                        ->options(fn () => \App\Models\WorkflowGroupe::forModelType('prospect')->pluck('label', 'code'))
+                        ->options(fn () => WorkflowGroupe::forModelType('prospect')->pluck('label', 'code'))
                         ->searchable()
                         ->native(false),
 
                     Forms\Components\Select::make('pipeline_statut')
                         ->label('Statut pipeline cible')
-                        ->options(fn () => \App\Models\PipelineStatut::optionsFor('prospect'))
+                        ->options(fn () => PipelineStatut::optionsFor('prospect'))
                         ->searchable()
                         ->native(false)
                         ->helperText('Statut prospect appliqué après cet appel'),
@@ -132,7 +139,7 @@ class StatutPhoningResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('model_type')
                     ->label('Modèle')
-                    ->formatStateUsing(fn($state) => StatutPhoning::MODEL_TYPES[$state] ?? $state)
+                    ->formatStateUsing(fn ($state) => StatutPhoning::MODEL_TYPES[$state] ?? $state)
                     ->badge()
                     ->color('primary')
                     ->sortable()
@@ -165,17 +172,17 @@ class StatutPhoningResource extends Resource
                 Tables\Columns\TextColumn::make('couleur')
                     ->label('Couleur')
                     ->badge()
-                    ->color(fn($state) => match ($state) {
-                        'blue'   => 'info',
+                    ->color(fn ($state) => match ($state) {
+                        'blue' => 'info',
                         'orange' => 'warning',
-                        'green'  => 'success',
-                        'teal'   => 'success',
-                        'red'    => 'danger',
+                        'green' => 'success',
+                        'teal' => 'success',
+                        'red' => 'danger',
                         'yellow' => 'warning',
                         'purple' => 'primary',
-                        default  => 'gray',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn($state) => StatutPhoning::COULEURS[$state] ?? $state),
+                    ->formatStateUsing(fn ($state) => StatutPhoning::COULEURS[$state] ?? $state),
 
                 Tables\Columns\TextColumn::make('groupe')->label('Cas')->badge()->toggleable(),
                 Tables\Columns\TextColumn::make('pipeline_statut')->label('Pipeline')->fontFamily('mono')->toggleable(),
@@ -209,9 +216,9 @@ class StatutPhoningResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListStatutPhonings::route('/'),
+            'index' => ListStatutPhonings::route('/'),
             'create' => CreateStatutPhoning::route('/create'),
-            'edit'   => EditStatutPhoning::route('/{record}/edit'),
+            'edit' => EditStatutPhoning::route('/{record}/edit'),
         ];
     }
 }

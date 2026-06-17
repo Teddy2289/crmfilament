@@ -19,12 +19,12 @@ class Tarification extends Model
     ];
 
     protected $casts = [
-        'prix_pc'               => 'decimal:2',
-        'part_aopia'            => 'decimal:2',
-        'tarifs'                => 'decimal:2',
+        'prix_pc' => 'decimal:2',
+        'part_aopia' => 'decimal:2',
+        'tarifs' => 'decimal:2',
         'tarifs_affichage_comm' => 'decimal:2',
-        'part_cse'              => 'decimal:2',
-        'part_salarie'          => 'decimal:2',
+        'part_cse' => 'decimal:2',
+        'part_salarie' => 'decimal:2',
     ];
 
     public function partenaire()

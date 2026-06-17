@@ -44,9 +44,9 @@ class AlloproPanelProvider extends PanelProvider
                 'primary' => Color::Orange,
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
-                'danger'  => Color::Rose,
-                'info'    => Color::Sky,
-                'gray'    => Color::Slate,
+                'danger' => Color::Rose,
+                'info' => Color::Sky,
+                'gray' => Color::Slate,
             ])
             ->navigationGroups([
                 NavigationGroup::make('Tickets')
@@ -96,12 +96,12 @@ class AlloproPanelProvider extends PanelProvider
             ->spa()
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn() => view('filament.allopro.auth.login-styles'),
+                fn () => view('filament.allopro.auth.login-styles'),
                 scopes: [AlloproLogin::class],
             )
             ->renderHook(
                 PanelsRenderHook::BODY_START,
-                fn() => view('filament.allopro.auth.login-sidebar'),
+                fn () => view('filament.allopro.auth.login-sidebar'),
                 scopes: [AlloproLogin::class],
             );
     }

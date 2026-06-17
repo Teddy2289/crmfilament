@@ -3,8 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Enums\TypeLogement;
-use App\Enums\StatutOccupant;
 
 return new class extends Migration
 {

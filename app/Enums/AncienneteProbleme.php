@@ -16,7 +16,7 @@ enum AncienneteProbleme: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::MoinsD1h => 'danger',
             self::Aujourdhui => 'warning',
             self::DepuisQuelquesJours => 'info',
@@ -26,7 +26,7 @@ enum AncienneteProbleme: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::MoinsD1h => 'heroicon-o-clock',
             self::Aujourdhui => 'heroicon-o-calendar',
             self::DepuisQuelquesJours => 'heroicon-o-calendar-days',
@@ -36,7 +36,7 @@ enum AncienneteProbleme: string
 
     public function niveauUrgence(): int
     {
-        return match($this) {
+        return match ($this) {
             self::MoinsD1h => 1,
             self::Aujourdhui => 2,
             self::DepuisQuelquesJours => 3,

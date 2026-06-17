@@ -14,11 +14,15 @@ use Spatie\Permission\Models\Role;
 
 class RoleResource extends Resource
 {
-    protected static ?string $model           = Role::class;
-    protected static ?string $navigationIcon  = 'heroicon-o-shield-check';
+    protected static ?string $model = Role::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
+
     protected static ?string $navigationLabel = 'Rôles & Permissions';
+
     protected static ?string $navigationGroup = 'Utilisateurs & Accès';
-    protected static ?int    $navigationSort  = 2;
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -61,10 +65,10 @@ class RoleResource extends Resource
                     ->searchable()
                     ->weight('semibold')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
-                        'super_admin'    => 'danger',
+                    ->color(fn (string $state) => match ($state) {
+                        'super_admin' => 'danger',
                         'administrateur' => 'warning',
-                        default          => 'gray',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('permissions_count')
@@ -87,7 +91,7 @@ class RoleResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn(Role $record) => !in_array($record->name, ['super_admin', 'administrateur'])),
+                    ->visible(fn (Role $record) => ! in_array($record->name, ['super_admin', 'administrateur'])),
             ])
             ->striped();
     }
@@ -95,9 +99,9 @@ class RoleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListRoles::route('/'),
+            'index' => ListRoles::route('/'),
             'create' => CreateRole::route('/create'),
-            'edit'   => EditRole::route('/{record}/edit'),
+            'edit' => EditRole::route('/{record}/edit'),
         ];
     }
 }

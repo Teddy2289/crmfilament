@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use App\Enums\RendezVousType;
 use App\Enums\RendezVousStatut;
+use App\Enums\RendezVousType;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use Carbon\Carbon;
 
 class RendezVous extends Model
 {
@@ -117,7 +117,7 @@ class RendezVous extends Model
             'join' => true,
         ]);
 
-        return 'Dans ' . $diff;
+        return 'Dans '.$diff;
     }
 
     public function getEstPasseAttribute(): bool
@@ -165,19 +165,21 @@ class RendezVous extends Model
 
     public function getLieuCompletAttribute(): string
     {
-        if (!$this->lieu && !$this->adresse_lieu) return 'Non spécifié';
+        if (! $this->lieu && ! $this->adresse_lieu) {
+            return 'Non spécifié';
+        }
 
-        return trim($this->lieu . ($this->adresse_lieu ? ' - ' . $this->adresse_lieu : ''));
+        return trim($this->lieu.($this->adresse_lieu ? ' - '.$this->adresse_lieu : ''));
     }
 
     public function getEstSynchroOutlookAttribute(): bool
     {
-        return !empty($this->outlook_event_id);
+        return ! empty($this->outlook_event_id);
     }
 
     public function getEstSynchroGoogleAttribute(): bool
     {
-        return !empty($this->google_event_id);
+        return ! empty($this->google_event_id);
     }
 
     public function getEstSynchroCalendarAttribute(): bool
@@ -192,7 +194,7 @@ class RendezVous extends Model
 
         if ($notes) {
             $data['notes'] = $this->notes
-                ? $this->notes . "\n[Réalisé] {$notes}"
+                ? $this->notes."\n[Réalisé] {$notes}"
                 : "[Réalisé] {$notes}";
         }
 
@@ -204,7 +206,7 @@ class RendezVous extends Model
         $this->update([
             'statut' => RendezVousStatut::Annule,
             'notes' => $this->notes
-                ? $this->notes . "\n[Annulé] {$motif}"
+                ? $this->notes."\n[Annulé] {$motif}"
                 : "[Annulé] {$motif}",
         ]);
     }
@@ -218,7 +220,7 @@ class RendezVous extends Model
 
         if ($motif) {
             $data['notes'] = $this->notes
-                ? $this->notes . "\n[Décalé au {$nouvelleDate->format('d/m/Y H:i')}] {$motif}"
+                ? $this->notes."\n[Décalé au {$nouvelleDate->format('d/m/Y H:i')}] {$motif}"
                 : "[Décalé au {$nouvelleDate->format('d/m/Y H:i')}] {$motif}";
         }
 
@@ -271,8 +273,8 @@ class RendezVous extends Model
     {
         $this->update([
             'notes' => $this->notes
-                ? $this->notes . "\n[" . now()->format('d/m/Y H:i') . "] {$note}"
-                : "[" . now()->format('d/m/Y H:i') . "] {$note}",
+                ? $this->notes."\n[".now()->format('d/m/Y H:i')."] {$note}"
+                : '['.now()->format('d/m/Y H:i')."] {$note}",
         ]);
     }
 
@@ -503,9 +505,12 @@ class RendezVous extends Model
         }
 
         $total = $query->count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $realises = (clone $query)->realises()->count();
+
         return round(($realises / $total) * 100, 1);
     }
 
@@ -518,9 +523,12 @@ class RendezVous extends Model
         }
 
         $total = $query->count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $annules = (clone $query)->annules()->count();
+
         return round(($annules / $total) * 100, 1);
     }
 
@@ -555,7 +563,7 @@ class RendezVous extends Model
             ->map(function ($rdv) {
                 return [
                     'id' => $rdv->id,
-                    'title' => $rdv->type->label() . ' - ' . ($rdv->interlocuteur_nom ?? 'Sans interlocuteur'),
+                    'title' => $rdv->type->label().' - '.($rdv->interlocuteur_nom ?? 'Sans interlocuteur'),
                     'start' => $rdv->date_heure->toIso8601String(),
                     'end' => $rdv->date_heure->addHour()->toIso8601String(),
                     'color' => $rdv->type->color(),
@@ -575,10 +583,10 @@ class RendezVous extends Model
     protected static function booted(): void
     {
         static::creating(function (RendezVous $rdv) {
-            if (!$rdv->statut) {
+            if (! $rdv->statut) {
                 $rdv->statut = RendezVousStatut::Planifie;
             }
-            if (!$rdv->type) {
+            if (! $rdv->type) {
                 $rdv->type = RendezVousType::Appel;
             }
         });

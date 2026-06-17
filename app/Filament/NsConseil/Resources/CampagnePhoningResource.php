@@ -2,10 +2,12 @@
 
 namespace App\Filament\NsConseil\Resources;
 
+use App\Enums\OrganizationType;
 use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource\Pages;
 use App\Models\CampagnePhoning;
 use App\Models\EntiteCommerciale;
+use App\Models\Partenaire;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -17,11 +19,15 @@ use Filament\Tables\Table;
 
 class CampagnePhoningResource extends Resource
 {
-    protected static ?string $model           = CampagnePhoning::class;
-    protected static ?string $navigationIcon  = 'heroicon-o-megaphone';
+    protected static ?string $model = CampagnePhoning::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-megaphone';
+
     protected static ?string $navigationGroup = 'Activités';
+
     protected static ?string $navigationLabel = 'Campagnes d\'appels';
-    protected static ?int    $navigationSort  = 1;
+
+    protected static ?int $navigationSort = 1;
 
     // ─────────────────────────────────────────────────────────────────
     // FORMULAIRE
@@ -54,7 +60,7 @@ class CampagnePhoningResource extends Resource
 
                     Forms\Components\Select::make('entite_id')
                         ->label('Entité commerciale')
-                        ->options(fn() => EntiteCommerciale::orderBy('nom')->pluck('nom', 'id'))
+                        ->options(fn () => EntiteCommerciale::orderBy('nom')->pluck('nom', 'id'))
                         ->searchable()
                         ->nullable(),
                 ]),
@@ -67,10 +73,10 @@ class CampagnePhoningResource extends Resource
                     Forms\Components\Select::make('user_id')
                         ->label('Assigné à')
                         ->options(
-                            fn() => User::where('actif', true)
+                            fn () => User::where('actif', true)
                                 ->orderBy('nom')
                                 ->get()
-                                ->mapWithKeys(fn($u) => [$u->id => trim("{$u->prenom} {$u->nom}")])
+                                ->mapWithKeys(fn ($u) => [$u->id => trim("{$u->prenom} {$u->nom}")])
                         )
                         ->searchable()
                         ->nullable()
@@ -81,7 +87,7 @@ class CampagnePhoningResource extends Resource
                         ->options(CampagnePhoning::TYPES_ENTITE)
                         ->required()
                         ->live()
-                        ->afterStateUpdated(fn(Forms\Set $set) => $set('criteres', [])),
+                        ->afterStateUpdated(fn (Forms\Set $set) => $set('criteres', [])),
 
                     Forms\Components\DatePicker::make('date_debut')
                         ->label('Date de début')
@@ -99,12 +105,12 @@ class CampagnePhoningResource extends Resource
             Forms\Components\Section::make('Critères — Prospects')
                 ->icon('heroicon-o-funnel')
                 ->columns(2)
-                ->visible(fn(Get $get) => $get('type_entite') === 'prospects')
+                ->visible(fn (Get $get) => $get('type_entite') === 'prospects')
                 ->schema([
                     Forms\Components\CheckboxList::make('criteres.statuts')
                         ->label('Statuts à inclure')
                         ->options(collect(ProspectStatut::cases())->mapWithKeys(
-                            fn($case) => [$case->value => $case->label()]
+                            fn ($case) => [$case->value => $case->label()]
                         ))
                         ->default([])
                         ->columns(3)
@@ -132,9 +138,9 @@ class CampagnePhoningResource extends Resource
                     Forms\Components\Select::make('criteres.type_pressenti')
                         ->label('Type pressenti')
                         ->options([
-                            'cse'       => 'CSE',
-                            'artisan'   => 'Artisan',
-                            'direct'    => 'Direct',
+                            'cse' => 'CSE',
+                            'artisan' => 'Artisan',
+                            'direct' => 'Direct',
                         ])
                         ->nullable()
                         ->placeholder('Tous'),
@@ -144,12 +150,12 @@ class CampagnePhoningResource extends Resource
             Forms\Components\Section::make('Critères — Partenaires')
                 ->icon('heroicon-o-funnel')
                 ->columns(2)
-                ->visible(fn(Get $get) => $get('type_entite') === 'partenaires')
+                ->visible(fn (Get $get) => $get('type_entite') === 'partenaires')
                 ->schema([
                     Forms\Components\CheckboxList::make('criteres.statuts')
                         ->label('Statuts à inclure')
                         ->default([])
-                        ->options(\App\Models\Partenaire::STATUTS)
+                        ->options(Partenaire::STATUTS)
                         ->columns(2)
                         ->columnSpanFull(),
 
@@ -163,7 +169,7 @@ class CampagnePhoningResource extends Resource
 
                     Forms\Components\Select::make('criteres.type')
                         ->label('Type de partenaire')
-                        ->options(\App\Enums\OrganizationType::class)
+                        ->options(OrganizationType::class)
                         ->nullable()
                         ->placeholder('Tous'),
                 ]),
@@ -172,7 +178,7 @@ class CampagnePhoningResource extends Resource
             Forms\Components\Section::make('Critères — Clients')
                 ->icon('heroicon-o-funnel')
                 ->columns(2)
-                ->visible(fn(Get $get) => $get('type_entite') === 'clients')
+                ->visible(fn (Get $get) => $get('type_entite') === 'clients')
                 ->schema([
                     Forms\Components\TextInput::make('criteres.departement')
                         ->label('Département')
@@ -182,7 +188,7 @@ class CampagnePhoningResource extends Resource
                     Forms\Components\Select::make('criteres.etat')
                         ->label('État')
                         ->options([
-                            'actif'   => 'Actif',
+                            'actif' => 'Actif',
                             'inactif' => 'Inactif',
                             'prospect' => 'Prospect',
                         ])
@@ -212,16 +218,16 @@ class CampagnePhoningResource extends Resource
 
                 Tables\Columns\BadgeColumn::make('statut')
                     ->label('Statut')
-                    ->formatStateUsing(fn($state) => CampagnePhoning::STATUTS[$state] ?? $state)
+                    ->formatStateUsing(fn ($state) => CampagnePhoning::STATUTS[$state] ?? $state)
                     ->colors([
                         'warning' => 'brouillon',
                         'success' => 'active',
-                        'gray'    => 'terminee',
+                        'gray' => 'terminee',
                     ]),
 
                 Tables\Columns\BadgeColumn::make('type_entite')
                     ->label('Cible')
-                    ->formatStateUsing(fn($state) => CampagnePhoning::TYPES_ENTITE[$state] ?? $state)
+                    ->formatStateUsing(fn ($state) => CampagnePhoning::TYPES_ENTITE[$state] ?? $state)
                     ->colors([
                         'warning' => 'prospects',
                         'primary' => 'partenaires',
@@ -231,7 +237,7 @@ class CampagnePhoningResource extends Resource
                 Tables\Columns\TextColumn::make('user.nom')
                     ->label('Assigné à')
                     ->formatStateUsing(
-                        fn($record) => $record->user
+                        fn ($record) => $record->user
                             ? trim("{$record->user->prenom} {$record->user->nom}")
                             : '—'
                     )
@@ -249,7 +255,7 @@ class CampagnePhoningResource extends Resource
 
                 Tables\Columns\TextColumn::make('contacts_count')
                     ->label('Contacts')
-                    ->getStateUsing(fn($record) => $record->countContacts())
+                    ->getStateUsing(fn ($record) => $record->countContacts())
                     ->suffix(' contacts')
                     ->badge()
                     ->color('info'),
@@ -271,10 +277,10 @@ class CampagnePhoningResource extends Resource
                 Tables\Filters\SelectFilter::make('user_id')
                     ->label('Assigné à')
                     ->options(
-                        fn() => User::where('actif', true)
+                        fn () => User::where('actif', true)
                             ->orderBy('nom')
                             ->get()
-                            ->mapWithKeys(fn($u) => [$u->id => trim("{$u->prenom} {$u->nom}")])
+                            ->mapWithKeys(fn ($u) => [$u->id => trim("{$u->prenom} {$u->nom}")])
                     ),
             ])
             ->actions([
@@ -282,7 +288,7 @@ class CampagnePhoningResource extends Resource
                     ->label('Activer')
                     ->icon('heroicon-o-play')
                     ->color('success')
-                    ->visible(fn($record) => $record->statut === 'brouillon')
+                    ->visible(fn ($record) => $record->statut === 'brouillon')
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update(['statut' => 'active']);
@@ -293,7 +299,7 @@ class CampagnePhoningResource extends Resource
                     ->label('Terminer')
                     ->icon('heroicon-o-stop')
                     ->color('danger')
-                    ->visible(fn($record) => $record->statut === 'active')
+                    ->visible(fn ($record) => $record->statut === 'active')
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update(['statut' => 'terminee']);
@@ -304,8 +310,8 @@ class CampagnePhoningResource extends Resource
                     ->label('Lancer le phoning')
                     ->icon('heroicon-o-phone-arrow-up-right')
                     ->color('primary')
-                    ->visible(fn($record) => $record->statut === 'active')
-                    ->url(fn($record) => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
+                    ->visible(fn ($record) => $record->statut === 'active')
+                    ->url(fn ($record) => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
 
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -324,9 +330,9 @@ class CampagnePhoningResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCampagnesPhonings::route('/'),
+            'index' => Pages\ListCampagnesPhonings::route('/'),
             'create' => Pages\CreateCampagnePhoning::route('/create'),
-            'edit'   => Pages\EditCampagnePhoning::route('/{record}/edit'),
+            'edit' => Pages\EditCampagnePhoning::route('/{record}/edit'),
         ];
     }
 }

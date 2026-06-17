@@ -2,22 +2,22 @@
 
 namespace App\Enums;
 
-use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasIcon;
+use Filament\Support\Contracts\HasLabel;
 
-enum TauxTVA: string implements HasLabel, HasColor, HasIcon
+enum TauxTVA: string implements HasColor, HasIcon, HasLabel
 {
-    case Reduit        = '5.5';
+    case Reduit = '5.5';
     case Intermediaire = '10.0';
-    case Normal        = '20.0';
+    case Normal = '20.0';
 
     public function label(): string
     {
-        return match($this) {
-            self::Reduit        => '5,5 % (Réduit)',
+        return match ($this) {
+            self::Reduit => '5,5 % (Réduit)',
             self::Intermediaire => '10 % (Intermédiaire)',
-            self::Normal        => '20 % (Normal)',
+            self::Normal => '20 % (Normal)',
         };
     }
 
@@ -33,10 +33,10 @@ enum TauxTVA: string implements HasLabel, HasColor, HasIcon
 
     public function color(): string
     {
-        return match($this) {
-            self::Reduit        => 'success',
+        return match ($this) {
+            self::Reduit => 'success',
             self::Intermediaire => 'warning',
-            self::Normal        => 'danger',
+            self::Normal => 'danger',
         };
     }
 
@@ -47,10 +47,10 @@ enum TauxTVA: string implements HasLabel, HasColor, HasIcon
 
     public function icon(): string
     {
-        return match($this) {
-            self::Reduit        => 'heroicon-o-banknotes',
+        return match ($this) {
+            self::Reduit => 'heroicon-o-banknotes',
             self::Intermediaire => 'heroicon-o-currency-euro',
-            self::Normal        => 'heroicon-o-receipt-percent',
+            self::Normal => 'heroicon-o-receipt-percent',
         };
     }
 
@@ -108,7 +108,7 @@ enum TauxTVA: string implements HasLabel, HasColor, HasIcon
     public static function pourSelect(): array
     {
         return collect(self::cases())
-            ->mapWithKeys(fn($case) => [$case->value => $case->label()])
+            ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
             ->toArray();
     }
 

@@ -3,12 +3,12 @@
 namespace App\Services\Aopia;
 
 use App\Enums\ProspectStatut;
+use App\Models\Appel;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use App\Models\User;
 use App\Services\Crm\CrmProfileService;
 use App\Services\Crm\CrmSettingsService;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -59,7 +59,7 @@ class AopiaProspectWorkflowService
         $prospect->statut = $nouveauStatut;
 
         if ($note) {
-            $prospect->description = trim(($prospect->description ? $prospect->description . "\n" : '') . '[' . now()->format('d/m/Y H:i') . '] ' . $note);
+            $prospect->description = trim(($prospect->description ? $prospect->description."\n" : '').'['.now()->format('d/m/Y H:i').'] '.$note);
         }
 
         if ($nouveauStatut === ProspectStatut::KO) {
@@ -83,7 +83,7 @@ class AopiaProspectWorkflowService
         $manquants = $this->champsManquantsPourQf($prospect);
 
         if (! empty($manquants)) {
-            throw new RuntimeException('Passage QF bloqué. Éléments manquants : ' . implode(', ', $manquants));
+            throw new RuntimeException('Passage QF bloqué. Éléments manquants : '.implode(', ', $manquants));
         }
 
         return DB::transaction(function () use ($prospect, $acteur) {
@@ -203,11 +203,11 @@ class AopiaProspectWorkflowService
         // Le projet possède déjà Appel, mais les colonnes peuvent évoluer.
         // On applique une vérification souple : si aucune table d'appels exploitable n'est liée,
         // on laisse la transition et on délègue le contrôle fin à l'action UI/CTI.
-        if (! class_exists(\App\Models\Appel::class)) {
+        if (! class_exists(Appel::class)) {
             return;
         }
 
-        $count = \App\Models\Appel::query()
+        $count = Appel::query()
             ->where('appelable_type', Prospect::class)
             ->where('appelable_id', $prospect->id)
             ->count();

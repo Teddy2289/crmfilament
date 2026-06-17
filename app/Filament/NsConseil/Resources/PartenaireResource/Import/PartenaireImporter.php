@@ -14,6 +14,9 @@ use App\Models\EntiteCommerciale;
 use App\Models\HistoriqueConseiller;
 use App\Models\Partenaire;
 use App\Models\Tarification;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 /**
  * Importe la feuille MAJ (format unique de référence).
@@ -38,59 +41,63 @@ use App\Models\Tarification;
 class PartenaireImporter
 {
     private const COL = [
-        'entite'               => 0,
-        'entreprise'           => 1,
-        'nom_retenu'           => 2,
-        'nb_salaries'          => 3,
-        'statut'               => 4,
-        'annee_signature'      => 5,
-        'date_signature'       => 6,
-        'nb_ventes'            => 7,
-        'derniere_vente'       => 8,
-        'ventes_2025'          => 9,
-        'ventes_2026'          => 10,
-        'derniere_permanence'  => 11,
-        'nbre_perm_2025'       => 12,
-        'nbre_perm_2026'       => 13,
-        'type'                 => 14,
-        'origine'              => 15,
-        'parrain'              => 16,
-        'conseiller'           => 17,
-        'ancien_conseiller'    => 18,
-        'statut_vdi'           => 19,
-        'dept_conseiller'      => 20,
-        'adresse_cse'          => 21,
-        'cp_cse'               => 22,
-        'commune_cse'          => 23,
-        'contact_nom'          => 24,
-        'contact_prenom'       => 25,
-        'contact_fonction'     => 26,
-        'contact_mail'         => 27,
+        'entite' => 0,
+        'entreprise' => 1,
+        'nom_retenu' => 2,
+        'nb_salaries' => 3,
+        'statut' => 4,
+        'annee_signature' => 5,
+        'date_signature' => 6,
+        'nb_ventes' => 7,
+        'derniere_vente' => 8,
+        'ventes_2025' => 9,
+        'ventes_2026' => 10,
+        'derniere_permanence' => 11,
+        'nbre_perm_2025' => 12,
+        'nbre_perm_2026' => 13,
+        'type' => 14,
+        'origine' => 15,
+        'parrain' => 16,
+        'conseiller' => 17,
+        'ancien_conseiller' => 18,
+        'statut_vdi' => 19,
+        'dept_conseiller' => 20,
+        'adresse_cse' => 21,
+        'cp_cse' => 22,
+        'commune_cse' => 23,
+        'contact_nom' => 24,
+        'contact_prenom' => 25,
+        'contact_fonction' => 26,
+        'contact_mail' => 27,
         'contact_tel_portable' => 28,
-        'contact_tel_fixe'     => 29,
-        'contact_preference'   => 30,
+        'contact_tel_fixe' => 29,
+        'contact_preference' => 30,
         'autres_interlocuteurs' => 31,
         'parrainage_entreprise' => 32,
-        'possibilite_perm'     => 33,
-        'replicable'           => 34,
-        'prix_pc'              => 35,
-        'part_aopia'           => 36,
-        'tarifs'               => 37,
-        'part_cse'             => 38,
-        'part_salarie'         => 39,
-        'tarifs_affichage'     => 40,
-        'adresse_facturation'  => 41,
-        'commentaires'         => 42,
+        'possibilite_perm' => 33,
+        'replicable' => 34,
+        'prix_pc' => 35,
+        'part_aopia' => 36,
+        'tarifs' => 37,
+        'part_cse' => 38,
+        'part_salarie' => 39,
+        'tarifs_affichage' => 40,
+        'adresse_facturation' => 41,
+        'commentaires' => 42,
     ];
 
     private const MIN_COLS = 17;
 
-    protected array $errors  = [];
-    protected int   $created = 0;
-    protected int   $updated = 0;
-    protected int   $skipped = 0;
+    protected array $errors = [];
 
-    private array $entiteCache     = [];
+    protected int $created = 0;
+
+    protected int $updated = 0;
+
+    protected int $skipped = 0;
+
+    private array $entiteCache = [];
+
     private array $conseillerCache = [];
 
     // ─── Point d'entrée ──────────────────────────────────────────────
@@ -106,13 +113,14 @@ class PartenaireImporter
 
             if (count($row) < self::MIN_COLS) {
                 $this->skipped++;
+
                 continue;
             }
 
             try {
                 $this->processRow($row, $i + 1, $defaults);
             } catch (\Throwable $e) {
-                $this->errors[] = "Ligne " . ($i + 1) . " : " . $e->getMessage();
+                $this->errors[] = 'Ligne '.($i + 1).' : '.$e->getMessage();
             }
         }
 
@@ -123,16 +131,17 @@ class PartenaireImporter
 
     private function processRow(array $row, int $lineNumber, array $defaults): void
     {
-        $get = fn(string $col): mixed => $this->cell($row, $col);
+        $get = fn (string $col): mixed => $this->cell($row, $col);
 
         $nom = $this->str($get('entreprise'));
         if (empty($nom)) {
             $this->skipped++;
+
             return;
         }
 
         // ── FK ────────────────────────────────────────────────────────
-        $entiteId     = $this->resolveEntiteId($this->str($get('entite')))
+        $entiteId = $this->resolveEntiteId($this->str($get('entite')))
             ?? ($defaults['entite_id'] ?? null);
         $conseillerId = $this->resolveConseillerId($this->str($get('conseiller')))
             ?? ($defaults['conseiller_id'] ?? null);
@@ -144,30 +153,30 @@ class PartenaireImporter
 
         // ── Données Partenaire ────────────────────────────────────────
         $data = array_filter([
-            'nom'                  => $nom,
-            'entreprise'           => $nom,
-            'nom_retenu'           => $this->str($get('nom_retenu')),
-            'type'                 => $this->resolveType($get('type'))
+            'nom' => $nom,
+            'entreprise' => $nom,
+            'nom_retenu' => $this->str($get('nom_retenu')),
+            'type' => $this->resolveType($get('type'))
                 ?? ($defaults['type'] ?? OrganizationType::CSE->value),
-            'statut'               => $this->resolveStatut($get('statut'))
+            'statut' => $this->resolveStatut($get('statut'))
                 ?? ($defaults['statut'] ?? OrganizationStatus::AProspecter->value),
-            'annee_signature'      => $this->cleanInt($get('annee_signature')),
-            'date_signature'       => $this->parseDate($get('date_signature')),
-            'nb_salaries'          => $this->cleanNbSalaries($get('nb_salaries')),
-            'adresse'              => $this->str($get('adresse_cse')),
-            'code_postal'          => $cp,
-            'ville'                => $commune,
-            'departement'          => $departement,
-            'origine_contact'      => $this->str($get('origine')),
+            'annee_signature' => $this->cleanInt($get('annee_signature')),
+            'date_signature' => $this->parseDate($get('date_signature')),
+            'nb_salaries' => $this->cleanNbSalaries($get('nb_salaries')),
+            'adresse' => $this->str($get('adresse_cse')),
+            'code_postal' => $cp,
+            'ville' => $commune,
+            'departement' => $departement,
+            'origine_contact' => $this->str($get('origine')),
             'parrain_marraine_texte' => mb_substr((string) ($this->str($get('parrain')) ?? ''), 0, 255) ?: null,
             'parrainage_entreprise' => $this->parseBool($get('parrainage_entreprise')),
             'possibilite_permanence' => $this->str($get('possibilite_perm')),
-            'replicable'           => $this->str($get('replicable')), // colonne TEXT en BDD
-            'commentaires'         => $this->str($get('commentaires')),
-            'entite_id'            => $entiteId,
-            'conseiller_id'        => $conseillerId,
+            'replicable' => $this->str($get('replicable')), // colonne TEXT en BDD
+            'commentaires' => $this->str($get('commentaires')),
+            'entite_id' => $entiteId,
+            'conseiller_id' => $conseillerId,
             'nomenclature_interne' => $defaults['nomenclature_interne'] ?? null,
-        ], fn($v) => $v !== null && $v !== '');
+        ], fn ($v) => $v !== null && $v !== '');
 
         // ── Upsert Partenaire ─────────────────────────────────────────
         $partenaire = Partenaire::updateOrCreate(
@@ -182,11 +191,11 @@ class PartenaireImporter
             AdresseCse::updateOrCreate(
                 ['partenaire_id' => $partenaire->id],
                 array_filter([
-                    'adresse'       => $this->str($get('adresse_cse')),
-                    'code_postal'   => $cp,
-                    'commune'       => $commune,
+                    'adresse' => $this->str($get('adresse_cse')),
+                    'code_postal' => $cp,
+                    'commune' => $commune,
                     'partenaire_id' => $partenaire->id,
-                ], fn($v) => $v !== null)
+                ], fn ($v) => $v !== null)
             );
         }
 
@@ -207,67 +216,67 @@ class PartenaireImporter
                 HistoriqueConseiller::firstOrCreate(
                     ['partenaire_id' => $partenaire->id, 'ancien_conseiller_id' => $ancienId],
                     [
-                        'ancien_conseiller_id'  => $ancienId,
+                        'ancien_conseiller_id' => $ancienId,
                         'nouveau_conseiller_id' => $conseillerId,
-                        'date_changement'       => now()->toDateString(),
-                        'partenaire_id'         => $partenaire->id,
+                        'date_changement' => now()->toDateString(),
+                        'partenaire_id' => $partenaire->id,
                     ]
                 );
             }
         }
 
-        $nbVentes      = $this->cleanInt($get('nb_ventes'));
+        $nbVentes = $this->cleanInt($get('nb_ventes'));
         $derniereVente = $this->parseDate($get('derniere_vente'));
-        $ventes2025    = $this->cleanInt($get('ventes_2025'));
-        $ventes2026    = $this->cleanInt($get('ventes_2026'));
+        $ventes2025 = $this->cleanInt($get('ventes_2025'));
+        $ventes2026 = $this->cleanInt($get('ventes_2026'));
         if ($nbVentes !== null || $derniereVente || $ventes2025 !== null || $ventes2026 !== null) {
             ActiviteVente::updateOrCreate(
                 ['partenaire_id' => $partenaire->id],
                 array_filter([
-                    'partenaire_id'       => $partenaire->id,
-                    'consultant_id'       => $conseillerId,
+                    'partenaire_id' => $partenaire->id,
+                    'consultant_id' => $conseillerId,
                     'nombre_ventes_total' => $nbVentes,
-                    'derniere_vente'      => $derniereVente,
-                    'ventes_2025'         => $ventes2025,
-                    'ventes_2026'         => $ventes2026,
-                ], fn($v) => $v !== null)
+                    'derniere_vente' => $derniereVente,
+                    'ventes_2025' => $ventes2025,
+                    'ventes_2026' => $ventes2026,
+                ], fn ($v) => $v !== null)
             );
         }
 
         $dernierePerm = $this->parseDate($get('derniere_permanence'));
-        $nbre2025     = $this->cleanInt($get('nbre_perm_2025'));
-        $nbre2026     = $this->cleanInt($get('nbre_perm_2026'));
+        $nbre2025 = $this->cleanInt($get('nbre_perm_2025'));
+        $nbre2026 = $this->cleanInt($get('nbre_perm_2026'));
         if ($dernierePerm || $nbre2025 !== null || $nbre2026 !== null) {
             ActivitePermanence::updateOrCreate(
                 ['partenaire_id' => $partenaire->id],
                 array_filter([
-                    'partenaire_id'       => $partenaire->id,
-                    'consultant_id'       => $conseillerId,
+                    'partenaire_id' => $partenaire->id,
+                    'consultant_id' => $conseillerId,
                     'derniere_permanence' => $dernierePerm,
-                    'nbre_2025'           => $nbre2025,
-                    'nbre_2026'           => $nbre2026,
-                ], fn($v) => $v !== null)
+                    'nbre_2025' => $nbre2025,
+                    'nbre_2026' => $nbre2026,
+                ], fn ($v) => $v !== null)
             );
         }
 
-        $prixPc   = $this->cleanDecimal($get('prix_pc'));
+        $prixPc = $this->cleanDecimal($get('prix_pc'));
         $partAopia = $this->cleanDecimal($get('part_aopia'));
-        $tarifs   = $this->cleanDecimal($get('tarifs'));
-        $partCse  = $this->cleanDecimal($get('part_cse'));
-        $partSal  = $this->cleanDecimal($get('part_salarie'));
+        $tarifs = $this->cleanDecimal($get('tarifs'));
+        $partCse = $this->cleanDecimal($get('part_cse'));
+        $partSal = $this->cleanDecimal($get('part_salarie'));
         if ($prixPc || $partAopia || $tarifs || $partCse || $partSal) {
             Tarification::updateOrCreate(
                 ['partenaire_id' => $partenaire->id],
                 array_filter([
-                    'partenaire_id'         => $partenaire->id,
-                    'prix_pc'               => $prixPc,
-                    'part_aopia'            => $partAopia,
-                    'tarifs'                => $tarifs,
-                    'part_cse'              => $partCse,
-                    'part_salarie'          => $partSal,
+                    'partenaire_id' => $partenaire->id,
+                    'prix_pc' => $prixPc,
+                    'part_aopia' => $partAopia,
+                    'tarifs' => $tarifs,
+                    'part_cse' => $partCse,
+                    'part_salarie' => $partSal,
                     'tarifs_affichage_comm' => $this->cleanDecimal($get('tarifs_affichage')),
-                    'adresse_facturation'   => $this->str($get('adresse_facturation')),
-                ], fn($v) => $v !== null && $v !== '')
+                    'adresse_facturation' => $this->str($get('adresse_facturation')),
+                ], fn ($v) => $v !== null && $v !== '')
             );
         }
     }
@@ -276,18 +285,18 @@ class PartenaireImporter
 
     private function upsertContacts(Partenaire $partenaire, array $row): void
     {
-        $split = fn(mixed $v): array => array_values(array_filter(
+        $split = fn (mixed $v): array => array_values(array_filter(
             array_map('trim', explode("\n", (string) ($v ?? ''))),
-            fn($s) => $s !== '' && $s !== '/'
+            fn ($s) => $s !== '' && $s !== '/'
         ));
 
-        $noms      = $split($this->cell($row, 'contact_nom'));
-        $prenoms   = $split($this->cell($row, 'contact_prenom'));
+        $noms = $split($this->cell($row, 'contact_nom'));
+        $prenoms = $split($this->cell($row, 'contact_prenom'));
         $fonctions = $split($this->cell($row, 'contact_fonction'));
-        $mails     = $split($this->cell($row, 'contact_mail'));
+        $mails = $split($this->cell($row, 'contact_mail'));
         $portables = $split($this->cell($row, 'contact_tel_portable'));
-        $fixes     = $split($this->cell($row, 'contact_tel_fixe'));
-        $pref      = $this->str($this->cell($row, 'contact_preference'));
+        $fixes = $split($this->cell($row, 'contact_tel_fixe'));
+        $pref = $this->str($this->cell($row, 'contact_preference'));
 
         $count = max(count($noms), count($prenoms), count($mails));
         if ($count === 0) {
@@ -295,29 +304,29 @@ class PartenaireImporter
         }
 
         for ($i = 0; $i < $count; $i++) {
-            $nom      = $this->str($noms[$i]      ?? null);
-            $prenom   = $this->str($prenoms[$i]   ?? null);
-            $mail     = $this->str($mails[$i]     ?? null);
+            $nom = $this->str($noms[$i] ?? null);
+            $prenom = $this->str($prenoms[$i] ?? null);
+            $mail = $this->str($mails[$i] ?? null);
             $portable = $this->str($portables[$i] ?? null);
-            $fixe     = $this->str($fixes[$i]     ?? null);
+            $fixe = $this->str($fixes[$i] ?? null);
             $fonction = $this->str($fonctions[$i] ?? null);
 
             // Décalage de saisie : nom vide → toute la ligne décalée d'une colonne
-            if (!$nom && $prenom) {
-                $nom      = $prenom;
-                $prenom   = $this->str($fonctions[$i] ?? null);
-                $fonction = $this->str($mails[$i]     ?? null);
-                $mail     = $this->str($portables[$i] ?? null);
-                $portable = $this->str($fixes[$i]     ?? null);
-                $fixe     = null;
+            if (! $nom && $prenom) {
+                $nom = $prenom;
+                $prenom = $this->str($fonctions[$i] ?? null);
+                $fonction = $this->str($mails[$i] ?? null);
+                $mail = $this->str($portables[$i] ?? null);
+                $portable = $this->str($fixes[$i] ?? null);
+                $fixe = null;
             }
 
-            if (!$nom) {
+            if (! $nom) {
                 continue;
             }
 
             // Valider que mail ressemble à un email (pas une fonction ou tel)
-            if ($mail && !str_contains($mail, '@')) {
+            if ($mail && ! str_contains($mail, '@')) {
                 $mail = null;
             }
 
@@ -326,28 +335,37 @@ class PartenaireImporter
             ContactPartenaire::updateOrCreate(
                 ['partenaire_id' => $partenaire->id, 'nom' => $nom, 'prenom' => $prenom],
                 array_filter([
-                    'partenaire_id'     => $partenaire->id,
-                    'nom'               => $nom,
-                    'prenom'            => $prenom,
-                    'fonction'          => $fonction ? mb_substr($fonction, 0, 100) : null,
-                    'role'              => $role,
-                    'email'             => $mail,
-                    'telephone_mobile'  => $this->cleanTelephone($portable),
-                    'telephone_direct'  => $this->cleanTelephone($fixe),
+                    'partenaire_id' => $partenaire->id,
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'fonction' => $fonction ? mb_substr($fonction, 0, 100) : null,
+                    'role' => $role,
+                    'email' => $mail,
+                    'telephone_mobile' => $this->cleanTelephone($portable),
+                    'telephone_direct' => $this->cleanTelephone($fixe),
                     'preference_contact' => $pref,
-                    'est_principal'     => ($i === 0),
-                ], fn($v) => $v !== null && $v !== '')
+                    'est_principal' => ($i === 0),
+                ], fn ($v) => $v !== null && $v !== '')
             );
         }
     }
 
     private function detectRole(?string $fonction): string
     {
-        if (!$fonction) return 'AUTRE';
+        if (! $fonction) {
+            return 'AUTRE';
+        }
         $l = mb_strtolower($fonction);
-        if (str_contains($l, 'secr')) return 'SECRETAIRE';
-        if (str_contains($l, 'trésor') || str_contains($l, 'tresor')) return 'TRESORIER';
-        if (str_contains($l, 'syndicat') || str_contains($l, 'ds ') || str_contains($l, 'délégué')) return 'SYNDICAT_DS';
+        if (str_contains($l, 'secr')) {
+            return 'SECRETAIRE';
+        }
+        if (str_contains($l, 'trésor') || str_contains($l, 'tresor')) {
+            return 'TRESORIER';
+        }
+        if (str_contains($l, 'syndicat') || str_contains($l, 'ds ') || str_contains($l, 'délégué')) {
+            return 'SYNDICAT_DS';
+        }
+
         return 'AUTRE';
     }
 
@@ -355,32 +373,34 @@ class PartenaireImporter
 
     private function resolveEntiteId(?string $nom): ?int
     {
-        if (!$nom) return null;
+        if (! $nom) {
+            return null;
+        }
 
         $key = mb_strtoupper(trim($nom));
 
-        if (!array_key_exists($key, $this->entiteCache)) {
+        if (! array_key_exists($key, $this->entiteCache)) {
             // Chercher par nom exact
             $entite = EntiteCommerciale::where('nom', $key)->first();
 
             // Si pas trouvé, chercher par LIKE
-            if (!$entite) {
+            if (! $entite) {
                 $entite = EntiteCommerciale::where('nom', 'LIKE', "%{$key}%")->first();
             }
 
             // Si pas trouvé, chercher par code
-            if (!$entite) {
+            if (! $entite) {
                 $entite = EntiteCommerciale::where('code', $key)->first();
             }
 
             // ✅ SOLUTION 2 : Créer automatiquement l'entité si elle n'existe pas
-            if (!$entite) {
+            if (! $entite) {
                 $entite = EntiteCommerciale::create([
                     'code' => $key,
                     'nom' => $key,
                 ]);
 
-                \Illuminate\Support\Facades\Log::info("Entité créée automatiquement: {$key} avec ID: " . $entite->id);
+                Log::info("Entité créée automatiquement: {$key} avec ID: ".$entite->id);
             }
 
             $this->entiteCache[$key] = $entite->id;
@@ -388,9 +408,12 @@ class PartenaireImporter
 
         return $this->entiteCache[$key];
     }
+
     private function resolveConseillerId(?string $name): ?int
     {
-        if (!$name) return null;
+        if (! $name) {
+            return null;
+        }
         $name = trim($name);
         if (array_key_exists($name, $this->conseillerCache)) {
             return $this->conseillerCache[$name];
@@ -413,6 +436,7 @@ class PartenaireImporter
             });
         }
         $this->conseillerCache[$name] = $query->value('id');
+
         return $this->conseillerCache[$name];
     }
 
@@ -428,10 +452,10 @@ class PartenaireImporter
     private function cleanCpCommune(mixed $cpRaw, mixed $communeRaw): array
     {
         // Séparer sur \n si multi-valeurs → prendre la première paire
-        $cpList      = array_filter(array_map('trim', explode("\n", (string) ($cpRaw ?? ''))), fn($s) => $s !== '');
-        $communeList = array_filter(array_map('trim', explode("\n", (string) ($communeRaw ?? ''))), fn($s) => $s !== '');
+        $cpList = array_filter(array_map('trim', explode("\n", (string) ($cpRaw ?? ''))), fn ($s) => $s !== '');
+        $communeList = array_filter(array_map('trim', explode("\n", (string) ($communeRaw ?? ''))), fn ($s) => $s !== '');
 
-        $cp      = array_values($cpList)[0] ?? null;
+        $cp = array_values($cpList)[0] ?? null;
         $commune = array_values($communeList)[0] ?? null;
 
         // Float Excel : 65000.0 → "65000"
@@ -443,11 +467,11 @@ class PartenaireImporter
         }
 
         // Détection inversion : cp ressemble à une ville (aucun chiffre) et commune à un code
-        $cpDigits      = preg_replace('/\D/', '', (string) ($cp ?? ''));
+        $cpDigits = preg_replace('/\D/', '', (string) ($cp ?? ''));
         $communeDigits = preg_replace('/\D/', '', (string) ($commune ?? ''));
 
         if (
-            $cp && !$cpDigits             // cp = texte sans chiffre → c'est une ville
+            $cp && ! $cpDigits             // cp = texte sans chiffre → c'est une ville
             && $commune && ctype_digit($communeDigits) && strlen($communeDigits) >= 4
         ) {
             [$cp, $commune] = [$commune, $cp]; // swap
@@ -463,7 +487,9 @@ class PartenaireImporter
 
         // Commune : nettoyer et tronquer à 100 chars
         $commune = $commune ? mb_substr(trim((string) $commune), 0, 100) : null;
-        if ($commune === '' || $commune === '/') $commune = null;
+        if ($commune === '' || $commune === '/') {
+            $commune = null;
+        }
 
         return [$cp, $commune];
     }
@@ -474,7 +500,9 @@ class PartenaireImporter
      */
     private function cleanDepartement(mixed $value): ?string
     {
-        if ($value === null || $value === '') return null;
+        if ($value === null || $value === '') {
+            return null;
+        }
 
         // Float Excel : 65.0 → "65"
         if (is_float($value)) {
@@ -490,6 +518,7 @@ class PartenaireImporter
             if ($num > 999) {
                 $num = (int) substr((string) $num, 0, 2);
             }
+
             return str_pad((string) $num, 2, '0', STR_PAD_LEFT);
         }
 
@@ -502,15 +531,22 @@ class PartenaireImporter
      */
     private function cleanNbSalaries(mixed $value): ?int
     {
-        if ($value === null || $value === '' || $value === '/') return null;
-        if (is_int($value)) return $value;
-        if (is_float($value)) return (int) $value;
+        if ($value === null || $value === '' || $value === '/') {
+            return null;
+        }
+        if (is_int($value)) {
+            return $value;
+        }
+        if (is_float($value)) {
+            return (int) $value;
+        }
 
         $s = preg_replace('/\s+/', '', (string) $value);
         // Extraire le premier bloc numérique
         if (preg_match('/(\d+)/', $s, $m)) {
             return (int) $m[1];
         }
+
         return null;
     }
 
@@ -521,7 +557,9 @@ class PartenaireImporter
     private function cleanTelephone(mixed $value): ?string
     {
         $s = $this->str($value);
-        if (!$s) return null;
+        if (! $s) {
+            return null;
+        }
 
         // Premier numéro si plusieurs séparés par \n ou /
         $s = preg_split('/[\n\r\/]+/', $s)[0] ?? '';
@@ -543,22 +581,31 @@ class PartenaireImporter
     private function cell(array $row, string $col): mixed
     {
         $index = self::COL[$col] ?? null;
-        if ($index === null || !array_key_exists($index, $row)) return null;
+        if ($index === null || ! array_key_exists($index, $row)) {
+            return null;
+        }
+
         return $row[$index];
     }
 
     private function str(mixed $value): ?string
     {
-        if ($value === null) return null;
+        if ($value === null) {
+            return null;
+        }
         $s = trim((string) $value);
+
         return ($s === '' || $s === '/' || $s === '-') ? null : $s;
     }
 
     private function isEmptyRow(array $row): bool
     {
         foreach ($row as $cell) {
-            if (trim((string) $cell) !== '') return false;
+            if (trim((string) $cell) !== '') {
+                return false;
+            }
         }
+
         return true;
     }
 
@@ -566,16 +613,19 @@ class PartenaireImporter
     {
         $v = mb_strtolower(trim((string) ($value ?? '')));
         $map = [
-            'cse'         => OrganizationType::CSE->value,
-            'entreprise'  => OrganizationType::EntrepriseDirecte->value,
-            'boutique'    => OrganizationType::EntrepriseDirecte->value,
-            'syndicat'    => OrganizationType::Syndicat->value,
+            'cse' => OrganizationType::CSE->value,
+            'entreprise' => OrganizationType::EntrepriseDirecte->value,
+            'boutique' => OrganizationType::EntrepriseDirecte->value,
+            'syndicat' => OrganizationType::Syndicat->value,
             'association' => OrganizationType::Association->value,
-            'ass'         => OrganizationType::Association->value,
+            'ass' => OrganizationType::Association->value,
         ];
         foreach ($map as $key => $enumVal) {
-            if (str_contains($v, $key)) return $enumVal;
+            if (str_contains($v, $key)) {
+                return $enumVal;
+            }
         }
+
         return null;
     }
 
@@ -584,49 +634,67 @@ class PartenaireImporter
         $v = mb_strtolower(trim((string) ($value ?? '')));
         // Trier par longueur desc pour matcher "signé nouveau process" avant "signé"
         $map = [
-            'signé nouveau process'   => OrganizationStatus::ConventionEngagement->value,
-            'signe nouveau process'   => OrganizationStatus::ConventionEngagement->value,
-            'convention'              => OrganizationStatus::ConventionEngagement->value,
-            'en prospect'             => OrganizationStatus::AProspecter->value,
-            'à prospecter'            => OrganizationStatus::AProspecter->value,
-            'a prospecter'            => OrganizationStatus::AProspecter->value,
-            'prospect'                => OrganizationStatus::AProspecter->value,
-            'en cours'                => OrganizationStatus::EnCoursProspection->value,
-            'rdv'                     => OrganizationStatus::RdvEnCours->value,
-            'signée'                  => OrganizationStatus::SigneAccordCadre->value,
-            'signee'                  => OrganizationStatus::SigneAccordCadre->value,
-            'signé'                   => OrganizationStatus::SigneAccordCadre->value,
-            'signe'                   => OrganizationStatus::SigneAccordCadre->value,
-            'refus'                   => OrganizationStatus::Refus->value,
+            'signé nouveau process' => OrganizationStatus::ConventionEngagement->value,
+            'signe nouveau process' => OrganizationStatus::ConventionEngagement->value,
+            'convention' => OrganizationStatus::ConventionEngagement->value,
+            'en prospect' => OrganizationStatus::AProspecter->value,
+            'à prospecter' => OrganizationStatus::AProspecter->value,
+            'a prospecter' => OrganizationStatus::AProspecter->value,
+            'prospect' => OrganizationStatus::AProspecter->value,
+            'en cours' => OrganizationStatus::EnCoursProspection->value,
+            'rdv' => OrganizationStatus::RdvEnCours->value,
+            'signée' => OrganizationStatus::SigneAccordCadre->value,
+            'signee' => OrganizationStatus::SigneAccordCadre->value,
+            'signé' => OrganizationStatus::SigneAccordCadre->value,
+            'signe' => OrganizationStatus::SigneAccordCadre->value,
+            'refus' => OrganizationStatus::Refus->value,
         ];
-        uksort($map, fn($a, $b) => strlen($b) - strlen($a));
+        uksort($map, fn ($a, $b) => strlen($b) - strlen($a));
         foreach ($map as $key => $enumVal) {
-            if (str_contains($v, $key)) return $enumVal;
+            if (str_contains($v, $key)) {
+                return $enumVal;
+            }
         }
+
         return null;
     }
 
     private function parseBool(mixed $value): ?bool
     {
-        if ($value === null || $value === '') return null;
+        if ($value === null || $value === '') {
+            return null;
+        }
         $v = mb_strtolower(trim((string) $value));
-        if (in_array($v, ['oui', 'yes', '1'])) return true;
-        if (in_array($v, ['non', 'no', '0'])) return false;
+        if (in_array($v, ['oui', 'yes', '1'])) {
+            return true;
+        }
+        if (in_array($v, ['non', 'no', '0'])) {
+            return false;
+        }
+
         return null;
     }
 
     private function parseDate(mixed $value): ?string
     {
-        if ($value === null || $value === '' || $value === '/') return null;
+        if ($value === null || $value === '' || $value === '/') {
+            return null;
+        }
         try {
-            if ($value instanceof \DateTime) return $value->format('Y-m-d');
+            if ($value instanceof \DateTime) {
+                return $value->format('Y-m-d');
+            }
             if (is_numeric($value)) {
-                $ts = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value);
+                $ts = Date::excelToDateTimeObject((float) $value);
                 $y = (int) $ts->format('Y');
-                if ($y < 1900 || $y > 2100) return null;
+                if ($y < 1900 || $y > 2100) {
+                    return null;
+                }
+
                 return $ts->format('Y-m-d');
             }
-            return \Carbon\Carbon::parse((string) $value)->format('Y-m-d');
+
+            return Carbon::parse((string) $value)->format('Y-m-d');
         } catch (\Exception) {
             return null;
         }
@@ -634,19 +702,31 @@ class PartenaireImporter
 
     private function cleanInt(mixed $value): ?int
     {
-        if ($value === null || $value === '' || $value === '/') return null;
-        if (is_int($value)) return $value;
-        if (is_float($value)) return (int) $value;
+        if ($value === null || $value === '' || $value === '/') {
+            return null;
+        }
+        if (is_int($value)) {
+            return $value;
+        }
+        if (is_float($value)) {
+            return (int) $value;
+        }
         $digits = preg_replace('/[^\d]/', '', (string) $value);
+
         return $digits !== '' ? (int) $digits : null;
     }
 
     private function cleanDecimal(mixed $value): ?string
     {
-        if ($value === null || $value === '' || $value === '/') return null;
-        if (is_numeric($value)) return (string) $value;
+        if ($value === null || $value === '' || $value === '/') {
+            return null;
+        }
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
         $clean = str_replace([' ', "\u{00A0}", "\u{202F}", ','], ['', '', '', '.'], (string) $value);
         $clean = preg_replace('/[^\d.]/', '', $clean);
+
         return is_numeric($clean) ? $clean : null;
     }
 
@@ -656,7 +736,7 @@ class PartenaireImporter
             'created' => $this->created,
             'updated' => $this->updated,
             'skipped' => $this->skipped,
-            'errors'  => $this->errors,
+            'errors' => $this->errors,
         ];
     }
 }

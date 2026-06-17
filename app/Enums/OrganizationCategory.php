@@ -10,7 +10,7 @@ enum OrganizationCategory: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Partenaires => 'Partenaires',
             self::Artisans => 'Artisans',
             self::Contrats => 'Contrats',
@@ -19,7 +19,7 @@ enum OrganizationCategory: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Partenaires => 'primary',
             self::Artisans => 'warning',
             self::Contrats => 'info',
@@ -28,7 +28,7 @@ enum OrganizationCategory: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Partenaires => 'heroicon-o-user-group',
             self::Artisans => 'heroicon-o-wrench-screwdriver',
             self::Contrats => 'heroicon-o-document-text',

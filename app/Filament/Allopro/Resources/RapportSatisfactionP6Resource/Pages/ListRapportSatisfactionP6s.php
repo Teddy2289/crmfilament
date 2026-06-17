@@ -33,34 +33,34 @@ class ListRapportSatisfactionP6s extends ListRecords
             'a_appeler' => Tab::make('📞 À appeler J+1')
                 ->badge($this->getTicketsASappeler())
                 ->badgeColor($this->getTicketsASappeler() > 0 ? 'danger' : 'gray')
-                ->modifyQueryUsing(fn(Builder $query) => $query->whereHas('ticket', function (Builder $t) {
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('ticket', function (Builder $t) {
                     $t->where('statut', TicketStatut::InterventionRealisee->value)
-                      ->whereDoesntHave('rapportSatisfaction');
+                        ->whereDoesntHave('rapportSatisfaction');
                 })),
 
             'satisfaits' => Tab::make('✅ Satisfaits')
                 ->badge(RapportSatisfactionP6::query()->satisfaits()->count())
                 ->badgeColor('success')
-                ->modifyQueryUsing(fn(Builder $query) => $query->satisfaits()),
+                ->modifyQueryUsing(fn (Builder $query) => $query->satisfaits()),
 
             'suivi_qualite' => Tab::make('⚠️ Suivi qualité')
                 ->badge($this->getSuiviQualiteCount())
                 ->badgeColor('warning')
-                ->modifyQueryUsing(fn(Builder $query) => $query->whereBetween('note_nps', [6, 7])),
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereBetween('note_nps', [6, 7])),
 
             'detracteurs' => Tab::make('🚨 Détracteurs')
                 ->badge(RapportSatisfactionP6::query()->detracteurs()->count())
                 ->badgeColor('danger')
-                ->modifyQueryUsing(fn(Builder $query) => $query->detracteurs()),
+                ->modifyQueryUsing(fn (Builder $query) => $query->detracteurs()),
 
             'sans_feedback' => Tab::make('Feedback manquant')
                 ->badge(RapportSatisfactionP6::query()->where('feedback_artisan', false)->count())
                 ->badgeColor('warning')
-                ->modifyQueryUsing(fn(Builder $query) => $query->where('feedback_artisan', false)),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('feedback_artisan', false)),
 
             'du_mois' => Tab::make('Ce mois')
                 ->badge(RapportSatisfactionP6::duMois()->count())
-                ->modifyQueryUsing(fn(Builder $query) => $query->duMois()),
+                ->modifyQueryUsing(fn (Builder $query) => $query->duMois()),
         ];
     }
 

@@ -14,11 +14,17 @@ use Filament\Tables\Table;
 class WorkflowGroupeResource extends Resource
 {
     protected static ?string $model = WorkflowGroupe::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-group';
+
     protected static ?string $navigationLabel = 'Groupes workflow';
+
     protected static ?string $navigationGroup = 'Paramétrage CRM';
+
     protected static ?int $navigationSort = 4;
+
     protected static ?string $modelLabel = 'Groupe workflow';
+
     protected static ?string $pluralModelLabel = 'Groupes workflow';
 
     public static function form(Form $form): Form

@@ -2,22 +2,21 @@
 
 namespace App\Models;
 
-use App\Enums\EventType;
 use App\Enums\EventResult;
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\EventType;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\CampagnePhoning;
+use Illuminate\Database\Eloquent\Model;
 
 class Appel extends Model
 {
     protected $table = 'appels';
 
     protected $casts = [
-        'type'           => EventType::class,
-        'resultat'       => EventResult::class,
-        'date_heure'     => 'datetime',
+        'type' => EventType::class,
+        'resultat' => EventResult::class,
+        'date_heure' => 'datetime',
         'duree_secondes' => 'integer',
-        'fiche_data'     => 'array',
+        'fiche_data' => 'array',
     ];
 
     protected $fillable = [
@@ -83,7 +82,7 @@ class Appel extends Model
 
     public function getDureeFormateeAttribute(): string
     {
-        if (!$this->duree_secondes) {
+        if (! $this->duree_secondes) {
             return 'N/A';
         }
 
@@ -151,12 +150,12 @@ class Appel extends Model
         $this->update([
             'resultat' => EventResult::Annule,
             'commentaire' => $this->commentaire
-                ? $this->commentaire . "\n[Annulation] {$motif}"
+                ? $this->commentaire."\n[Annulation] {$motif}"
                 : "[Annulation] {$motif}",
         ]);
     }
 
-    public function marquerDecale(\DateTime $nouvelleDate, string $motif = null): void
+    public function marquerDecale(\DateTime $nouvelleDate, ?string $motif = null): void
     {
         $data = [
             'resultat' => EventResult::Decale,
@@ -165,7 +164,7 @@ class Appel extends Model
 
         if ($motif) {
             $data['commentaire'] = $this->commentaire
-                ? $this->commentaire . "\n[Décalé] {$motif}"
+                ? $this->commentaire."\n[Décalé] {$motif}"
                 : "[Décalé] {$motif}";
         }
 
@@ -181,7 +180,7 @@ class Appel extends Model
 
         if ($notes) {
             $data['commentaire'] = $this->commentaire
-                ? $this->commentaire . "\n[Rappel] {$notes}"
+                ? $this->commentaire."\n[Rappel] {$notes}"
                 : "[Rappel] {$notes}";
         }
 
@@ -347,10 +346,12 @@ class Appel extends Model
         }
 
         $total = $query->count();
-        if ($total === 0)
+        if ($total === 0) {
             return 0;
+        }
 
         $realises = (clone $query)->realises()->count();
+
         return round(($realises / $total) * 100, 1);
     }
 
@@ -373,10 +374,10 @@ class Appel extends Model
     protected static function booted(): void
     {
         static::creating(function (Appel $appel) {
-            if (!$appel->date_heure) {
+            if (! $appel->date_heure) {
                 $appel->date_heure = now();
             }
-            if (!$appel->type) {
+            if (! $appel->type) {
                 $appel->type = EventType::Appel;
             }
         });

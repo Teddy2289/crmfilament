@@ -21,14 +21,20 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class ArtisanResource extends Resource
 {
     protected static ?string $model = Artisan::class;
-    protected static ?string $navigationIcon  = 'heroicon-o-wrench-screwdriver';
+
+    protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
+
     protected static ?string $navigationLabel = 'Artisans';
+
     protected static ?string $navigationGroup = 'Artisans';
-    protected static ?int    $navigationSort  = 1;
+
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $recordTitleAttribute = 'nom_complet';
 
     // ── Badges de navigation ─────────────────────────────────────
@@ -172,19 +178,19 @@ class ArtisanResource extends Resource
                     ->searchable(['nom', 'prenom'])
                     ->sortable(['nom'])
                     ->weight('semibold')
-                    ->description(fn(Artisan $r) => $r->raison_sociale),
+                    ->description(fn (Artisan $r) => $r->raison_sociale),
 
                 Tables\Columns\TextColumn::make('corps_de_metier')
                     ->label('Métier')
                     ->sortable()
-                    ->formatStateUsing(fn($state) => $state->label())
-                    ->color(fn($state) => $state->color()),
+                    ->formatStateUsing(fn ($state) => $state->label())
+                    ->color(fn ($state) => $state->color()),
 
                 Tables\Columns\TextColumn::make('statut_compte')
                     ->label('Statut')
                     ->sortable()
-                    ->formatStateUsing(fn($state) => $state->label())
-                    ->color(fn($state) => $state->color()),
+                    ->formatStateUsing(fn ($state) => $state->label())
+                    ->color(fn ($state) => $state->color()),
 
                 Tables\Columns\TextColumn::make('telephone_principal')
                     ->label('Téléphone')
@@ -207,12 +213,12 @@ class ArtisanResource extends Resource
                 Tables\Columns\TextColumn::make('note_moyenne')
                     ->label('Note moy.')
                     ->sortable()
-                    ->formatStateUsing(fn($state) => $state ? number_format($state, 1) . ' / 10' : '—')
-                    ->color(fn($state) => match(true) {
-                        $state >= 8  => 'success',
-                        $state >= 6  => 'warning',
+                    ->formatStateUsing(fn ($state) => $state ? number_format($state, 1).' / 10' : '—')
+                    ->color(fn ($state) => match (true) {
+                        $state >= 8 => 'success',
+                        $state >= 6 => 'warning',
                         $state !== null => 'danger',
-                        default      => 'gray',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('date_souscription')
@@ -244,11 +250,11 @@ class ArtisanResource extends Resource
 
                 Tables\Filters\Filter::make('prioritaires')
                     ->label('Métiers prioritaires')
-                    ->query(fn(Builder $q) => $q->prioritaires()),
+                    ->query(fn (Builder $q) => $q->prioritaires()),
 
                 Tables\Filters\Filter::make('bien_notes')
                     ->label('Bien notés (≥ 8)')
-                    ->query(fn(Builder $q) => $q->bienNotes(8)),
+                    ->query(fn (Builder $q) => $q->bienNotes(8)),
             ])
 
             ->actions([
@@ -256,7 +262,7 @@ class ArtisanResource extends Resource
                     ->label('Activer')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(Artisan $r) => $r->estEnAttente())
+                    ->visible(fn (Artisan $r) => $r->estEnAttente())
                     ->requiresConfirmation()
                     ->action(function (Artisan $record) {
                         $record->activer();
@@ -270,7 +276,7 @@ class ArtisanResource extends Resource
                     ->label('Suspendre')
                     ->icon('heroicon-o-pause-circle')
                     ->color('danger')
-                    ->visible(fn(Artisan $r) => $r->estActif())
+                    ->visible(fn (Artisan $r) => $r->estActif())
                     ->form([
                         Forms\Components\Textarea::make('motif')
                             ->label('Motif de suspension')
@@ -299,7 +305,7 @@ class ArtisanResource extends Resource
                         ->action(function ($records) {
                             $records->each->activer();
                             Notification::make()
-                                ->title(count($records) . ' artisan(s) activé(s)')
+                                ->title(count($records).' artisan(s) activé(s)')
                                 ->success()
                                 ->send();
                         }),
@@ -323,10 +329,10 @@ class ArtisanResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  =>ListArtisans::route('/'),
-            'create' =>CreateArtisan::route('/create'),
-            'view'   =>ViewArtisan::route('/{record}'),
-            'edit'   =>EditArtisan::route('/{record}/edit'),
+            'index' => ListArtisans::route('/'),
+            'create' => CreateArtisan::route('/create'),
+            'view' => ViewArtisan::route('/{record}'),
+            'edit' => EditArtisan::route('/{record}/edit'),
         ];
     }
 
@@ -346,12 +352,12 @@ class ArtisanResource extends Resource
         return auth()->user()?->hasAnyRole(['responsable_plateau', 'back_office']) ?? false;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return auth()->user()?->hasAnyRole(['responsable_plateau', 'back_office']) ?? false;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return auth()->user()?->hasRole('responsable_plateau') ?? false;
     }

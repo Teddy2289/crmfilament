@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class Client extends Model
 {
@@ -13,10 +13,10 @@ class Client extends Model
     protected $table = 'clients';
 
     protected $casts = [
-        'date_naissance'    => 'date',
-        'montant_cpf'       => 'decimal:2',
+        'date_naissance' => 'date',
+        'montant_cpf' => 'decimal:2',
         'ne_plus_contacter' => 'boolean',
-        'extra_data'        => 'array',
+        'extra_data' => 'array',
     ];
 
     protected $fillable = [
@@ -48,7 +48,7 @@ class Client extends Model
 
     public function getNomCompletAttribute(): string
     {
-        return trim(($this->civilite ? $this->civilite . ' ' : '') . ($this->nom_tiers ?? ''));
+        return trim(($this->civilite ? $this->civilite.' ' : '').($this->nom_tiers ?? ''));
     }
 
     public function getAgeAttribute(): ?int
@@ -77,10 +77,12 @@ class Client extends Model
 
     public function getInitialesAttribute(): string
     {
-        if (! $this->nom_tiers) return '?';
+        if (! $this->nom_tiers) {
+            return '?';
+        }
 
         return collect(explode(' ', $this->nom_tiers))
-            ->map(fn($mot) => strtoupper(substr($mot, 0, 1)))
+            ->map(fn ($mot) => strtoupper(substr($mot, 0, 1)))
             ->implode('');
     }
 
@@ -92,7 +94,7 @@ class Client extends Model
             'ne_plus_contacter' => true,
             'extra_data' => array_merge($this->extra_data ?? [], [
                 'motif_npc' => $motif,
-                'date_npc'  => now()->toDateString(),
+                'date_npc' => now()->toDateString(),
             ]),
         ]);
     }
@@ -105,13 +107,19 @@ class Client extends Model
     public function aDesPropositions(): bool
     {
         // Guard : pas de relation si ref_client null
-        if (! $this->ref_client) return false;
+        if (! $this->ref_client) {
+            return false;
+        }
+
         return $this->propositions()->exists();
     }
 
     public function aDesPropositionsEnCours(): bool
     {
-        if (! $this->ref_client) return false;
+        if (! $this->ref_client) {
+            return false;
+        }
+
         return $this->propositions()
             ->whereNotIn('etat', ['Terminée', 'Annulée'])
             ->exists();
@@ -119,19 +127,28 @@ class Client extends Model
 
     public function getTotalHeuresFormation(): int
     {
-        if (! $this->ref_client) return 0;
+        if (! $this->ref_client) {
+            return 0;
+        }
+
         return (int) $this->propositions()->sum('nb_heures_formation');
     }
 
     public function getTotalHeuresRealisees(): int
     {
-        if (! $this->ref_client) return 0;
+        if (! $this->ref_client) {
+            return 0;
+        }
+
         return (int) $this->propositions()->sum('heures_realisees');
     }
 
     public function getTotalHeuresRestantes(): int
     {
-        if (! $this->ref_client) return 0;
+        if (! $this->ref_client) {
+            return 0;
+        }
+
         return (int) $this->propositions()->sum('heures_restantes');
     }
 
@@ -140,25 +157,35 @@ class Client extends Model
         $fromPropositions = $this->ref_client
             ? (float) $this->propositions()->sum('montant_cpf')
             : 0.0;
+
         return $fromPropositions + (float) ($this->montant_cpf ?? 0);
     }
 
     public function getProgressionFormationAttribute(): float
     {
         $total = $this->getTotalHeuresFormation();
-        if ($total === 0) return 0.0;
+        if ($total === 0) {
+            return 0.0;
+        }
+
         return round(($this->getTotalHeuresRealisees() / $total) * 100, 1);
     }
 
     public function getDernierePropositionAttribute(): ?Proposition
     {
-        if (! $this->ref_client) return null;
+        if (! $this->ref_client) {
+            return null;
+        }
+
         return $this->propositions()->latest('date_lancement')->first();
     }
 
     public function getDerniereFormationAttribute(): ?Proposition
     {
-        if (! $this->ref_client) return null;
+        if (! $this->ref_client) {
+            return null;
+        }
+
         return $this->propositions()
             ->whereNotNull('date_debut_formation')
             ->latest('date_debut_formation')
@@ -170,10 +197,10 @@ class Client extends Model
     public function scopeContactables(Builder $query): Builder
     {
         return $query->where('ne_plus_contacter', false)
-                     ->where(function (Builder $q) {
-                         $q->whereNotNull('email')
-                           ->orWhereNotNull('telephone');
-                     });
+            ->where(function (Builder $q) {
+                $q->whereNotNull('email')
+                    ->orWhereNotNull('telephone');
+            });
     }
 
     public function scopeNonContactables(Builder $query): Builder
@@ -228,16 +255,16 @@ class Client extends Model
     public static function getKpis(): array
     {
         return [
-            'total'             => static::count(),
-            'contactables'      => static::contactables()->count(),
-            'non_contactables'  => static::nonContactables()->count(),
+            'total' => static::count(),
+            'contactables' => static::contactables()->count(),
+            'non_contactables' => static::nonContactables()->count(),
             'avec_propositions' => static::avecPropositions()->count(),
             'sans_propositions' => static::sansPropositions()->count(),
-            'avec_cpf'          => static::avecCPF()->count(),
-            'nouveaux_mois'     => static::whereMonth('created_at', now()->month)
-                                        ->whereYear('created_at', now()->year)
-                                        ->count(),
-            'par_region'        => static::getRepartitionParRegion(),
+            'avec_cpf' => static::avecCPF()->count(),
+            'nouveaux_mois' => static::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count(),
+            'par_region' => static::getRepartitionParRegion(),
         ];
     }
 
@@ -261,7 +288,7 @@ class Client extends Model
             if (! $client->ref_client) {
                 // Génère une ref unique basée sur timestamp + random pour éviter
                 // les collisions sur import massif (plusieurs milliers en parallèle)
-                $client->ref_client = 'CLI-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+                $client->ref_client = 'CLI-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -6));
             }
         });
     }
@@ -272,7 +299,7 @@ class Client extends Model
     {
         // whereNotNull garantit qu'on ne fait jamais WHERE ref_client = NULL
         return $this->hasMany(Proposition::class, 'ref_client', 'ref_client')
-                    ->whereNotNull('ref_client');
+            ->whereNotNull('ref_client');
     }
 
     public function partenaires()

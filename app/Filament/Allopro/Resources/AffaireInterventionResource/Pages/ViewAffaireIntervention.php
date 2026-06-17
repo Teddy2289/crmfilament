@@ -4,10 +4,8 @@ namespace App\Filament\Allopro\Resources\AffaireInterventionResource\Pages;
 
 use App\Enums\StatutAffaireIntervention;
 use App\Filament\Allopro\Resources\AffaireInterventionResource;
-use App\Models\AffaireIntervention;
 use Filament\Actions;
 use Filament\Forms;
-use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -27,7 +25,7 @@ class ViewAffaireIntervention extends ViewRecord
                 ->label('Confirmer artisan')
                 ->icon('heroicon-o-check-circle')
                 ->color('primary')
-                ->visible(fn() => $this->record->statut === StatutAffaireIntervention::EnAttente)
+                ->visible(fn () => $this->record->statut === StatutAffaireIntervention::EnAttente)
                 ->requiresConfirmation()
                 ->modalHeading("L'artisan confirme sa venue ?")
                 ->modalDescription("Cette action mettra le ticket associé en statut 'Artisan confirmé'.")
@@ -42,7 +40,7 @@ class ViewAffaireIntervention extends ViewRecord
                 ->label('Démarrer intervention')
                 ->icon('heroicon-o-play')
                 ->color('info')
-                ->visible(fn() => $this->record->statut === StatutAffaireIntervention::Confirmee)
+                ->visible(fn () => $this->record->statut === StatutAffaireIntervention::Confirmee)
                 ->requiresConfirmation()
                 ->modalHeading("Démarrer l'intervention ?")
                 ->action(function () {
@@ -56,7 +54,7 @@ class ViewAffaireIntervention extends ViewRecord
                 ->label('Finaliser')
                 ->icon('heroicon-o-clipboard-document-check')
                 ->color('teal')
-                ->visible(fn() => $this->record->statut === StatutAffaireIntervention::EnCours)
+                ->visible(fn () => $this->record->statut === StatutAffaireIntervention::EnCours)
                 ->form([
                     Forms\Components\Textarea::make('compte_rendu_artisan')
                         ->label("Compte-rendu de l'artisan")
@@ -80,7 +78,7 @@ class ViewAffaireIntervention extends ViewRecord
                 ->label('Valider par client')
                 ->icon('heroicon-o-hand-thumb-up')
                 ->color('success')
-                ->visible(fn() => $this->record->statut === StatutAffaireIntervention::Realisee)
+                ->visible(fn () => $this->record->statut === StatutAffaireIntervention::Realisee)
                 ->form([
                     Forms\Components\Select::make('satisfaction_immediate')
                         ->label('Satisfaction immédiate (1–5)')
@@ -105,7 +103,7 @@ class ViewAffaireIntervention extends ViewRecord
                 ->label('Annuler')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
-                ->visible(fn() => $this->record->statut?->estActive())
+                ->visible(fn () => $this->record->statut?->estActive())
                 ->form([
                     Forms\Components\Textarea::make('motif')
                         ->label("Motif d'annulation")
@@ -123,7 +121,7 @@ class ViewAffaireIntervention extends ViewRecord
                 ->label('Déclarer échec')
                 ->icon('heroicon-o-exclamation-triangle')
                 ->color('danger')
-                ->visible(fn() => $this->record->statut === StatutAffaireIntervention::EnCours)
+                ->visible(fn () => $this->record->statut === StatutAffaireIntervention::EnCours)
                 ->form([
                     Forms\Components\Textarea::make('motif')
                         ->label("Motif de l'échec")
@@ -156,14 +154,14 @@ class ViewAffaireIntervention extends ViewRecord
                     TextEntry::make('statut')
                         ->label('Statut')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state instanceof StatutAffaireIntervention ? $state->label() : $state)
-                        ->color(fn($state) => $state instanceof StatutAffaireIntervention ? $state->color() : 'gray')
-                        ->icon(fn($state) => $state instanceof StatutAffaireIntervention ? $state->icon() : null),
+                        ->formatStateUsing(fn ($state) => $state instanceof StatutAffaireIntervention ? $state->label() : $state)
+                        ->color(fn ($state) => $state instanceof StatutAffaireIntervention ? $state->color() : 'gray')
+                        ->icon(fn ($state) => $state instanceof StatutAffaireIntervention ? $state->icon() : null),
 
                     TextEntry::make('numero_tentative')
                         ->label('Tentative n°')
                         ->badge()
-                        ->color(fn($state) => $state > 1 ? 'warning' : 'gray'),
+                        ->color(fn ($state) => $state > 1 ? 'warning' : 'gray'),
 
                     IconEntry::make('sla_respectee')
                         ->label('SLA P4')
@@ -176,11 +174,11 @@ class ViewAffaireIntervention extends ViewRecord
                     TextEntry::make('delai_confirmation_formate')
                         ->label('Délai confirmation')
                         ->badge()
-                        ->color(fn($state, $record) => match(true) {
-                            !$record->delai_confirmation_minutes  => 'gray',
-                            $record->delai_confirmation_minutes <= 5  => 'success',
+                        ->color(fn ($state, $record) => match (true) {
+                            ! $record->delai_confirmation_minutes => 'gray',
+                            $record->delai_confirmation_minutes <= 5 => 'success',
                             $record->delai_confirmation_minutes <= 30 => 'warning',
-                            default                                   => 'danger',
+                            default => 'danger',
                         }),
                 ]),
 
@@ -197,19 +195,18 @@ class ViewAffaireIntervention extends ViewRecord
                     TextEntry::make('ticket.statut')
                         ->label('Statut ticket')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
-                        ->color(fn($state) => $state?->color() ?? 'gray'),
+                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
+                        ->color(fn ($state) => $state?->color() ?? 'gray'),
 
                     TextEntry::make('ticket.niveau_priorite')
                         ->label('Priorité ticket')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
-                        ->color(fn($state) => $state?->color() ?? 'gray'),
+                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
+                        ->color(fn ($state) => $state?->color() ?? 'gray'),
 
                     TextEntry::make('ticket.contactParticulier.nom')
                         ->label('Client')
-                        ->formatStateUsing(fn($state, $record) =>
-                            trim(($record->ticket?->contactParticulier?->prenom ?? '') . ' ' . ($record->ticket?->contactParticulier?->nom ?? '')) ?: '—'
+                        ->formatStateUsing(fn ($state, $record) => trim(($record->ticket?->contactParticulier?->prenom ?? '').' '.($record->ticket?->contactParticulier?->nom ?? '')) ?: '—'
                         ),
 
                     TextEntry::make('ticket.contactParticulier.telephone')
@@ -230,14 +227,14 @@ class ViewAffaireIntervention extends ViewRecord
                 ->schema([
                     TextEntry::make('artisan.nom')
                         ->label('Artisan')
-                        ->formatStateUsing(fn($state, $record) => $record->artisan?->nom_complet ?? '—')
+                        ->formatStateUsing(fn ($state, $record) => $record->artisan?->nom_complet ?? '—')
                         ->weight('semibold'),
 
                     TextEntry::make('artisan.corps_de_metier')
                         ->label('Métier')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
-                        ->color(fn($state) => $state?->color() ?? 'gray'),
+                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
+                        ->color(fn ($state) => $state?->color() ?? 'gray'),
 
                     TextEntry::make('artisan.telephone_principal')
                         ->label('Téléphone')
@@ -258,8 +255,7 @@ class ViewAffaireIntervention extends ViewRecord
 
                     TextEntry::make('operateurDispatch.prenom')
                         ->label('Dispatcher')
-                        ->formatStateUsing(fn($state, $record) =>
-                            trim(($record->operateurDispatch?->prenom ?? '') . ' ' . ($record->operateurDispatch?->nom ?? '')) ?: '—'
+                        ->formatStateUsing(fn ($state, $record) => trim(($record->operateurDispatch?->prenom ?? '').' '.($record->operateurDispatch?->nom ?? '')) ?: '—'
                         ),
                 ]),
 
@@ -274,9 +270,8 @@ class ViewAffaireIntervention extends ViewRecord
 
                     TextEntry::make('creneau_debut')
                         ->label('Créneau')
-                        ->formatStateUsing(fn($state, $record) =>
-                            ($record->creneau_debut && $record->creneau_fin)
-                                ? $record->creneau_debut . ' – ' . $record->creneau_fin
+                        ->formatStateUsing(fn ($state, $record) => ($record->creneau_debut && $record->creneau_fin)
+                                ? $record->creneau_debut.' – '.$record->creneau_fin
                                 : '—'
                         ),
 
@@ -317,7 +312,7 @@ class ViewAffaireIntervention extends ViewRecord
                         ->columnSpanFull(),
 
                     TextEntry::make('compte_rendu_artisan')
-                        ->label("Compte-rendu artisan")
+                        ->label('Compte-rendu artisan')
                         ->prose()
                         ->placeholder('Non renseigné')
                         ->columnSpanFull(),
@@ -341,13 +336,13 @@ class ViewAffaireIntervention extends ViewRecord
 
                     TextEntry::make('satisfaction_immediate')
                         ->label('Satisfaction immédiate')
-                        ->formatStateUsing(fn($state) => $state ? $state . ' / 5' : '—')
+                        ->formatStateUsing(fn ($state) => $state ? $state.' / 5' : '—')
                         ->badge()
-                        ->color(fn($state) => match(true) {
+                        ->color(fn ($state) => match (true) {
                             $state === null => 'gray',
-                            $state >= 4     => 'success',
-                            $state === 3    => 'warning',
-                            default         => 'danger',
+                            $state >= 4 => 'success',
+                            $state === 3 => 'warning',
+                            default => 'danger',
                         }),
                 ]),
 

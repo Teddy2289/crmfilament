@@ -1,14 +1,34 @@
 <?php
 
+use App\Http\Middleware\EnsureSuperAdmin;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
+use Illuminate\Auth\Middleware\Authorize;
+use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Http\Middleware\SetCacheHeaders;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Routing\Middleware\ValidateSignature;
+use Illuminate\Session\Middleware\AuthenticateSession;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        commands: __DIR__ . '/../routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -24,32 +44,32 @@ return Application::configure(basePath: dirname(__DIR__))
         // ── Middlewares web globaux ─────────────────────────────────
         // (déjà inclus par défaut dans Laravel 11, mais explicités ici)
         $middleware->web(append: [
-            \Illuminate\Cookie\Middleware\EncryptCookies::class,
-            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-            \Illuminate\Session\Middleware\StartSession::class,
-            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+            ShareErrorsFromSession::class,
+            VerifyCsrfToken::class,
+            SubstituteBindings::class,
         ]);
 
         // ── Aliases de middleware ───────────────────────────────────
         // Utilisés dans les routes et les panels Filament
         $middleware->alias([
-            'auth'             => \Illuminate\Auth\Middleware\Authenticate::class,
-            'auth.basic'       => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-            'auth.session'     => \Illuminate\Session\Middleware\AuthenticateSession::class,
-            'cache.headers'    => \Illuminate\Http\Middleware\SetCacheHeaders::class,
-            'can'              => \Illuminate\Auth\Middleware\Authorize::class,
-            'guest'            => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
-            'signed'           => \Illuminate\Routing\Middleware\ValidateSignature::class,
-            'throttle'         => \Illuminate\Routing\Middleware\ThrottleRequests::class,
-            'verified'         => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+            'auth' => Authenticate::class,
+            'auth.basic' => AuthenticateWithBasicAuth::class,
+            'auth.session' => AuthenticateSession::class,
+            'cache.headers' => SetCacheHeaders::class,
+            'can' => Authorize::class,
+            'guest' => RedirectIfAuthenticated::class,
+            'signed' => ValidateSignature::class,
+            'throttle' => ThrottleRequests::class,
+            'verified' => EnsureEmailIsVerified::class,
 
             // Spatie Permissions
-            'role'             => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission'       => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
-            'ensure.super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'ensure.super.admin' => EnsureSuperAdmin::class,
         ]);
 
         // ── Redirection après auth ──────────────────────────────────
@@ -74,7 +94,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Redirection vers le bon panel selon l'URL en cas de 401
         $exceptions->renderable(function (
-            \Illuminate\Auth\AuthenticationException $e,
+            AuthenticationException $e,
             Request $request
         ) {
             if ($request->is('ns-conseil/*')) {

@@ -12,14 +12,14 @@ class EnsureSuperAdmin
     {
         $user = $request->user();
 
-        if (!$user || !$user->actif) {
+        if (! $user || ! $user->actif) {
             abort(403);
         }
 
         // Utilise Spatie directement via roles relation
         $roles = $user->roles->pluck('name');
 
-        if (!$roles->intersect(['super_admin', 'administrateur'])->count()) {
+        if (! $roles->intersect(['super_admin', 'administrateur'])->count()) {
             abort(403, 'Accès réservé aux super administrateurs.');
         }
 

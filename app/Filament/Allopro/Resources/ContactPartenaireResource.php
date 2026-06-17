@@ -155,13 +155,13 @@ class ContactPartenaireResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('fonction_complete')
                     ->label('Poste / Service')
-                    ->state(fn(ContactPartenaire $record): string => $record->fonction_complete),
+                    ->state(fn (ContactPartenaire $record): string => $record->fonction_complete),
                 Tables\Columns\TextColumn::make('telephone_principal')
                     ->label('Téléphone')
-                    ->state(fn(ContactPartenaire $record): string => $record->telephone_principal),
+                    ->state(fn (ContactPartenaire $record): string => $record->telephone_principal),
                 Tables\Columns\TextColumn::make('email_principal')
                     ->label('Email')
-                    ->state(fn(ContactPartenaire $record): string => $record->email_principal)
+                    ->state(fn (ContactPartenaire $record): string => $record->email_principal)
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('est_principal')
                     ->label('Principal')
@@ -173,8 +173,8 @@ class ContactPartenaireResource extends Resource
                 Tables\Columns\TextColumn::make('niveau_influence')
                     ->label('Influence')
                     ->badge()
-                    ->state(fn(ContactPartenaire $record): string => $record->niveau_influence_label)
-                    ->color(fn(ContactPartenaire $record): string => $record->niveau_influence_color),
+                    ->state(fn (ContactPartenaire $record): string => $record->niveau_influence_label)
+                    ->color(fn (ContactPartenaire $record): string => $record->niveau_influence_color),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('est_principal')

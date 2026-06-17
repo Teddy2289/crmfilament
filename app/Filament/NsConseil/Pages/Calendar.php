@@ -2,6 +2,8 @@
 
 namespace App\Filament\NsConseil\Pages;
 
+use App\Filament\NsConseil\Widgets\CalendarWidget;
+use App\Models\RendezVous;
 use App\Services\GoogleCalendarService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -9,11 +11,15 @@ use Filament\Pages\Page;
 
 class Calendar extends Page
 {
-    protected static ?string $navigationIcon  = 'heroicon-o-calendar-days';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+
     protected static ?string $navigationLabel = 'Calendrier';
+
     protected static ?string $navigationGroup = 'Activités';
-    protected static ?int    $navigationSort  = 1;
-    protected static string  $view            = 'filament.ns-conseil.pages.calendar';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static string $view = 'filament.ns-conseil.pages.calendar';
 
     public bool $isGoogleConnected = false;
 
@@ -31,7 +37,7 @@ class Calendar extends Page
                 ->label('Nouveau RDV')
                 ->icon('heroicon-o-plus')
                 ->color('primary')
-                ->action(fn() => redirect('/ns-conseil/rendez-vous/create')),
+                ->action(fn () => redirect('/ns-conseil/rendez-vous/create')),
         ];
 
         if ($this->isGoogleConnected) {
@@ -47,14 +53,14 @@ class Calendar extends Page
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->outlined()
-                ->action(fn() => redirect('/google/disconnect'));
+                ->action(fn () => redirect('/google/disconnect'));
         } else {
             $actions[] = Action::make('connect_google')
                 ->label('Connecter Google Calendar')
                 ->icon('heroicon-o-calendar-days')
                 ->color('success')
                 ->outlined()
-                ->action(fn() => redirect('/google/redirect'));
+                ->action(fn () => redirect('/google/redirect'));
         }
 
         return $actions;
@@ -62,16 +68,17 @@ class Calendar extends Page
 
     public function syncAll(): void
     {
-        $user    = auth()->user();
+        $user = auth()->user();
         $service = app(GoogleCalendarService::class);
 
         if (! $service->isConnected($user)) {
             Notification::make()->title('Non connecté à Google')->warning()->send();
+
             return;
         }
 
-        $rdvs = \App\Models\RendezVous::query()
-            ->where(fn($q) => $q->where('commercial_id', $user->id)
+        $rdvs = RendezVous::query()
+            ->where(fn ($q) => $q->where('commercial_id', $user->id)
                 ->orWhere('teleprospecteur_id', $user->id))
             ->whereIn('statut', ['planifie', 'decale'])
             ->whereNull('google_event_id')
@@ -79,7 +86,9 @@ class Calendar extends Page
 
         $count = 0;
         foreach ($rdvs as $rdv) {
-            if ($service->createEvent($rdv)) $count++;
+            if ($service->createEvent($rdv)) {
+                $count++;
+            }
         }
 
         Notification::make()
@@ -93,7 +102,7 @@ class Calendar extends Page
     protected function getFooterWidgets(): array
     {
         return [
-            \App\Filament\NsConseil\Widgets\CalendarWidget::class,
+            CalendarWidget::class,
         ];
     }
 }

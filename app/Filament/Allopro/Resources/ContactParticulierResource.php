@@ -2,10 +2,10 @@
 
 namespace App\Filament\Allopro\Resources;
 
+use App\Enums\StatutOccupant;
+use App\Enums\TypeLogement;
 use App\Filament\Allopro\Resources\ContactParticulierResource\Pages;
 use App\Models\ContactParticulier;
-use App\Enums\TypeLogement;
-use App\Enums\StatutOccupant;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;

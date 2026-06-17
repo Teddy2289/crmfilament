@@ -7,7 +7,9 @@ use App\Enums\EventType;
 use App\Models\Appel;
 use App\Models\User;
 use App\Services\AircallService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 
 class SyncAircallCalls extends Command
 {
@@ -74,7 +76,7 @@ class SyncAircallCalls extends Command
         return self::SUCCESS;
     }
 
-    private function syncCall(array $call, \Illuminate\Support\Collection $aircallUsers): bool
+    private function syncCall(array $call, Collection $aircallUsers): bool
     {
         if (Appel::where('aircall_call_id', (string) $call['id'])->exists()) {
             return false;
@@ -83,7 +85,7 @@ class SyncAircallCalls extends Command
         $userId = null;
         $agentNom = null;
 
-        if (!empty($call['user']['id'])) {
+        if (! empty($call['user']['id'])) {
             // ✅ 1. Chercher par aircall_user_id (mapping explicite)
             $localUser = User::where('aircall_user_id', (string) $call['user']['id'])->first();
 
@@ -111,7 +113,7 @@ class SyncAircallCalls extends Command
             'user_id' => $userId,               // ✅ Null si pas de mapping local
             'type' => $type,
             'resultat' => $resultat,
-            'date_heure' => \Carbon\Carbon::createFromTimestamp($call['started_at']),
+            'date_heure' => Carbon::createFromTimestamp($call['started_at']),
             'duree_secondes' => $call['duration'] ?? null,
             'direction' => $call['direction'] ?? null,
             'numero_appelant' => $call['raw_digits'] ?? null,

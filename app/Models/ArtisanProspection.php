@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use App\Enums\StatutCampagneProspection;
-use App\Enums\PrioriteSegment;
 use App\Enums\CorpsDeMetier;
+use App\Enums\PrioriteSegment;
+use App\Enums\StatutCampagneProspection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class ArtisanProspection extends Model
 {
@@ -84,12 +84,13 @@ class ArtisanProspection extends Model
         }
 
         $jours = floor($heures / 24);
+
         return "{$jours} jour(s)";
     }
 
     public function getProchainContactAttribute(): ?string
     {
-        if (!$this->date_dernier_contact) {
+        if (! $this->date_dernier_contact) {
             return 'Immédiat';
         }
 
@@ -97,7 +98,7 @@ class ArtisanProspection extends Model
         $prochain = $this->date_dernier_contact->copy()->addHours($delai);
 
         if ($prochain->isPast()) {
-            return 'En retard depuis ' . $prochain->diffForHumans();
+            return 'En retard depuis '.$prochain->diffForHumans();
         }
 
         return $prochain->diffForHumans();
@@ -106,7 +107,9 @@ class ArtisanProspection extends Model
     public function getTauxConversionAttribute(): float
     {
         $total = static::where('teleprospecteur_id', $this->teleprospecteur_id)->count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $converties = static::where('teleprospecteur_id', $this->teleprospecteur_id)
             ->whereNotNull('artisan_id')
@@ -125,12 +128,12 @@ class ArtisanProspection extends Model
     {
         return $this->statut_campagne->estConvertible() &&
             $this->accord_verbal &&
-            !$this->artisan_id;
+            ! $this->artisan_id;
     }
 
     public function estConverti(): bool
     {
-        return !is_null($this->artisan_id);
+        return ! is_null($this->artisan_id);
     }
 
     public function estPrioritaire(): bool
@@ -140,21 +143,22 @@ class ArtisanProspection extends Model
 
     public function doitEtreRelance(): bool  // ✅ Du modèle 2
     {
-        if (!$this->statut_campagne->estActif()) {
+        if (! $this->statut_campagne->estActif()) {
             return false;
         }
 
-        if (!$this->date_dernier_contact) {
+        if (! $this->date_dernier_contact) {
             return true;
         }
 
         $delaiHeures = $this->priorite_segment->delaiRecontactHeures();
+
         return $this->date_dernier_contact->addHours($delaiHeures)->isPast();
     }
 
     public function changerStatut(StatutCampagneProspection $nouveauStatut, ?string $notes = null): void
     {
-        if (!in_array($nouveauStatut, $this->statut_campagne->statutsSuivants())) {
+        if (! in_array($nouveauStatut, $this->statut_campagne->statutsSuivants())) {
             throw new \Exception(
                 "Transition impossible de {$this->statut_campagne->value} à {$nouveauStatut->value}"
             );
@@ -167,7 +171,7 @@ class ArtisanProspection extends Model
 
         if ($notes) {
             $data['notes'] = $this->notes
-                ? $this->notes . "\n[" . now()->format('d/m/Y H:i') . "] {$notes}"
+                ? $this->notes."\n[".now()->format('d/m/Y H:i')."] {$notes}"
                 : $notes;
         }
 
@@ -182,15 +186,15 @@ class ArtisanProspection extends Model
     public function donnerAccordVerbal(): void
     {
         $this->update([
-            'accord_verbal'        => true,
-            'statut_campagne'      => StatutCampagneProspection::SOC,
+            'accord_verbal' => true,
+            'statut_campagne' => StatutCampagneProspection::SOC,
             'date_dernier_contact' => now(),
         ]);
     }
 
     public function convertirEnArtisan(): ?Artisan  // ✅ Du modèle 2 (amélioré)
     {
-        if (!$this->estConvertible()) {
+        if (! $this->estConvertible()) {
             return null;
         }
 
@@ -203,16 +207,17 @@ class ArtisanProspection extends Model
                 'zone_intervention' => $this->zone_geo,
                 'date_souscription' => now(),
                 'statut_compte' => StatutCompteArtisan::EnAttenteActivation,
-                'notes' => "Converti depuis prospection #{$this->id}\n" . ($this->notes ?? ''),
+                'notes' => "Converti depuis prospection #{$this->id}\n".($this->notes ?? ''),
             ]);
 
             $this->update([
                 'artisan_id' => $artisan->id,
                 'statut_campagne' => StatutCampagneProspection::SOC,
-                'notes' => $this->notes . "\n[Conversion] Artisan créé le " . now()->format('d/m/Y H:i'),
+                'notes' => $this->notes."\n[Conversion] Artisan créé le ".now()->format('d/m/Y H:i'),
             ]);
 
             \DB::commit();
+
             return $artisan;
         } catch (\Exception $e) {
             \DB::rollBack();
@@ -220,7 +225,7 @@ class ArtisanProspection extends Model
         }
     }
 
-    public function marquerHorsCible(string $motif = null): void
+    public function marquerHorsCible(?string $motif = null): void
     {
         $this->changerStatut(StatutCampagneProspection::HC, $motif ?? 'Marqué hors cible');
     }
@@ -339,9 +344,12 @@ class ArtisanProspection extends Model
         }
 
         $total = $query->count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $converties = (clone $query)->whereNotNull('artisan_id')->count();
+
         return round(($converties / $total) * 100, 1);
     }
 
@@ -384,14 +392,14 @@ class ArtisanProspection extends Model
     {
         static::creating(function (ArtisanProspection $prospection) {
             // ✅ Du modèle 2 : Priorité auto selon métier
-            if ($prospection->corps_de_metier && !$prospection->priorite_segment) {
+            if ($prospection->corps_de_metier && ! $prospection->priorite_segment) {
                 $prospection->priorite_segment = PrioriteSegment::depuisCorpsDeMetier(
                     $prospection->corps_de_metier
                 );
             }
 
             // Statut par défaut
-            if (!$prospection->statut_campagne) {
+            if (! $prospection->statut_campagne) {
                 $prospection->statut_campagne = StatutCampagneProspection::AC;
             }
         });
@@ -401,7 +409,7 @@ class ArtisanProspection extends Model
             if (
                 $prospection->isDirty('accord_verbal') &&
                 $prospection->accord_verbal &&
-                !$prospection->date_envoi_document
+                ! $prospection->date_envoi_document
             ) {
                 $prospection->date_envoi_document = now();
             }
@@ -409,7 +417,7 @@ class ArtisanProspection extends Model
             // Mettre à jour date_dernier_contact si changement de statut
             if (
                 $prospection->isDirty('statut_campagne') &&
-                !$prospection->isDirty('date_dernier_contact')
+                ! $prospection->isDirty('date_dernier_contact')
             ) {
                 $prospection->date_dernier_contact = now();
             }

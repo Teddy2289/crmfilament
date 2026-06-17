@@ -36,6 +36,7 @@ class CrmProfileSeeder extends Seeder
 
         if ($perms === '*') {
             $role->syncPermissions(Permission::all());
+
             return;
         }
 
@@ -48,6 +49,7 @@ class CrmProfileSeeder extends Seeder
                 ->orWhere('name', 'like', 'prospection_artisans.%')
                 ->orWhere('name', 'like', 'dashboard.%')
                 ->get());
+
             return;
         }
 

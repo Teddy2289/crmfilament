@@ -15,16 +15,18 @@ use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class FicheP2Resource extends Resource
 {
     protected static ?string $model = FicheP2::class;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
     protected static ?string $navigationLabel = 'Fiches P2';
+
     protected static ?string $navigationGroup = 'Tickets';
-    protected static ?int $navigationSort     = 2;
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -74,7 +76,7 @@ class FicheP2Resource extends Resource
 
                     Forms\Components\Select::make('anciennete_probleme')
                         ->label('Ancienneté du problème')
-                        ->options(collect(AncienneteProbleme::cases())->mapWithKeys(fn($e) => [$e->value => $e->label()]))
+                        ->options(collect(AncienneteProbleme::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()]))
                         ->native(false)
                         ->required(),
                 ]),
@@ -88,7 +90,9 @@ class FicheP2Resource extends Resource
                     $metierValue = $get('corps_de_metier');
                     $metierEnum = CorpsDeMetier::tryFrom($metierValue);
 
-                    if (! $metierEnum) return [];
+                    if (! $metierEnum) {
+                        return [];
+                    }
 
                     $questions = $metierEnum->questionsMetier();
                     $inputs = [];
@@ -110,7 +114,7 @@ class FicheP2Resource extends Resource
                 ->schema([
                     Forms\Components\Select::make('niveau_priorite')
                         ->label('Niveau de priorité')
-                        ->options(collect(NiveauPriorite::cases())->mapWithKeys(fn($e) => [$e->value => $e->label()]))
+                        ->options(collect(NiveauPriorite::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()]))
                         ->native(false)
                         ->required(),
 
@@ -142,13 +146,13 @@ class FicheP2Resource extends Resource
 
                     Forms\Components\Select::make('type_logement')
                         ->label('Type de logement')
-                        ->options(collect(TypeLogement::cases())->mapWithKeys(fn($e) => [$e->value => $e->label()]))
+                        ->options(collect(TypeLogement::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()]))
                         ->native(false)
                         ->required(),
 
                     Forms\Components\Select::make('statut_occupant')
                         ->label('Statut de l\'occupant')
-                        ->options(collect(StatutOccupant::cases())->mapWithKeys(fn($e) => [$e->value => $e->label()]))
+                        ->options(collect(StatutOccupant::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()]))
                         ->native(false)
                         ->required(),
 
@@ -216,7 +220,7 @@ class FicheP2Resource extends Resource
 
                 Tables\Filters\SelectFilter::make('niveau_priorite')
                     ->label('Priorité')
-                    ->options(collect(NiveauPriorite::cases())->mapWithKeys(fn($e) => [$e->value => $e->label()])),
+                    ->options(collect(NiveauPriorite::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()])),
 
                 Tables\Filters\TernaryFilter::make('fiche_complete')
                     ->label('Statut de complétude'),
@@ -240,10 +244,10 @@ class FicheP2Resource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListFicheP2s::route('/'),
+            'index' => Pages\ListFicheP2s::route('/'),
             'create' => Pages\CreateFicheP2::route('/create'),
-            'view'   => Pages\ViewFicheP2::route('/{record}'),
-            'edit'   => Pages\EditFicheP2::route('/{record}/edit'),
+            'view' => Pages\ViewFicheP2::route('/{record}'),
+            'edit' => Pages\EditFicheP2::route('/{record}/edit'),
         ];
     }
 }

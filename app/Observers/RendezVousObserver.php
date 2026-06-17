@@ -2,9 +2,9 @@
 
 namespace App\Observers;
 
+use App\Enums\RendezVousStatut;
 use App\Models\RendezVous;
 use App\Services\GoogleCalendarService;
-use App\Enums\RendezVousStatut;
 
 class RendezVousObserver
 {
@@ -12,7 +12,9 @@ class RendezVousObserver
 
     public function created(RendezVous $rdv): void
     {
-        if ($rdv->statut === RendezVousStatut::Annule) return;
+        if ($rdv->statut === RendezVousStatut::Annule) {
+            return;
+        }
 
         $this->google->createEvent($rdv);
         $this->clearCache($rdv);

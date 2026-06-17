@@ -11,7 +11,7 @@ enum RendezVousStatut: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Planifie => 'Planifié',
             self::Realise => 'Réalisé',
             self::Annule => 'Annulé',
@@ -21,7 +21,7 @@ enum RendezVousStatut: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Planifie => 'info',
             self::Realise => 'success',
             self::Annule => 'danger',
@@ -31,7 +31,7 @@ enum RendezVousStatut: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Planifie => 'heroicon-o-calendar',
             self::Realise => 'heroicon-o-check-circle',
             self::Annule => 'heroicon-o-x-circle',

@@ -25,12 +25,12 @@ class HeuresFormation extends Model
     ];
 
     protected $casts = [
-        'heures_obligatoires'    => 'decimal:2',
+        'heures_obligatoires' => 'decimal:2',
         'heures_complementaires' => 'decimal:2',
-        'heures_elearning'       => 'decimal:2',
-        'total_heures'           => 'decimal:2',
-        'heures_realisees'       => 'decimal:2',
-        'heures_restantes'       => 'decimal:2',
+        'heures_elearning' => 'decimal:2',
+        'total_heures' => 'decimal:2',
+        'heures_realisees' => 'decimal:2',
+        'heures_restantes' => 'decimal:2',
     ];
 
     public function dossier()

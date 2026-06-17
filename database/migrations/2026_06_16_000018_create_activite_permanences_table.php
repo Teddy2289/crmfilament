@@ -17,13 +17,13 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('partenaire_id')
-                  ->constrained('partenaires')
-                  ->cascadeOnDelete();
+                ->constrained('partenaires')
+                ->cascadeOnDelete();
 
             $table->foreignId('consultant_id')
-                  ->nullable()
-                  ->constrained('consultants')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('consultants')
+                ->nullOnDelete();
 
             $table->date('derniere_permanence')->nullable();
             $table->integer('nbre_2025')->default(0);

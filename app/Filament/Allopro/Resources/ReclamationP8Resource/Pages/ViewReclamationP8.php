@@ -1,13 +1,12 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\ReclamationP8Resource\Pages;
 
 use App\Filament\Allopro\Resources\ReclamationP8Resource;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
-
 use Filament\Resources\Pages\ViewRecord;
-
 
 class ViewReclamationP8 extends ViewRecord
 {
@@ -20,7 +19,7 @@ class ViewReclamationP8 extends ViewRecord
                 ->label('Prendre en charge')
                 ->icon('heroicon-o-hand-raised')
                 ->color('warning')
-                ->visible(fn() => $this->record->estOuverte())
+                ->visible(fn () => $this->record->estOuverte())
                 ->form([
                     Forms\Components\Textarea::make('notes')
                         ->label('Plan d\'action initial')->rows(3)->required(),
@@ -35,8 +34,7 @@ class ViewReclamationP8 extends ViewRecord
                 ->label('Valider (superviseur)')
                 ->icon('heroicon-o-shield-check')
                 ->color('info')
-                ->visible(fn() =>
-                    $this->record->estEnTraitement() &&
+                ->visible(fn () => $this->record->estEnTraitement() &&
                     auth()->user()?->hasAnyRole(['responsable_plateau', 'superviseur'])
                 )
                 ->form([
@@ -52,7 +50,7 @@ class ViewReclamationP8 extends ViewRecord
                 ->label('Clôturer la réclamation')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn() => $this->record->estValideeSuperviseur() || $this->record->estEnTraitement())
+                ->visible(fn () => $this->record->estValideeSuperviseur() || $this->record->estEnTraitement())
                 ->form([
                     Forms\Components\Textarea::make('notes')
                         ->label('Solution apportée')
@@ -65,7 +63,7 @@ class ViewReclamationP8 extends ViewRecord
                     Notification::make()->title('✅ Réclamation clôturée — Dossier archivé P7')->success()->send();
                 }),
 
-            Actions\EditAction::make()->visible(fn() => $this->record->estActive()),
+            Actions\EditAction::make()->visible(fn () => $this->record->estActive()),
         ];
     }
 }

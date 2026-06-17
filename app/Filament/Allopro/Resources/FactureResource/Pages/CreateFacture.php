@@ -1,11 +1,10 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\FactureResource\Pages;
 
-
 use App\Filament\Allopro\Resources\FactureResource;
-
+use App\Models\Facture;
 use Filament\Resources\Pages\CreateRecord;
-
 
 class CreateFacture extends CreateRecord
 {
@@ -13,7 +12,8 @@ class CreateFacture extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['numero'] = \App\Models\Facture::genererNumero();
+        $data['numero'] = Facture::genererNumero();
+
         return $data;
     }
 
@@ -24,6 +24,6 @@ class CreateFacture extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Facture ' . $this->getRecord()->numero . ' créée';
+        return 'Facture '.$this->getRecord()->numero.' créée';
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\ArtisanResource\Pages;
 
 use App\Filament\Allopro\Resources\ArtisanResource;

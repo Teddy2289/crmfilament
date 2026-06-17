@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\OrganizationType;
 use App\Enums\OrganizationStatus;
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\OrganizationType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Partenaire extends Model
@@ -13,13 +13,13 @@ class Partenaire extends Model
     use HasFactory, SoftDeletes;
 
     public const STATUTS = [
-        'a_prospecter'          => 'À prospecter',
-        'en_cours_prospection'  => 'En cours de prospection',
-        'rdv_en_cours'          => 'RDV en cours',
-        'signe_accord_cadre'    => 'Signé accord cadre',
+        'a_prospecter' => 'À prospecter',
+        'en_cours_prospection' => 'En cours de prospection',
+        'rdv_en_cours' => 'RDV en cours',
+        'signe_accord_cadre' => 'Signé accord cadre',
         'convention_engagement' => 'Convention d\'engagement',
-        'refus'                 => 'Refus',
-        'inactif'               => 'Inactif',
+        'refus' => 'Refus',
+        'inactif' => 'Inactif',
     ];
 
     protected $fillable = [
@@ -110,20 +110,20 @@ class Partenaire extends Model
     ];
 
     protected $casts = [
-        'type'                   => OrganizationType::class,
-        'statut'                 => OrganizationStatus::class,
-        'date_convention'        => 'date',
-        'date_signature'         => 'date',
-        'cse_date_fin_mandat'    => 'date',
+        'type' => OrganizationType::class,
+        'statut' => OrganizationStatus::class,
+        'date_convention' => 'date',
+        'date_signature' => 'date',
+        'cse_date_fin_mandat' => 'date',
         'date_modification_statut' => 'datetime',
-        'date_evaluation'        => 'date',
+        'date_evaluation' => 'date',
         'cse_existence_juridique' => 'boolean',
-        'parrainage_entreprise'  => 'boolean', // ✅ OUI/NON → bool
-        'nb_salaries'            => 'integer',
-        'chiffre_affaires'       => 'decimal:2',
-        'nombre_ventes_liees'    => 'integer',
-        'cse_nb_elus'            => 'integer',
-        'annee_signature'        => 'integer',
+        'parrainage_entreprise' => 'boolean', // ✅ OUI/NON → bool
+        'nb_salaries' => 'integer',
+        'chiffre_affaires' => 'decimal:2',
+        'nombre_ventes_liees' => 'integer',
+        'cse_nb_elus' => 'integer',
+        'annee_signature' => 'integer',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -145,7 +145,7 @@ class Partenaire extends Model
 
     public function getNomCompletAttribute(): string
     {
-        return $this->nom . ' (' . $this->type->value . ')';
+        return $this->nom.' ('.$this->type->value.')';
     }
 
     /**
@@ -158,8 +158,8 @@ class Partenaire extends Model
             : (OrganizationType::tryFrom((string) $type)?->value ?? (string) $type);
 
         return collect([$typeLabel, $entreprise, $ville])
-            ->filter(fn($part) => filled($part))
-            ->map(fn($part) => trim((string) $part))
+            ->filter(fn ($part) => filled($part))
+            ->map(fn ($part) => trim((string) $part))
             ->implode(' ');
     }
 
@@ -170,7 +170,7 @@ class Partenaire extends Model
 
     public function getAdresseCompleteAttribute(): string
     {
-        return trim($this->adresse . ', ' . $this->code_postal . ' ' . $this->ville);
+        return trim($this->adresse.', '.$this->code_postal.' '.$this->ville);
     }
 
     // ── Scopes ──────────────────────────────────────────────────────
@@ -209,7 +209,7 @@ class Partenaire extends Model
             OrganizationStatus::EnCoursProspection,
         ])->where(function ($q) use ($joursSansContact) {
             $q->whereNull('date_modification_statut')
-              ->orWhere('date_modification_statut', '<=', now()->subDays($joursSansContact));
+                ->orWhere('date_modification_statut', '<=', now()->subDays($joursSansContact));
         });
     }
 
@@ -222,7 +222,7 @@ class Partenaire extends Model
 
     public function estActif(): bool
     {
-        return !in_array($this->statut, [
+        return ! in_array($this->statut, [
             OrganizationStatus::Refus,
             OrganizationStatus::ConventionEngagement,
         ]);
@@ -251,7 +251,7 @@ class Partenaire extends Model
     public function changerStatut(OrganizationStatus $nouveauStatut): void
     {
         $this->update([
-            'statut'                   => $nouveauStatut,
+            'statut' => $nouveauStatut,
             'date_modification_statut' => now(),
         ]);
     }
@@ -264,18 +264,18 @@ class Partenaire extends Model
     public function signerConvention(): void
     {
         $this->update([
-            'statut'                   => OrganizationStatus::ConventionEngagement,
-            'date_convention'          => now(),
+            'statut' => OrganizationStatus::ConventionEngagement,
+            'date_convention' => now(),
             'date_modification_statut' => now(),
         ]);
     }
 
-    public function refuser(string $motif = null): void
+    public function refuser(?string $motif = null): void
     {
         $this->update([
-            'statut'                   => OrganizationStatus::Refus,
+            'statut' => OrganizationStatus::Refus,
             'date_modification_statut' => now(),
-            'notes' => $motif ? $this->notes . "\nRefus: " . $motif : $this->notes,
+            'notes' => $motif ? $this->notes."\nRefus: ".$motif : $this->notes,
         ]);
     }
 
@@ -294,7 +294,7 @@ class Partenaire extends Model
         });
 
         static::creating(function (Partenaire $partenaire) {
-            if (!$partenaire->statut) {
+            if (! $partenaire->statut) {
                 $partenaire->statut = OrganizationStatus::AProspecter;
             }
         });

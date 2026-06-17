@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -9,8 +10,11 @@ use Illuminate\Support\Facades\Log;
 class AircallService
 {
     private string $baseUrl;
+
     private string $apiId;
+
     private string $apiToken;
+
     private int $timeout;
 
     public function __construct()
@@ -22,7 +26,7 @@ class AircallService
     }
 
     // ── HTTP client ────────────────────────────────────────────────
-    private function client(): \Illuminate\Http\Client\PendingRequest
+    private function client(): PendingRequest
     {
         return Http::withBasicAuth($this->apiId, $this->apiToken)
             ->timeout($this->timeout)
@@ -34,9 +38,9 @@ class AircallService
     public function getCalls(array $filters = []): array
     {
         return Cache::remember(
-            'aircall_calls_' . md5(serialize($filters)),
+            'aircall_calls_'.md5(serialize($filters)),
             now()->addMinutes(2),
-            fn() => $this->client()->get('/calls', $filters)->json('calls', [])
+            fn () => $this->client()->get('/calls', $filters)->json('calls', [])
         );
     }
 
@@ -45,14 +49,13 @@ class AircallService
         return Cache::remember(
             "aircall_all_calls_{$page}",
             now()->addMinutes(2),
-            fn() => $this->client()->get('/calls', [
+            fn () => $this->client()->get('/calls', [
                 'per_page' => $perPage,
                 'page' => $page,
                 'order' => 'desc',
             ])->json('calls', [])
         );
     }
-
 
     public function getCallsToday(): array
     {
@@ -68,6 +71,7 @@ class AircallService
             return $this->client()->get("/calls/{$callId}")->json('call');
         } catch (\Exception $e) {
             Log::error('Aircall getCall error', ['id' => $callId, 'error' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -89,15 +93,17 @@ class AircallService
 
         do {
             $filters = ['per_page' => 50, 'page' => $page, 'order' => 'desc'];
-            if ($from)
+            if ($from) {
                 $filters['from'] = $from;
-            if ($to)
+            }
+            if ($to) {
                 $filters['to'] = $to;
+            }
 
             $calls = Cache::remember(
-                'aircall_stats_p' . $page . '_' . md5(serialize($filters)),
+                'aircall_stats_p'.$page.'_'.md5(serialize($filters)),
                 now()->addMinutes(10),
-                fn() => $this->client()->get('/calls', $filters)->json('calls', [])
+                fn () => $this->client()->get('/calls', $filters)->json('calls', [])
             );
 
             $allCalls = array_merge($allCalls, $calls);
@@ -139,6 +145,7 @@ class AircallService
     {
         try {
             $response = $this->client()->get('/ping');
+
             return $response->successful();
         } catch (\Exception $e) {
             return false;

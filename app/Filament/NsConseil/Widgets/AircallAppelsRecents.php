@@ -8,14 +8,21 @@ use Filament\Widgets\Widget;
 class AircallAppelsRecents extends Widget
 {
     protected static ?int $sort = 2;
+
     protected int|string|array $columnSpan = 'full';
+
     protected static ?string $pollingInterval = '60s';
+
     protected static string $view = 'filament.ns-conseil.widgets.aircall-appels-recents';
 
     public array $calls = [];
+
     public int $page = 1;
+
     public int $perPage = 25;
+
     public string $filterDirection = '';
+
     protected static bool $isLazy = true;
 
     public function mount(): void
