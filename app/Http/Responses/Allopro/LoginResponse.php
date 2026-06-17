@@ -16,6 +16,10 @@ class LoginResponse implements LoginResponseContract
             default => '/allopro',
         };
 
-        return new \Illuminate\Http\RedirectResponse($url);
+        if ($request->wantsJson()) {
+            return response()->json(['redirect' => $url]);
+        }
+
+        return redirect()->to($url);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Allopro\Pages\Dashboard;
+use App\Filament\Allopro\Pages\Auth\Login as AlloproLogin;
 use App\Http\Responses\Allopro\LoginResponse;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -12,6 +12,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -37,7 +38,7 @@ class AlloproPanelProvider extends PanelProvider
         return $panel
             ->id('allopro')
             ->path('allopro')
-            ->login()
+            ->login(AlloproLogin::class)
             ->brandName('AlloPro 24/24 — Centre de Contact')
             ->colors([
                 'primary' => Color::Orange,
@@ -92,6 +93,16 @@ class AlloproPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
-            ->spa();
+            ->spa()
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn() => view('filament.allopro.auth.login-styles'),
+                scopes: [AlloproLogin::class],
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn() => view('filament.allopro.auth.login-sidebar'),
+                scopes: [AlloproLogin::class],
+            );
     }
 }

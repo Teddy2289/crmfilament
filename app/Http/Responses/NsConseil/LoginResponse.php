@@ -3,11 +3,10 @@
 namespace App\Http\Responses\NsConseil;
 
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
-use Symfony\Component\HttpFoundation\Response;
 
 class LoginResponse implements LoginResponseContract
 {
-    public function toResponse($request): Response
+    public function toResponse($request)
     {
         $user = auth()->user();
 
@@ -17,7 +16,14 @@ class LoginResponse implements LoginResponseContract
             default => '/ns-conseil',
         };
 
-        // En mode SPA Livewire, il faut forcer une vraie réponse HTTP
-        return new \Illuminate\Http\RedirectResponse($url);
+        if ($request->wantsJson()) {
+            return response()->json(['redirect' => $url]);
+        }
+
+        // Pas de contrainte de type ":  Response" ici : l'interface
+        // Responsable de Filament n'en exige pas, et Livewire a besoin
+        // de récupérer son propre objet Redirector (pas un Symfony\Response
+        // classique) pour gérer correctement la redirection en AJAX.
+        return redirect()->to($url);
     }
 }

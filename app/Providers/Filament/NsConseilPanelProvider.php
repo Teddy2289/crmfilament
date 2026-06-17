@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\NsConseil\Pages\AircallDashboard;
+use App\Filament\NsConseil\Pages\Auth\Login as NsConseilLogin;
 use App\Http\Responses\NsConseil\LoginResponse;
 use App\Filament\NsConseil\Pages\Dashboard;
 use App\Http\Middleware\SetLocale;
@@ -41,7 +42,7 @@ class NsConseilPanelProvider extends PanelProvider
         return $panel
             ->id('ns-conseil')
             ->path('ns-conseil')
-            ->login()
+            ->login(NsConseilLogin::class)
             ->brandName('NS CONSEIL — CRM Partenaires')
             ->colors([
                 'primary' => Color::Blue,
@@ -110,7 +111,16 @@ class NsConseilPanelProvider extends PanelProvider
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()
-            // ✅ CORRECT
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn() => view('filament.ns-conseil.auth.login-styles'),
+                scopes: [NsConseilLogin::class],
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn() => view('filament.ns-conseil.auth.login-sidebar'),
+                scopes: [NsConseilLogin::class],
+            )
             ->renderHook(
                 PanelsRenderHook::BODY_START,
                 fn() => view('filament.loading-overlay'),

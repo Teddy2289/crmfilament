@@ -24,10 +24,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class PhoningWorkflow extends Page
 {
-    protected static ?string $navigationIcon    = 'heroicon-o-phone-arrow-up-right';
-    protected static ?string $navigationLabel   = 'Campagne d\'appels';
-    protected static ?string $navigationGroup   = 'Activités';
-    protected static ?int    $navigationSort    = 2;
+    // protected static ?string $navigationIcon    = 'heroicon-o-phone-arrow-up-right';
+    // protected static ?string $navigationLabel   = 'Campagne d\'appels';
+    // protected static ?string $navigationGroup   = 'Activités';
+    // protected static ?int    $navigationSort    = 2;
     protected static string  $view              = 'filament.ns-conseil.pages.phoning-workflow';
 
     public ?Model  $currentContact     = null;

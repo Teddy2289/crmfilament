@@ -145,11 +145,6 @@ class ListProspects extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('campagne')
-                ->label('Workflow Phoning')
-                ->icon('heroicon-o-phone-arrow-up-right')
-                ->url(PhoningWorkflow::getUrl())
-                ->color('warning'),
 
             Actions\CreateAction::make()->label('Nouveau prospect'),
 
