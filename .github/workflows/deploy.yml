@@ -45,6 +45,9 @@ jobs:
             set -e
             cd /home/contact/web/crm-v2.mbl-service.com
 
+            echo "==> Discarding any local server-side changes..."
+            git reset --hard HEAD
+
             echo "==> Pulling latest code..."
             git pull origin main
 
@@ -70,8 +73,8 @@ jobs:
             php artisan filament:cache-components
 
             echo "==> Fixing permissions..."
-            chown -R contact:contact storage bootstrap/cache
-            chmod -R 775 storage bootstrap/cache
+            sudo chown -R contact:contact storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
 
             echo "==> Bringing app back online..."
             php artisan up
