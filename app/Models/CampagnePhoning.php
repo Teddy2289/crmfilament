@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use App\Models\ContactPartenaire;
 
 class CampagnePhoning extends Model
 {
@@ -26,21 +25,21 @@ class CampagnePhoning extends Model
     ];
 
     protected $casts = [
-        'criteres'    => 'array',
-        'date_debut'  => 'date',
-        'date_fin'    => 'date',
+        'criteres' => 'array',
+        'date_debut' => 'date',
+        'date_fin' => 'date',
     ];
 
     public const STATUTS = [
         'brouillon' => 'Brouillon',
-        'active'    => 'Active',
-        'terminee'  => 'Terminée',
+        'active' => 'Active',
+        'terminee' => 'Terminée',
     ];
 
     public const TYPES_ENTITE = [
-        'prospects'   => 'Prospects',
+        'prospects' => 'Prospects',
         'partenaires' => 'Partenaires',
-        'clients'     => 'Clients',
+        'clients' => 'Clients',
     ];
 
     // ── Relations ────────────────────────────────────────────────────
@@ -53,6 +52,59 @@ class CampagnePhoning extends Model
     public function entite()
     {
         return $this->belongsTo(EntiteCommerciale::class, 'entite_id');
+    }
+
+    public function appels()
+    {
+        return $this->hasMany(Appel::class, 'campagne_id');
+    }
+
+    public function scripts()
+    {
+        return $this->hasMany(ScriptAppel::class, 'campagne_id');
+    }
+
+    // ── Statistiques campagne ─────────────────────────────────────────
+
+    public function getStats(): array
+    {
+        $totalContacts = $this->countContacts();
+        $appels = $this->appels();
+        $totalAppels = $appels->count();
+
+        $contactsTraites = $appels->distinct('appelable_id')->count('appelable_id');
+
+        $parStatut = $appels->selectRaw('phoning_status, COUNT(*) as total')
+            ->groupBy('phoning_status')
+            ->pluck('total', 'phoning_status')
+            ->toArray();
+
+        $progression = $totalContacts > 0
+            ? round(($contactsTraites / $totalContacts) * 100, 1)
+            : 0;
+
+        return [
+            'total_contacts' => $totalContacts,
+            'contacts_traites' => $contactsTraites,
+            'contacts_restants' => max(0, $totalContacts - $contactsTraites),
+            'total_appels' => $totalAppels,
+            'progression' => $progression,
+            'par_statut' => $parStatut,
+        ];
+    }
+
+    public function estTerminee(): bool
+    {
+        $totalContacts = $this->countContacts();
+        if ($totalContacts === 0) {
+            return false;
+        }
+
+        $contactsTraites = $this->appels()
+            ->distinct('appelable_id')
+            ->count('appelable_id');
+
+        return $contactsTraites >= $totalContacts;
     }
 
     // ── Scopes ───────────────────────────────────────────────────────
@@ -88,9 +140,9 @@ class CampagnePhoning extends Model
     public function getStatutColorAttribute(): string
     {
         return match ($this->statut) {
-            'active'  => 'success',
-            'terminee'=> 'gray',
-            default   => 'warning',
+            'active' => 'success',
+            'terminee' => 'gray',
+            default => 'warning',
         };
     }
 
@@ -109,10 +161,10 @@ class CampagnePhoning extends Model
         $criteres = $this->criteres ?? [];
 
         return match ($this->type_entite) {
-            'prospects'   => $this->buildProspectsQuery($criteres),
+            'prospects' => $this->buildProspectsQuery($criteres),
             'partenaires' => $this->buildPartenairesQuery($criteres),
-            'clients'     => $this->buildClientsQuery($criteres),
-            default       => throw new \InvalidArgumentException("type_entite inconnu : {$this->type_entite}"),
+            'clients' => $this->buildClientsQuery($criteres),
+            default => throw new \InvalidArgumentException("type_entite inconnu : {$this->type_entite}"),
         };
     }
 
@@ -124,8 +176,8 @@ class CampagnePhoning extends Model
     {
         $type = match ($this->type_entite) {
             'partenaires' => 'partenaire',
-            'clients'     => 'client',
-            default       => 'prospect',
+            'clients' => 'client',
+            default => 'prospect',
         };
 
         return $this->buildQuery()
@@ -152,7 +204,7 @@ class CampagnePhoning extends Model
             $q->where('departement', $c['departement']);
         }
         if (! empty($c['secteur_activite'])) {
-            $q->where('secteur_activite', 'like', '%' . $c['secteur_activite'] . '%');
+            $q->where('secteur_activite', 'like', '%'.$c['secteur_activite'].'%');
         }
         if (isset($c['nb_salaries_min']) && $c['nb_salaries_min'] !== '') {
             $q->where('nb_salaries', '>=', (int) $c['nb_salaries_min']);
@@ -185,7 +237,7 @@ class CampagnePhoning extends Model
                     $q->where('type', $c['type']);
                 }
                 if (! empty($c['secteur_activite'])) {
-                    $q->where('secteur_activite', 'like', '%' . $c['secteur_activite'] . '%');
+                    $q->where('secteur_activite', 'like', '%'.$c['secteur_activite'].'%');
                 }
             });
     }

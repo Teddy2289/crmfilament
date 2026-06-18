@@ -11,7 +11,9 @@ use Filament\Tables\Table;
 class ContactsRelationManager extends RelationManager
 {
     protected static string $relationship = 'contacts';
+
     protected static ?string $title = 'Contacts';
+
     protected static ?string $icon = 'heroicon-o-user';
 
     public function form(Form $form): Form

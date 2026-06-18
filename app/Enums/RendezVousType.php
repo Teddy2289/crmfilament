@@ -11,7 +11,7 @@ enum RendezVousType: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Appel => 'Appel',
             self::Permanence => 'Permanence',
             self::Presentation => 'Présentation',
@@ -21,7 +21,7 @@ enum RendezVousType: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Appel => 'primary',
             self::Permanence => 'success',
             self::Presentation => 'warning',
@@ -31,7 +31,7 @@ enum RendezVousType: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Appel => 'heroicon-o-phone',
             self::Permanence => 'heroicon-o-building-office-2',
             self::Presentation => 'heroicon-o-presentation-chart-bar',

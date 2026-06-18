@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\BonDeCommandeResource\RelationManagers;
 
 use App\Enums\ModePaiement;
@@ -14,8 +15,10 @@ use Filament\Tables\Table;
 class FactureRelationManager extends RelationManager
 {
     protected static string $relationship = 'facture';
+
     protected static ?string $title = 'Facture';
-    protected static ?string $icon  = 'heroicon-o-receipt-percent';
+
+    protected static ?string $icon = 'heroicon-o-receipt-percent';
 
     public function form(Form $form): Form
     {
@@ -28,7 +31,7 @@ class FactureRelationManager extends RelationManager
             Forms\Components\Select::make('statut_paiement')
                 ->label('Statut paiement')
                 ->options(collect(StatutPaiement::cases())
-                    ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                    ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                     ->toArray())
                 ->native(false)
                 ->required(),
@@ -41,7 +44,7 @@ class FactureRelationManager extends RelationManager
             Forms\Components\Select::make('mode_paiement')
                 ->label('Mode de paiement')
                 ->options(collect(ModePaiement::cases())
-                    ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                    ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                     ->toArray())
                 ->native(false)
                 ->nullable(),
@@ -60,18 +63,18 @@ class FactureRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('statut_paiement')
                     ->label('Statut paiement')
                     ->badge()
-                    ->formatStateUsing(fn($state) => $state instanceof StatutPaiement ? $state->label() : $state)
-                    ->color(fn($state) => $state instanceof StatutPaiement ? $state->color() : 'gray'),
+                    ->formatStateUsing(fn ($state) => $state instanceof StatutPaiement ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof StatutPaiement ? $state->color() : 'gray'),
 
                 Tables\Columns\TextColumn::make('total_ttc')
                     ->label('TTC')
-                    ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €')
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('solde_restant_du')
                     ->label('Solde dû')
-                    ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €')
-                    ->color(fn($state) => (float)$state > 0 ? 'danger' : 'success'),
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €')
+                    ->color(fn ($state) => (float) $state > 0 ? 'danger' : 'success'),
 
                 Tables\Columns\TextColumn::make('date_echeance')
                     ->label('Échéance')
@@ -88,19 +91,19 @@ class FactureRelationManager extends RelationManager
                     ->label('Paiement')
                     ->icon('heroicon-o-banknotes')
                     ->color('success')
-                    ->visible(fn(Facture $record) => !$record->est_payee)
+                    ->visible(fn (Facture $record) => ! $record->est_payee)
                     ->form([
                         Forms\Components\TextInput::make('montant')
                             ->label('Montant reçu (€)')
                             ->numeric()
                             ->prefix('€')
                             ->required()
-                            ->default(fn(Facture $record) => $record->solde_restant_du),
+                            ->default(fn (Facture $record) => $record->solde_restant_du),
 
                         Forms\Components\Select::make('mode')
                             ->label('Mode')
                             ->options(collect(ModePaiement::cases())
-                                ->mapWithKeys(fn($e) => [$e->value => $e->label()])
+                                ->mapWithKeys(fn ($e) => [$e->value => $e->label()])
                                 ->toArray())
                             ->native(false)
                             ->required(),

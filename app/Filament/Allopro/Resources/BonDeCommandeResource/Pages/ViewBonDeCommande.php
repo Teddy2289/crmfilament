@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\BonDeCommandeResource\Pages;
 
 use App\Enums\StatutBonDeCommande;
@@ -6,8 +7,8 @@ use App\Filament\Allopro\Resources\BonDeCommandeResource;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
-
 use Filament\Resources\Pages\ViewRecord;
+
 class ViewBonDeCommande extends ViewRecord
 {
     protected static string $resource = BonDeCommandeResource::class;
@@ -19,7 +20,7 @@ class ViewBonDeCommande extends ViewRecord
                 ->label('Confirmer réception')
                 ->icon('heroicon-o-check')
                 ->color('info')
-                ->visible(fn() => $this->record->statut === StatutBonDeCommande::EnAttente)
+                ->visible(fn () => $this->record->statut === StatutBonDeCommande::EnAttente)
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->record->confirmerParArtisan();
@@ -31,7 +32,7 @@ class ViewBonDeCommande extends ViewRecord
                 ->label('Planifier intervention')
                 ->icon('heroicon-o-calendar')
                 ->color('warning')
-                ->visible(fn() => $this->record->statut === StatutBonDeCommande::Confirme)
+                ->visible(fn () => $this->record->statut === StatutBonDeCommande::Confirme)
                 ->form([
                     Forms\Components\DateTimePicker::make('date')
                         ->label('Date d\'intervention')->native(false)->required()->default(now()->addDay()),
@@ -48,7 +49,7 @@ class ViewBonDeCommande extends ViewRecord
                 ->label('Démarrer')
                 ->icon('heroicon-o-play')
                 ->color('primary')
-                ->visible(fn() => $this->record->statut === StatutBonDeCommande::Confirme)
+                ->visible(fn () => $this->record->statut === StatutBonDeCommande::Confirme)
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->record->demarrerIntervention();
@@ -60,7 +61,7 @@ class ViewBonDeCommande extends ViewRecord
                 ->label('Marquer réalisé')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn() => in_array($this->record->statut, [StatutBonDeCommande::Confirme, StatutBonDeCommande::EnCours]))
+                ->visible(fn () => in_array($this->record->statut, [StatutBonDeCommande::Confirme, StatutBonDeCommande::EnCours]))
                 ->requiresConfirmation()
                 ->modalHeading('Marquer l\'intervention comme réalisée ?')
                 ->modalDescription('Une facture sera automatiquement générée et le ticket clôturé.')
@@ -68,11 +69,11 @@ class ViewBonDeCommande extends ViewRecord
                     $facture = $this->record->marquerRealise();
                     $this->refreshFormData(['statut']);
                     Notification::make()
-                        ->title('✅ Intervention réalisée — Facture ' . $facture->numero . ' générée')
+                        ->title('✅ Intervention réalisée — Facture '.$facture->numero.' générée')
                         ->success()->send();
                 }),
 
-            Actions\EditAction::make()->visible(fn() => $this->record->statut === StatutBonDeCommande::EnAttente),
+            Actions\EditAction::make()->visible(fn () => $this->record->statut === StatutBonDeCommande::EnAttente),
         ];
     }
 }

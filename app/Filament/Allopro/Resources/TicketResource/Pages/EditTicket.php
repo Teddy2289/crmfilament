@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\TicketResource\Pages;
 
 use App\Filament\Allopro\Resources\TicketResource;
@@ -14,7 +15,7 @@ class EditTicket extends EditRecord
         return [
             Actions\ViewAction::make(),
             Actions\DeleteAction::make()
-                ->visible(fn() => auth()->user()?->hasRole('responsable_plateau')),
+                ->visible(fn () => auth()->user()?->hasRole('responsable_plateau')),
         ];
     }
 

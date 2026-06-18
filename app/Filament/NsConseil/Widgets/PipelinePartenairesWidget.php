@@ -9,7 +9,9 @@ use Filament\Widgets\ChartWidget;
 class PipelinePartenairesWidget extends ChartWidget
 {
     protected static ?string $heading = 'Pipeline Partenaires — Répartition par statut';
+
     protected static ?int $sort = 2;
+
     protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array

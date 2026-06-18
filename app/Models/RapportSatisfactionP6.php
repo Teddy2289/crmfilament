@@ -3,8 +3,9 @@
 namespace App\Models;
 
 use App\Enums\StatutClotureP6;
-use App\Enums\TicketStatut;
 use App\Enums\StatutReclamation;
+use App\Enums\TicketStatut;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -94,7 +95,7 @@ class RapportSatisfactionP6 extends Model
 
     public function updateNoteArtisan(): void
     {
-        if (!$this->artisan_id) {
+        if (! $this->artisan_id) {
             return;
         }
 
@@ -104,19 +105,19 @@ class RapportSatisfactionP6 extends Model
 
         if ($this->artisan) {
             $this->artisan->update([
-                'note_moyenne' => round($moyenne, 2)
+                'note_moyenne' => round($moyenne, 2),
             ]);
         }
     }
 
     public function ouvrirReclamationP8(): ?ReclamationP8
     {
-        if (!$this->declencheP8()) {
+        if (! $this->declencheP8()) {
             return null;
         }
 
         // Vérifier si le ticket existe
-        if (!$this->ticket) {
+        if (! $this->ticket) {
             return null;
         }
 
@@ -145,7 +146,7 @@ class RapportSatisfactionP6 extends Model
                 );
             } catch (\Exception $e) {
                 // Log error but continue
-                \Log::error('Erreur changement statut ticket: ' . $e->getMessage());
+                \Log::error('Erreur changement statut ticket: '.$e->getMessage());
             }
         }
 
@@ -173,14 +174,14 @@ class RapportSatisfactionP6 extends Model
         return $description;
     }
 
-    protected function calculerDateResolution(): \Carbon\Carbon
+    protected function calculerDateResolution(): Carbon
     {
         $date = now()->copy();
         $joursAjoutes = 0;
 
         while ($joursAjoutes < 5) {
             $date->addDay();
-            if (!$date->isWeekend()) {
+            if (! $date->isWeekend()) {
                 $joursAjoutes++;
             }
         }
@@ -222,7 +223,7 @@ class RapportSatisfactionP6 extends Model
     public function scopeDuMois($query)
     {
         return $query->whereMonth('date_appel_j1', now()->month)
-                     ->whereYear('date_appel_j1', now()->year);
+            ->whereYear('date_appel_j1', now()->year);
     }
 
     // ── Méthodes statiques KPIs ─────────────────────────────────────
@@ -234,9 +235,12 @@ class RapportSatisfactionP6 extends Model
     public static function getTauxSatisfaction(): float
     {
         $total = static::count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $satisfaits = static::satisfaits()->count();
+
         return round(($satisfaits / $total) * 100, 1);
     }
 
@@ -255,6 +259,7 @@ class RapportSatisfactionP6 extends Model
         return collect(range($mois - 1, 0))
             ->map(function ($i) {
                 $date = now()->subMonths($i);
+
                 return [
                     'mois' => $date->format('Y-m'),
                     'label' => $date->format('M Y'),
@@ -274,7 +279,7 @@ class RapportSatisfactionP6 extends Model
     {
         static::saving(function (RapportSatisfactionP6 $rapport) {
             // Auto-statut selon NPS
-            if ($rapport->note_nps !== null && !$rapport->statut_cloture) {
+            if ($rapport->note_nps !== null && ! $rapport->statut_cloture) {
                 $rapport->statut_cloture = StatutClotureP6::depuisNPS($rapport->note_nps);
             }
         });
@@ -295,7 +300,7 @@ class RapportSatisfactionP6 extends Model
                 $rapport->updateNoteArtisan();
 
                 // Vérifier si on doit ouvrir P8 maintenant
-                if ($rapport->declencheP8() && $rapport->ticket && !$rapport->ticket->reclamationActive) {
+                if ($rapport->declencheP8() && $rapport->ticket && ! $rapport->ticket->reclamationActive) {
                     $rapport->ouvrirReclamationP8();
                 }
             }

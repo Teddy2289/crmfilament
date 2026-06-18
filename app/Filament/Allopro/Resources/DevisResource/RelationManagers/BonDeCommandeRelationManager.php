@@ -14,8 +14,10 @@ use Filament\Tables\Table;
 class BonDeCommandeRelationManager extends RelationManager
 {
     protected static string $relationship = 'bonDeCommande';
+
     protected static ?string $title = 'Bon de commande';
-    protected static ?string $icon  = 'heroicon-o-clipboard-document-check';
+
+    protected static ?string $icon = 'heroicon-o-clipboard-document-check';
 
     public function form(Form $form): Form
     {
@@ -29,23 +31,22 @@ class BonDeCommandeRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('numero')->label('N° BC')->weight('semibold'),
 
                 Tables\Columns\TextColumn::make('statut')->label('Statut')->badge()
-                    ->formatStateUsing(fn($state) => $state instanceof StatutBonDeCommande ? $state->label() : $state)
-                    ->color(fn($state) => $state instanceof StatutBonDeCommande ? $state->color() : 'gray'),
-
+                    ->formatStateUsing(fn ($state) => $state instanceof StatutBonDeCommande ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof StatutBonDeCommande ? $state->color() : 'gray'),
 
                 Tables\Columns\TextColumn::make('date_intervention_prevue')
                     ->label('Intervention')->dateTime('d/m/Y H:i'),
 
                 Tables\Columns\TextColumn::make('montant_total_ttc')
                     ->label('Montant TTC')
-                    ->formatStateUsing(fn($state) => number_format((float)$state, 2, ',', ' ') . ' €'),
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 2, ',', ' ').' €'),
 
                 Tables\Columns\IconColumn::make('acompte_encaisse')
                     ->label('Acompte')->boolean(),
 
                 Tables\Columns\IconColumn::make('facture')
                     ->label('Facturé')
-                    ->getStateUsing(fn($record) => $record->facture()->exists())
+                    ->getStateUsing(fn ($record) => $record->facture()->exists())
                     ->boolean()
                     ->trueColor('success')->falseColor('gray'),
             ])
@@ -54,7 +55,7 @@ class BonDeCommandeRelationManager extends RelationManager
                     ->label('Confirmer')
                     ->icon('heroicon-o-check')
                     ->color('info')
-                    ->visible(fn(BonDeCommande $record) => $record->statut === StatutBonDeCommande::EnAttente)
+                    ->visible(fn (BonDeCommande $record) => $record->statut === StatutBonDeCommande::EnAttente)
 
                     ->action(function (BonDeCommande $record) {
                         $record->confirmerParArtisan();
@@ -64,11 +65,11 @@ class BonDeCommandeRelationManager extends RelationManager
                     ->label('Réalisé')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(BonDeCommande $record) => in_array($record->statut, [StatutBonDeCommande::Confirme, StatutBonDeCommande::EnCours]))
+                    ->visible(fn (BonDeCommande $record) => in_array($record->statut, [StatutBonDeCommande::Confirme, StatutBonDeCommande::EnCours]))
                     ->requiresConfirmation()
                     ->action(function (BonDeCommande $record) {
                         $facture = $record->marquerRealise();
-                        Notification::make()->title('Facture ' . $facture->numero . ' générée')->success()->send();
+                        Notification::make()->title('Facture '.$facture->numero.' générée')->success()->send();
                     }),
                 Tables\Actions\ViewAction::make(),
             ]);

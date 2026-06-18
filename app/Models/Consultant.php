@@ -15,10 +15,10 @@ class Consultant extends Model
      */
     public const STATUTS = [
         'Mandataire' => 'Mandataire',
-        'VDI'        => 'VDI',
-        'Salarié'    => 'Salarié',
-        'PRC'        => 'PRC',
-        'PIP'        => 'PIP',
+        'VDI' => 'VDI',
+        'Salarié' => 'Salarié',
+        'PRC' => 'PRC',
+        'PIP' => 'PIP',
     ];
 
     protected $fillable = [
@@ -38,7 +38,7 @@ class Consultant extends Model
 
     public function getNomCompletAttribute(): string
     {
-        return trim($this->prenom . ' ' . $this->nom);
+        return trim($this->prenom.' '.$this->nom);
     }
 
     public function getStatutLabelAttribute(): string

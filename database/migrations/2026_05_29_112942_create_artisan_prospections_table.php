@@ -1,11 +1,10 @@
 <?php
 
+use App\Enums\PrioriteSegment;
+use App\Enums\StatutCampagneProspection;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Enums\StatutCampagneProspection;
-use App\Enums\PrioriteSegment;
-use App\Enums\CorpsDeMetier;
 
 return new class extends Migration
 {

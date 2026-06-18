@@ -16,7 +16,7 @@ class PartenaireImportResolver
 
     /**
      * @param  string  $filePath  Chemin absolu vers le .xlsx
-     * @param  array   $defaults  Valeurs par défaut (entite_id, type, statut, conseiller_id…)
+     * @param  array  $defaults  Valeurs par défaut (entite_id, type, statut, conseiller_id…)
      * @return array{created:int, updated:int, skipped:int, errors:list<string>}
      */
     public static function importFile(string $filePath, array $defaults = []): array
@@ -39,7 +39,7 @@ class PartenaireImportResolver
                 'created' => 0,
                 'updated' => 0,
                 'skipped' => 0,
-                'errors'  => ["Feuille '" . self::TARGET_SHEET . "' introuvable dans le fichier."],
+                'errors' => ["Feuille '".self::TARGET_SHEET."' introuvable dans le fichier."],
             ];
         }
 
@@ -56,12 +56,13 @@ class PartenaireImportResolver
                 'created' => 0,
                 'updated' => 0,
                 'skipped' => 0,
-                'errors'  => ["La feuille '" . self::TARGET_SHEET . "' est vide ou ne contient que l'en-tête."],
+                'errors' => ["La feuille '".self::TARGET_SHEET."' est vide ou ne contient que l'en-tête."],
             ];
         }
 
         // ── Déléguer à l'importer ─────────────────────────────────────
-        $importer = new PartenaireImporter();
+        $importer = new PartenaireImporter;
+
         return $importer->import($rows, $defaults);
     }
 }

@@ -2,13 +2,11 @@
 
 namespace App\Filament\NsConseil\Resources;
 
+use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\DossierFormationResource\Pages;
 use App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers\HeuresRelationManager;
 use App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers\PlanningRelationManager;
 use App\Models\DossierFormation;
-use App\Models\Client;
-use App\Models\Consultant;
-use App\Models\EntiteCommerciale;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -18,15 +16,25 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Str;
 
 class DossierFormationResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = DossierFormation::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+
     protected static ?string $navigationGroup = 'Clients & Formations';
+
     protected static ?string $navigationLabel = 'Dossiers Formation';
+
     protected static ?int $navigationSort = 3;
+
+    public static function canAccess(): bool
+    {
+        return static::userHasAnyRole(['admin', 'superviseur', 'commercial']);
+    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -166,7 +174,7 @@ class DossierFormationResource extends Resource
                     ->searchable(['personne.nom_tiers', 'personne.email'])
                     ->sortable()
                     ->weight('bold')
-                    ->description(fn(DossierFormation $record) => $record->personne?->email),
+                    ->description(fn (DossierFormation $record) => $record->personne?->email),
 
                 Tables\Columns\TextColumn::make('ref_client')
                     ->label('Réf. client')
@@ -180,7 +188,7 @@ class DossierFormationResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->limit(30)
-                    ->tooltip(fn(DossierFormation $record) => $record->intitule_programme),
+                    ->tooltip(fn (DossierFormation $record) => $record->intitule_programme),
 
                 // 🏢 Entité
                 Tables\Columns\TextColumn::make('entite.nom')
@@ -216,7 +224,7 @@ class DossierFormationResource extends Resource
                 Tables\Columns\TextColumn::make('statut_formation')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn($state) => match ($state) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'a_venir' => 'À venir',
                         'en_cours' => 'En cours',
                         'termine' => 'Terminé',
@@ -225,7 +233,7 @@ class DossierFormationResource extends Resource
                         'reporte' => 'Reporté',
                         default => $state ?? '—',
                     })
-                    ->color(fn($state) => match ($state) {
+                    ->color(fn ($state) => match ($state) {
                         'a_venir' => 'info',
                         'en_cours' => 'warning',
                         'termine' => 'success',
@@ -239,7 +247,7 @@ class DossierFormationResource extends Resource
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
-                    ->formatStateUsing(fn($state) => match ($state) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'brouillon' => 'Brouillon',
                         'en_cours' => 'En cours',
                         'soumis' => 'Soumis',
@@ -248,7 +256,7 @@ class DossierFormationResource extends Resource
                         'cloture' => 'Clôturé',
                         default => $state ?? '—',
                     })
-                    ->color(fn($state) => match ($state) {
+                    ->color(fn ($state) => match ($state) {
                         'brouillon' => 'gray',
                         'en_cours' => 'primary',
                         'soumis' => 'warning',
@@ -349,24 +357,24 @@ class DossierFormationResource extends Resource
                 // 💰 Filtres montants
                 Tables\Filters\Filter::make('avec_cpf')
                     ->label('Avec financement CPF')
-                    ->query(fn(Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
+                    ->query(fn (Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('sans_cpf')
                     ->label('Sans financement CPF')
-                    ->query(fn(Builder $q) => $q->whereNull('montant_cpf')->orWhere('montant_cpf', '=', 0))
+                    ->query(fn (Builder $q) => $q->whereNull('montant_cpf')->orWhere('montant_cpf', '=', 0))
                     ->toggle(),
 
                 // 📅 Filtres dates
                 Tables\Filters\Filter::make('date_vente_recente')
                     ->label('Vendu ce mois-ci')
-                    ->query(fn(Builder $q) => $q->whereMonth('date_vente', now()->month)
+                    ->query(fn (Builder $q) => $q->whereMonth('date_vente', now()->month)
                         ->whereYear('date_vente', now()->year))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('date_vente_trimestre')
                     ->label('Vendu ce trimestre')
-                    ->query(fn(Builder $q) => $q->whereBetween('date_vente', [
+                    ->query(fn (Builder $q) => $q->whereBetween('date_vente', [
                         now()->startOfQuarter(),
                         now()->endOfQuarter(),
                     ]))
@@ -506,8 +514,7 @@ class DossierFormationResource extends Resource
                         ->label('Client')
                         ->weight('bold')
                         ->url(
-                            fn(DossierFormation $record) =>
-                            route('filament.ns-conseil.resources.clients.view', ['record' => $record->personne_id])
+                            fn (DossierFormation $record) => route('filament.ns-conseil.resources.clients.view', ['record' => $record->personne_id])
                         )
                         ->openUrlInNewTab(),
 
@@ -540,7 +547,8 @@ class DossierFormationResource extends Resource
                         ->placeholder('0,00 €')
                         ->formatStateUsing(function (DossierFormation $record) {
                             $total = ($record->montant_ht ?? 0) + ($record->montant_cpf ?? 0);
-                            return number_format($total, 2, ',', ' ') . ' €';
+
+                            return number_format($total, 2, ',', ' ').' €';
                         }),
                 ])->columns(3),
 
@@ -554,8 +562,8 @@ class DossierFormationResource extends Resource
                     Infolists\Components\TextEntry::make('statut_formation')
                         ->label('Statut')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state ?? '—')
-                        ->color(fn($state) => match ($state) {
+                        ->formatStateUsing(fn ($state) => $state ?? '—')
+                        ->color(fn ($state) => match ($state) {
                             'En attente' => 'gray',
                             'Validé' => 'primary',
                             'En cours' => 'warning',
@@ -568,8 +576,8 @@ class DossierFormationResource extends Resource
                     Infolists\Components\TextEntry::make('etat')
                         ->label('État du dossier')
                         ->badge()
-                        ->formatStateUsing(fn($state) => $state ?? '—')
-                        ->color(fn($state) => match ($state) {
+                        ->formatStateUsing(fn ($state) => $state ?? '—')
+                        ->color(fn ($state) => match ($state) {
                             'Brouillon' => 'gray',
                             'En cours' => 'primary',
                             'Soumis' => 'warning',
@@ -651,7 +659,7 @@ class DossierFormationResource extends Resource
         return [
             'Client' => $record->personne?->nom_tiers ?? 'N/A',
             'Statut' => $record->statut_formation ?? 'N/A',
-            'Montant CPF' => $record->montant_cpf ? number_format($record->montant_cpf, 2, ',', ' ') . ' €' : '0,00 €',
+            'Montant CPF' => $record->montant_cpf ? number_format($record->montant_cpf, 2, ',', ' ').' €' : '0,00 €',
         ];
     }
 

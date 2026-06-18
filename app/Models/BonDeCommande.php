@@ -4,9 +4,10 @@ namespace App\Models;
 
 use App\Enums\StatutBonDeCommande;
 use App\Enums\TicketStatut;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 /**
  * BonDeCommande
@@ -16,22 +17,22 @@ use Illuminate\Database\Eloquent\Builder;
  *
  * Chaîne documentaire : Devis → BonDeCommande → Facture
  *
- * @property int         $id
- * @property string      $numero                  Format BC-AAAA-NNNN (auto)
- * @property int         $devis_id                FK → Devis (origine)
- * @property int         $ticket_id               FK → Ticket (Affaire)
- * @property int         $artisan_id              FK → Artisan (exécutant)
- * @property int         $contact_particulier_id  FK → ContactParticulier (client)
- * @property array       $lignes                  Reprises du devis accepté
- * @property float       $montant_total_ttc        Repris du devis
- * @property float|null  $acompte_montant         Si conditions de paiement le prévoient
- * @property bool        $acompte_encaisse        True si acompte reçu
- * @property \Carbon\Carbon|null $date_intervention_prevue  Issue du RDV planifié en P3
- * @property int|null    $duree_estimee_heures
- * @property string|null $instructions_artisan    Accès, outils particuliers…
- * @property string      $conditions_paiement
- * @property StatutBonDeCommande $statut          En attente / Confirmé / En cours / Réalisé / Annulé
- * @property \Carbon\Carbon|null $date_confirmation  Quand artisan confirme (auto)
+ * @property int $id
+ * @property string $numero Format BC-AAAA-NNNN (auto)
+ * @property int $devis_id FK → Devis (origine)
+ * @property int $ticket_id FK → Ticket (Affaire)
+ * @property int $artisan_id FK → Artisan (exécutant)
+ * @property int $contact_particulier_id FK → ContactParticulier (client)
+ * @property array $lignes Reprises du devis accepté
+ * @property float $montant_total_ttc Repris du devis
+ * @property float|null $acompte_montant Si conditions de paiement le prévoient
+ * @property bool $acompte_encaisse True si acompte reçu
+ * @property Carbon|null $date_intervention_prevue Issue du RDV planifié en P3
+ * @property int|null $duree_estimee_heures
+ * @property string|null $instructions_artisan Accès, outils particuliers…
+ * @property string $conditions_paiement
+ * @property StatutBonDeCommande $statut En attente / Confirmé / En cours / Réalisé / Annulé
+ * @property Carbon|null $date_confirmation Quand artisan confirme (auto)
  */
 class BonDeCommande extends Model
 {
@@ -40,13 +41,13 @@ class BonDeCommande extends Model
     protected $table = 'bon_de_commandes';
 
     protected $casts = [
-        'statut'                  => StatutBonDeCommande::class,
-        'lignes'                  => 'array',
-        'montant_total_ttc'       => 'decimal:2',
-        'acompte_montant'         => 'decimal:2',
-        'acompte_encaisse'        => 'boolean',
+        'statut' => StatutBonDeCommande::class,
+        'lignes' => 'array',
+        'montant_total_ttc' => 'decimal:2',
+        'acompte_montant' => 'decimal:2',
+        'acompte_encaisse' => 'boolean',
         'date_intervention_prevue' => 'datetime',
-        'date_confirmation'       => 'datetime',
+        'date_confirmation' => 'datetime',
     ];
 
     protected $fillable = [
@@ -106,7 +107,7 @@ class BonDeCommande extends Model
 
     public function getAcompteEnAttenteAttribute(): bool
     {
-        return $this->necessite_acompte && !$this->acompte_encaisse;
+        return $this->necessite_acompte && ! $this->acompte_encaisse;
     }
 
     public function getSoldeRestantAttribute(): float
@@ -114,6 +115,7 @@ class BonDeCommande extends Model
         if ($this->acompte_encaisse && $this->acompte_montant) {
             return $this->montant_total_ttc - $this->acompte_montant;
         }
+
         return $this->montant_total_ttc;
     }
 
@@ -131,7 +133,7 @@ class BonDeCommande extends Model
         }
 
         $this->update([
-            'statut'            => StatutBonDeCommande::Confirme,
+            'statut' => StatutBonDeCommande::Confirme,
             'date_confirmation' => now(),
         ]);
 
@@ -146,7 +148,7 @@ class BonDeCommande extends Model
                     "BC #{$this->numero} confirmé par l'artisan"
                 );
             } catch (\Exception $e) {
-                \Log::error("Erreur progression ticket lors confirmation BC: " . $e->getMessage());
+                \Log::error('Erreur progression ticket lors confirmation BC: '.$e->getMessage());
             }
         }
     }
@@ -158,7 +160,7 @@ class BonDeCommande extends Model
     {
         $data = [
             'date_intervention_prevue' => $date,
-            'statut'                   => StatutBonDeCommande::Confirme,
+            'statut' => StatutBonDeCommande::Confirme,
         ];
 
         if ($dureeHeures !== null) {
@@ -171,11 +173,10 @@ class BonDeCommande extends Model
     /**
      * Marquer l'intervention comme réalisée — génère la facture automatiquement.
      */
-
     public function marquerRealise(): Facture
     {
-        if (!in_array($this->statut, [StatutBonDeCommande::Confirme, StatutBonDeCommande::EnCours])) {
-            throw new \Exception("Le BC doit être confirmé ou en cours pour être marqué réalisé.");
+        if (! in_array($this->statut, [StatutBonDeCommande::Confirme, StatutBonDeCommande::EnCours])) {
+            throw new \Exception('Le BC doit être confirmé ou en cours pour être marqué réalisé.');
         }
 
         $this->update(['statut' => StatutBonDeCommande::Realise]);
@@ -191,7 +192,7 @@ class BonDeCommande extends Model
                     "Intervention BC #{$this->numero} réalisée"
                 );
             } catch (\Exception $e) {
-                \Log::error("Erreur progression ticket lors réalisation: " . $e->getMessage());
+                \Log::error('Erreur progression ticket lors réalisation: '.$e->getMessage());
             }
         }
 
@@ -202,21 +203,21 @@ class BonDeCommande extends Model
     public function demarrerIntervention(): void
     {
         if ($this->statut !== StatutBonDeCommande::Confirme) {
-            throw new \Exception("Le BC doit être confirmé pour démarrer.");
+            throw new \Exception('Le BC doit être confirmé pour démarrer.');
         }
         $this->update(['statut' => StatutBonDeCommande::EnCours]);
     }
 
-    public function annuler(string $motif = null): void
+    public function annuler(?string $motif = null): void
     {
         if ($this->statut === StatutBonDeCommande::Realise) {
-            throw new \Exception("Un BC réalisé ne peut pas être annulé.");
+            throw new \Exception('Un BC réalisé ne peut pas être annulé.');
         }
 
         $this->update([
-            'statut'               => StatutBonDeCommande::Annule,
+            'statut' => StatutBonDeCommande::Annule,
             'instructions_artisan' => $motif
-                ? ($this->instructions_artisan . "\n[Annulation] {$motif}")
+                ? ($this->instructions_artisan."\n[Annulation] {$motif}")
                 : $this->instructions_artisan,
         ]);
     }
@@ -224,7 +225,7 @@ class BonDeCommande extends Model
     public function enregistrerAcompte(float $montant): void
     {
         $this->update([
-            'acompte_montant'  => $montant,
+            'acompte_montant' => $montant,
             'acompte_encaisse' => true,
         ]);
     }
@@ -232,24 +233,25 @@ class BonDeCommande extends Model
     protected function genererFacture(): Facture
     {
         return Facture::create([
-            'numero'                 => Facture::genererNumero(),
-            'bon_de_commande_id'     => $this->id,
-            'ticket_id'              => $this->ticket_id,
-            'artisan_id'             => $this->artisan_id,
+            'numero' => Facture::genererNumero(),
+            'bon_de_commande_id' => $this->id,
+            'ticket_id' => $this->ticket_id,
+            'artisan_id' => $this->artisan_id,
             'contact_particulier_id' => $this->contact_particulier_id,
-            'lignes'                 => $this->lignes ?? [], // Évite null
-            'acompte_deja_verse'     => $this->acompte_encaisse ? $this->acompte_montant : null,
-            'conditions_paiement'    => $this->conditions_paiement,
-            'statut_paiement'        => 'en_attente',
-            'date_echeance'          => now()->addDays(30),
+            'lignes' => $this->lignes ?? [], // Évite null
+            'acompte_deja_verse' => $this->acompte_encaisse ? $this->acompte_montant : null,
+            'conditions_paiement' => $this->conditions_paiement,
+            'statut_paiement' => 'en_attente',
+            'date_echeance' => now()->addDays(30),
         ]);
     }
 
     public static function genererNumero(): string
     {
-        $annee    = now()->year;
+        $annee = now()->year;
         $dernierN = static::whereYear('created_at', $annee)->count() + 1;
-        return 'BC-' . $annee . '-' . str_pad($dernierN, 4, '0', STR_PAD_LEFT);
+
+        return 'BC-'.$annee.'-'.str_pad($dernierN, 4, '0', STR_PAD_LEFT);
     }
 
     // ── Scopes ──────────────────────────────────────────────────────
@@ -320,19 +322,18 @@ class BonDeCommande extends Model
     public static function getKpis(): array
     {
         return [
-            'total_actifs'            => static::actifs()->count(),
+            'total_actifs' => static::actifs()->count(),
             'en_attente_confirmation' => static::enAttente()->count(),
-            'confirmes'               => static::confirmes()->count(),
-            'realises_mois'           => static::realises()->duMois()->count(),
-            'acomptes_en_attente'     => static::avecAcompteEnAttente()->count(),
-            'interventions_a_venir'   => static::interventionAVenir()->count(),
-            'sans_facture'            => static::sansFacture()->count(),
-            'ca_realise_mois'         => static::realises()->duMois()->sum('montant_total_ttc'),
+            'confirmes' => static::confirmes()->count(),
+            'realises_mois' => static::realises()->duMois()->count(),
+            'acomptes_en_attente' => static::avecAcompteEnAttente()->count(),
+            'interventions_a_venir' => static::interventionAVenir()->count(),
+            'sans_facture' => static::sansFacture()->count(),
+            'ca_realise_mois' => static::realises()->duMois()->sum('montant_total_ttc'),
         ];
     }
 
     // ── Boot ────────────────────────────────────────────────────────
-
 
     public static function booted(): void
     {

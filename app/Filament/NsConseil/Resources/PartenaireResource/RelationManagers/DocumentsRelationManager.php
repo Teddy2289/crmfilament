@@ -12,7 +12,9 @@ use Filament\Tables\Table;
 class DocumentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'documents';
+
     protected static ?string $title = 'Documents';
+
     protected static ?string $icon = 'heroicon-o-paper-clip';
 
     public function form(Form $form): Form
@@ -64,7 +66,7 @@ class DocumentsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('taille')
                     ->label('Taille')
                     ->formatStateUsing(fn ($state) => $state
-                        ? number_format($state / 1024, 1) . ' Ko'
+                        ? number_format($state / 1024, 1).' Ko'
                         : '—'),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -78,7 +80,7 @@ class DocumentsRelationManager extends RelationManager
                 Tables\Actions\Action::make('telecharger')
                     ->label('Télécharger')
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->url(fn ($record) => asset('storage/' . $record->path))
+                    ->url(fn ($record) => asset('storage/'.$record->path))
                     ->openUrlInNewTab(),
                 Tables\Actions\DeleteAction::make(),
             ]);

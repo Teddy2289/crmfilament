@@ -1,8 +1,10 @@
 <?php
-namespace App\Filament\Allopro\Resources\BonDeCommandeResource\Pages;
-use App\Filament\Allopro\Resources\BonDeCommandeResource;
-use Filament\Resources\Pages\CreateRecord;
 
+namespace App\Filament\Allopro\Resources\BonDeCommandeResource\Pages;
+
+use App\Filament\Allopro\Resources\BonDeCommandeResource;
+use App\Models\BonDeCommande;
+use Filament\Resources\Pages\CreateRecord;
 
 class CreateBonDeCommande extends CreateRecord
 {
@@ -10,7 +12,8 @@ class CreateBonDeCommande extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['numero'] = \App\Models\BonDeCommande::genererNumero();
+        $data['numero'] = BonDeCommande::genererNumero();
+
         return $data;
     }
 
@@ -21,6 +24,6 @@ class CreateBonDeCommande extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'BC ' . $this->getRecord()->numero . ' créé';
+        return 'BC '.$this->getRecord()->numero.' créé';
     }
 }

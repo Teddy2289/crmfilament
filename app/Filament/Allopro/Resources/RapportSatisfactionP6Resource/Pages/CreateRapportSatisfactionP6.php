@@ -1,7 +1,10 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\RapportSatisfactionP6Resource\Pages;
 
+use App\Enums\TicketStatut;
 use App\Filament\Allopro\Resources\RapportSatisfactionP6Resource;
+use App\Models\Ticket;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +16,7 @@ class CreateRapportSatisfactionP6 extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['operateur_id'] = $data['operateur_id'] ?? auth()->id();
+
         return $data;
     }
 
@@ -39,7 +43,7 @@ class CreateRapportSatisfactionP6 extends CreateRecord
             $record = $this->getRecord();
 
             // Ensure relationships are loaded
-            if (!$record->relationLoaded('ticket')) {
+            if (! $record->relationLoaded('ticket')) {
                 $record->load('ticket');
             }
 
@@ -50,7 +54,7 @@ class CreateRapportSatisfactionP6 extends CreateRecord
                 // Log or handle missing ticket
                 \Log::warning('Rapport P6 créé sans ticket associé', [
                     'rapport_id' => $record->id,
-                    'ticket_id' => $record->ticket_id
+                    'ticket_id' => $record->ticket_id,
                 ]);
             }
 
@@ -59,9 +63,9 @@ class CreateRapportSatisfactionP6 extends CreateRecord
 
         } catch (\Exception $e) {
             // Log the error but don't break the creation process
-            \Log::error('Erreur après création rapport P6: ' . $e->getMessage(), [
+            \Log::error('Erreur après création rapport P6: '.$e->getMessage(), [
                 'rapport_id' => $record->id ?? null,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // Send error notification to user
@@ -79,33 +83,34 @@ class CreateRapportSatisfactionP6 extends CreateRecord
     protected function updateTicketStatut($record): void
     {
         // Check if ticket is in the correct state
-        if ($record->ticket->statut !== \App\Enums\TicketStatut::InterventionRealisee) {
+        if ($record->ticket->statut !== TicketStatut::InterventionRealisee) {
             \Log::info('Ticket non mis à jour - statut incorrect', [
                 'ticket_id' => $record->ticket->id,
                 'current_statut' => $record->ticket->statut,
-                'expected_statut' => \App\Enums\TicketStatut::InterventionRealisee->value
+                'expected_statut' => TicketStatut::InterventionRealisee->value,
             ]);
+
             return;
         }
 
         // Determine new status based on NPS
-        $nouveauStatut = match(true) {
-            $record->note_nps >= 8 => \App\Enums\TicketStatut::ClotureSatisfait,
-            $record->note_nps >= 6 => \App\Enums\TicketStatut::SuiviQualiteRequis,
-            default                => \App\Enums\TicketStatut::ReclamationOuverte,
+        $nouveauStatut = match (true) {
+            $record->note_nps >= 8 => TicketStatut::ClotureSatisfait,
+            $record->note_nps >= 6 => TicketStatut::SuiviQualiteRequis,
+            default => TicketStatut::ReclamationOuverte,
         };
 
         try {
             // Change ticket status
             $record->ticket->changerStatut(
                 $nouveauStatut,
-                "NPS {$record->note_nps}/10 — Rapport P6 saisi le " . now()->format('d/m/Y')
+                "NPS {$record->note_nps}/10 — Rapport P6 saisi le ".now()->format('d/m/Y')
             );
 
             // Success notification for status change
             Notification::make()
                 ->title('✅ Ticket mis à jour')
-                ->body('Le statut du ticket a été changé en: ' . $nouveauStatut->label())
+                ->body('Le statut du ticket a été changé en: '.$nouveauStatut->label())
                 ->success()
                 ->send();
 
@@ -113,12 +118,12 @@ class CreateRapportSatisfactionP6 extends CreateRecord
             \Log::error('Erreur lors du changement de statut du ticket', [
                 'ticket_id' => $record->ticket->id,
                 'target_statut' => $nouveauStatut,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             Notification::make()
                 ->title('⚠️ Erreur mise à jour ticket')
-                ->body('Impossible de mettre à jour le statut du ticket: ' . $e->getMessage())
+                ->body('Impossible de mettre à jour le statut du ticket: '.$e->getMessage())
                 ->warning()
                 ->send();
         }
@@ -141,7 +146,7 @@ class CreateRapportSatisfactionP6 extends CreateRecord
             \Log::info('P8 automatique créée suite à rapport P6', [
                 'rapport_id' => $record->id,
                 'ticket_id' => $record->ticket_id,
-                'nps_score' => $record->note_nps
+                'nps_score' => $record->note_nps,
             ]);
         }
     }
@@ -168,9 +173,9 @@ class CreateRapportSatisfactionP6 extends CreateRecord
         $ticketId = $this->data['ticket_id'] ?? null;
 
         if ($ticketId) {
-            $ticket = \App\Models\Ticket::find($ticketId);
+            $ticket = Ticket::find($ticketId);
 
-            if (!$ticket) {
+            if (! $ticket) {
                 Notification::make()
                     ->title('Erreur')
                     ->body('Le ticket sélectionné n\'existe pas.')
@@ -179,7 +184,7 @@ class CreateRapportSatisfactionP6 extends CreateRecord
                 $this->halt();
             }
 
-            if ($ticket->statut !== \App\Enums\TicketStatut::InterventionRealisee) {
+            if ($ticket->statut !== TicketStatut::InterventionRealisee) {
                 Notification::make()
                     ->title('⚠️ Attention')
                     ->body('Le ticket doit être en statut "Intervention réalisée" pour créer un rapport P6.')

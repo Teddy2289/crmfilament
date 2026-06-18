@@ -9,8 +9,11 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 class AircallStatsOverview extends BaseWidget
 {
     protected static ?int $sort = 1;
+
     protected int|string|array $columnSpan = 'full';
+
     protected static ?string $pollingInterval = '60s';
+
     protected static bool $isLazy = true;
 
     // AircallStatsOverview.php
@@ -29,7 +32,7 @@ class AircallStatsOverview extends BaseWidget
                 ->color('primary')
                 ->icon('heroicon-o-phone'),
 
-            Stat::make('Taux de réponse', $stats['taux_reponse'] . '%')
+            Stat::make('Taux de réponse', $stats['taux_reponse'].'%')
                 ->description("{$stats['repondus']} répondus · {$stats['manques']} manqués")
                 ->color($stats['taux_reponse'] >= 80 ? 'success' : 'warning')
                 ->icon('heroicon-o-check-circle'),

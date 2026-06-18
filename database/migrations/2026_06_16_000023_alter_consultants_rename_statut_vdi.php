@@ -23,11 +23,11 @@ return new class extends Migration
             }
 
             // Si ni statut_vdi ni statut n'existe (table fraîche)
-            if (!Schema::hasColumn('consultants', 'statut') && !Schema::hasColumn('consultants', 'statut_vdi')) {
+            if (! Schema::hasColumn('consultants', 'statut') && ! Schema::hasColumn('consultants', 'statut_vdi')) {
                 $table->string('statut')
-                      ->nullable()
-                      ->after('prenom')
-                      ->comment('Mandataire / VDI / Salarié / PRC / PIP');
+                    ->nullable()
+                    ->after('prenom')
+                    ->comment('Mandataire / VDI / Salarié / PRC / PIP');
             }
         });
 
@@ -35,9 +35,9 @@ return new class extends Migration
         // (enum natif évité pour faciliter les migrations futures)
         Schema::table('consultants', function (Blueprint $table) {
             $table->string('statut')
-                  ->nullable()
-                  ->comment('Mandataire / VDI / Salarié / PRC / PIP')
-                  ->change();
+                ->nullable()
+                ->comment('Mandataire / VDI / Salarié / PRC / PIP')
+                ->change();
         });
     }
 

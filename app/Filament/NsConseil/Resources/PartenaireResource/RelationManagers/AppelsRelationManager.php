@@ -2,8 +2,8 @@
 
 namespace App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
 
-use App\Enums\EventType;
 use App\Enums\EventResult;
+use App\Enums\EventType;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -13,7 +13,9 @@ use Filament\Tables\Table;
 class AppelsRelationManager extends RelationManager
 {
     protected static string $relationship = 'appels';
+
     protected static ?string $title = 'Appels';
+
     protected static ?string $icon = 'heroicon-o-phone';
 
     public function form(Form $form): Form

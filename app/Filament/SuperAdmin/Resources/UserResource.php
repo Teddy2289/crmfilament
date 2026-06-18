@@ -17,17 +17,20 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 class UserResource extends Resource
 {
-    protected static ?string $model           = User::class;
-    protected static ?string $navigationIcon  = 'heroicon-o-users';
+    protected static ?string $model = User::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-users';
+
     protected static ?string $navigationLabel = 'Utilisateurs';
+
     protected static ?string $navigationGroup = 'Utilisateurs & Accès';
-    protected static ?int    $navigationSort  = 1;
+
+    protected static ?int $navigationSort = 1;
 
     public static function getNavigationBadge(): ?string
     {
@@ -66,17 +69,17 @@ class UserResource extends Resource
                     Forms\Components\CheckboxList::make('roles')
                         ->label('')
                         ->relationship('roles', 'name')
-                        ->getOptionLabelFromRecordUsing(fn($record) => match ($record->name) {
-                            'super_admin'        => '⚡ Super Admin',
-                            'administrateur'     => '🔑 Administrateur',
+                        ->getOptionLabelFromRecordUsing(fn ($record) => match ($record->name) {
+                            'super_admin' => '⚡ Super Admin',
+                            'administrateur' => '🔑 Administrateur',
                             'responsable_plateau' => '📋 Responsable Plateau',
-                            'back_office'        => '🖥️ Back Office',
-                            'operateur_n1'       => '📞 Opérateur N1',
-                            'superviseur'        => '👁️ Superviseur',
-                            'team_leader'        => '🏆 Team Leader',
-                            'commercial'         => '💼 Commercial',
-                            'teleprospecteur'    => '📣 Téléprospecteur',
-                            default              => $record->name,
+                            'back_office' => '🖥️ Back Office',
+                            'operateur_n1' => '📞 Opérateur N1',
+                            'superviseur' => '👁️ Superviseur',
+                            'team_leader' => '🏆 Team Leader',
+                            'commercial' => '💼 Commercial',
+                            'teleprospecteur' => '📣 Téléprospecteur',
+                            default => $record->name,
                         })
                         ->columns(3)
                         ->gridDirection('row'),
@@ -85,23 +88,23 @@ class UserResource extends Resource
             Forms\Components\Section::make('Mot de passe')
                 ->icon('heroicon-o-lock-closed')
                 ->collapsible()
-                ->collapsed(fn($record) => $record !== null)
+                ->collapsed(fn ($record) => $record !== null)
                 ->schema([
                     Forms\Components\TextInput::make('password')
                         ->label('Nouveau mot de passe')
                         ->password()
                         ->revealable()
                         ->minLength(8)
-                        ->dehydrated(fn($state) => filled($state))
-                        ->dehydrateStateUsing(fn($state) => Hash::make($state))
-                        ->required(fn($record) => $record === null)
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                        ->required(fn ($record) => $record === null)
                         ->helperText('Laisser vide pour ne pas modifier'),
 
                     Forms\Components\TextInput::make('password_confirmation')
                         ->label('Confirmer le mot de passe')
                         ->password()->revealable()
                         ->same('password')
-                        ->required(fn($record) => $record === null)
+                        ->required(fn ($record) => $record === null)
                         ->dehydrated(false),
                 ]),
         ]);
@@ -115,7 +118,7 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('nom')
                     ->label('Nom')
-                    ->formatStateUsing(fn($state, $record) => trim($record->prenom . ' ' . $record->nom))
+                    ->formatStateUsing(fn ($state, $record) => trim($record->prenom.' '.$record->nom))
                     ->searchable(['nom', 'prenom'])
                     ->weight('semibold')
                     ->sortable(),
@@ -128,10 +131,10 @@ class UserResource extends Resource
                     ->label('Rôles')
                     ->badge()
                     ->separator(',')
-                    ->color(fn($state) => match ($state) {
-                        'super_admin'     => 'danger',
-                        'administrateur'  => 'warning',
-                        default           => 'gray',
+                    ->color(fn ($state) => match ($state) {
+                        'super_admin' => 'danger',
+                        'administrateur' => 'warning',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('secteur')
@@ -165,13 +168,13 @@ class UserResource extends Resource
             ->actions([
                 // ── Désactiver/Activer ──
                 Tables\Actions\Action::make('toggle_actif')
-                    ->label(fn(User $record) => $record->actif ? 'Désactiver' : 'Activer')
-                    ->icon(fn(User $record) => $record->actif ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
-                    ->color(fn(User $record) => $record->actif ? 'danger' : 'success')
-                    ->visible(fn(User $record) => $record->id !== auth()->id())
+                    ->label(fn (User $record) => $record->actif ? 'Désactiver' : 'Activer')
+                    ->icon(fn (User $record) => $record->actif ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn (User $record) => $record->actif ? 'danger' : 'success')
+                    ->visible(fn (User $record) => $record->id !== auth()->id())
                     ->requiresConfirmation()
                     ->action(function (User $record) {
-                        $record->update(['actif' => !$record->actif]);
+                        $record->update(['actif' => ! $record->actif]);
                         Notification::make()
                             ->title($record->actif ? 'Compte activé' : 'Compte désactivé')
                             ->success()->send();
@@ -197,7 +200,7 @@ class UserResource extends Resource
                     ->label('Se connecter en tant que')
                     ->icon('heroicon-o-arrow-right-on-rectangle')
                     ->color('info')
-                    ->visible(fn(User $record) => $record->id !== auth()->id() && !$record->roles->pluck('name')->contains('super_admin'))
+                    ->visible(fn (User $record) => $record->id !== auth()->id() && ! $record->roles->pluck('name')->contains('super_admin'))
 
                     ->requiresConfirmation()
                     ->modalHeading('Connexion en tant que cet utilisateur ?')
@@ -206,15 +209,16 @@ class UserResource extends Resource
                         session(['impersonating' => auth()->id()]);
                         auth()->login($record);
                         Notification::make()
-                            ->title('Connecté en tant que ' . $record->nom_complet)
+                            ->title('Connecté en tant que '.$record->nom_complet)
                             ->warning()->send();
+
                         return redirect('/');
                     }),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn(User $record) => $record->id !== auth()->id()),
+                    ->visible(fn (User $record) => $record->id !== auth()->id()),
             ])
 
             ->bulkActions([
@@ -224,7 +228,7 @@ class UserResource extends Resource
                         ->label('Activer la sélection')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
-                        ->action(fn($records) => $records->each->update(['actif' => true])),
+                        ->action(fn ($records) => $records->each->update(['actif' => true])),
 
                     // ── Désactiver en masse ──
                     Tables\Actions\BulkAction::make('desactiver')
@@ -232,7 +236,7 @@ class UserResource extends Resource
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn($records) => $records->each->update(['actif' => false])),
+                        ->action(fn ($records) => $records->each->update(['actif' => false])),
 
                     // ── Assigner rôle en masse ──
                     Tables\Actions\BulkAction::make('assigner_role')
@@ -262,7 +266,7 @@ class UserResource extends Resource
                 ->columns(3)
                 ->schema([
                     TextEntry::make('nom')->label('Nom complet')
-                        ->formatStateUsing(fn($state, $record) => trim($record->prenom . ' ' . $record->nom))
+                        ->formatStateUsing(fn ($state, $record) => trim($record->prenom.' '.$record->nom))
                         ->weight('bold'),
                     TextEntry::make('email')->label('Email')->copyable()->icon('heroicon-o-envelope'),
                     TextEntry::make('secteur')->label('Secteur')->placeholder('—'),
@@ -273,10 +277,10 @@ class UserResource extends Resource
             Section::make('Rôles & Permissions')
                 ->schema([
                     TextEntry::make('roles.name')->label('Rôles')->badge()
-                        ->color(fn(string $state) => match ($state) {
-                            'super_admin'    => 'danger',
+                        ->color(fn (string $state) => match ($state) {
+                            'super_admin' => 'danger',
                             'administrateur' => 'warning',
-                            default          => 'gray',
+                            default => 'gray',
                         }),
                 ]),
         ]);
@@ -285,10 +289,10 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListUsers::route('/'),
+            'index' => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
-            'view'   => ViewUser::route('/{record}'),
-            'edit'   => EditUser::route('/{record}/edit'),
+            'view' => ViewUser::route('/{record}'),
+            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 }

@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\CorpsDeMetier;
-use App\Enums\StatutCompteArtisan;
 use App\Enums\CanalAlerte;
+use App\Enums\CorpsDeMetier;
 use App\Enums\ModeAgendaArtisan;
+use App\Enums\StatutCompteArtisan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -38,16 +38,16 @@ class Artisan extends Model
     ];
 
     protected $casts = [
-        'corps_de_metier'        => CorpsDeMetier::class,
-        'statut_compte'          => StatutCompteArtisan::class,
-        'canal_alerte'           => 'array',              // MODIFIÉ : devient JSON array multi-valeurs
-        'mode_agenda'            => ModeAgendaArtisan::class,  // NOUVEAU
-        'plages_disponibilite'   => 'array',              // NOUVEAU
-        'date_souscription'      => 'date',
-        'date_activation'        => 'date',
-        'agenda_disponibilites'  => 'boolean',
-        'note_moyenne'           => 'decimal:2',
-        'nb_interventions'       => 'integer',
+        'corps_de_metier' => CorpsDeMetier::class,
+        'statut_compte' => StatutCompteArtisan::class,
+        'canal_alerte' => 'array',              // MODIFIÉ : devient JSON array multi-valeurs
+        'mode_agenda' => ModeAgendaArtisan::class,  // NOUVEAU
+        'plages_disponibilite' => 'array',              // NOUVEAU
+        'date_souscription' => 'date',
+        'date_activation' => 'date',
+        'agenda_disponibilites' => 'boolean',
+        'note_moyenne' => 'decimal:2',
+        'nb_interventions' => 'integer',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -59,8 +59,9 @@ class Artisan extends Model
     public function getRaisonSocialeCompleteAttribute(): string
     {
         if ($this->raison_sociale) {
-            return $this->raison_sociale . ' (' . $this->nom_complet . ')';
+            return $this->raison_sociale.' ('.$this->nom_complet.')';
         }
+
         return $this->nom_complet;
     }
 
@@ -118,7 +119,7 @@ class Artisan extends Model
     public function scopePrioritaires($query)
     {
         return $query->whereIn('corps_de_metier', array_map(
-            fn($e) => $e->value,
+            fn ($e) => $e->value,
             CorpsDeMetier::metiersPrioritaires()
         ));
     }
@@ -126,7 +127,7 @@ class Artisan extends Model
     public function scopeDisponibles($query)
     {
         return $query->where('agenda_disponibilites', true)
-                     ->where('statut_compte', StatutCompteArtisan::Actif->value);
+            ->where('statut_compte', StatutCompteArtisan::Actif->value);
     }
 
     public function scopeBienNotes($query, float $minimum = 4.0)
@@ -169,22 +170,22 @@ class Artisan extends Model
     // NOUVELLE MÉTHODE POUR LA FACTURATION
     public function peutEtreFacture(): bool
     {
-        return !empty($this->siret) && strlen($this->siret) === 14;
+        return ! empty($this->siret) && strlen($this->siret) === 14;
     }
 
     public function activer(): void
     {
         $this->update([
-            'statut_compte'   => StatutCompteArtisan::Actif,
+            'statut_compte' => StatutCompteArtisan::Actif,
             'date_activation' => now(),
         ]);
     }
 
-    public function suspendre(string $motif = null): void
+    public function suspendre(?string $motif = null): void
     {
         $this->update([
             'statut_compte' => StatutCompteArtisan::Suspendu,
-            'notes'         => $motif ? $this->notes . "\nSuspension: " . $motif : $this->notes,
+            'notes' => $motif ? $this->notes."\nSuspension: ".$motif : $this->notes,
         ]);
     }
 
@@ -198,7 +199,9 @@ class Artisan extends Model
     public function getTauxSatisfactionAttribute(): float
     {
         $total = $this->rapportsSatisfaction()->count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $satisfaits = $this->rapportsSatisfaction()
             ->where('note_nps', '>=', 8)
@@ -230,16 +233,16 @@ class Artisan extends Model
     protected static function booted(): void
     {
         static::creating(function (Artisan $artisan) {
-            if (!$artisan->statut_compte) {
+            if (! $artisan->statut_compte) {
                 $artisan->statut_compte = StatutCompteArtisan::EnAttenteActivation;
             }
-            if (!$artisan->date_souscription) {
+            if (! $artisan->date_souscription) {
                 $artisan->date_souscription = now();
             }
-            if (!$artisan->canal_alerte) {
+            if (! $artisan->canal_alerte) {
                 $artisan->canal_alerte = [CanalAlerte::LesDeux->value]; // MODIFIÉ : array multi-valeurs
             }
-            if (!$artisan->mode_agenda) {
+            if (! $artisan->mode_agenda) {
                 $artisan->mode_agenda = ModeAgendaArtisan::ModeA; // Valeur par défaut
             }
         });
@@ -247,7 +250,7 @@ class Artisan extends Model
         static::updating(function (Artisan $artisan) {
             if ($artisan->isDirty('statut_compte') &&
                 $artisan->statut_compte === StatutCompteArtisan::Actif &&
-                !$artisan->date_activation) {
+                ! $artisan->date_activation) {
                 $artisan->date_activation = now();
             }
         });

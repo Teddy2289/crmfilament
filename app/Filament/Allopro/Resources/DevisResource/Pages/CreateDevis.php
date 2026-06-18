@@ -1,7 +1,9 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\DevisResource\Pages;
 
 use App\Filament\Allopro\Resources\DevisResource;
+use App\Models\Devis;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateDevis extends CreateRecord
@@ -10,7 +12,8 @@ class CreateDevis extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['numero'] = \App\Models\Devis::genererNumero();
+        $data['numero'] = Devis::genererNumero();
+
         return $data;
     }
 
@@ -21,6 +24,6 @@ class CreateDevis extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Devis ' . $this->getRecord()->numero . ' créé';
+        return 'Devis '.$this->getRecord()->numero.' créé';
     }
 }

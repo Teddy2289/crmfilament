@@ -1,4 +1,5 @@
 <?php
+
 // ── app/Filament/NsConseil/Resources/RendezVousResource/Pages/ListRendezVous.php
 
 namespace App\Filament\NsConseil\Resources\RendezVousResource\Pages;
@@ -36,7 +37,7 @@ class ListRendezVous extends ListRecords
                 ->badgeColor('info')
                 ->modifyQueryUsing(function (Builder $q) {
                     return $q->whereIn('statut', [RendezVousStatut::Planifie->value, RendezVousStatut::Decale->value])
-                             ->where('date_heure', '>=', now());
+                        ->where('date_heure', '>=', now());
                 }),
 
             'aujourd_hui' => Tab::make("Aujourd'hui")
@@ -64,7 +65,7 @@ class ListRendezVous extends ListRecords
                 ->modifyQueryUsing(function (Builder $q) use ($user) {
                     return $q->where(function (Builder $q) use ($user) {
                         $q->where('commercial_id', $user->id)
-                          ->orWhere('teleprospecteur_id', $user->id);
+                            ->orWhere('teleprospecteur_id', $user->id);
                     });
                 }),
         ];

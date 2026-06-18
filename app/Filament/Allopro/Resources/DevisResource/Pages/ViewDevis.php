@@ -4,7 +4,6 @@ namespace App\Filament\Allopro\Resources\DevisResource\Pages;
 
 use App\Enums\StatutDevis;
 use App\Filament\Allopro\Resources\DevisResource;
-use App\Models\Devis;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -21,7 +20,7 @@ class ViewDevis extends ViewRecord
                 ->label('Envoyer au client')
                 ->icon('heroicon-o-paper-airplane')
                 ->color('info')
-                ->visible(fn() => $this->record->statut === StatutDevis::Brouillon)
+                ->visible(fn () => $this->record->statut === StatutDevis::Brouillon)
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->record->envoyer();
@@ -33,14 +32,14 @@ class ViewDevis extends ViewRecord
                 ->label('Marquer accepté')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn() => in_array($this->record->statut, [StatutDevis::Envoye, StatutDevis::Brouillon]))
+                ->visible(fn () => in_array($this->record->statut, [StatutDevis::Envoye, StatutDevis::Brouillon]))
                 ->form([
                     Forms\Components\Select::make('mode_acceptation')
                         ->label('Mode d\'acceptation')
                         ->options([
                             'signature_electronique' => 'Signature électronique',
-                            'appel'                  => 'Appel téléphonique',
-                            'email'                  => 'Email',
+                            'appel' => 'Appel téléphonique',
+                            'email' => 'Email',
                         ])
                         ->required()->native(false)->default('appel'),
                 ])
@@ -48,7 +47,7 @@ class ViewDevis extends ViewRecord
                     $bc = $this->record->accepter($data['mode_acceptation']);
                     $this->refreshFormData(['statut', 'date_acceptation_refus']);
                     Notification::make()
-                        ->title('✅ Devis accepté — BC ' . $bc->numero . ' généré automatiquement')
+                        ->title('✅ Devis accepté — BC '.$bc->numero.' généré automatiquement')
                         ->success()->send();
                 }),
 
@@ -56,7 +55,7 @@ class ViewDevis extends ViewRecord
                 ->label('Marquer refusé')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
-                ->visible(fn() => $this->record->statut === StatutDevis::Envoye)
+                ->visible(fn () => $this->record->statut === StatutDevis::Envoye)
                 ->form([
                     Forms\Components\Textarea::make('motif')->label('Motif du refus')->rows(3),
                 ])
@@ -67,12 +66,12 @@ class ViewDevis extends ViewRecord
                 }),
 
             Actions\EditAction::make()
-                ->visible(fn() => $this->record->statut === StatutDevis::Brouillon),
+                ->visible(fn () => $this->record->statut === StatutDevis::Brouillon),
             Actions\Action::make('telecharger_pdf')
                 ->label('Télécharger PDF')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('gray')
-                ->url(fn() => route('devis.pdf', $this->record))
+                ->url(fn () => route('devis.pdf', $this->record))
                 ->openUrlInNewTab(),
         ];
     }

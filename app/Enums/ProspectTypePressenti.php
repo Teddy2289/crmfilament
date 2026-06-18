@@ -11,7 +11,7 @@ enum ProspectTypePressenti: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::CSE => 'CSE',
             self::Syndicat => 'Syndicat',
             self::Entreprise => 'Entreprise',

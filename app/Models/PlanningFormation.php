@@ -9,6 +9,7 @@ class PlanningFormation extends Model
     protected $table = 'planning_formations';
 
     protected $primaryKey = 'dossier_id';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -21,10 +22,10 @@ class PlanningFormation extends Model
     ];
 
     protected $casts = [
-        'date_lancement'           => 'date',
-        'date_debut'               => 'date',
-        'date_fin_theorique'       => 'date',
-        'date_certification'       => 'date',
+        'date_lancement' => 'date',
+        'date_debut' => 'date',
+        'date_fin_theorique' => 'date',
+        'date_certification' => 'date',
         'date_questionnaire_chaud' => 'date',
     ];
 

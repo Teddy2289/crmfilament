@@ -4,11 +4,16 @@ namespace App\Filament\NsConseil\Resources\ProspectResource\Pages;
 
 use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\ProspectResource;
-use App\Models\Partenaire;
+use App\Models\FicheTemplate;
+use App\Services\Aopia\FicheGenerationService;
 use Filament\Actions;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Actions\Action;
+use Illuminate\Support\Facades\Storage;
 
 class ViewProspect extends ViewRecord
 {
@@ -25,7 +30,7 @@ class ViewProspect extends ViewRecord
                 ->label('Qualifier QF')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->visible(fn () => !in_array($this->record->statut, [
+                ->visible(fn () => ! in_array($this->record->statut, [
                     ProspectStatut::KO,
                     ProspectStatut::QF,
                 ]))
@@ -45,12 +50,12 @@ class ViewProspect extends ViewRecord
                 ->label('Marquer KO')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
-                ->visible(fn () => !in_array($this->record->statut, [
+                ->visible(fn () => ! in_array($this->record->statut, [
                     ProspectStatut::KO,
                     ProspectStatut::QF,
                 ]))
                 ->form([
-                    \Filament\Forms\Components\Textarea::make('motif')
+                    Textarea::make('motif')
                         ->label('Motif KO')
                         ->required()
                         ->rows(3)
@@ -71,9 +76,9 @@ class ViewProspect extends ViewRecord
                 ->label('Planifier rappel')
                 ->icon('heroicon-o-clock')
                 ->color('warning')
-                ->visible(fn () => !in_array($this->record->statut, [ProspectStatut::KO]))
+                ->visible(fn () => ! in_array($this->record->statut, [ProspectStatut::KO]))
                 ->form([
-                    \Filament\Forms\Components\DateTimePicker::make('rappel_at')
+                    DateTimePicker::make('rappel_at')
                         ->label('Date et heure du rappel')
                         ->required()
                         ->seconds(false)
@@ -93,7 +98,7 @@ class ViewProspect extends ViewRecord
                 ->icon('heroicon-o-chat-bubble-left-ellipsis')
                 ->color('gray')
                 ->form([
-                    \Filament\Forms\Components\Textarea::make('note')
+                    Textarea::make('note')
                         ->label('Note')
                         ->required()
                         ->rows(4)
@@ -127,6 +132,52 @@ class ViewProspect extends ViewRecord
                     } catch (\Exception $e) {
                         Notification::make()
                             ->title('Erreur de conversion')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            Action::make('generer_fiche')
+                ->label('Générer fiche Word')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('info')
+                ->visible(fn () => FicheTemplate::where('actif', true)->exists())
+                ->form([
+                    Select::make('fiche_template_id')
+                        ->label('Modèle de fiche')
+                        ->options(fn () => FicheTemplate::where('actif', true)
+                            ->get()
+                            ->mapWithKeys(fn (FicheTemplate $t) => [
+                                $t->id => "{$t->type_label} — {$t->nom}",
+                            ]))
+                        ->required()
+                        ->native(false)
+                        ->helperText('Sélectionnez le modèle de fiche à générer pour ce prospect.'),
+                ])
+                ->modalHeading('Générer une fiche Word')
+                ->modalDescription('Le document sera généré à partir des données du prospect et enregistré dans ses documents.')
+                ->action(function (array $data) {
+                    try {
+                        $template = FicheTemplate::findOrFail($data['fiche_template_id']);
+                        $service = app(FicheGenerationService::class);
+                        $rdv = $this->record->rendezVous()->latest('date_heure')->first();
+                        $document = $service->generer($template, $this->record, $rdv);
+
+                        Notification::make()
+                            ->title('Fiche générée')
+                            ->body("Document « {$document->nom_fichier} » créé et lié au prospect.")
+                            ->success()
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('telecharger')
+                                    ->label('Télécharger')
+                                    ->url(Storage::url($document->path))
+                                    ->openUrlInNewTab(),
+                            ])
+                            ->send();
+                    } catch (\Exception $e) {
+                        Notification::make()
+                            ->title('Erreur de génération')
                             ->body($e->getMessage())
                             ->danger()
                             ->send();

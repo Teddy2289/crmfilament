@@ -16,8 +16,8 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('partenaire_id')
-                  ->constrained('partenaires')
-                  ->cascadeOnDelete();
+                ->constrained('partenaires')
+                ->cascadeOnDelete();
 
             $table->date('date_demande')->nullable();
             $table->decimal('montant', 8, 2)->default(100.00)->comment('Montant fixe 100 €');

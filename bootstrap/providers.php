@@ -1,9 +1,15 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\Filament\AdminPanelProvider;
+use App\Providers\Filament\AlloproPanelProvider;
+use App\Providers\Filament\NsConseilPanelProvider;
+use App\Providers\Filament\SuperAdminPanelProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\Filament\AdminPanelProvider::class,
-    App\Providers\Filament\AlloproPanelProvider::class,
-    App\Providers\Filament\NsConseilPanelProvider::class,
-    App\Providers\Filament\SuperAdminPanelProvider::class,
+    AppServiceProvider::class,
+    AdminPanelProvider::class,
+    AlloproPanelProvider::class,
+    NsConseilPanelProvider::class,
+    SuperAdminPanelProvider::class,
 ];

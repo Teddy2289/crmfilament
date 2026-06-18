@@ -2,6 +2,7 @@
 
 namespace App\Filament\NsConseil\Resources;
 
+use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
 use App\Filament\NsConseil\Resources\ClientResource\Pages;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
@@ -20,11 +21,22 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ClientResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = Client::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
     protected static ?string $navigationGroup = 'Clients & Formations';
+
     protected static ?string $navigationLabel = 'Clients';
+
     protected static ?int $navigationSort = 1;
+
+    public static function canAccess(): bool
+    {
+        return static::userHasAnyRole(['admin', 'superviseur', 'commercial']);
+    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -43,10 +55,10 @@ class ClientResource extends Resource
                     Forms\Components\Select::make('civilite')
                         ->label('Civilité')
                         ->options([
-                            'M.'  => 'M.',
+                            'M.' => 'M.',
                             'Mme' => 'Mme',
                             'Mlle' => 'Mlle',
-                            'Dr'  => 'Dr',
+                            'Dr' => 'Dr',
                         ]),
 
                     Forms\Components\TextInput::make('nom_tiers')
@@ -116,10 +128,10 @@ class ClientResource extends Resource
                     Forms\Components\Select::make('etat')
                         ->label('État')
                         ->options([
-                            'prospect'  => 'Prospect',
-                            'en_cours'  => 'En cours',
-                            'termine'   => 'Terminé',
-                            'certifie'  => 'Certifié',
+                            'prospect' => 'Prospect',
+                            'en_cours' => 'En cours',
+                            'termine' => 'Terminé',
+                            'certifie' => 'Certifié',
                             'abandonne' => 'Abandonné',
                         ]),
 
@@ -162,10 +174,9 @@ class ClientResource extends Resource
                     ->searchable(['nom_tiers', 'email', 'telephone'])
                     ->sortable()
                     ->weight('bold')
-                    ->formatStateUsing(fn($state, Client $record) =>
-                        trim(($record->civilite ? $record->civilite . ' ' : '') . $state)
+                    ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').$state)
                     )
-                    ->description(fn(Client $record) => $record->email ?? $record->telephone)
+                    ->description(fn (Client $record) => $record->email ?? $record->telephone)
                     ->toggleable(),
 
                 // 📞 Contact
@@ -212,21 +223,21 @@ class ClientResource extends Resource
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
-                    ->formatStateUsing(fn($state) => match ($state) {
-                        'prospect'  => 'Prospect',
-                        'en_cours'  => 'En cours',
-                        'termine'   => 'Terminé',
-                        'certifie'  => 'Certifié',
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'prospect' => 'Prospect',
+                        'en_cours' => 'En cours',
+                        'termine' => 'Terminé',
+                        'certifie' => 'Certifié',
                         'abandonne' => 'Abandonné',
-                        default     => $state ?? '—',
+                        default => $state ?? '—',
                     })
-                    ->color(fn($state) => match ($state) {
-                        'prospect'  => 'gray',
-                        'en_cours'  => 'primary',
-                        'termine'   => 'success',
-                        'certifie'  => 'success',
+                    ->color(fn ($state) => match ($state) {
+                        'prospect' => 'gray',
+                        'en_cours' => 'primary',
+                        'termine' => 'success',
+                        'certifie' => 'success',
                         'abandonne' => 'danger',
-                        default     => 'gray',
+                        default => 'gray',
                     })
                     ->toggleable(),
 
@@ -259,10 +270,10 @@ class ClientResource extends Resource
                 Tables\Filters\SelectFilter::make('etat')
                     ->label('État')
                     ->options([
-                        'prospect'  => 'Prospect',
-                        'en_cours'  => 'En cours',
-                        'termine'   => 'Terminé',
-                        'certifie'  => 'Certifié',
+                        'prospect' => 'Prospect',
+                        'en_cours' => 'En cours',
+                        'termine' => 'Terminé',
+                        'certifie' => 'Certifié',
                         'abandonne' => 'Abandonné',
                     ])
                     ->placeholder('Tous les états'),
@@ -286,7 +297,7 @@ class ClientResource extends Resource
                 Tables\Filters\SelectFilter::make('region')
                     ->label('Région')
                     ->options(
-                        fn() => Client::whereNotNull('region')
+                        fn () => Client::whereNotNull('region')
                             ->where('region', '!=', '')
                             ->distinct()
                             ->orderBy('region')
@@ -299,7 +310,7 @@ class ClientResource extends Resource
                 Tables\Filters\SelectFilter::make('departement')
                     ->label('Département')
                     ->options(
-                        fn() => Client::whereNotNull('departement')
+                        fn () => Client::whereNotNull('departement')
                             ->where('departement', '!=', '')
                             ->distinct()
                             ->orderBy('departement')
@@ -313,7 +324,7 @@ class ClientResource extends Resource
                 Tables\Filters\Filter::make('contactables')
                     ->label('Contactables')
                     ->query(
-                        fn(Builder $q) => $q->where('ne_plus_contacter', false)
+                        fn (Builder $q) => $q->where('ne_plus_contacter', false)
                             ->where(function ($q) {
                                 $q->whereNotNull('email')->orWhereNotNull('telephone');
                             })
@@ -322,12 +333,12 @@ class ClientResource extends Resource
 
                 Tables\Filters\Filter::make('avec_cpf')
                     ->label('Avec CPF')
-                    ->query(fn(Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
+                    ->query(fn (Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('sans_proposition')
                     ->label('Sans proposition')
-                    ->query(fn(Builder $q) => $q->doesntHave('propositions')),
+                    ->query(fn (Builder $q) => $q->doesntHave('propositions')),
 
                 // 🗑️ Corbeille
                 Tables\Filters\TrashedFilter::make()
@@ -340,9 +351,9 @@ class ClientResource extends Resource
                     ->label(''),
 
                 Tables\Actions\Action::make('toggle_contact')
-                    ->label(fn(Client $record) => $record->ne_plus_contacter ? 'Réactiver' : 'Bloquer')
-                    ->icon(fn(Client $record) => $record->ne_plus_contacter ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
-                    ->color(fn(Client $record) => $record->ne_plus_contacter ? 'success' : 'danger')
+                    ->label(fn (Client $record) => $record->ne_plus_contacter ? 'Réactiver' : 'Bloquer')
+                    ->icon(fn (Client $record) => $record->ne_plus_contacter ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->color(fn (Client $record) => $record->ne_plus_contacter ? 'success' : 'danger')
                     ->action(function (Client $record) {
                         if ($record->ne_plus_contacter) {
                             $record->reactiver();
@@ -378,7 +389,7 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('nom_tiers')
                         ->label('Nom')
                         ->weight('bold')
-                        ->formatStateUsing(fn($state, Client $record) => $record->nom_complet),
+                        ->formatStateUsing(fn ($state, Client $record) => $record->nom_complet),
                     Infolists\Components\TextEntry::make('ref_client')
                         ->label('Référence'),
                     Infolists\Components\TextEntry::make('civilite')
@@ -418,21 +429,21 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('etat')
                         ->label('État')
                         ->badge()
-                        ->formatStateUsing(fn($state) => match ($state) {
-                            'prospect'  => 'Prospect',
-                            'en_cours'  => 'En cours',
-                            'termine'   => 'Terminé',
-                            'certifie'  => 'Certifié',
+                        ->formatStateUsing(fn ($state) => match ($state) {
+                            'prospect' => 'Prospect',
+                            'en_cours' => 'En cours',
+                            'termine' => 'Terminé',
+                            'certifie' => 'Certifié',
                             'abandonne' => 'Abandonné',
-                            default     => $state ?? '—',
+                            default => $state ?? '—',
                         })
-                        ->color(fn($state) => match ($state) {
-                            'prospect'  => 'gray',
-                            'en_cours'  => 'primary',
-                            'termine'   => 'success',
-                            'certifie'  => 'success',
+                        ->color(fn ($state) => match ($state) {
+                            'prospect' => 'gray',
+                            'en_cours' => 'primary',
+                            'termine' => 'success',
+                            'certifie' => 'success',
                             'abandonne' => 'danger',
-                            default     => 'gray',
+                            default => 'gray',
                         }),
                     Infolists\Components\TextEntry::make('montant_cpf')
                         ->label('Montant CPF')
@@ -484,10 +495,10 @@ class ClientResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListClients::route('/'),
+            'index' => Pages\ListClients::route('/'),
             'create' => Pages\CreateClient::route('/create'),
-            'edit'   => Pages\EditClient::route('/{record}/edit'),
-            'view'   => Pages\ViewClient::route('/{record}'),
+            'edit' => Pages\EditClient::route('/{record}/edit'),
+            'view' => Pages\ViewClient::route('/{record}'),
         ];
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Filament\NsConseil\Resources;
 
+use App\Enums\OrganizationType;
+use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\NsConseil\Resources\OpportuniteResource\Pages;
@@ -20,11 +22,22 @@ use Illuminate\Database\Eloquent\Builder;
 
 class OpportuniteResource extends Resource
 {
+    use HasRoleAccess;
+
     protected static ?string $model = Opportunite::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-light-bulb';
+
     protected static ?string $navigationGroup = 'Pipeline';
+
     protected static ?string $navigationLabel = 'Opportunités';
+
     protected static ?int $navigationSort = 3;
+
+    public static function canAccess(): bool
+    {
+        return static::userHasAnyRole(['admin', 'superviseur', 'commercial']);
+    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -53,7 +66,7 @@ class OpportuniteResource extends Resource
 
                     Forms\Components\Select::make('type_pressenti')
                         ->label('Type pressenti')
-                        ->options(\App\Enums\OrganizationType::class),
+                        ->options(OrganizationType::class),
 
                     Forms\Components\TextInput::make('departement')
                         ->label('Département')
@@ -71,7 +84,7 @@ class OpportuniteResource extends Resource
                         ->numeric(),
 
                     Forms\Components\TextInput::make('chiffre_affaires')
-                        ->label("CA (€)")
+                        ->label('CA (€)')
                         ->numeric()
                         ->prefix('€'),
                 ])->columns(3),
@@ -136,7 +149,7 @@ class OpportuniteResource extends Resource
                     Forms\Components\Select::make('assigne_a')
                         ->label('Assigné à')
                         ->relationship('assigneA', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
+                        ->getOptionLabelFromRecordUsing(fn (User $r) => "{$r->prenom} {$r->nom}")
                         ->searchable()
                         ->preload(),
 
@@ -152,7 +165,7 @@ class OpportuniteResource extends Resource
                     Forms\Components\Textarea::make('raison_perte')
                         ->label('Raison de perte')
                         ->rows(2)
-                        ->visible(fn(Get $get) => $get('statut') === 'perdu'),
+                        ->visible(fn (Get $get) => $get('statut') === 'perdu'),
                 ])->columns(3),
 
             Forms\Components\Section::make('Notes')
@@ -188,13 +201,14 @@ class OpportuniteResource extends Resource
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn($state) => Opportunite::STATUTS[$state] ?? $state)
-                    ->color(fn($state) => match ($state) {
+                    ->formatStateUsing(fn ($state) => Opportunite::STATUTS[$state] ?? $state)
+                    ->color(fn ($state) => match ($state) {
                         'nouveau' => 'info',
-                        'en_qualification' => 'warning',
+                        'en_cours_evaluation' => 'warning',
                         'contacte' => 'primary',
                         'rdv_planifie' => 'orange',
                         'en_negociation' => 'purple',
+                        'qualifiee' => 'primary',
                         'converti' => 'success',
                         'perdu' => 'danger',
                         default => 'gray',
@@ -203,8 +217,8 @@ class OpportuniteResource extends Resource
                 Tables\Columns\TextColumn::make('potentiel')
                     ->label('Potentiel')
                     ->badge()
-                    ->formatStateUsing(fn($state) => Opportunite::POTENTIELS[$state] ?? $state)
-                    ->color(fn($state) => match ($state) {
+                    ->formatStateUsing(fn ($state) => Opportunite::POTENTIELS[$state] ?? $state)
+                    ->color(fn ($state) => match ($state) {
                         'faible' => 'gray',
                         'moyen' => 'info',
                         'eleve' => 'warning',
@@ -214,11 +228,11 @@ class OpportuniteResource extends Resource
 
                 Tables\Columns\TextColumn::make('source_detection')
                     ->label('Source')
-                    ->formatStateUsing(fn($state) => Opportunite::SOURCES[$state] ?? $state),
+                    ->formatStateUsing(fn ($state) => Opportunite::SOURCES[$state] ?? $state),
 
                 Tables\Columns\TextColumn::make('assigneA.nom')
                     ->label('Assigné')
-                    ->formatStateUsing(fn($record) => $record->assigneA
+                    ->formatStateUsing(fn ($record) => $record->assigneA
                         ? "{$record->assigneA->prenom} {$record->assigneA->nom}"
                         : '—'),
 
@@ -251,7 +265,7 @@ class OpportuniteResource extends Resource
 
                 Tables\Filters\Filter::make('actives')
                     ->label('Actives uniquement')
-                    ->query(fn(Builder $q) => $q->whereNotIn('statut', ['converti', 'perdu']))
+                    ->query(fn (Builder $q) => $q->whereNotIn('statut', ['converti', 'perdu']))
                     ->default(),
 
                 Tables\Filters\TrashedFilter::make(),
@@ -260,12 +274,29 @@ class OpportuniteResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
 
+                // Qualifier (CDC §4.3 : pré-requis à la conversion)
+                Tables\Actions\Action::make('qualifier')
+                    ->label('Qualifier')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('primary')
+                    ->visible(fn (Opportunite $record) => ! in_array($record->statut, ['qualifiee', 'converti', 'perdu']))
+                    ->action(function (Opportunite $record) {
+                        $record->marquerQualifiee();
+                        Notification::make()
+                            ->title('Opportunité qualifiée ✓')
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Qualifier l\'opportunité')
+                    ->modalDescription('L\'opportunité passe au statut « Qualifiée » et devient convertible en prospect.'),
+
                 // Convertir en prospect
                 Tables\Actions\Action::make('convertir')
                     ->label('→ Prospect')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->color('success')
-                    ->visible(fn(Opportunite $record) => $record->statut !== 'converti')
+                    ->visible(fn (Opportunite $record) => $record->est_convertible)
                     ->action(function (Opportunite $record) {
                         $record->convertirEnProspect();
                         Notification::make()
@@ -282,7 +313,7 @@ class OpportuniteResource extends Resource
                     ->label('Perdue')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn(Opportunite $record) => !in_array($record->statut, ['converti', 'perdu']))
+                    ->visible(fn (Opportunite $record) => ! in_array($record->statut, ['converti', 'perdu']))
                     ->form([
                         Forms\Components\Textarea::make('raison_perte')
                             ->label('Raison de la perte')

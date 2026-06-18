@@ -4,13 +4,11 @@ namespace App\Models;
 
 use App\Enums\StatutAffaireIntervention;
 use App\Enums\TicketStatut;
-use App\Enums\CanalContactPreferentiel;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AffaireIntervention extends Model
 {
@@ -19,18 +17,18 @@ class AffaireIntervention extends Model
     protected $table = 'affaire_interventions';
 
     protected $casts = [
-        'statut'                     => StatutAffaireIntervention::class,
-        'date_rdv_prevue'            => 'datetime',
-        'date_notification_artisan'  => 'datetime',
-        'date_confirmation_artisan'  => 'datetime',
-        'date_debut_reelle'          => 'datetime',
-        'date_fin_reelle'            => 'datetime',
-        'date_signature_client'      => 'datetime',
-        'signature_client'           => 'boolean',
+        'statut' => StatutAffaireIntervention::class,
+        'date_rdv_prevue' => 'datetime',
+        'date_notification_artisan' => 'datetime',
+        'date_confirmation_artisan' => 'datetime',
+        'date_debut_reelle' => 'datetime',
+        'date_fin_reelle' => 'datetime',
+        'date_signature_client' => 'datetime',
+        'signature_client' => 'boolean',
         'delai_confirmation_minutes' => 'integer',
-        'duree_reelle_minutes'       => 'integer',
-        'satisfaction_immediate'     => 'integer',
-        'numero_tentative'           => 'integer',
+        'duree_reelle_minutes' => 'integer',
+        'satisfaction_immediate' => 'integer',
+        'numero_tentative' => 'integer',
     ];
 
     protected $fillable = [
@@ -83,32 +81,34 @@ class AffaireIntervention extends Model
 
     public function getDelaiConfirmationFormateAttribute(): string
     {
-        if (!$this->delai_confirmation_minutes) {
+        if (! $this->delai_confirmation_minutes) {
             return 'N/A';
         }
 
         $min = $this->delai_confirmation_minutes;
-        return $min < 60 ? "{$min} min" : floor($min / 60) . 'h' . ($min % 60 ? ' ' . ($min % 60) . 'min' : '');
+
+        return $min < 60 ? "{$min} min" : floor($min / 60).'h'.($min % 60 ? ' '.($min % 60).'min' : '');
     }
 
     public function getDureeReelleFormateeAttribute(): string
     {
-        if (!$this->duree_reelle_minutes) {
+        if (! $this->duree_reelle_minutes) {
             return 'N/A';
         }
 
         $min = $this->duree_reelle_minutes;
-        return $min < 60 ? "{$min} min" : floor($min / 60) . 'h' . ($min % 60 ? ' ' . ($min % 60) . 'min' : '');
+
+        return $min < 60 ? "{$min} min" : floor($min / 60).'h'.($min % 60 ? ' '.($min % 60).'min' : '');
     }
 
     public function getSlaRespecteeAttribute(): bool
     {
-        if (!$this->date_notification_artisan || !$this->date_confirmation_artisan) {
+        if (! $this->date_notification_artisan || ! $this->date_confirmation_artisan) {
             return true;
         }
 
         $ticket = $this->ticket;
-        if (!$ticket?->niveau_priorite) {
+        if (! $ticket?->niveau_priorite) {
             return true;
         }
 
@@ -117,7 +117,7 @@ class AffaireIntervention extends Model
 
     public function getEstEnRetardAttribute(): bool
     {
-        if (!$this->statut?->estActive() || !$this->date_rdv_prevue) {
+        if (! $this->statut?->estActive() || ! $this->date_rdv_prevue) {
             return false;
         }
 
@@ -133,7 +133,7 @@ class AffaireIntervention extends Model
 
     public function changerStatut(StatutAffaireIntervention $nouveauStatut, ?string $notes = null): void
     {
-        if (!$this->peutPasserA($nouveauStatut)) {
+        if (! $this->peutPasserA($nouveauStatut)) {
             throw new \Exception(
                 "Transition impossible : {$this->statut->value} → {$nouveauStatut->value}"
             );
@@ -143,7 +143,7 @@ class AffaireIntervention extends Model
 
         if ($notes) {
             $data['notes_intervention'] = $this->notes_intervention
-                ? $this->notes_intervention . "\n[" . now()->format('d/m/Y H:i') . "] {$notes}"
+                ? $this->notes_intervention."\n[".now()->format('d/m/Y H:i')."] {$notes}"
                 : $notes;
         }
 
@@ -159,7 +159,7 @@ class AffaireIntervention extends Model
         $this->changerStatut(StatutAffaireIntervention::Confirmee);
 
         $this->update([
-            'date_confirmation_artisan'  => now(),
+            'date_confirmation_artisan' => now(),
             'delai_confirmation_minutes' => $this->date_notification_artisan
                 ? (int) $this->date_notification_artisan->diffInMinutes(now())
                 : null,
@@ -188,8 +188,8 @@ class AffaireIntervention extends Model
         $this->changerStatut(StatutAffaireIntervention::Realisee);
 
         $data = [
-            'date_fin_reelle'             => now(),
-            'compte_rendu_artisan'        => $compteRendu,
+            'date_fin_reelle' => now(),
+            'compte_rendu_artisan' => $compteRendu,
             'description_travaux_realises' => $descriptionTravaux,
         ];
 
@@ -208,13 +208,13 @@ class AffaireIntervention extends Model
     /**
      * Le client valide et signe le bon d'intervention.
      */
-    public function validerParClient(int $satisfactionImmédiate = null): void
+    public function validerParClient(?int $satisfactionImmédiate = null): void
     {
         $this->changerStatut(StatutAffaireIntervention::ValideeClient);
 
         $this->update([
-            'signature_client'       => true,
-            'date_signature_client'  => now(),
+            'signature_client' => true,
+            'date_signature_client' => now(),
             'satisfaction_immediate' => $satisfactionImmédiate,
         ]);
     }
@@ -309,13 +309,13 @@ class AffaireIntervention extends Model
     public static function getKpis(): array
     {
         return [
-            'en_attente'           => static::enAttente()->count(),
-            'confirmees'           => static::confirmees()->count(),
-            'en_cours'             => static::enCours()->count(),
-            'realisees_jour'       => static::realisees()->duJour()->count(),
-            'en_retard'            => static::enRetardConfirmation()->count(),
+            'en_attente' => static::enAttente()->count(),
+            'confirmees' => static::confirmees()->count(),
+            'en_cours' => static::enCours()->count(),
+            'realisees_jour' => static::realisees()->duJour()->count(),
+            'en_retard' => static::enRetardConfirmation()->count(),
             'delai_moyen_confirmation' => static::getDelaiMoyenConfirmation(),
-            'taux_reussite'        => static::getTauxReussite(),
+            'taux_reussite' => static::getTauxReussite(),
         ];
     }
 
@@ -336,7 +336,9 @@ class AffaireIntervention extends Model
             StatutAffaireIntervention::Echec->value,
         ])->count();
 
-        if ($total === 0) return 100;
+        if ($total === 0) {
+            return 100;
+        }
 
         $reussies = static::whereIn('statut', [
             StatutAffaireIntervention::Realisee->value,
@@ -381,17 +383,15 @@ class AffaireIntervention extends Model
             ->orderBy('id', 'desc')
             ->value('reference');
 
-        if ($lastReference && preg_match('/AFF-' . $year . '-(\d+)/', $lastReference, $matches)) {
+        if ($lastReference && preg_match('/AFF-'.$year.'-(\d+)/', $lastReference, $matches)) {
             $lastNumber = (int) $matches[1];
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        return $prefix . '-' . $year . '-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+        return $prefix.'-'.$year.'-'.str_pad($newNumber, 5, '0', STR_PAD_LEFT);
     }
-
-
 
     public static function genererReference(): string
     {
@@ -400,10 +400,8 @@ class AffaireIntervention extends Model
             ->whereYear('created_at', now()->year)
             ->count() + 1;
 
-        return 'AFF-' . now()->year . '-' . str_pad($count, 5, '0', STR_PAD_LEFT);
+        return 'AFF-'.now()->year.'-'.str_pad($count, 5, '0', STR_PAD_LEFT);
     }
-
-
 
     // ── Relations ────────────────────────────────────────────────────
 

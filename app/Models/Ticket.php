@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use App\Enums\TicketStatut;
-use App\Enums\NiveauPriorite;
 use App\Enums\CorpsDeMetier;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Enums\NiveauPriorite;
+use App\Enums\TicketStatut;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 class Ticket extends Model
@@ -39,12 +39,12 @@ class Ticket extends Model
      * En liant les Enums ici, Laravel s'occupe de toutes les conversions.
      */
     protected $casts = [
-        'statut'           => TicketStatut::class,
-        'niveau_priorite'  => NiveauPriorite::class,
-        'corps_de_metier'  => CorpsDeMetier::class,
-        'date_creation'    => 'datetime',
-        'date_cloture'     => 'datetime',
-        'rdv_planifie_at'  => 'datetime',
+        'statut' => TicketStatut::class,
+        'niveau_priorite' => NiveauPriorite::class,
+        'corps_de_metier' => CorpsDeMetier::class,
+        'date_creation' => 'datetime',
+        'date_cloture' => 'datetime',
+        'rdv_planifie_at' => 'datetime',
         'rappel_promise_at' => 'datetime',
     ];
 
@@ -78,6 +78,7 @@ class Ticket extends Model
     public function getDureeTraitementMinutesAttribute(): int
     {
         $fin = $this->date_cloture ?? now();
+
         return $this->date_creation ? $fin->diffInMinutes($this->date_creation) : 0;
     }
 
@@ -86,34 +87,36 @@ class Ticket extends Model
         $minutes = $this->duree_traitement_minutes;
 
         if ($minutes < 60) {
-            return $minutes . ' min';
+            return $minutes.' min';
         }
 
         $heures = floor($minutes / 60);
-        $mins   = $minutes % 60;
+        $mins = $minutes % 60;
 
         if ($heures < 24) {
-            return $heures . 'h' . ($mins > 0 ? ' ' . $mins . 'min' : '');
+            return $heures.'h'.($mins > 0 ? ' '.$mins.'min' : '');
         }
 
-        $jours  = floor($heures / 24);
+        $jours = floor($heures / 24);
         $heures = $heures % 24;
-        return $jours . 'j ' . $heures . 'h';
+
+        return $jours.'j '.$heures.'h';
     }
 
     public function getSlaRespecteAttribute(): bool
     {
-        if (!$this->niveau_priorite || !$this->artisan_id) {
+        if (! $this->niveau_priorite || ! $this->artisan_id) {
             return true;
         }
 
         $delaiMax = $this->niveau_priorite->delaiMaxMinutes() ?? 480;
+
         return $this->duree_traitement_minutes <= $delaiMax;
     }
 
     public function getEstEnRetardAttribute(): bool
     {
-        return !$this->sla_respecte && ($this->statut?->estActif() ?? false);
+        return ! $this->sla_respecte && ($this->statut?->estActif() ?? false);
     }
 
     public function getStatutOrdreAttribute(): int
@@ -255,14 +258,14 @@ class Ticket extends Model
 
     public function changerStatut(TicketStatut $nouveauStatut, ?string $notes = null, bool $force = false): void
     {
-        if (!$force && !$this->peutPasserA($nouveauStatut)) {
+        if (! $force && ! $this->peutPasserA($nouveauStatut)) {
             throw new \Exception("Transition impossible de {$this->statut?->value} à {$nouveauStatut->value}");
         }
 
         $data = ['statut' => $nouveauStatut->value];
 
         if ($notes) {
-            $data['notes'] = $this->notes . "\n[" . now()->format('d/m/Y H:i') . "] {$notes}";
+            $data['notes'] = $this->notes."\n[".now()->format('d/m/Y H:i')."] {$notes}";
         }
 
         if (in_array($nouveauStatut, [TicketStatut::DossierCloture, TicketStatut::ClotureSatisfait], true)) {
@@ -292,9 +295,9 @@ class Ticket extends Model
                 continue;
             }
 
-            if (!$this->peutPasserA($etape)) {
+            if (! $this->peutPasserA($etape)) {
                 throw new \Exception(
-                    "Impossible de passer de {$this->statut->value} à {$etape->value} " .
+                    "Impossible de passer de {$this->statut->value} à {$etape->value} ".
                         "en progressant vers {$statutCible->value}"
                 );
             }
@@ -330,27 +333,28 @@ class Ticket extends Model
 
         $key = $statutCible->value;
 
-        if (!isset($chemins[$key])) {
+        if (! isset($chemins[$key])) {
             throw new \Exception("Aucun chemin défini vers le statut {$statutCible->label()}");
         }
 
         // Filtrer pour ne garder que les étapes après le statut actuel
         $statuts = array_map(
-            fn($value) => TicketStatut::from($value),
+            fn ($value) => TicketStatut::from($value),
             $chemins[$key]
         );
 
         $positionActuelle = array_search($this->statut, $statuts);
 
         if ($positionActuelle === false) {
-            throw new \Exception("Position actuelle non trouvée dans le chemin");
+            throw new \Exception('Position actuelle non trouvée dans le chemin');
         }
 
         return array_slice($statuts, $positionActuelle + 1);
     }
+
     public function assignerArtisan(Artisan $artisan): void
     {
-        if (!$artisan->estDisponible()) {
+        if (! $artisan->estDisponible()) {
             throw new \Exception("L'artisan n'est pas disponible");
         }
 
@@ -360,7 +364,7 @@ class Ticket extends Model
     public function planifierRDV(\DateTime $dateRdv): void
     {
         $this->update([
-            'statut'          => TicketStatut::RdvPlanifie->value,
+            'statut' => TicketStatut::RdvPlanifie->value,
             'rdv_planifie_at' => $dateRdv,
         ]);
     }
@@ -368,7 +372,7 @@ class Ticket extends Model
     public function programmerRappel(\DateTime $dateRappel): void
     {
         $this->update([
-            'statut'            => TicketStatut::RappelPromis->value,
+            'statut' => TicketStatut::RappelPromis->value,
             'rappel_promise_at' => $dateRappel,
         ]);
     }
@@ -393,23 +397,23 @@ class Ticket extends Model
 
     public function getDelaiRestantSLA(): int
     {
-        if (!$this->niveau_priorite || $this->estCloture()) {
+        if (! $this->niveau_priorite || $this->estCloture()) {
             return 0;
         }
 
         $delaiMax = $this->niveau_priorite->delaiMaxMinutes() ?? 480;
-        $ecoule   = $this->date_creation ? $this->date_creation->diffInMinutes(now()) : 0;
+        $ecoule = $this->date_creation ? $this->date_creation->diffInMinutes(now()) : 0;
 
         return max(0, $delaiMax - $ecoule);
     }
 
     public function getSlaDepasseDepuis(): ?string
     {
-        if ($this->sla_respecte || !$this->date_creation || !$this->niveau_priorite) {
+        if ($this->sla_respecte || ! $this->date_creation || ! $this->niveau_priorite) {
             return null;
         }
 
-        $delaiMax    = $this->niveau_priorite->delaiMaxMinutes() ?? 480;
+        $delaiMax = $this->niveau_priorite->delaiMaxMinutes() ?? 480;
         $depassement = $this->date_creation->addMinutes($delaiMax);
 
         return $depassement->diffForHumans();
@@ -446,19 +450,20 @@ class Ticket extends Model
     public static function genererReference(): string
     {
         $count = static::whereYear('created_at', now()->year)->count() + 1;
-        return 'TK-' . now()->year . '-' . str_pad($count, 5, '0', STR_PAD_LEFT);
+
+        return 'TK-'.now()->year.'-'.str_pad($count, 5, '0', STR_PAD_LEFT);
     }
 
     public static function getKpis(): array
     {
         return [
-            'total_jour'          => static::duJour()->count(),
-            'actifs'              => static::actifs()->count(),
-            'urgents'             => static::urgents()->count(),
-            'en_retard'           => static::enRetard()->count(),
-            'sans_artisan'        => static::sansArtisan()->count(),
-            'clotures_jour'       => static::clotures()->duJour()->count(),
-            'taux_satisfaction'   => static::getTauxSatisfaction(),
+            'total_jour' => static::duJour()->count(),
+            'actifs' => static::actifs()->count(),
+            'urgents' => static::urgents()->count(),
+            'en_retard' => static::enRetard()->count(),
+            'sans_artisan' => static::sansArtisan()->count(),
+            'clotures_jour' => static::clotures()->duJour()->count(),
+            'taux_satisfaction' => static::getTauxSatisfaction(),
             'delai_moyen_minutes' => static::getDelaiMoyen(),
         ];
     }
@@ -467,7 +472,9 @@ class Ticket extends Model
     {
         // ✅ Correction : on utilise 'rapportsSatisfaction' (au pluriel)
         $total = static::clotures()->whereHas('rapportsSatisfaction')->count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         // ✅ Correction : ici aussi
         $satisfaits = static::clotures()
@@ -510,7 +517,7 @@ class Ticket extends Model
             if (
                 $ticket->isDirty('statut') &&
                 $ticket->estCloture() &&
-                !$ticket->date_cloture
+                ! $ticket->date_cloture
             ) {
                 $ticket->date_cloture = now();
             }

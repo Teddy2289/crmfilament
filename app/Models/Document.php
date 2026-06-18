@@ -3,9 +3,10 @@
 namespace App\Models;
 
 use App\Enums\OrganizationCategory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Document extends Model
 {
@@ -35,7 +36,9 @@ class Document extends Model
 
     public function getTailleFormateeAttribute(): string
     {
-        if (!$this->taille) return '0 B';
+        if (! $this->taille) {
+            return '0 B';
+        }
 
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
         $size = $this->taille;
@@ -46,7 +49,7 @@ class Document extends Model
             $unit++;
         }
 
-        return round($size, 2) . ' ' . $units[$unit];
+        return round($size, 2).' '.$units[$unit];
     }
 
     public function getExtensionAttribute(): string
@@ -95,7 +98,7 @@ class Document extends Model
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
-    public function telecharger(): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function telecharger(): StreamedResponse
     {
         return Storage::download($this->path, $this->nom_fichier);
     }
@@ -105,13 +108,14 @@ class Document extends Model
         if (Storage::exists($this->path)) {
             return Storage::delete($this->path);
         }
+
         return true;
     }
 
     public function renommer(string $nouveauNom): void
     {
         $ancienPath = $this->path;
-        $nouveauPath = dirname($this->path) . '/' . $nouveauNom;
+        $nouveauPath = dirname($this->path).'/'.$nouveauNom;
 
         if (Storage::exists($ancienPath)) {
             Storage::move($ancienPath, $nouveauPath);
@@ -127,7 +131,7 @@ class Document extends Model
     {
         $nouveauDossier = strtolower($nouvelleCategorie->value);
         $ancienPath = $this->path;
-        $nouveauPath = $nouveauDossier . '/' . $this->nom_fichier;
+        $nouveauPath = $nouveauDossier.'/'.$this->nom_fichier;
 
         if (Storage::exists($ancienPath)) {
             Storage::move($ancienPath, $nouveauPath);
@@ -198,7 +202,7 @@ class Document extends Model
         OrganizationCategory $categorie,
         ?int $userId = null
     ): self {
-        $nomFichier = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $fichier->getClientOriginalName());
+        $nomFichier = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $fichier->getClientOriginalName());
         $dossier = strtolower($categorie->value);
         $path = $fichier->storeAs($dossier, $nomFichier, 'public');
 

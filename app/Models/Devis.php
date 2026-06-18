@@ -4,11 +4,11 @@ namespace App\Models;
 
 use App\Enums\StatutBonDeCommande;
 use App\Enums\StatutDevis;
-use App\Enums\TauxTVA;
 use App\Enums\TicketStatut;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -19,23 +19,23 @@ use Illuminate\Support\Facades\DB;
  *
  * Chaîne documentaire : Devis → BonDeCommande → Facture
  *
- * @property int         $id
- * @property string      $numero                  Format DEV-AAAA-NNNN (auto)
- * @property int         $ticket_id               FK → Ticket (Affaire)
- * @property int         $artisan_id              FK → Artisan (émetteur)
- * @property int         $contact_particulier_id  FK → ContactParticulier (destinataire)
- * @property array       $lignes                  JSON : [{libelle, quantite, prix_unitaire_ht, taux_tva}]
- * @property float       $remise_montant          Remise en € (avant TVA)
- * @property float       $remise_pourcentage      Remise en % (avant TVA)
- * @property string      $conditions_paiement     Acompte / Solde à intervention / 30j
- * @property string|null $notes                   Conditions spécifiques
- * @property \Carbon\Carbon $date_validite         Par défaut J+30
- * @property StatutDevis $statut                  Brouillon / Envoyé / Accepté / Refusé / Expiré
- * @property string|null $mode_acceptation        Signature électronique / Appel / Email
- * @property \Carbon\Carbon|null $date_acceptation_refus  Horodatée à la signature
- * @property float       $total_ht                Calculé
- * @property float       $montant_tva             Calculé
- * @property float       $total_ttc               Calculé
+ * @property int $id
+ * @property string $numero Format DEV-AAAA-NNNN (auto)
+ * @property int $ticket_id FK → Ticket (Affaire)
+ * @property int $artisan_id FK → Artisan (émetteur)
+ * @property int $contact_particulier_id FK → ContactParticulier (destinataire)
+ * @property array $lignes JSON : [{libelle, quantite, prix_unitaire_ht, taux_tva}]
+ * @property float $remise_montant Remise en € (avant TVA)
+ * @property float $remise_pourcentage Remise en % (avant TVA)
+ * @property string $conditions_paiement Acompte / Solde à intervention / 30j
+ * @property string|null $notes Conditions spécifiques
+ * @property Carbon $date_validite Par défaut J+30
+ * @property StatutDevis $statut Brouillon / Envoyé / Accepté / Refusé / Expiré
+ * @property string|null $mode_acceptation Signature électronique / Appel / Email
+ * @property Carbon|null $date_acceptation_refus Horodatée à la signature
+ * @property float $total_ht Calculé
+ * @property float $montant_tva Calculé
+ * @property float $total_ttc Calculé
  */
 class Devis extends Model
 {
@@ -44,16 +44,16 @@ class Devis extends Model
     protected $table = 'devis';
 
     protected $casts = [
-        'statut'                  => StatutDevis::class,
-        'lignes'                  => 'array',
-        'date_validite'           => 'date',
-        'date_acceptation_refus'  => 'datetime',
-        'date_emission'           => 'date',
-        'remise_montant'          => 'decimal:2',
-        'remise_pourcentage'      => 'decimal:2',
-        'total_ht'                => 'decimal:2',
-        'montant_tva'             => 'decimal:2',
-        'total_ttc'               => 'decimal:2',
+        'statut' => StatutDevis::class,
+        'lignes' => 'array',
+        'date_validite' => 'date',
+        'date_acceptation_refus' => 'datetime',
+        'date_emission' => 'date',
+        'remise_montant' => 'decimal:2',
+        'remise_pourcentage' => 'decimal:2',
+        'total_ht' => 'decimal:2',
+        'montant_tva' => 'decimal:2',
+        'total_ttc' => 'decimal:2',
     ];
 
     protected $fillable = [
@@ -81,15 +81,15 @@ class Devis extends Model
     const VALIDITE_DEFAUT_JOURS = 30;
 
     const CONDITIONS_PAIEMENT = [
-        'acompte'              => 'Acompte à la commande',
-        'solde_intervention'   => 'Solde à l\'intervention',
-        '30_jours'             => 'Paiement à 30 jours',
+        'acompte' => 'Acompte à la commande',
+        'solde_intervention' => 'Solde à l\'intervention',
+        '30_jours' => 'Paiement à 30 jours',
     ];
 
     const MODES_ACCEPTATION = [
         'signature_electronique' => 'Signature électronique',
-        'appel'                  => 'Appel téléphonique',
-        'email'                  => 'Email',
+        'appel' => 'Appel téléphonique',
+        'email' => 'Email',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -127,7 +127,7 @@ class Devis extends Model
 
     public function getEstEnAttenteAttribute(): bool
     {
-        return $this->statut === StatutDevis::Envoye && !$this->getEstExpireAttribute();
+        return $this->statut === StatutDevis::Envoye && ! $this->getEstExpireAttribute();
     }
 
     public function getJoursAvantExpirationAttribute(): int
@@ -135,6 +135,7 @@ class Devis extends Model
         if ($this->date_validite->isPast()) {
             return 0;
         }
+
         return now()->diffInDays($this->date_validite);
     }
 
@@ -157,7 +158,7 @@ class Devis extends Model
     public function calculerTotaux(): void
     {
         $totalHtBrut = 0.0;
-        $totalTva    = 0.0;
+        $totalTva = 0.0;
 
         foreach ($this->lignes ?? [] as $ligne) {
             $ht = ($ligne['quantite'] ?? 1) * ($ligne['prix_unitaire_ht'] ?? 0);
@@ -174,16 +175,16 @@ class Devis extends Model
         // TVA par ligne (proportionnelle à la remise)
         $ratioRemise = $totalHtBrut > 0 ? ($totalHtNet / $totalHtBrut) : 1;
         foreach ($this->lignes ?? [] as $ligne) {
-            $ht  = ($ligne['quantite'] ?? 1) * ($ligne['prix_unitaire_ht'] ?? 0) * $ratioRemise;
+            $ht = ($ligne['quantite'] ?? 1) * ($ligne['prix_unitaire_ht'] ?? 0) * $ratioRemise;
             $tva = $ht * (($ligne['taux_tva'] ?? 20) / 100);
             $totalTva += $tva;
         }
 
         // On injecte les valeurs directement dans l'objet.
         // Laravel se chargera de les envoyer en BDD dans la foulée.
-        $this->total_ht    = round($totalHtNet, 2);
+        $this->total_ht = round($totalHtNet, 2);
         $this->montant_tva = round($totalTva, 2);
-        $this->total_ttc   = round($totalHtNet + $totalTva, 2);
+        $this->total_ttc = round($totalHtNet + $totalTva, 2);
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
@@ -191,11 +192,11 @@ class Devis extends Model
     public function envoyer(): void
     {
         if ($this->statut !== StatutDevis::Brouillon) {
-            throw new \Exception("Seul un devis en brouillon peut être envoyé.");
+            throw new \Exception('Seul un devis en brouillon peut être envoyé.');
         }
         $this->update([
-            'statut'         => StatutDevis::Envoye,
-            'date_emission'  => now(),
+            'statut' => StatutDevis::Envoye,
+            'date_emission' => now(),
         ]);
     }
 
@@ -203,30 +204,30 @@ class Devis extends Model
 
     public function accepter(string $modeAcceptation): BonDeCommande
     {
-        if (!in_array($this->statut, [StatutDevis::Envoye, StatutDevis::Brouillon])) {
-            throw new \Exception("Seuls les devis envoyés ou en brouillon peuvent être acceptés.");
+        if (! in_array($this->statut, [StatutDevis::Envoye, StatutDevis::Brouillon])) {
+            throw new \Exception('Seuls les devis envoyés ou en brouillon peuvent être acceptés.');
         }
 
         $bonCommande = DB::transaction(function () use ($modeAcceptation) {
             // 1. Mettre à jour le devis
             $this->update([
-                'statut'               => StatutDevis::Accepte,
-                'mode_acceptation'     => $modeAcceptation,
+                'statut' => StatutDevis::Accepte,
+                'mode_acceptation' => $modeAcceptation,
                 'date_acceptation_refus' => now(),
             ]);
 
             // 2. Générer le bon de commande
             $bonCommande = BonDeCommande::create([
-                'numero'                 => BonDeCommande::genererNumero(),
-                'devis_id'               => $this->id,
-                'ticket_id'              => $this->ticket_id,
-                'artisan_id'             => $this->artisan_id,
+                'numero' => BonDeCommande::genererNumero(),
+                'devis_id' => $this->id,
+                'ticket_id' => $this->ticket_id,
+                'artisan_id' => $this->artisan_id,
                 'contact_particulier_id' => $this->contact_particulier_id,
-                'lignes'                 => $this->lignes,
-                'montant_total_ttc'      => $this->total_ttc,
-                'acompte_montant'        => $this->calculerAcompte(),
-                'conditions_paiement'    => $this->conditions_paiement,
-                'statut'                 => StatutBonDeCommande::EnAttente,
+                'lignes' => $this->lignes,
+                'montant_total_ttc' => $this->total_ttc,
+                'acompte_montant' => $this->calculerAcompte(),
+                'conditions_paiement' => $this->conditions_paiement,
+                'statut' => StatutBonDeCommande::EnAttente,
             ]);
 
             // 3. Utiliser la méthode progresserJusquA pour le ticket
@@ -236,7 +237,7 @@ class Devis extends Model
                 try {
                     // Faire progresser le ticket jusqu'au statut DevisAccepte
                     $ticket->progresserJusquA(TicketStatut::DevisAccepte, [
-                        'date_rdv' => $bonCommande->date_intervention_prevue ?? now()->addDays(7)
+                        'date_rdv' => $bonCommande->date_intervention_prevue ?? now()->addDays(7),
                     ]);
 
                     // Ajouter une note au ticket
@@ -246,9 +247,9 @@ class Devis extends Model
                     );
                 } catch (\Exception $e) {
                     // Log l'erreur mais continue (le BC est créé)
-                    \Log::error("Erreur progression ticket: " . $e->getMessage(), [
+                    \Log::error('Erreur progression ticket: '.$e->getMessage(), [
                         'devis_id' => $this->id,
-                        'ticket_id' => $ticket->id
+                        'ticket_id' => $ticket->id,
                     ]);
                 }
             }
@@ -259,13 +260,13 @@ class Devis extends Model
         return $bonCommande;
     }
 
-    public function refuser(string $motif = null): void
+    public function refuser(?string $motif = null): void
     {
         $this->update([
-            'statut'                 => StatutDevis::Refuse,
+            'statut' => StatutDevis::Refuse,
             'date_acceptation_refus' => now(),
-            'notes'                  => $motif
-                ? ($this->notes ? $this->notes . "\n[Refus] {$motif}" : "[Refus] {$motif}")
+            'notes' => $motif
+                ? ($this->notes ? $this->notes."\n[Refus] {$motif}" : "[Refus] {$motif}")
                 : $this->notes,
         ]);
     }
@@ -280,23 +281,24 @@ class Devis extends Model
     protected function genererBonDeCommande(): BonDeCommande
     {
         return BonDeCommande::create([
-            'numero'                 => BonDeCommande::genererNumero(),
-            'devis_id'               => $this->id,
-            'ticket_id'              => $this->ticket_id,
-            'artisan_id'             => $this->artisan_id,
+            'numero' => BonDeCommande::genererNumero(),
+            'devis_id' => $this->id,
+            'ticket_id' => $this->ticket_id,
+            'artisan_id' => $this->artisan_id,
             'contact_particulier_id' => $this->contact_particulier_id,
-            'lignes'                 => $this->lignes,
-            'montant_total_ttc'      => $this->total_ttc,
-            'conditions_paiement'    => $this->conditions_paiement,
-            'statut'                 => 'en_attente',
+            'lignes' => $this->lignes,
+            'montant_total_ttc' => $this->total_ttc,
+            'conditions_paiement' => $this->conditions_paiement,
+            'statut' => 'en_attente',
         ]);
     }
 
     public static function genererNumero(): string
     {
-        $annee    = now()->year;
+        $annee = now()->year;
         $dernierN = static::whereYear('created_at', $annee)->count() + 1;
-        return 'DEV-' . $annee . '-' . str_pad($dernierN, 4, '0', STR_PAD_LEFT);
+
+        return 'DEV-'.$annee.'-'.str_pad($dernierN, 4, '0', STR_PAD_LEFT);
     }
 
     // ── Scopes ──────────────────────────────────────────────────────
@@ -361,14 +363,14 @@ class Devis extends Model
     public static function getKpis(): array
     {
         return [
-            'total'             => static::count(),
-            'en_attente'        => static::enAttente()->count(),
-            'acceptes_mois'     => static::acceptes()->duMois()->count(),
-            'refuses_mois'      => static::refuses()->duMois()->count(),
-            'expires'           => static::expires()->count(),
-            'taux_acceptation'  => static::getTauxAcceptation(),
-            'montant_pipeline'  => static::enAttente()->sum('total_ttc'),
-            'a_relancer'        => static::aRelancer()->count(),
+            'total' => static::count(),
+            'en_attente' => static::enAttente()->count(),
+            'acceptes_mois' => static::acceptes()->duMois()->count(),
+            'refuses_mois' => static::refuses()->duMois()->count(),
+            'expires' => static::expires()->count(),
+            'taux_acceptation' => static::getTauxAcceptation(),
+            'montant_pipeline' => static::enAttente()->sum('total_ttc'),
+            'a_relancer' => static::aRelancer()->count(),
         ];
     }
 

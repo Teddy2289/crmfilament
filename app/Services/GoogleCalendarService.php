@@ -2,13 +2,18 @@
 
 namespace App\Services;
 
+use App\Enums\RendezVousType;
 use App\Models\GoogleToken;
 use App\Models\RendezVous;
 use App\Models\User;
-use App\Enums\RendezVousStatut;
-use App\Enums\RendezVousType;
-use League\OAuth2\Client\Provider\Google;
+use Carbon\Carbon;
+use GuzzleHttp\Client;
+use GuzzleHttp\Pool;
+use GuzzleHttp\Promise\Utils;
+use GuzzleHttp\Psr7\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use League\OAuth2\Client\Provider\Google;
 
 class GoogleCalendarService
 {
@@ -17,9 +22,9 @@ class GoogleCalendarService
     public function __construct()
     {
         $this->provider = new Google([
-            'clientId'     => config('services.google.client_id'),
+            'clientId' => config('services.google.client_id'),
             'clientSecret' => config('services.google.client_secret'),
-            'redirectUri'  => config('services.google.redirect'),
+            'redirectUri' => config('services.google.redirect'),
         ]);
     }
 
@@ -34,8 +39,8 @@ class GoogleCalendarService
                 'email',
                 'profile',
             ],
-            'access_type'   => 'offline',
-            'prompt'        => 'consent',   // force refresh_token
+            'access_type' => 'offline',
+            'prompt' => 'consent',   // force refresh_token
         ]);
     }
 
@@ -48,11 +53,11 @@ class GoogleCalendarService
         return GoogleToken::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'access_token'  => $accessToken->getToken(),
+                'access_token' => $accessToken->getToken(),
                 'refresh_token' => $accessToken->getRefreshToken(),
-                'token_type'    => 'Bearer',
-                'expires_at'    => $accessToken->getExpires()
-                    ? \Carbon\Carbon::createFromTimestamp($accessToken->getExpires())
+                'token_type' => 'Bearer',
+                'expires_at' => $accessToken->getExpires()
+                    ? Carbon::createFromTimestamp($accessToken->getExpires())
                     : null,
             ]
         );
@@ -61,7 +66,9 @@ class GoogleCalendarService
     public function revokeToken(User $user): void
     {
         $token = GoogleToken::where('user_id', $user->id)->first();
-        if (! $token) return;
+        if (! $token) {
+            return;
+        }
 
         try {
             $this->makeRequest('GET', 'https://oauth2.googleapis.com/revoke', $token, [
@@ -90,8 +97,8 @@ class GoogleCalendarService
 
             $token->update([
                 'access_token' => $newToken->getToken(),
-                'expires_at'   => $newToken->getExpires()
-                    ? \Carbon\Carbon::createFromTimestamp($newToken->getExpires())
+                'expires_at' => $newToken->getExpires()
+                    ? Carbon::createFromTimestamp($newToken->getExpires())
                     : null,
             ]);
         }
@@ -112,12 +119,14 @@ class GoogleCalendarService
     public function createEvent(RendezVous $rdv): ?string
     {
         $user = $rdv->commercial ?? $rdv->teleprospecteur;
-        if (! $user || ! $this->isConnected($user)) return null;
+        if (! $user || ! $this->isConnected($user)) {
+            return null;
+        }
 
         try {
-            $token      = $this->getValidToken($user);
+            $token = $this->getValidToken($user);
             $calendarId = $token->calendar_id ?? 'primary';
-            $body       = $this->buildEventBody($rdv);
+            $body = $this->buildEventBody($rdv);
 
             $response = $this->makeRequest(
                 'POST',
@@ -136,8 +145,9 @@ class GoogleCalendarService
         } catch (\Throwable $e) {
             Log::error('GoogleCalendar::createEvent failed', [
                 'rdv_id' => $rdv->id,
-                'error'  => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -147,15 +157,19 @@ class GoogleCalendarService
      */
     public function updateEvent(RendezVous $rdv): bool
     {
-        if (! $rdv->google_event_id) return false;
+        if (! $rdv->google_event_id) {
+            return false;
+        }
 
         $user = $rdv->commercial ?? $rdv->teleprospecteur;
-        if (! $user || ! $this->isConnected($user)) return false;
+        if (! $user || ! $this->isConnected($user)) {
+            return false;
+        }
 
         try {
-            $token      = $this->getValidToken($user);
+            $token = $this->getValidToken($user);
             $calendarId = $token->calendar_id ?? 'primary';
-            $body       = $this->buildEventBody($rdv);
+            $body = $this->buildEventBody($rdv);
 
             $this->makeRequest(
                 'PUT',
@@ -167,10 +181,11 @@ class GoogleCalendarService
             return true;
         } catch (\Throwable $e) {
             Log::error('GoogleCalendar::updateEvent failed', [
-                'rdv_id'   => $rdv->id,
+                'rdv_id' => $rdv->id,
                 'event_id' => $rdv->google_event_id,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -180,13 +195,17 @@ class GoogleCalendarService
      */
     public function deleteEvent(RendezVous $rdv): bool
     {
-        if (! $rdv->google_event_id) return false;
+        if (! $rdv->google_event_id) {
+            return false;
+        }
 
         $user = $rdv->commercial ?? $rdv->teleprospecteur;
-        if (! $user || ! $this->isConnected($user)) return false;
+        if (! $user || ! $this->isConnected($user)) {
+            return false;
+        }
 
         try {
-            $token      = $this->getValidToken($user);
+            $token = $this->getValidToken($user);
             $calendarId = $token->calendar_id ?? 'primary';
 
             $this->makeRequest(
@@ -196,13 +215,15 @@ class GoogleCalendarService
             );
 
             $rdv->update(['google_event_id' => null]);
+
             return true;
         } catch (\Throwable $e) {
             Log::error('GoogleCalendar::deleteEvent failed', [
-                'rdv_id'   => $rdv->id,
+                'rdv_id' => $rdv->id,
                 'event_id' => $rdv->google_event_id,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -217,10 +238,10 @@ class GoogleCalendarService
     public function getEvents(User $user, \DateTime $start, \DateTime $end): array
     {
         // Plus de isConnected() ici — getValidToken() lève une exception si non connecté
-        $weekKey  = (new \Carbon\Carbon($start))->format('Y-W');
+        $weekKey = (new Carbon($start))->format('Y-W');
         $cacheKey = "gcal_events_{$user->id}_{$weekKey}";
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(30), function () use ($user, $start, $end) {
+        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($user, $start, $end) {
             return $this->fetchAllCalendarEvents($user, $start, $end);
         });
     }
@@ -232,9 +253,9 @@ class GoogleCalendarService
     {
         // Invalide les 12 prochaines semaines
         for ($i = 0; $i < 12; $i++) {
-            $weekKey  = now()->addWeeks($i)->format('Y-W');
+            $weekKey = now()->addWeeks($i)->format('Y-W');
             $cacheKey = "gcal_events_{$user->id}_{$weekKey}";
-            \Illuminate\Support\Facades\Cache::forget($cacheKey);
+            Cache::forget($cacheKey);
         }
     }
 
@@ -244,12 +265,12 @@ class GoogleCalendarService
     private function fetchAllCalendarEvents(User $user, \DateTime $start, \DateTime $end): array
     {
         try {
-            $token      = $this->getValidToken($user);
-            $timeMin    = (new \Carbon\Carbon($start))->toRfc3339String();
-            $timeMax    = (new \Carbon\Carbon($end))->toRfc3339String();
+            $token = $this->getValidToken($user);
+            $timeMin = (new Carbon($start))->toRfc3339String();
+            $timeMax = (new Carbon($end))->toRfc3339String();
 
             // 1. Liste des calendriers — elle aussi mise en cache 1h
-            $calendarMeta = \Illuminate\Support\Facades\Cache::remember(
+            $calendarMeta = Cache::remember(
                 "gcal_calendars_{$user->id}",
                 now()->addHour(24),
                 function () use ($token) {
@@ -261,10 +282,11 @@ class GoogleCalendarService
                     $meta = [];
                     foreach ($calList['items'] ?? [] as $cal) {
                         $meta[$cal['id']] = [
-                            'name'  => $cal['summary']         ?? $cal['id'],
+                            'name' => $cal['summary'] ?? $cal['id'],
                             'color' => $cal['backgroundColor'] ?? '#6b7280',
                         ];
                     }
+
                     return empty($meta)
                         ? ['primary' => ['name' => 'Principal', 'color' => '#6b7280']]
                         : $meta;
@@ -272,36 +294,36 @@ class GoogleCalendarService
             );
 
             // 2. Requêtes événements en parallèle via Guzzle Pool
-            $client   = new \GuzzleHttp\Client();
+            $client = new Client;
             $requests = [];
 
             foreach ($calendarMeta as $calendarId => $meta) {
-                $requests[$calendarId] = new \GuzzleHttp\Psr7\Request(
+                $requests[$calendarId] = new Request(
                     'GET',
-                    'https://www.googleapis.com/calendar/v3/calendars/' . urlencode($calendarId) . '/events'
-                        . '?' . http_build_query([
-                            'timeMin'      => $timeMin,
-                            'timeMax'      => $timeMax,
+                    'https://www.googleapis.com/calendar/v3/calendars/'.urlencode($calendarId).'/events'
+                        .'?'.http_build_query([
+                            'timeMin' => $timeMin,
+                            'timeMax' => $timeMax,
                             'singleEvents' => 'true',
-                            'orderBy'      => 'startTime',
-                            'maxResults'   => 250,
+                            'orderBy' => 'startTime',
+                            'maxResults' => 250,
                         ]),
                     [
                         'Authorization' => "Bearer {$token->access_token}",
-                        'Accept'        => 'application/json',
+                        'Accept' => 'application/json',
                     ]
                 );
             }
 
             // Exécution parallèle — toutes les requêtes partent en même temps
-            $pool = new \GuzzleHttp\Pool($client, (function () use ($requests) {
+            $pool = new Pool($client, (function () use ($requests) {
                 foreach ($requests as $calId => $request) {
                     yield $calId => $request;
                 }
             })(), [
                 'concurrency' => 6,  // 6 requêtes simultanées max
-                'fulfilled'   => function ($response, $calId) use (&$allEvents, &$seenIds, $calendarMeta) {},
-                'rejected'    => function ($reason, $calId) {},
+                'fulfilled' => function ($response, $calId) use (&$allEvents, &$seenIds) {},
+                'rejected' => function ($reason, $calId) {},
             ]);
 
             // Utilisation de Pool::promise() pour récupérer les réponses
@@ -312,32 +334,33 @@ class GoogleCalendarService
             }
 
             $allEvents = [];
-            $seenIds   = [];
-            $results   = \GuzzleHttp\Promise\Utils::settle(
-                \GuzzleHttp\Promise\Utils::unwrap($promises)
+            $seenIds = [];
+            $results = Utils::settle(
+                Utils::unwrap($promises)
             );
         } catch (\Throwable $e) {
             // settle() ne lève pas, mais unwrap() peut lever — fallback séquentiel
             Log::warning('GoogleCalendar: parallel fetch failed, falling back to sequential', [
                 'error' => $e->getMessage(),
             ]);
+
             return $this->fetchSequential($token ?? null, $calendarMeta ?? [], $timeMin ?? '', $timeMax ?? '');
         }
 
         // Traiter les réponses
         foreach ($requests as $calId => $_) {
             try {
-                $body   = $promises[$calId]->wait()->getBody()->getContents();
-                $data   = json_decode($body, true);
-                $meta   = $calendarMeta[$calId];
+                $body = $promises[$calId]->wait()->getBody()->getContents();
+                $data = json_decode($body, true);
+                $meta = $calendarMeta[$calId];
 
                 foreach ($data['items'] ?? [] as $event) {
                     if (! isset($seenIds[$event['id']])) {
-                        $event['_calendar_id']    = $calId;
-                        $event['_calendar_name']  = $meta['name'];
+                        $event['_calendar_id'] = $calId;
+                        $event['_calendar_name'] = $meta['name'];
                         $event['_calendar_color'] = $meta['color'];
-                        $allEvents[]              = $event;
-                        $seenIds[$event['id']]    = true;
+                        $allEvents[] = $event;
+                        $seenIds[$event['id']] = true;
                     }
                 }
             } catch (\Throwable) {
@@ -353,26 +376,28 @@ class GoogleCalendarService
      */
     private function fetchSequential(?GoogleToken $token, array $calendarMeta, string $timeMin, string $timeMax): array
     {
-        if (! $token) return [];
+        if (! $token) {
+            return [];
+        }
 
         $allEvents = [];
-        $seenIds   = [];
+        $seenIds = [];
 
         foreach ($calendarMeta as $calendarId => $meta) {
             try {
                 $response = $this->makeRequest(
                     'GET',
-                    'https://www.googleapis.com/calendar/v3/calendars/' . urlencode($calendarId) . '/events',
+                    'https://www.googleapis.com/calendar/v3/calendars/'.urlencode($calendarId).'/events',
                     $token,
                     ['query' => ['timeMin' => $timeMin, 'timeMax' => $timeMax, 'singleEvents' => 'true', 'orderBy' => 'startTime', 'maxResults' => 250]]
                 );
                 foreach ($response['items'] ?? [] as $event) {
                     if (! isset($seenIds[$event['id']])) {
-                        $event['_calendar_id']    = $calendarId;
-                        $event['_calendar_name']  = $meta['name'];
+                        $event['_calendar_id'] = $calendarId;
+                        $event['_calendar_name'] = $meta['name'];
                         $event['_calendar_color'] = $meta['color'];
-                        $allEvents[]              = $event;
-                        $seenIds[$event['id']]    = true;
+                        $allEvents[] = $event;
+                        $seenIds[$event['id']] = true;
                     }
                 }
             } catch (\Throwable) {
@@ -388,17 +413,17 @@ class GoogleCalendarService
     private function buildEventBody(RendezVous $rdv): array
     {
         $start = $rdv->date_heure;
-        $end   = $rdv->date_heure->copy()->addHour();
+        $end = $rdv->date_heure->copy()->addHour();
 
         $body = [
-            'summary'     => $this->buildEventTitle($rdv),
+            'summary' => $this->buildEventTitle($rdv),
             'description' => $this->buildEventDescription($rdv),
-            'start'       => ['dateTime' => $start->toRfc3339String(), 'timeZone' => config('app.timezone', 'Europe/Paris')],
-            'end'         => ['dateTime' => $end->toRfc3339String(),   'timeZone' => config('app.timezone', 'Europe/Paris')],
-            'colorId'     => $this->getGoogleColorId($rdv->type),
-            'reminders'   => [
+            'start' => ['dateTime' => $start->toRfc3339String(), 'timeZone' => config('app.timezone', 'Europe/Paris')],
+            'end' => ['dateTime' => $end->toRfc3339String(),   'timeZone' => config('app.timezone', 'Europe/Paris')],
+            'colorId' => $this->getGoogleColorId($rdv->type),
+            'reminders' => [
                 'useDefault' => false,
-                'overrides'  => [
+                'overrides' => [
                     ['method' => 'email',  'minutes' => 60],
                     ['method' => 'popup',  'minutes' => 15],
                 ],
@@ -407,7 +432,7 @@ class GoogleCalendarService
 
         // Lieu si présent
         if ($rdv->lieu || $rdv->adresse_lieu) {
-            $body['location'] = trim(($rdv->lieu ?? '') . ' ' . ($rdv->adresse_lieu ?? ''));
+            $body['location'] = trim(($rdv->lieu ?? '').' '.($rdv->adresse_lieu ?? ''));
         }
 
         // Inviter l'interlocuteur si email connu
@@ -423,7 +448,7 @@ class GoogleCalendarService
     private function buildEventTitle(RendezVous $rdv): string
     {
         $type = $rdv->type instanceof RendezVousType ? $rdv->type->value : $rdv->type;
-        $qui  = $rdv->interlocuteur_nom ?? 'Sans interlocuteur';
+        $qui = $rdv->interlocuteur_nom ?? 'Sans interlocuteur';
 
         // Nom du partenaire/prospect si disponible via relation polymorphique
         $entite = null;
@@ -440,11 +465,21 @@ class GoogleCalendarService
     {
         $lines = [];
 
-        if ($rdv->interlocuteur_nom) $lines[] = "👤 Interlocuteur : {$rdv->interlocuteur_nom}";
-        if ($rdv->interlocuteur_tel) $lines[] = "📞 Téléphone : {$rdv->interlocuteur_tel}";
-        if ($rdv->interlocuteur_email) $lines[] = "✉️ Email : {$rdv->interlocuteur_email}";
-        if ($rdv->lieu)               $lines[] = "📍 Lieu : {$rdv->lieu}";
-        if ($rdv->notes)              $lines[] = "\n📝 Notes :\n{$rdv->notes}";
+        if ($rdv->interlocuteur_nom) {
+            $lines[] = "👤 Interlocuteur : {$rdv->interlocuteur_nom}";
+        }
+        if ($rdv->interlocuteur_tel) {
+            $lines[] = "📞 Téléphone : {$rdv->interlocuteur_tel}";
+        }
+        if ($rdv->interlocuteur_email) {
+            $lines[] = "✉️ Email : {$rdv->interlocuteur_email}";
+        }
+        if ($rdv->lieu) {
+            $lines[] = "📍 Lieu : {$rdv->lieu}";
+        }
+        if ($rdv->notes) {
+            $lines[] = "\n📝 Notes :\n{$rdv->notes}";
+        }
 
         $lines[] = "\n🔗 CRM NS Conseil — RDV #{$rdv->id}";
 
@@ -460,11 +495,11 @@ class GoogleCalendarService
         $typeValue = $type instanceof RendezVousType ? $type->value : (string) $type;
 
         return match ($typeValue) {
-            'Appel'         => '7',  // Cyan (Peacock)
-            'Permanence'    => '2',  // Vert (Sage)
-            'Presentation'  => '9',  // Bleu (Blueberry)
-            'Intervention'  => '6',  // Orange (Tangerine)
-            default         => '1',  // Bleu lavande
+            'Appel' => '7',  // Cyan (Peacock)
+            'Permanence' => '2',  // Vert (Sage)
+            'Presentation' => '9',  // Bleu (Blueberry)
+            'Intervention' => '6',  // Orange (Tangerine)
+            default => '1',  // Bleu lavande
         };
     }
 
@@ -472,16 +507,16 @@ class GoogleCalendarService
 
     private function makeRequest(string $method, string $url, GoogleToken $token, array $options = []): array
     {
-        $client  = new \GuzzleHttp\Client();
-        $options  = array_merge($options, [
+        $client = new Client;
+        $options = array_merge($options, [
             'headers' => [
                 'Authorization' => "Bearer {$token->access_token}",
-                'Accept'        => 'application/json',
+                'Accept' => 'application/json',
             ],
         ]);
 
         $response = $client->request($method, $url, $options);
-        $body     = $response->getBody()->getContents();
+        $body = $response->getBody()->getContents();
 
         return $body ? json_decode($body, true) : [];
     }
