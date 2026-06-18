@@ -378,6 +378,17 @@ class ProspectResource extends Resource
                         fn (Prospect $record) => ! in_array($record->statut, [ProspectStatut::KO, ProspectStatut::QF])
                     )
                     ->action(function (Prospect $record) {
+                        $manquants = self::champsManquantsQF($record);
+                        if (! empty($manquants)) {
+                            Notification::make()
+                                ->title('Passage QF bloqué — champs manquants')
+                                ->body(implode(', ', $manquants))
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
                         $record->qualifier();
                         Notification::make()
                             ->title('Prospect qualifié QF')
@@ -390,11 +401,19 @@ class ProspectResource extends Resource
                     ->label('→ Partenaire')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->color('success')
-                    ->visible(fn (Prospect $record) => $record->statut === ProspectStatut::QF)
+                    ->visible(function (Prospect $record) {
+                        if ($record->statut !== ProspectStatut::QF) {
+                            return false;
+                        }
+                        // CDC §6 — Seul le TL (superviseur) peut convertir
+                        $user = auth()->user();
+
+                        return $user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isSuperviseur());
+                    })
                     ->action(function (Prospect $record) {
                         $record->convertirEnPartenaire();
                         Notification::make()
-                            ->title('Converti en partenaire ✓')
+                             ->title('Converti en partenaire')
                             ->success()
                             ->send();
                     })
@@ -827,6 +846,42 @@ class ProspectResource extends Resource
                     ]),
                 ]),
         ]);
+    }
+ /**
+     * WF4 — Champs obligatoires pour le passage en QF (CDC §9).
+     *
+     * @return list<string> labels des champs manquants
+     */
+    public static function champsManquantsQF(Prospect $prospect): array
+    {
+        $regles = [
+            'interlocuteur_nom' => 'Nom interlocuteur CSE',
+            'interlocuteur_telephone' => 'Tél. interlocuteur CSE',
+            'interlocuteur_email' => 'Email interlocuteur CSE',
+            'telephone' => 'Téléphone entreprise',
+            'commercial_id' => 'Commercial assigné',
+        ];
+
+        $manquants = [];
+        foreach ($regles as $champ => $label) {
+            if (empty($prospect->{$champ})) {
+                $manquants[] = $label;
+            }
+        }
+
+        // Vérifier qu'un RDV planifié existe
+        $rdvExiste = $prospect->rendezVous()
+            ->whereIn('statut', [
+                \App\Enums\RendezVousStatut::Planifie->value,
+                \App\Enums\RendezVousStatut::Decale->value,
+            ])
+            ->exists();
+
+        if (! $rdvExiste) {
+            $manquants[] = 'RDV planifié (date, heure, lieu)';
+        }
+
+        return $manquants;
     }
 
     public static function getRelations(): array

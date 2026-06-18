@@ -5,10 +5,15 @@ namespace App\Observers;
 use App\Enums\RendezVousStatut;
 use App\Models\RendezVous;
 use App\Services\GoogleCalendarService;
+use App\Models\Prospect;
+use App\Services\Aopia\RdvWorkflowService;
 
 class RendezVousObserver
 {
-    public function __construct(private GoogleCalendarService $google) {}
+    public function __construct(
+        private GoogleCalendarService $google,
+        private RdvWorkflowService $rdvWorkflow,
+    ) {}
 
     public function created(RendezVous $rdv): void
     {
@@ -17,6 +22,13 @@ class RendezVousObserver
         }
 
         $this->google->createEvent($rdv);
+        // WF1: envoi confirmation au CSE si RDV lié à un prospect
+        if ($rdv->statut === RendezVousStatut::Planifie
+            && $rdv->rdvable_type === Prospect::class
+            && ! $rdv->email_confirmation_envoye
+        ) {
+            rescue(fn () => $this->rdvWorkflow->envoyerConfirmationCse($rdv));
+        }
         $this->clearCache($rdv);
     }
 

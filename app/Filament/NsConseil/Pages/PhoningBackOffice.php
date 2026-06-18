@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Cache;
 
 class PhoningBackOffice extends Page
 {
-    use HasRoleAccess;
+       use \App\Filament\NsConseil\Concerns\HasRoleAccess;
 
     protected static ?string $navigationIcon = 'heroicon-o-queue-list';
 

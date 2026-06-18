@@ -12,7 +12,7 @@ use Filament\Pages\Page;
 
 class AircallDashboard extends Page
 {
-    use HasRoleAccess;
+     use \App\Filament\NsConseil\Concerns\HasRoleAccess;
 
     protected static ?string $navigationIcon = 'heroicon-o-phone';
 
