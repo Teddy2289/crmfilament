@@ -37,8 +37,8 @@ return new class extends Migration
             }
         });
 
-        // Corriger replicable VARCHAR→TEXT si déjà créée en string
-        if (Schema::hasColumn('partenaires', 'replicable')) {
+         // Corriger replicable VARCHAR→TEXT si déjà créée en string (MySQL only)
+        if (Schema::hasColumn('partenaires', 'replicable') && DB::getDriverName() !== 'sqlite') {
             DB::statement('ALTER TABLE partenaires MODIFY COLUMN replicable TEXT NULL');
         }
     }
