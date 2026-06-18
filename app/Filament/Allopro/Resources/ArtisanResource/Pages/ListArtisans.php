@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\ArtisanResource\Pages;
 
 use App\Filament\Allopro\Resources\ArtisanResource;
@@ -29,20 +30,20 @@ class ListArtisans extends ListRecords
             'actifs' => Tab::make('Actifs')
                 ->badge(Artisan::actifs()->count())
                 ->badgeColor('success')
-                ->modifyQueryUsing(fn($q) => $q->actifs()),
+                ->modifyQueryUsing(fn ($q) => $q->actifs()),
 
             'en_attente' => Tab::make('En attente')
                 ->badge(Artisan::enAttente()->count())
                 ->badgeColor('warning')
-                ->modifyQueryUsing(fn($q) => $q->enAttente()),
+                ->modifyQueryUsing(fn ($q) => $q->enAttente()),
 
             'suspendus' => Tab::make('Suspendus')
                 ->badge(Artisan::suspendus()->count())
                 ->badgeColor('danger')
-                ->modifyQueryUsing(fn($q) => $q->suspendus()),
+                ->modifyQueryUsing(fn ($q) => $q->suspendus()),
 
             'sans_agenda' => Tab::make('Sans agenda')
-                ->modifyQueryUsing(fn($q) => $q->where('agenda_disponibilites', false)->actifs()),
+                ->modifyQueryUsing(fn ($q) => $q->where('agenda_disponibilites', false)->actifs()),
         ];
     }
 }

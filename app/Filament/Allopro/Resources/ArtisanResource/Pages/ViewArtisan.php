@@ -1,10 +1,10 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\ArtisanResource\Pages;
 
 use App\Filament\Allopro\Resources\ArtisanResource;
-use App\Models\Artisan;
 use Filament\Actions;
-use Filament\Infolists\Components\Grid;
+use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -23,7 +23,7 @@ class ViewArtisan extends ViewRecord
                 ->label('Activer')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn() => $this->record->estEnAttente())
+                ->visible(fn () => $this->record->estEnAttente())
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->record->activer();
@@ -35,9 +35,9 @@ class ViewArtisan extends ViewRecord
                 ->label('Suspendre')
                 ->icon('heroicon-o-pause-circle')
                 ->color('danger')
-                ->visible(fn() => $this->record->estActif())
+                ->visible(fn () => $this->record->estActif())
                 ->form([
-                    \Filament\Forms\Components\Textarea::make('motif')
+                    Textarea::make('motif')
                         ->label('Motif')
                         ->required(),
                 ])
@@ -80,9 +80,9 @@ class ViewArtisan extends ViewRecord
                 ->schema([
                     TextEntry::make('corps_de_metier')
                         ->label('Métier')
-                        ->formatStateUsing(fn($state) => $state->label())
+                        ->formatStateUsing(fn ($state) => $state->label())
                         ->badge()
-                        ->color(fn($state) => $state->color()),
+                        ->color(fn ($state) => $state->color()),
 
                     TextEntry::make('telephone_principal')
                         ->label('Téléphone principal')
@@ -96,7 +96,7 @@ class ViewArtisan extends ViewRecord
 
                     TextEntry::make('canal_alerte')
                         ->label('Canal d\'alerte')
-                        ->formatStateUsing(fn($state) => $state->label())
+                        ->formatStateUsing(fn ($state) => $state->label())
                         ->badge(),
 
                     TextEntry::make('zone_intervention')
@@ -110,9 +110,9 @@ class ViewArtisan extends ViewRecord
                 ->schema([
                     TextEntry::make('statut_compte')
                         ->label('Statut')
-                        ->formatStateUsing(fn($state) => $state->label())
+                        ->formatStateUsing(fn ($state) => $state->label())
                         ->badge()
-                        ->color(fn($state) => $state->color()),
+                        ->color(fn ($state) => $state->color()),
 
                     IconEntry::make('agenda_disponibilites')
                         ->label('Agenda configuré')
@@ -124,13 +124,13 @@ class ViewArtisan extends ViewRecord
 
                     TextEntry::make('note_moyenne')
                         ->label('Note moyenne')
-                        ->formatStateUsing(fn($state) => $state ? number_format($state, 1) . ' / 10' : '—')
+                        ->formatStateUsing(fn ($state) => $state ? number_format($state, 1).' / 10' : '—')
                         ->badge()
-                        ->color(fn($state) => match(true) {
-                            $state >= 8  => 'success',
-                            $state >= 6  => 'warning',
+                        ->color(fn ($state) => match (true) {
+                            $state >= 8 => 'success',
+                            $state >= 6 => 'warning',
                             $state !== null => 'danger',
-                            default      => 'gray',
+                            default => 'gray',
                         }),
 
                     TextEntry::make('date_souscription')
@@ -145,7 +145,7 @@ class ViewArtisan extends ViewRecord
                     TextEntry::make('priorite_segment')
                         ->label('Priorité segment')
                         ->badge()
-                        ->color(fn($state) => $state === 'Haute' ? 'danger' : 'gray'),
+                        ->color(fn ($state) => $state === 'Haute' ? 'danger' : 'gray'),
                 ]),
 
             Section::make('Notes internes')

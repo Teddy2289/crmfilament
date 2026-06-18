@@ -2,6 +2,7 @@
 
 namespace App\Filament\SuperAdmin\Pages;
 
+use App\Models\FieldVisibility;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -11,35 +12,50 @@ use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class DatabaseManager extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-circle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
+
     protected static ?string $navigationLabel = 'Gestionnaire BDD';
+
     protected static ?string $navigationGroup = 'Base de données';
-    protected static ?int    $navigationSort  = 1;
-    protected static string  $view            = 'filament.super-admin.pages.database-manager';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static string $view = 'filament.super-admin.pages.database-manager';
 
     // ── État de la page ──────────────────────────────────────────
-    public ?string $selectedTable    = null;
-    public array   $tableData        = [];
-    public array   $tableColumns     = [];
-    public int     $currentPage      = 1;
-    public int     $perPage          = 25;
-    public int     $totalRows        = 0;
-    public ?string $searchQuery      = null;
-    public string  $activeTab        = 'data'; // data | structure | sql
-    public string  $sqlQuery         = '';
-    public ?string $sqlResult        = null;
-    public bool    $sqlError         = false;
+    public ?string $selectedTable = null;
+
+    public array $tableData = [];
+
+    public array $tableColumns = [];
+
+    public int $currentPage = 1;
+
+    public int $perPage = 25;
+
+    public int $totalRows = 0;
+
+    public ?string $searchQuery = null;
+
+    public string $activeTab = 'data'; // data | structure | sql
+
+    public string $sqlQuery = '';
+
+    public ?string $sqlResult = null;
+
+    public bool $sqlError = false;
 
     // ── Tables disponibles ───────────────────────────────────────
     public function getTables(): array
     {
         return collect(DB::select('SHOW TABLES'))
-            ->map(fn($t) => array_values((array)$t)[0])
+            ->map(fn ($t) => array_values((array) $t)[0])
             ->sort()
             ->values()
             ->toArray();
@@ -48,9 +64,9 @@ class DatabaseManager extends Page implements HasForms
     public function selectTable(string $table): void
     {
         $this->selectedTable = $table;
-        $this->currentPage   = 1;
-        $this->searchQuery   = null;
-        $this->activeTab     = 'structure';
+        $this->currentPage = 1;
+        $this->searchQuery = null;
+        $this->activeTab = 'structure';
         $this->loadTableData();
         $this->loadTableStructure();
     }
@@ -58,7 +74,9 @@ class DatabaseManager extends Page implements HasForms
     // ── Chargement des données ───────────────────────────────────
     public function loadTableData(): void
     {
-        if (!$this->selectedTable) return;
+        if (! $this->selectedTable) {
+            return;
+        }
 
         $query = DB::table($this->selectedTable);
 
@@ -66,25 +84,27 @@ class DatabaseManager extends Page implements HasForms
             $columns = Schema::getColumnListing($this->selectedTable);
             $query->where(function ($q) use ($columns) {
                 foreach ($columns as $col) {
-                    $q->orWhere($col, 'LIKE', '%' . $this->searchQuery . '%');
+                    $q->orWhere($col, 'LIKE', '%'.$this->searchQuery.'%');
                 }
             });
         }
 
         $this->totalRows = $query->count();
-        $offset          = ($this->currentPage - 1) * $this->perPage;
+        $offset = ($this->currentPage - 1) * $this->perPage;
 
         $this->tableData = $query
             ->offset($offset)
             ->limit($this->perPage)
             ->get()
-            ->map(fn($row) => (array) $row)
+            ->map(fn ($row) => (array) $row)
             ->toArray();
     }
 
     public function loadTableStructure(): void
     {
-        if (!$this->selectedTable) return;
+        if (! $this->selectedTable) {
+            return;
+        }
 
         $this->tableColumns = DB::select("DESCRIBE `{$this->selectedTable}`");
     }
@@ -120,7 +140,7 @@ class DatabaseManager extends Page implements HasForms
             ->label('Ajouter une colonne')
             ->icon('heroicon-o-plus')
             ->color('success')
-            ->visible(fn() => $this->selectedTable !== null)
+            ->visible(fn () => $this->selectedTable !== null)
             ->form([
                 Forms\Components\Grid::make(2)->schema([
                     Forms\Components\TextInput::make('column_name')
@@ -132,25 +152,25 @@ class DatabaseManager extends Page implements HasForms
                     Forms\Components\Select::make('column_type')
                         ->label('Type')
                         ->options([
-                            'VARCHAR(255)'  => 'VARCHAR(255) — Texte court',
-                            'TEXT'          => 'TEXT — Texte long',
-                            'LONGTEXT'      => 'LONGTEXT — Texte très long',
-                            'INT'           => 'INT — Entier',
-                            'BIGINT'        => 'BIGINT — Grand entier',
+                            'VARCHAR(255)' => 'VARCHAR(255) — Texte court',
+                            'TEXT' => 'TEXT — Texte long',
+                            'LONGTEXT' => 'LONGTEXT — Texte très long',
+                            'INT' => 'INT — Entier',
+                            'BIGINT' => 'BIGINT — Grand entier',
                             'DECIMAL(10,2)' => 'DECIMAL(10,2) — Décimal',
-                            'FLOAT'         => 'FLOAT — Flottant',
-                            'BOOLEAN'       => 'BOOLEAN — Booléen',
-                            'DATE'          => 'DATE — Date',
-                            'DATETIME'      => 'DATETIME — Date + heure',
-                            'TIMESTAMP'     => 'TIMESTAMP — Horodatage',
-                            'JSON'          => 'JSON — Données JSON',
-                            'ENUM'          => 'ENUM — Valeurs fixes (voir ci-dessous)',
+                            'FLOAT' => 'FLOAT — Flottant',
+                            'BOOLEAN' => 'BOOLEAN — Booléen',
+                            'DATE' => 'DATE — Date',
+                            'DATETIME' => 'DATETIME — Date + heure',
+                            'TIMESTAMP' => 'TIMESTAMP — Horodatage',
+                            'JSON' => 'JSON — Données JSON',
+                            'ENUM' => 'ENUM — Valeurs fixes (voir ci-dessous)',
                         ])
                         ->required()->native(false),
 
                     Forms\Components\TextInput::make('enum_values')
                         ->label('Valeurs ENUM (séparées par virgule)')
-                        ->helperText("Ex: valeur1,valeur2,valeur3 — uniquement si type ENUM")
+                        ->helperText('Ex: valeur1,valeur2,valeur3 — uniquement si type ENUM')
                         ->nullable(),
 
                     Forms\Components\Toggle::make('nullable')
@@ -169,21 +189,21 @@ class DatabaseManager extends Page implements HasForms
             ])
             ->action(function (array $data) {
                 try {
-                    $table  = $this->selectedTable;
-                    $col    = $data['column_name'];
-                    $type   = $data['column_type'];
-                    $null   = $data['nullable'] ? 'NULL' : 'NOT NULL';
-                    $after  = $data['after_column'] ? "AFTER `{$data['after_column']}`" : '';
+                    $table = $this->selectedTable;
+                    $col = $data['column_name'];
+                    $type = $data['column_type'];
+                    $null = $data['nullable'] ? 'NULL' : 'NOT NULL';
+                    $after = $data['after_column'] ? "AFTER `{$data['after_column']}`" : '';
 
-                    if ($type === 'ENUM' && !empty($data['enum_values'])) {
+                    if ($type === 'ENUM' && ! empty($data['enum_values'])) {
                         $vals = collect(explode(',', $data['enum_values']))
-                            ->map(fn($v) => "'" . trim($v) . "'")
+                            ->map(fn ($v) => "'".trim($v)."'")
                             ->join(',');
                         $type = "ENUM($vals)";
                     }
 
                     $default = $data['default_value'] !== null
-                        ? "DEFAULT '" . addslashes($data['default_value']) . "'"
+                        ? "DEFAULT '".addslashes($data['default_value'])."'"
                         : '';
 
                     DB::statement("ALTER TABLE `$table` ADD COLUMN `$col` $type $null $default $after");
@@ -212,6 +232,7 @@ class DatabaseManager extends Page implements HasForms
                 ->title('Colonne protégée')
                 ->body("La colonne `$column` ne peut pas être supprimée.")
                 ->danger()->send();
+
             return;
         }
 
@@ -232,15 +253,15 @@ class DatabaseManager extends Page implements HasForms
             ->label('Modifier colonne')
             ->icon('heroicon-o-pencil')
             ->color('warning')
-            ->visible(fn() => $this->selectedTable !== null)
+            ->visible(fn () => $this->selectedTable !== null)
             ->form([
                 Forms\Components\Grid::make(2)->schema([
                     Forms\Components\Select::make('column_name')
                         ->label('Colonne à modifier')
                         ->options(
-                            fn() => $this->selectedTable
+                            fn () => $this->selectedTable
                                 ? collect(Schema::getColumnListing($this->selectedTable))
-                                ->mapWithKeys(fn($c) => [$c => $c])->toArray()
+                                    ->mapWithKeys(fn ($c) => [$c => $c])->toArray()
                                 : []
                         )
                         ->required()->native(false),
@@ -248,18 +269,18 @@ class DatabaseManager extends Page implements HasForms
                     Forms\Components\Select::make('new_type')
                         ->label('Nouveau type')
                         ->options([
-                            'VARCHAR(255)'  => 'VARCHAR(255)',
-                            'VARCHAR(500)'  => 'VARCHAR(500)',
-                            'TEXT'          => 'TEXT',
-                            'LONGTEXT'      => 'LONGTEXT',
-                            'INT'           => 'INT',
-                            'BIGINT'        => 'BIGINT',
+                            'VARCHAR(255)' => 'VARCHAR(255)',
+                            'VARCHAR(500)' => 'VARCHAR(500)',
+                            'TEXT' => 'TEXT',
+                            'LONGTEXT' => 'LONGTEXT',
+                            'INT' => 'INT',
+                            'BIGINT' => 'BIGINT',
                             'DECIMAL(10,2)' => 'DECIMAL(10,2)',
                             'DECIMAL(15,2)' => 'DECIMAL(15,2)',
-                            'BOOLEAN'       => 'BOOLEAN',
-                            'DATE'          => 'DATE',
-                            'DATETIME'      => 'DATETIME',
-                            'JSON'          => 'JSON',
+                            'BOOLEAN' => 'BOOLEAN',
+                            'DATE' => 'DATE',
+                            'DATETIME' => 'DATETIME',
+                            'JSON' => 'JSON',
                         ])
                         ->required()->native(false),
 
@@ -305,7 +326,7 @@ class DatabaseManager extends Page implements HasForms
             ])
             ->action(function (array $data) {
                 try {
-                    $name       = $data['table_name'];
+                    $name = $data['table_name'];
                     $timestamps = $data['with_timestamps']
                         ? '`created_at` TIMESTAMP NULL, `updated_at` TIMESTAMP NULL,'
                         : '';
@@ -337,6 +358,7 @@ class DatabaseManager extends Page implements HasForms
                 ->title('Table protégée')
                 ->body("La table `$table` est protégée et ne peut pas être supprimée.")
                 ->danger()->send();
+
             return;
         }
 
@@ -344,8 +366,8 @@ class DatabaseManager extends Page implements HasForms
             DB::statement("DROP TABLE IF EXISTS `$table`");
             if ($this->selectedTable === $table) {
                 $this->selectedTable = null;
-                $this->tableData     = [];
-                $this->tableColumns  = [];
+                $this->tableData = [];
+                $this->tableColumns = [];
             }
             Notification::make()->title("Table `$table` supprimée")->warning()->send();
         } catch (\Exception $e) {
@@ -356,14 +378,17 @@ class DatabaseManager extends Page implements HasForms
     // ── Exécuter SQL libre ───────────────────────────────────────
     public function executeSql(): void
     {
-        if (empty(trim($this->sqlQuery))) return;
+        if (empty(trim($this->sqlQuery))) {
+            return;
+        }
 
         // Sécurité : interdire certaines commandes destructives sans confirmation
         $dangerous = ['DROP DATABASE', 'TRUNCATE', 'DROP TABLE users', 'DELETE FROM users'];
         foreach ($dangerous as $cmd) {
             if (Str::contains(strtoupper($this->sqlQuery), strtoupper($cmd))) {
                 $this->sqlResult = "⚠️ Commande refusée : `$cmd` est interdite dans l'éditeur SQL libre.";
-                $this->sqlError  = true;
+                $this->sqlError = true;
+
                 return;
             }
         }
@@ -372,13 +397,13 @@ class DatabaseManager extends Page implements HasForms
             $isSelect = Str::startsWith(strtoupper(trim($this->sqlQuery)), 'SELECT');
 
             if ($isSelect) {
-                $results          = DB::select($this->sqlQuery);
-                $this->sqlResult  = json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-                $this->sqlError   = false;
+                $results = DB::select($this->sqlQuery);
+                $this->sqlResult = json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                $this->sqlError = false;
             } else {
-                $affected         = DB::statement($this->sqlQuery);
-                $this->sqlResult  = "✅ Requête exécutée avec succès.";
-                $this->sqlError   = false;
+                $affected = DB::statement($this->sqlQuery);
+                $this->sqlResult = '✅ Requête exécutée avec succès.';
+                $this->sqlError = false;
 
                 if ($this->selectedTable) {
                     $this->loadTableData();
@@ -386,8 +411,8 @@ class DatabaseManager extends Page implements HasForms
                 }
             }
         } catch (\Exception $e) {
-            $this->sqlResult = "❌ Erreur : " . $e->getMessage();
-            $this->sqlError  = true;
+            $this->sqlResult = '❌ Erreur : '.$e->getMessage();
+            $this->sqlError = true;
         }
     }
 
@@ -423,16 +448,15 @@ class DatabaseManager extends Page implements HasForms
         ];
     }
 
-
     public function getManageVisibilityAction(): Action
     {
         return Action::make('manage_visibility')
             ->label('Visibilité par rôle')
             ->icon('heroicon-o-eye')
             ->color('info')
-            ->visible(fn() => $this->selectedTable !== null)
+            ->visible(fn () => $this->selectedTable !== null)
             ->form(function () {
-                $roles = \Spatie\Permission\Models\Role::pluck('name')->toArray();
+                $roles = Role::pluck('name')->toArray();
                 $columns = collect($this->tableColumns)->pluck('Field')->toArray();
 
                 $schema = [];
@@ -447,8 +471,7 @@ class DatabaseManager extends Page implements HasForms
                                     // Par défaut : tous les rôles voient le champ
                                     return collect($roles)
                                         ->filter(
-                                            fn($role) =>
-                                            \App\Models\FieldVisibility::isVisible(
+                                            fn ($role) => FieldVisibility::isVisible(
                                                 $this->selectedTable,
                                                 $col,
                                                 $role
@@ -461,21 +484,22 @@ class DatabaseManager extends Page implements HasForms
                                 ->gridDirection('row'),
                         ]);
                 }
+
                 return $schema;
             })
             ->action(function (array $data) {
-                $roles = \Spatie\Permission\Models\Role::pluck('name')->toArray();
+                $roles = Role::pluck('name')->toArray();
                 $columns = collect($this->tableColumns)->pluck('Field')->toArray();
 
                 foreach ($columns as $col) {
                     $visibleRoles = $data["visibility_{$col}"] ?? [];
 
                     foreach ($roles as $role) {
-                        \App\Models\FieldVisibility::updateOrCreate(
+                        FieldVisibility::updateOrCreate(
                             [
-                                'table_name'  => $this->selectedTable,
+                                'table_name' => $this->selectedTable,
                                 'column_name' => $col,
-                                'role_name'   => $role,
+                                'role_name' => $role,
                             ],
                             ['visible' => in_array($role, $visibleRoles)]
                         );

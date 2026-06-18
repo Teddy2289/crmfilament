@@ -1,10 +1,11 @@
 <?php
+
 // ── app/Filament/NsConseil/Resources/RendezVousResource/Pages/ViewRendezVous.php
 
 namespace App\Filament\NsConseil\Resources\RendezVousResource\Pages;
 
 use App\Filament\NsConseil\Resources\RendezVousResource;
-use App\Models\RendezVous;
+use App\Services\GoogleCalendarService;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -21,9 +22,9 @@ class ViewRendezVous extends ViewRecord
                 ->label('Sync Google Calendar')
                 ->icon('heroicon-o-arrow-path')
                 ->color('success')
-                ->visible(fn() => ! $this->record->google_event_id)
+                ->visible(fn () => ! $this->record->google_event_id)
                 ->action(function () {
-                    app(\App\Services\GoogleCalendarService::class)->createEvent($this->record);
+                    app(GoogleCalendarService::class)->createEvent($this->record);
                     $this->refreshFormData(['google_event_id']);
                 }),
 

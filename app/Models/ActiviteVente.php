@@ -23,9 +23,9 @@ class ActiviteVente extends Model
 
     protected $casts = [
         'nombre_ventes_total' => 'integer',
-        'ventes_2025'         => 'integer',
-        'ventes_2026'         => 'integer',
-        'derniere_vente'      => 'date',
+        'ventes_2025' => 'integer',
+        'ventes_2026' => 'integer',
+        'derniere_vente' => 'date',
     ];
 
     public function partenaire()

@@ -1,9 +1,10 @@
 <?php
+
 namespace App\Filament\NsConseil\Resources;
 
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
-use App\Filament\NsConseil\Resources\PartenaireResource\Actions\ImportPartenairesAction;
+use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 use App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
@@ -12,6 +13,7 @@ use App\Models\Partenaire;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -21,11 +23,22 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PartenaireResource extends Resource
 {
-    protected static ?string $model           = Partenaire::class;
-    protected static ?string $navigationIcon  = 'heroicon-o-building-office-2';
+    use HasRoleAccess;
+
+    protected static ?string $model = Partenaire::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+
     protected static ?string $navigationGroup = 'Pipeline';
+
     protected static ?string $navigationLabel = 'Partenaires';
-    protected static ?int    $navigationSort  = 1;
+
+    protected static ?int $navigationSort = 1;
+
+    public static function canAccess(): bool
+    {
+        return static::userHasAnyRole(['admin', 'superviseur', 'commercial']);
+    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -48,6 +61,40 @@ class PartenaireResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('nom')
                         ->label('Nom légal')->required()->maxLength(255)->columnSpan(2),
+                    Forms\Components\TextInput::make('entreprise')
+                        ->label('Entreprise')->maxLength(255)
+                        ->helperText('Raison sociale — utilisée pour la nomenclature')
+                        ->live(onBlur: true),
+                    Forms\Components\TextInput::make('nom_retenu')
+                        ->label('Nom retenu (nomenclature)')
+                        ->maxLength(255)
+                        ->columnSpan(2)
+                        ->helperText('Nomenclature imposée : [Type] [Entreprise] [Ville]')
+                        ->rules([
+                            function (Get $get) {
+                                return function (string $attribute, $value, callable $fail) use ($get) {
+                                    $type = $get('type');
+                                    $entreprise = $get('entreprise');
+                                    $ville = $get('ville');
+
+                                    if (filled($value) && filled($type) && filled($entreprise) && filled($ville)) {
+                                        $expected = Partenaire::genererNomenclature($type, $entreprise, $ville);
+                                        if ($value !== $expected) {
+                                            $fail('La nomenclature doit suivre le format : [Type] [Entreprise] [Ville]. Utilisez le bouton "Générer" pour créer la nomenclature correcte.');
+                                        }
+                                    }
+                                };
+                            },
+                        ])
+                        ->hintAction(
+                            Forms\Components\Actions\Action::make('genererNomenclature')
+                                ->label('Générer')
+                                ->icon('heroicon-m-sparkles')
+                                ->action(fn (Get $get, Set $set) => $set(
+                                    'nom_retenu',
+                                    Partenaire::genererNomenclature($get('type'), $get('entreprise'), $get('ville'))
+                                ))
+                        ),
                     Forms\Components\TextInput::make('siret')
                         ->label('SIRET')->maxLength(14)->minLength(14)
                         ->placeholder('14 chiffres exactement')
@@ -62,13 +109,13 @@ class PartenaireResource extends Resource
                     Forms\Components\Select::make('nomenclature_interne')
                         ->label('Nomenclature interne')
                         ->options([
-                            'CSE_PME'       => 'CSE PME (< 50 salariés)',
-                            'CSE_ETI'       => 'CSE ETI (50–299 salariés)',
-                            'CSE_GE'        => 'CSE Grande entreprise (300+)',
-                            'SYND_BRANCHE'  => 'Syndicat de branche',
+                            'CSE_PME' => 'CSE PME (< 50 salariés)',
+                            'CSE_ETI' => 'CSE ETI (50–299 salariés)',
+                            'CSE_GE' => 'CSE Grande entreprise (300+)',
+                            'SYND_BRANCHE' => 'Syndicat de branche',
                             'SYND_INTERPRO' => 'Syndicat interprofessionnel',
-                            'ENT_DIRECTE'   => 'Entreprise directe',
-                            'ASSOC'         => 'Association',
+                            'ENT_DIRECTE' => 'Entreprise directe',
+                            'ASSOC' => 'Association',
                         ])
                         ->searchable()->nullable(),
                     Forms\Components\TextInput::make('departement')
@@ -101,9 +148,9 @@ class PartenaireResource extends Resource
                     Forms\Components\Select::make('conseiller_id')
                         ->label('Conseiller assigné')
                         ->options(
-                            fn() => Consultant::orderBy('nom')
+                            fn () => Consultant::orderBy('nom')
                                 ->get()
-                                ->mapWithKeys(fn(Consultant $c) => [
+                                ->mapWithKeys(fn (Consultant $c) => [
                                     $c->id => trim("{$c->prenom} {$c->nom}"),
                                 ])
                                 ->toArray()
@@ -117,11 +164,11 @@ class PartenaireResource extends Resource
                     Forms\Components\Select::make('origine_contact')
                         ->label('Origine du contact')
                         ->options([
-                            'Salon'      => 'Salon',
+                            'Salon' => 'Salon',
                             'Démarchage' => 'Démarchage',
                             'Parrainage' => 'Parrainage',
-                            'Réseau'     => 'Réseau',
-                            'Autre'      => 'Autre',
+                            'Réseau' => 'Réseau',
+                            'Autre' => 'Autre',
                         ]),
                     Forms\Components\TextInput::make('parrain_marraine_texte')
                         ->label('Parrain / Marraine'),
@@ -169,7 +216,7 @@ class PartenaireResource extends Resource
                     Forms\Components\Textarea::make('cse_notes')->label('Notes CSE')->rows(2)->columnSpanFull(),
                 ])
                 ->columns(2)->collapsible()->collapsed()
-                ->visible(fn(Get $get) => $get('type') === OrganizationType::CSE->value),
+                ->visible(fn (Get $get) => $get('type') === OrganizationType::CSE->value),
 
             Forms\Components\Section::make('Informations syndicales')
                 ->icon('heroicon-o-users')
@@ -188,7 +235,7 @@ class PartenaireResource extends Resource
                     Forms\Components\Textarea::make('syndicat_notes')->label('Notes syndicat')->rows(2),
                 ])
                 ->columns(3)->collapsible()->collapsed()
-                ->visible(fn(Get $get) => $get('type') === OrganizationType::Syndicat->value),
+                ->visible(fn (Get $get) => $get('type') === OrganizationType::Syndicat->value),
 
             Forms\Components\Section::make('Dirigeant')
                 ->icon('heroicon-o-user')
@@ -224,16 +271,16 @@ class PartenaireResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')->badge()
                     ->formatStateUsing(
-                        fn($state) => $state instanceof OrganizationType
+                        fn ($state) => $state instanceof OrganizationType
                             ? $state->value
                             : OrganizationType::tryFrom((string) $state)?->value ?? $state
                     )
-                    ->color(fn($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
-                        OrganizationType::CSE               => 'primary',
-                        OrganizationType::Syndicat          => 'warning',
+                    ->color(fn ($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
+                        OrganizationType::CSE => 'primary',
+                        OrganizationType::Syndicat => 'warning',
                         OrganizationType::EntrepriseDirecte => 'info',
-                        OrganizationType::Association       => 'success',
-                        default                             => 'gray',
+                        OrganizationType::Association => 'success',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('departement')
@@ -242,33 +289,33 @@ class PartenaireResource extends Resource
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')->badge()
                     ->formatStateUsing(
-                        fn($state) => $state instanceof OrganizationStatus
+                        fn ($state) => $state instanceof OrganizationStatus
                             ? $state->label()
                             : OrganizationStatus::tryFrom((string) $state)?->label() ?? $state
                     )
-                    ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
-                        OrganizationStatus::AProspecter          => 'gray',
-                        OrganizationStatus::EnCoursProspection   => 'blue',
-                        OrganizationStatus::RdvEnCours           => 'warning',
-                        OrganizationStatus::SigneAccordCadre     => 'success',
+                    ->color(fn ($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
+                        OrganizationStatus::AProspecter => 'gray',
+                        OrganizationStatus::EnCoursProspection => 'blue',
+                        OrganizationStatus::RdvEnCours => 'warning',
+                        OrganizationStatus::SigneAccordCadre => 'success',
                         OrganizationStatus::ConventionEngagement => 'success',
-                        OrganizationStatus::Refus                => 'danger',
-                        default                                  => 'gray',
+                        OrganizationStatus::Refus => 'danger',
+                        default => 'gray',
                     })
-                    ->icon(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
-                        OrganizationStatus::AProspecter          => 'heroicon-o-queue-list',
-                        OrganizationStatus::EnCoursProspection   => 'heroicon-o-phone',
-                        OrganizationStatus::RdvEnCours           => 'heroicon-o-calendar',
-                        OrganizationStatus::SigneAccordCadre     => 'heroicon-o-document-check',
+                    ->icon(fn ($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
+                        OrganizationStatus::AProspecter => 'heroicon-o-queue-list',
+                        OrganizationStatus::EnCoursProspection => 'heroicon-o-phone',
+                        OrganizationStatus::RdvEnCours => 'heroicon-o-calendar',
+                        OrganizationStatus::SigneAccordCadre => 'heroicon-o-document-check',
                         OrganizationStatus::ConventionEngagement => 'heroicon-o-check-badge',
-                        OrganizationStatus::Refus                => 'heroicon-o-x-circle',
-                        default                                  => null,
+                        OrganizationStatus::Refus => 'heroicon-o-x-circle',
+                        default => null,
                     }),
 
                 // CORRECTIF : conseiller (Consultant) au lieu de commercial (User)
                 Tables\Columns\TextColumn::make('conseiller.nom')
                     ->label('Conseiller')->sortable()
-                    ->getStateUsing(fn($record) => $record->conseiller
+                    ->getStateUsing(fn ($record) => $record->conseiller
                         ? trim("{$record->conseiller->prenom} {$record->conseiller->nom}") : '—'),
 
                 Tables\Columns\TextColumn::make('date_signature')
@@ -276,7 +323,7 @@ class PartenaireResource extends Resource
 
                 Tables\Columns\TextColumn::make('date_modification_statut')
                     ->label('Modifié le')->dateTime('d/m/Y')->sortable()
-                    ->description(fn($record) => $record->statut === OrganizationStatus::RdvEnCours
+                    ->description(fn ($record) => $record->statut === OrganizationStatus::RdvEnCours
                         && $record->date_modification_statut?->lt(now()->subDays(80))
                         ? '⚠️ Approche 90j' : null),
             ])
@@ -290,9 +337,9 @@ class PartenaireResource extends Resource
                 Tables\Filters\SelectFilter::make('conseiller_id')
                     ->label('Conseiller')
                     ->options(
-                        fn() => Consultant::orderBy('nom')
+                        fn () => Consultant::orderBy('nom')
                             ->get()
-                            ->mapWithKeys(fn(Consultant $c) => [
+                            ->mapWithKeys(fn (Consultant $c) => [
                                 $c->id => trim("{$c->prenom} {$c->nom}"),
                             ])
                             ->toArray()
@@ -300,7 +347,7 @@ class PartenaireResource extends Resource
                     ->searchable(),
 
                 Tables\Filters\SelectFilter::make('departement')
-                    ->options(fn() => Partenaire::distinct()->pluck('departement', 'departement')->filter()->sort())
+                    ->options(fn () => Partenaire::distinct()->pluck('departement', 'departement')->filter()->sort())
                     ->label('Département')->searchable(),
 
                 Tables\Filters\Filter::make('rdv_90_jours')
@@ -338,7 +385,7 @@ class PartenaireResource extends Resource
                         Forms\Components\Textarea::make('commentaire')
                             ->label('Commentaire (optionnel)')->rows(2),
                     ])
-                    ->action(fn(Partenaire $record, array $data) => $record->changerStatut(
+                    ->action(fn (Partenaire $record, array $data) => $record->changerStatut(
                         OrganizationStatus::from($data['statut'])
                     ))
                     ->modalHeading('Changer le statut du partenaire')
@@ -355,16 +402,16 @@ class PartenaireResource extends Resource
                             Forms\Components\Select::make('conseiller_id')
                                 ->label('Conseiller')
                                 ->options(
-                                    fn() => Consultant::orderBy('nom')
+                                    fn () => Consultant::orderBy('nom')
                                         ->get()
-                                        ->mapWithKeys(fn(Consultant $c) => [
+                                        ->mapWithKeys(fn (Consultant $c) => [
                                             $c->id => trim("{$c->prenom} {$c->nom}"),
                                         ])
                                         ->toArray()
                                 )
                                 ->required(),
                         ])
-                        ->action(fn($records, array $data) => $records->each->update($data))
+                        ->action(fn ($records, array $data) => $records->each->update($data))
                         ->deselectRecordsAfterCompletion(),
                     Tables\Actions\BulkAction::make('changer_statut_bulk')
                         ->label('Changer le statut')->icon('heroicon-o-arrow-path')
@@ -372,7 +419,7 @@ class PartenaireResource extends Resource
                             Forms\Components\Select::make('statut')
                                 ->options(OrganizationStatus::class)->required(),
                         ])
-                        ->action(fn($records, array $data) => $records->each->update(['statut' => $data['statut']]))
+                        ->action(fn ($records, array $data) => $records->each->update(['statut' => $data['statut']]))
                         ->deselectRecordsAfterCompletion(),
                     Tables\Actions\RestoreBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
@@ -425,48 +472,48 @@ class PartenaireResource extends Resource
                             ->label('Type')
                             ->badge()
                             ->formatStateUsing(
-                                fn($state) => $state instanceof OrganizationType
+                                fn ($state) => $state instanceof OrganizationType
                                     ? $state->value
                                     : OrganizationType::tryFrom((string) $state)?->value ?? $state
                             )
-                            ->color(fn($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
-                                OrganizationType::CSE               => 'primary',
-                                OrganizationType::Syndicat          => 'warning',
+                            ->color(fn ($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
+                                OrganizationType::CSE => 'primary',
+                                OrganizationType::Syndicat => 'warning',
                                 OrganizationType::EntrepriseDirecte => 'info',
-                                OrganizationType::Association       => 'success',
-                                default                             => 'gray',
+                                OrganizationType::Association => 'success',
+                                default => 'gray',
                             }),
 
                         Infolists\Components\TextEntry::make('statut')
                             ->label('Statut')
                             ->badge()
                             ->formatStateUsing(
-                                fn($state) => $state instanceof OrganizationStatus
+                                fn ($state) => $state instanceof OrganizationStatus
                                     ? $state->label()
                                     : OrganizationStatus::tryFrom((string) $state)?->label() ?? $state
                             )
-                            ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
-                                OrganizationStatus::AProspecter          => 'gray',
-                                OrganizationStatus::EnCoursProspection   => 'blue',
-                                OrganizationStatus::RdvEnCours           => 'warning',
+                            ->color(fn ($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
+                                OrganizationStatus::AProspecter => 'gray',
+                                OrganizationStatus::EnCoursProspection => 'blue',
+                                OrganizationStatus::RdvEnCours => 'warning',
                                 OrganizationStatus::SigneAccordCadre,
                                 OrganizationStatus::ConventionEngagement => 'success',
-                                OrganizationStatus::Refus                => 'danger',
-                                default                                  => 'gray',
+                                OrganizationStatus::Refus => 'danger',
+                                default => 'gray',
                             }),
 
                         Infolists\Components\TextEntry::make('nomenclature_interne')
                             ->label('Nomenclature interne')
                             ->placeholder('—')
-                            ->formatStateUsing(fn($state) => match ($state) {
-                                'CSE_PME'       => 'CSE PME (< 50 salariés)',
-                                'CSE_ETI'       => 'CSE ETI (50–299 salariés)',
-                                'CSE_GE'        => 'CSE Grande entreprise (300+)',
-                                'SYND_BRANCHE'  => 'Syndicat de branche',
+                            ->formatStateUsing(fn ($state) => match ($state) {
+                                'CSE_PME' => 'CSE PME (< 50 salariés)',
+                                'CSE_ETI' => 'CSE ETI (50–299 salariés)',
+                                'CSE_GE' => 'CSE Grande entreprise (300+)',
+                                'SYND_BRANCHE' => 'Syndicat de branche',
                                 'SYND_INTERPRO' => 'Syndicat interprofessionnel',
-                                'ENT_DIRECTE'   => 'Entreprise directe',
-                                'ASSOC'         => 'Association',
-                                default         => $state ?? '—',
+                                'ENT_DIRECTE' => 'Entreprise directe',
+                                'ASSOC' => 'Association',
+                                default => $state ?? '—',
                             }),
                     ]),
                 ]),
@@ -500,7 +547,7 @@ class PartenaireResource extends Resource
                             ->label('Entreprise mère')
                             ->placeholder('—')
                             ->url(
-                                fn($record) => $record->entrepriseMere ?
+                                fn ($record) => $record->entrepriseMere ?
                                     PartenaireResource::getUrl('view', ['record' => $record->entrepriseMere]) : null
                             )
                             ->icon('heroicon-o-arrow-up-circle'),
@@ -508,7 +555,7 @@ class PartenaireResource extends Resource
                         Infolists\Components\TextEntry::make('filiales_count')
                             ->label('Filiales')
                             ->placeholder('0')
-                            ->state(fn($record) => $record->filiales()->count())
+                            ->state(fn ($record) => $record->filiales()->count())
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-o-squares-2x2'),
@@ -525,7 +572,7 @@ class PartenaireResource extends Resource
                         Infolists\Components\TextEntry::make('conseiller.nom')
                             ->label('Conseiller assigné')
                             ->getStateUsing(
-                                fn($record) => $record->conseiller
+                                fn ($record) => $record->conseiller
                                     ? trim("{$record->conseiller->prenom} {$record->conseiller->nom}")
                                     : '—'
                             )
@@ -536,7 +583,7 @@ class PartenaireResource extends Resource
                         Infolists\Components\TextEntry::make('commercial.nom')
                             ->label('Commercial')
                             ->getStateUsing(
-                                fn($record) => $record->commercial
+                                fn ($record) => $record->commercial
                                     ? trim("{$record->commercial->prenom} {$record->commercial->nom}")
                                     : '—'
                             )
@@ -553,14 +600,14 @@ class PartenaireResource extends Resource
                             ->date('d/m/Y')
                             ->placeholder('—')
                             ->icon('heroicon-o-calendar')
-                            ->color(fn($state) => $state ? 'success' : 'gray'),
+                            ->color(fn ($state) => $state ? 'success' : 'gray'),
 
                         Infolists\Components\TextEntry::make('date_convention')
                             ->label('Date de convention')
                             ->date('d/m/Y')
                             ->placeholder('—')
                             ->icon('heroicon-o-calendar-days')
-                            ->color(fn($state) => $state ? 'success' : 'gray'),
+                            ->color(fn ($state) => $state ? 'success' : 'gray'),
 
                         Infolists\Components\TextEntry::make('date_modification_statut')
                             ->label('Statut modifié le')
@@ -641,14 +688,14 @@ class PartenaireResource extends Resource
                             ->placeholder('—')
                             ->copyable()
                             ->icon('heroicon-o-phone')
-                            ->url(fn($state) => $state ? 'tel:' . $state : null),
+                            ->url(fn ($state) => $state ? 'tel:'.$state : null),
 
                         Infolists\Components\TextEntry::make('email')
                             ->label('Email')
                             ->placeholder('—')
                             ->copyable()
                             ->icon('heroicon-o-envelope')
-                            ->url(fn($state) => $state ? 'mailto:' . $state : null),
+                            ->url(fn ($state) => $state ? 'mailto:'.$state : null),
                     ]),
                 ]),
 
@@ -658,7 +705,7 @@ class PartenaireResource extends Resource
             Infolists\Components\Section::make(' Dirigeant')
                 ->icon('heroicon-o-user')
                 ->collapsible()
-                ->collapsed(fn(Partenaire $record) => !$record->dirigeant_nom && !$record->dirigeant_email)
+                ->collapsed(fn (Partenaire $record) => ! $record->dirigeant_nom && ! $record->dirigeant_email)
                 ->schema([
                     Infolists\Components\Grid::make(3)->schema([
                         Infolists\Components\TextEntry::make('dirigeant_nom')
@@ -681,14 +728,14 @@ class PartenaireResource extends Resource
                             ->placeholder('—')
                             ->copyable()
                             ->icon('heroicon-o-phone')
-                            ->url(fn($state) => $state ? 'tel:' . $state : null),
+                            ->url(fn ($state) => $state ? 'tel:'.$state : null),
 
                         Infolists\Components\TextEntry::make('dirigeant_email')
                             ->label('Email')
                             ->placeholder('—')
                             ->copyable()
                             ->icon('heroicon-o-envelope')
-                            ->url(fn($state) => $state ? 'mailto:' . $state : null),
+                            ->url(fn ($state) => $state ? 'mailto:'.$state : null),
                     ]),
                 ]),
 
@@ -699,7 +746,7 @@ class PartenaireResource extends Resource
                 ->icon('heroicon-o-user-group')
                 ->collapsible()
                 ->collapsed()
-                ->visible(fn(Partenaire $record) => $record->type === OrganizationType::CSE)
+                ->visible(fn (Partenaire $record) => $record->type === OrganizationType::CSE)
                 ->schema([
                     // Secrétaire
                     Infolists\Components\Grid::make(2)->schema([
@@ -785,7 +832,7 @@ class PartenaireResource extends Resource
                             ->date('d/m/Y')
                             ->placeholder('—')
                             ->icon('heroicon-o-calendar')
-                            ->color(fn($state) => $state && $state->isPast() ? 'danger' : 'success'),
+                            ->color(fn ($state) => $state && $state->isPast() ? 'danger' : 'success'),
 
                         Infolists\Components\IconEntry::make('cse_existence_juridique')
                             ->label('Existence juridique')
@@ -811,7 +858,7 @@ class PartenaireResource extends Resource
                 ->icon('heroicon-o-users')
                 ->collapsible()
                 ->collapsed()
-                ->visible(fn(Partenaire $record) => $record->type === OrganizationType::Syndicat)
+                ->visible(fn (Partenaire $record) => $record->type === OrganizationType::Syndicat)
                 ->schema([
                     Infolists\Components\Grid::make(3)->schema([
                         Infolists\Components\TextEntry::make('syndicat_appartenance')
@@ -929,7 +976,7 @@ class PartenaireResource extends Resource
                             ->placeholder('—')
                             ->icon('heroicon-o-trash')
                             ->color('danger')
-                            ->visible(fn($record) => $record->trashed()),
+                            ->visible(fn ($record) => $record->trashed()),
                     ]),
                 ]),
         ]);
@@ -949,10 +996,10 @@ class PartenaireResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListPartenaires::route('/'),
+            'index' => Pages\ListPartenaires::route('/'),
             'create' => Pages\CreatePartenaire::route('/create'),
-            'edit'   => Pages\EditPartenaire::route('/{record}/edit'),
-            'view'   => Pages\ViewPartenaire::route('/{record}'),
+            'edit' => Pages\EditPartenaire::route('/{record}/edit'),
+            'view' => Pages\ViewPartenaire::route('/{record}'),
         ];
     }
 }

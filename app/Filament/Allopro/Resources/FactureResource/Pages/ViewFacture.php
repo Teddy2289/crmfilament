@@ -7,7 +7,6 @@ use App\Filament\Allopro\Resources\FactureResource;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
-
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewFacture extends ViewRecord
@@ -21,13 +20,13 @@ class ViewFacture extends ViewRecord
                 ->label('Enregistrer paiement')
                 ->icon('heroicon-o-banknotes')
                 ->color('success')
-                ->visible(fn() => !$this->record->est_payee && !$this->record->est_litigieux)
+                ->visible(fn () => ! $this->record->est_payee && ! $this->record->est_litigieux)
                 ->form([
                     Forms\Components\TextInput::make('montant')->label('Montant reçu (€)')
                         ->numeric()->prefix('€')->required()
-                        ->default(fn() => $this->record->solde_restant_du),
+                        ->default(fn () => $this->record->solde_restant_du),
                     Forms\Components\Select::make('mode')->label('Mode de paiement')
-                        ->options(collect(ModePaiement::cases())->mapWithKeys(fn($e) => [$e->value => $e->label()])->toArray())
+                        ->options(collect(ModePaiement::cases())->mapWithKeys(fn ($e) => [$e->value => $e->label()])->toArray())
                         ->native(false)->required(),
                     Forms\Components\DatePicker::make('date')->label('Date')
                         ->native(false)->required()->default(today()),
@@ -46,7 +45,7 @@ class ViewFacture extends ViewRecord
                 ->label('Déclarer litige')
                 ->icon('heroicon-o-shield-exclamation')
                 ->color('danger')
-                ->visible(fn() => $this->record->est_en_retard && !$this->record->est_litigieux)
+                ->visible(fn () => $this->record->est_en_retard && ! $this->record->est_litigieux)
                 ->form([
                     Forms\Components\Textarea::make('motif')->label('Motif du litige')->rows(3)->required(),
                 ])
@@ -60,7 +59,7 @@ class ViewFacture extends ViewRecord
                 ->label('Calculer pénalités')
                 ->icon('heroicon-o-calculator')
                 ->color('warning')
-                ->visible(fn() => $this->record->est_en_retard && !$this->record->est_payee)
+                ->visible(fn () => $this->record->est_en_retard && ! $this->record->est_payee)
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->record->calculerPenalites();
@@ -72,7 +71,7 @@ class ViewFacture extends ViewRecord
                 ->label('Télécharger PDF')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('gray')
-                ->url(fn() => route('factures.pdf', $this->record))
+                ->url(fn () => route('factures.pdf', $this->record))
                 ->openUrlInNewTab(),
         ];
     }

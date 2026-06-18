@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('documents', function (Blueprint $table) {
+        Schema::create('documents', function (Blueprint $table) {
             $table->id();
             $table->string('nom_fichier');
             $table->string('categorie')->default(OrganizationCategory::Partenaires->value);

@@ -12,7 +12,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class RappelsDuJourWidget extends BaseWidget
 {
     protected static ?string $heading = '📞 Rappels du jour';
+
     protected static ?int $sort = 3;
+
     protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
@@ -88,7 +90,7 @@ class RappelsDuJourWidget extends BaseWidget
                         ]);
 
                         // Mettre à jour le rappel si besoin
-                        if (!empty($data['prochain_rappel'])) {
+                        if (! empty($data['prochain_rappel'])) {
                             $record->update([
                                 'rappel_planifie_at' => $data['prochain_rappel'],
                                 'statut' => ProspectStatut::RP,

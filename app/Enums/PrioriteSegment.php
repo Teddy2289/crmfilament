@@ -15,7 +15,7 @@ enum PrioriteSegment: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Haute => 'danger',
             self::Standard => 'info',
             self::Basse => 'gray',
@@ -24,7 +24,7 @@ enum PrioriteSegment: string
 
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Haute => 'heroicon-o-star',
             self::Standard => 'heroicon-o-flag',
             self::Basse => 'heroicon-o-arrow-down',
@@ -33,7 +33,7 @@ enum PrioriteSegment: string
 
     public function delaiRecontactHeures(): int
     {
-        return match($this) {
+        return match ($this) {
             self::Haute => 24,
             self::Standard => 72,
             self::Basse => 168, // 1 semaine
@@ -42,7 +42,7 @@ enum PrioriteSegment: string
 
     public static function depuisCorpsDeMetier(CorpsDeMetier $metier): self
     {
-        return match($metier) {
+        return match ($metier) {
             CorpsDeMetier::Plomberie,
             CorpsDeMetier::Electricite,
             CorpsDeMetier::Serrurerie => self::Haute,

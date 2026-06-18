@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\TicketResource\RelationManagers;
 
 use Filament\Forms;
@@ -10,8 +11,10 @@ use Filament\Tables\Table;
 class ReclamationsRelationManager extends RelationManager
 {
     protected static string $relationship = 'reclamations';
+
     protected static ?string $title = 'Réclamations P8';
-    protected static ?string $icon  = 'heroicon-o-exclamation-triangle';
+
+    protected static ?string $icon = 'heroicon-o-exclamation-triangle';
 
     public function form(Form $form): Form
     {
@@ -30,10 +33,10 @@ class ReclamationsRelationManager extends RelationManager
             Forms\Components\Select::make('statut')
                 ->label('Statut')
                 ->options([
-                    'ouverte'             => 'Ouverte',
-                    'en_traitement'       => 'En traitement',
+                    'ouverte' => 'Ouverte',
+                    'en_traitement' => 'En traitement',
                     'validee_superviseur' => 'Validée superviseur',
-                    'cloturee'            => 'Clôturée',
+                    'cloturee' => 'Clôturée',
                 ])
                 ->required()
                 ->native(false)
@@ -63,12 +66,12 @@ class ReclamationsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')
                     ->badge()
-                    ->color(fn($state) => match($state) {
-                        'ouverte'             => 'danger',
-                        'en_traitement'       => 'warning',
+                    ->color(fn ($state) => match ($state) {
+                        'ouverte' => 'danger',
+                        'en_traitement' => 'warning',
                         'validee_superviseur' => 'info',
-                        'cloturee'            => 'success',
-                        default               => 'gray',
+                        'cloturee' => 'success',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('description_reclamation')
@@ -82,8 +85,7 @@ class ReclamationsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('date_resolution_cible')
                     ->label('Résolution cible')
                     ->date('d/m/Y')
-                    ->color(fn($state, $record) =>
-                        $record->date_resolution_effective === null &&
+                    ->color(fn ($state, $record) => $record->date_resolution_effective === null &&
                         $state < now() ? 'danger' : 'gray'
                     ),
 
@@ -99,7 +101,7 @@ class ReclamationsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Ouvrir réclamation P8')
-                    ->visible(fn() => auth()->user()?->hasAnyRole(['back_office', 'responsable_plateau'])),
+                    ->visible(fn () => auth()->user()?->hasAnyRole(['back_office', 'responsable_plateau'])),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

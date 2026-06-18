@@ -9,8 +9,10 @@ use Filament\Tables\Table;
 class RapportsSatisfactionRelationManager extends RelationManager
 {
     protected static string $relationship = 'rapportsSatisfaction';
+
     protected static ?string $title = 'Rapports de satisfaction (P6)';
-    protected static ?string $icon  = 'heroicon-o-star';
+
+    protected static ?string $icon = 'heroicon-o-star';
 
     public function table(Table $table): Table
     {
@@ -23,22 +25,22 @@ class RapportsSatisfactionRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('note_nps')
                     ->label('NPS')
-                    ->formatStateUsing(fn($state) => $state . ' / 10')
+                    ->formatStateUsing(fn ($state) => $state.' / 10')
                     ->badge()
-                    ->color(fn($state) => match (true) {
+                    ->color(fn ($state) => match (true) {
                         $state >= 8 => 'success',
                         $state >= 6 => 'warning',
-                        default     => 'danger',
+                        default => 'danger',
                     })
                     ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('statut_cloture')
                     ->label('Statut')
-                    ->color(fn($state) => match ($state) {
-                        'satisfait'            => 'success',
+                    ->color(fn ($state) => match ($state) {
+                        'satisfait' => 'success',
                         'suivi_qualite_requis' => 'warning',
-                        'reclamation_ouverte'  => 'danger',
-                        default                => 'gray',
+                        'reclamation_ouverte' => 'danger',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\IconColumn::make('feedback_artisan')

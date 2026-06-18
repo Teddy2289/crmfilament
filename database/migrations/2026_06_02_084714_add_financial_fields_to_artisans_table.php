@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::table('artisans', function (Blueprint $table) {
 
-
             $table->string('formule_souscrite')
                 ->nullable()
                 ->after('statut_compte');

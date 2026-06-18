@@ -61,15 +61,17 @@ class ImportClientsAction extends Action
                         ->body('Le fichier uploadé est introuvable ou dans un format inattendu.')
                         ->danger()
                         ->send();
+
                     return;
                 }
 
                 if (! $resolvedPath || ! file_exists($resolvedPath)) {
                     Notification::make()
                         ->title('Fichier introuvable')
-                        ->body("Chemin résolu : " . ($resolvedPath ?? 'null'))
+                        ->body('Chemin résolu : '.($resolvedPath ?? 'null'))
                         ->danger()
                         ->send();
+
                     return;
                 }
 
@@ -84,6 +86,7 @@ class ImportClientsAction extends Action
                         ->body($e->getMessage())
                         ->danger()
                         ->send();
+
                     return;
                 }
                 // Pas d'unlink : c'est un fichier temp PHP, le GC s'en charge
@@ -91,7 +94,7 @@ class ImportClientsAction extends Action
                 $totalCreated = 0;
                 $totalUpdated = 0;
                 $totalSkipped = 0;
-                $allErrors    = [];
+                $allErrors = [];
 
                 foreach ($results as $sheetName => $result) {
                     $totalCreated += $result['created'];
@@ -118,15 +121,15 @@ class ImportClientsAction extends Action
                     ->send();
 
                 if (! empty($allErrors)) {
-                    $preview   = array_slice($allErrors, 0, 5);
-                    $more      = count($allErrors) - 5;
+                    $preview = array_slice($allErrors, 0, 5);
+                    $more = count($allErrors) - 5;
                     $errorBody = implode("\n", $preview);
                     if ($more > 0) {
                         $errorBody .= "\n… et {$more} autre(s) erreur(s).";
                     }
 
                     Notification::make()
-                        ->title(count($allErrors) . ' ligne(s) en erreur')
+                        ->title(count($allErrors).' ligne(s) en erreur')
                         ->body($errorBody)
                         ->warning()
                         ->persistent()

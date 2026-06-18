@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Enums;
 
 enum ModeAgendaArtisan: string
@@ -8,7 +9,7 @@ enum ModeAgendaArtisan: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::ModeA => 'Mode A — Plages structurées',
             self::ModeB => 'Mode B — Rappel à la demande (dégradé)',
         };
@@ -16,7 +17,7 @@ enum ModeAgendaArtisan: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::ModeA => 'success',
             self::ModeB => 'warning',
         };

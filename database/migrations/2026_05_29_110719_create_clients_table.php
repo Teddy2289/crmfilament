@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('clients', function (Blueprint $table) {
+        Schema::create('clients', function (Blueprint $table) {
             $table->id();
             $table->string('source_sheet')->nullable();
             $table->string('ref_client')->nullable()->index();
@@ -74,7 +74,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('clients');
-         Schema::dropIfExists('Import_logs');
+        Schema::dropIfExists('Import_logs');
         Schema::dropIfExists('Propositions');
     }
 };

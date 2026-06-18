@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Enums\OrganizationStatus;
-use App\Enums\ProspectStatut;
 use App\Enums\OrganizationType;
+use App\Enums\ProspectStatut;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class Prospect extends Model
@@ -142,9 +142,12 @@ class Prospect extends Model
 
     public function getTypePressentiLabelAttribute(): string
     {
-        if (!$this->type_pressenti) return 'Non défini';
+        if (! $this->type_pressenti) {
+            return 'Non défini';
+        }
 
         $types = OrganizationType::pourSelect();
+
         return $types[$this->type_pressenti] ?? $this->type_pressenti;
     }
 
@@ -189,16 +192,18 @@ class Prospect extends Model
         return collect([
             $this->ville,
             $this->departement,
-        ])->filter()->implode(' (') . ($this->departement ? ')' : '');
+        ])->filter()->implode(' (').($this->departement ? ')' : '');
     }
 
     public function getInterlocuteurCompletAttribute(): string
     {
-        if (!$this->interlocuteur_nom) return 'Non défini';
+        if (! $this->interlocuteur_nom) {
+            return 'Non défini';
+        }
 
         return trim(
-            $this->interlocuteur_nom .
-                ($this->interlocuteur_fonction ? ' - ' . $this->interlocuteur_fonction : '')
+            $this->interlocuteur_nom.
+                ($this->interlocuteur_fonction ? ' - '.$this->interlocuteur_fonction : '')
         );
     }
 
@@ -214,7 +219,9 @@ class Prospect extends Model
 
     public function getJoursAvantRappelAttribute(): ?int
     {
-        if (!$this->rappel_planifie_at) return null;
+        if (! $this->rappel_planifie_at) {
+            return null;
+        }
 
         if ($this->rappel_planifie_at->isPast()) {
             return -$this->rappel_planifie_at->diffInDays(now());
@@ -226,15 +233,24 @@ class Prospect extends Model
     public function getRappelEstEnRetardAttribute(): bool
     {
         return $this->rappel_planifie_at && $this->rappel_planifie_at->isPast()
-            && !in_array($this->statut, [ProspectStatut::KO, ProspectStatut::QF]);
+            && ! in_array($this->statut, [ProspectStatut::KO, ProspectStatut::QF]);
     }
 
     public function getTauxEngagementAttribute(): string
     {
-        if ($this->statut === ProspectStatut::QF) return '⭐⭐⭐⭐⭐';
-        if (in_array($this->statut, [ProspectStatut::RP, ProspectStatut::RPC])) return '⭐⭐⭐⭐';
-        if ($this->statut === ProspectStatut::STD_Joint) return '⭐⭐⭐';
-        if (in_array($this->statut, [ProspectStatut::STD_NR, ProspectStatut::CSE_NR])) return '⭐⭐';
+        if ($this->statut === ProspectStatut::QF) {
+            return '⭐⭐⭐⭐⭐';
+        }
+        if (in_array($this->statut, [ProspectStatut::RP, ProspectStatut::RPC])) {
+            return '⭐⭐⭐⭐';
+        }
+        if ($this->statut === ProspectStatut::STD_Joint) {
+            return '⭐⭐⭐';
+        }
+        if (in_array($this->statut, [ProspectStatut::STD_NR, ProspectStatut::CSE_NR])) {
+            return '⭐⭐';
+        }
+
         return '⭐';
     }
 
@@ -260,16 +276,16 @@ class Prospect extends Model
 
     public function changerStatut(ProspectStatut $nouveauStatut, ?string $notes = null): void
     {
-        if ($nouveauStatut === ProspectStatut::KO && !$notes) {
-            throw new \Exception("Un motif est obligatoire pour passer en KO");
+        if ($nouveauStatut === ProspectStatut::KO && ! $notes) {
+            throw new \Exception('Un motif est obligatoire pour passer en KO');
         }
 
         $data = ['statut' => $nouveauStatut];
 
         if ($notes) {
             $data['description'] = $this->description
-                ? $this->description . "\n[" . now()->format('d/m/Y H:i') . "] {$notes}"
-                : "[" . now()->format('d/m/Y H:i') . "] {$notes}";
+                ? $this->description."\n[".now()->format('d/m/Y H:i')."] {$notes}"
+                : '['.now()->format('d/m/Y H:i')."] {$notes}";
         }
 
         if ($nouveauStatut === ProspectStatut::KO) {
@@ -342,16 +358,16 @@ class Prospect extends Model
     {
         $this->update([
             'description' => $this->description
-                ? $this->description . "\n[" . now()->format('d/m/Y H:i') . "] {$note}"
-                : "[" . now()->format('d/m/Y H:i') . "] {$note}",
+                ? $this->description."\n[".now()->format('d/m/Y H:i')."] {$note}"
+                : '['.now()->format('d/m/Y H:i')."] {$note}",
         ]);
     }
 
     public function mettreAJourContact(
         string $nom,
-        string $fonction = null,
-        string $telephone = null,
-        string $email = null
+        ?string $fonction = null,
+        ?string $telephone = null,
+        ?string $email = null
     ): void {
         $this->update([
             'interlocuteur_nom' => $nom,
@@ -360,8 +376,6 @@ class Prospect extends Model
             'interlocuteur_email' => $email,
         ]);
     }
-
-
 
     // ── Scopes ──────────────────────────────────────────────────────
     public function scopeActifs($query): Builder
@@ -500,9 +514,12 @@ class Prospect extends Model
         }
 
         $total = $query->count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $qualifies = (clone $query)->qualifies()->count();
+
         return round(($qualifies / $total) * 100, 1);
     }
 
@@ -515,9 +532,12 @@ class Prospect extends Model
         }
 
         $total = $query->count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $ko = (clone $query)->ko()->count();
+
         return round(($ko / $total) * 100, 1);
     }
 
@@ -558,7 +578,7 @@ class Prospect extends Model
     protected static function booted(): void
     {
         static::creating(function (Prospect $prospect) {
-            if (!$prospect->statut) {
+            if (! $prospect->statut) {
                 $prospect->statut = ProspectStatut::AC;
             }
         });
@@ -568,7 +588,7 @@ class Prospect extends Model
             if (
                 $prospect->isDirty('statut') &&
                 $prospect->statut === ProspectStatut::STD_Joint &&
-                !$prospect->date_premier_contact
+                ! $prospect->date_premier_contact
             ) {
                 $prospect->date_premier_contact = now();
             }
@@ -577,74 +597,75 @@ class Prospect extends Model
 
     public function convertirEnPartenaire(): ?Partenaire
     {
-        if (!$this->estQualifie) {
-            throw new \Exception("Seuls les prospects qualifiés (QF) peuvent être convertis");
+        if (! $this->estQualifie) {
+            throw new \Exception('Seuls les prospects qualifiés (QF) peuvent être convertis');
         }
 
         DB::beginTransaction();
         try {
             $partenaire = Partenaire::create([
                 // Infos de base
-                'nom'                => $this->nom,
-                'type'               => $this->type_pressenti ?? OrganizationType::EntrepriseDirecte->value,
-                'siret'              => $this->siret,
-                'telephone'          => $this->telephone,
-                'email'              => $this->email,
-                'adresse'            => $this->adresse,
-                'code_postal'        => $this->code_postal,
-                'ville'              => $this->ville,
-                'departement'        => $this->departement,
-                'secteur_activite'   => $this->secteur_activite,
-                'nb_salaries'        => $this->nb_salaries,
-                'chiffre_affaires'   => $this->chiffre_affaires,
-                'commercial_id'      => $this->commercial_id,
-                'statut'             => OrganizationStatus::AProspecter,
-                'notes'              => "Converti depuis prospect #{$this->id}\n{$this->description}",
+                'nom' => $this->nom,
+                'type' => $this->type_pressenti ?? OrganizationType::EntrepriseDirecte->value,
+                'siret' => $this->siret,
+                'telephone' => $this->telephone,
+                'email' => $this->email,
+                'adresse' => $this->adresse,
+                'code_postal' => $this->code_postal,
+                'ville' => $this->ville,
+                'departement' => $this->departement,
+                'secteur_activite' => $this->secteur_activite,
+                'nb_salaries' => $this->nb_salaries,
+                'chiffre_affaires' => $this->chiffre_affaires,
+                'commercial_id' => $this->commercial_id,
+                'statut' => OrganizationStatus::AProspecter,
+                'notes' => "Converti depuis prospect #{$this->id}\n{$this->description}",
 
                 // Dirigeant
-                'dirigeant_nom'       => $this->dirigeant_nom,
-                'dirigeant_prenom'    => $this->dirigeant_prenom,
-                'dirigeant_fonction'  => $this->dirigeant_fonction,
+                'dirigeant_nom' => $this->dirigeant_nom,
+                'dirigeant_prenom' => $this->dirigeant_prenom,
+                'dirigeant_fonction' => $this->dirigeant_fonction,
                 'dirigeant_telephone' => $this->dirigeant_telephone,
-                'dirigeant_email'     => $this->dirigeant_email,
+                'dirigeant_email' => $this->dirigeant_email,
 
                 // CSE
-                'cse_secretaire_nom'        => $this->cse_secretaire_nom,
-                'cse_secretaire_prenom'     => $this->cse_secretaire_prenom,
+                'cse_secretaire_nom' => $this->cse_secretaire_nom,
+                'cse_secretaire_prenom' => $this->cse_secretaire_prenom,
                 'cse_secretaire_tel_direct' => $this->cse_secretaire_tel_direct,
-                'cse_secretaire_tel_perso'  => $this->cse_secretaire_tel_perso,
-                'cse_secretaire_email_pro'  => $this->cse_secretaire_email_pro,
+                'cse_secretaire_tel_perso' => $this->cse_secretaire_tel_perso,
+                'cse_secretaire_email_pro' => $this->cse_secretaire_email_pro,
                 'cse_secretaire_email_perso' => $this->cse_secretaire_email_perso,
-                'cse_tresorier_nom'         => $this->cse_tresorier_nom,
-                'cse_tresorier_prenom'      => $this->cse_tresorier_prenom,
-                'cse_tresorier_tel_direct'  => $this->cse_tresorier_tel_direct,
-                'cse_tresorier_tel_perso'   => $this->cse_tresorier_tel_perso,
-                'cse_tresorier_email_pro'   => $this->cse_tresorier_email_pro,
+                'cse_tresorier_nom' => $this->cse_tresorier_nom,
+                'cse_tresorier_prenom' => $this->cse_tresorier_prenom,
+                'cse_tresorier_tel_direct' => $this->cse_tresorier_tel_direct,
+                'cse_tresorier_tel_perso' => $this->cse_tresorier_tel_perso,
+                'cse_tresorier_email_pro' => $this->cse_tresorier_email_pro,
                 'cse_tresorier_email_perso' => $this->cse_tresorier_email_perso,
-                'cse_nb_elus'               => $this->cse_nb_elus,
-                'cse_date_fin_mandat'       => $this->cse_date_fin_mandat,
-                'cse_existence_juridique'   => $this->cse_existence_juridique,
-                'cse_notes'                 => $this->cse_notes,
+                'cse_nb_elus' => $this->cse_nb_elus,
+                'cse_date_fin_mandat' => $this->cse_date_fin_mandat,
+                'cse_existence_juridique' => $this->cse_existence_juridique,
+                'cse_notes' => $this->cse_notes,
 
                 // Syndicat
-                'syndicat_appartenance'          => $this->syndicat_appartenance,
-                'syndicat_nom_organisation'      => $this->syndicat_nom_organisation,
-                'syndicat_responsable_nom'       => $this->syndicat_responsable_nom,
-                'syndicat_responsable_prenom'    => $this->syndicat_responsable_prenom,
-                'syndicat_responsable_fonction'  => $this->syndicat_responsable_fonction,
-                'syndicat_tel_direct'            => $this->syndicat_tel_direct,
-                'syndicat_tel_perso'             => $this->syndicat_tel_perso,
-                'syndicat_email_pro'             => $this->syndicat_email_pro,
-                'syndicat_email_perso'           => $this->syndicat_email_perso,
-                'syndicat_perimetre'             => $this->syndicat_perimetre,
-                'syndicat_notes'                 => $this->syndicat_notes,
+                'syndicat_appartenance' => $this->syndicat_appartenance,
+                'syndicat_nom_organisation' => $this->syndicat_nom_organisation,
+                'syndicat_responsable_nom' => $this->syndicat_responsable_nom,
+                'syndicat_responsable_prenom' => $this->syndicat_responsable_prenom,
+                'syndicat_responsable_fonction' => $this->syndicat_responsable_fonction,
+                'syndicat_tel_direct' => $this->syndicat_tel_direct,
+                'syndicat_tel_perso' => $this->syndicat_tel_perso,
+                'syndicat_email_pro' => $this->syndicat_email_pro,
+                'syndicat_email_perso' => $this->syndicat_email_perso,
+                'syndicat_perimetre' => $this->syndicat_perimetre,
+                'syndicat_notes' => $this->syndicat_notes,
             ]);
 
             $this->update([
-                'description' => $this->description . "\n[Conversion] Partenaire créé le " . now()->format('d/m/Y H:i'),
+                'description' => $this->description."\n[Conversion] Partenaire créé le ".now()->format('d/m/Y H:i'),
             ]);
 
             DB::commit();
+
             return $partenaire;
         } catch (\Exception $e) {
             DB::rollBack();

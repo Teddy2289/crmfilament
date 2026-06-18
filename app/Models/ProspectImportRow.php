@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * ProspectImportRow
@@ -54,7 +54,9 @@ class ProspectImportRow extends Model
      * Possible statuses for import rows.
      */
     public const STATUS_IMPORTED = 'imported';
+
     public const STATUS_SKIPPED = 'skipped';
+
     public const STATUS_FAILED = 'failed';
 
     /**

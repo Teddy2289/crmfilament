@@ -2,29 +2,48 @@
 
 namespace App\Filament\NsConseil\Pages;
 
+use App\Enums\ProspectStatut;
+use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Models\Prospect;
 use App\Models\User;
-use App\Enums\ProspectStatut;
-use Filament\Pages\Page;
+use App\Services\Crm\CrmSettingsService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class PhoningBackOffice extends Page
 {
-    protected static ?string $navigationIcon  = 'heroicon-o-queue-list';
-    protected static ?string $navigationLabel = 'File d\'appels — Back-office';
-    protected static ?string $navigationGroup = 'Activités';
-    protected static ?int    $navigationSort  = 3;
-    protected static string  $view            = 'filament.ns-conseil.pages.phoning-back-office';
+       use \App\Filament\NsConseil\Concerns\HasRoleAccess;
 
-    public ?int   $selectedUserId   = null;
-    public array  $prospectList     = [];
+    protected static ?string $navigationIcon = 'heroicon-o-queue-list';
+
+    protected static ?string $navigationLabel = 'File d\'appels — Back-office';
+
+    protected static ?string $navigationGroup = 'Activités';
+
+    protected static ?int $navigationSort = 3;
+
+    public static function canAccess(): bool
+    {
+        return static::userHasAnyRole(['admin', 'superviseur']);
+    }
+
+    protected static string $view = 'filament.ns-conseil.pages.phoning-back-office';
+
+    public ?int $selectedUserId = null;
+
+    public array $prospectList = [];
+
     public array $selectedIds = [];
+
     // ── Filtres ──────────────────────────────────────────────────────
-    public string  $filterStatut     = '';
-    public string  $filterDept       = '';
-    public bool    $filterRappelOnly = false;
+    public string $filterStatut = '';
+
+    public string $filterDept = '';
+
+    public bool $filterRappelOnly = false;
 
     // ── Mount ────────────────────────────────────────────────────────
     public function mount(): void
@@ -39,10 +58,14 @@ class PhoningBackOffice extends Page
     // ── Requête centrale ─────────────────────────────────────────────
     protected function queryTeleprospecteurs()
     {
+        $roles = app(CrmSettingsService::class)->get('roles.teleprospecteur_roles', ['teleprospecteur']);
+
         return User::query()
-            ->where(function ($q) {
-                $q->whereHas('roles', fn($r) => $r->where('name', User::ROLE_TELEPROSPECTEUR))
-                    ->orWhere('role_cache', User::ROLE_TELEPROSPECTEUR);
+            ->where(function ($q) use ($roles) {
+                $q->whereHas('roles', fn ($r) => $r->whereIn('name', $roles));
+                foreach ($roles as $role) {
+                    $q->orWhere('role_cache', $role);
+                }
             })
             ->where('actif', true)
             ->orderBy('nom')
@@ -62,10 +85,11 @@ class PhoningBackOffice extends Page
     {
         if (! $this->selectedUserId) {
             $this->prospectList = [];
+
             return;
         }
 
-        $cacheKey   = "phoning_queue_user_{$this->selectedUserId}";
+        $cacheKey = "phoning_queue_user_{$this->selectedUserId}";
         $savedQueue = Cache::get($cacheKey);
 
         if ($savedQueue) {
@@ -82,8 +106,8 @@ class PhoningBackOffice extends Page
                 ->keyBy('id');
 
             $ordered = collect($ids)
-                ->filter(fn($id) => $prospects->has($id))
-                ->map(fn($id) => $this->formatProspect($prospects[$id]))
+                ->filter(fn ($id) => $prospects->has($id))
+                ->map(fn ($id) => $this->formatProspect($prospects[$id]))
                 ->values();
         } else {
             $ordered = Prospect::query()
@@ -100,28 +124,29 @@ class PhoningBackOffice extends Page
                     ELSE 7 END")
                 ->orderBy('rappel_planifie_at', 'asc')
                 ->get()
-                ->map(fn($p) => $this->formatProspect($p));
+                ->map(fn ($p) => $this->formatProspect($p));
         }
 
         $this->prospectList = $this->applyFiltersToCollection($ordered)->toArray();
     }
 
     // ── Appliquer les filtres sur la collection formatée ─────────────
-    protected function applyFiltersToCollection(\Illuminate\Support\Collection $col): \Illuminate\Support\Collection
+    protected function applyFiltersToCollection(Collection $col): Collection
     {
         if ($this->filterStatut !== '') {
             $col = $col->where('statut', $this->filterStatut)->values();
         }
         if ($this->filterDept !== '') {
             $dept = trim($this->filterDept);
-            $col  = $col->filter(function ($p) use ($dept) {
+            $col = $col->filter(function ($p) use ($dept) {
                 return str_contains($p['departement'] ?? '', $dept)
                     || str_contains($p['ville'] ?? '', $dept);
             })->values();
         }
         if ($this->filterRappelOnly) {
-            $col = $col->filter(fn($p) => ! empty($p['rappel_planifie_at']))->values();
+            $col = $col->filter(fn ($p) => ! empty($p['rappel_planifie_at']))->values();
         }
+
         return $col;
     }
 
@@ -133,8 +158,8 @@ class PhoningBackOffice extends Page
 
     public function clearFilters(): void
     {
-        $this->filterStatut     = '';
-        $this->filterDept       = '';
+        $this->filterStatut = '';
+        $this->filterDept = '';
         $this->filterRappelOnly = false;
         $this->loadProspects();
     }
@@ -143,34 +168,36 @@ class PhoningBackOffice extends Page
     protected function formatProspect(Prospect $p): array
     {
         return [
-            'id'                   => $p->id,
-            'nom'                  => $p->nom,
-            'statut'               => $p->statut->value,
-            'statut_label'         => $p->statut_label,
-            'statut_color'         => $p->statut_color,
-            'telephone'            => $p->telephone,
-            'ville'                => $p->ville,
-            'departement'          => $p->departement,
-            'type_pressenti'       => $p->type_pressenti_label,
-            'secteur_activite'     => $p->secteur_activite,
-            'nb_salaries'          => $p->nb_salaries,
-            'rappel_planifie_at'   => $p->rappel_planifie_at?->format('d/m/Y H:i'),
-            'rappel_en_retard'     => $p->rappel_est_en_retard,
+            'id' => $p->id,
+            'nom' => $p->nom,
+            'statut' => $p->statut->value,
+            'statut_label' => $p->statut_label,
+            'statut_color' => $p->statut_color,
+            'telephone' => $p->telephone,
+            'ville' => $p->ville,
+            'departement' => $p->departement,
+            'type_pressenti' => $p->type_pressenti_label,
+            'secteur_activite' => $p->secteur_activite,
+            'nb_salaries' => $p->nb_salaries,
+            'rappel_planifie_at' => $p->rappel_planifie_at?->format('d/m/Y H:i'),
+            'rappel_en_retard' => $p->rappel_est_en_retard,
             'date_premier_contact' => $p->date_premier_contact?->format('d/m/Y'),
-            'taux_engagement'      => $p->taux_engagement,
-            'interlocuteur'        => $p->interlocuteur_complet,
-            'description'          => $p->description ? \Str::limit($p->description, 80) : null,
+            'taux_engagement' => $p->taux_engagement,
+            'interlocuteur' => $p->interlocuteur_complet,
+            'description' => $p->description ? \Str::limit($p->description, 80) : null,
         ];
     }
 
     // ── Réordonner depuis le drag & drop ─────────────────────────────
     public function reorderFromDrag(array $orderedIds): void
     {
-        if (empty($orderedIds) || ! $this->selectedUserId) return;
-        $indexed            = collect($this->prospectList)->keyBy('id');
+        if (empty($orderedIds) || ! $this->selectedUserId) {
+            return;
+        }
+        $indexed = collect($this->prospectList)->keyBy('id');
         $this->prospectList = collect($orderedIds)
-            ->filter(fn($id) => $indexed->has($id))
-            ->map(fn($id) => $indexed[$id])
+            ->filter(fn ($id) => $indexed->has($id))
+            ->map(fn ($id) => $indexed[$id])
             ->values()
             ->toArray();
         $this->saveQueue();
@@ -180,7 +207,9 @@ class PhoningBackOffice extends Page
     public function moveUp(int $prospectId): void
     {
         $index = $this->findIndex($prospectId);
-        if ($index === null || $index === 0) return;
+        if ($index === null || $index === 0) {
+            return;
+        }
         [$this->prospectList[$index - 1], $this->prospectList[$index]] =
             [$this->prospectList[$index], $this->prospectList[$index - 1]];
         $this->saveQueue();
@@ -189,8 +218,10 @@ class PhoningBackOffice extends Page
     public function moveDown(int $prospectId): void
     {
         $index = $this->findIndex($prospectId);
-        $last  = count($this->prospectList) - 1;
-        if ($index === null || $index === $last) return;
+        $last = count($this->prospectList) - 1;
+        if ($index === null || $index === $last) {
+            return;
+        }
         [$this->prospectList[$index], $this->prospectList[$index + 1]] =
             [$this->prospectList[$index + 1], $this->prospectList[$index]];
         $this->saveQueue();
@@ -199,7 +230,9 @@ class PhoningBackOffice extends Page
     public function moveToTop(int $prospectId): void
     {
         $index = $this->findIndex($prospectId);
-        if ($index === null || $index === 0) return;
+        if ($index === null || $index === 0) {
+            return;
+        }
         $item = array_splice($this->prospectList, $index, 1)[0];
         array_unshift($this->prospectList, $item);
         $this->saveQueue();
@@ -209,7 +242,9 @@ class PhoningBackOffice extends Page
     public function moveToBottom(int $prospectId): void
     {
         $index = $this->findIndex($prospectId);
-        if ($index === null) return;
+        if ($index === null) {
+            return;
+        }
         $item = array_splice($this->prospectList, $index, 1)[0];
         $this->prospectList[] = $item;
         $this->saveQueue();
@@ -217,7 +252,9 @@ class PhoningBackOffice extends Page
 
     public function resetOrder(): void
     {
-        if (! $this->selectedUserId) return;
+        if (! $this->selectedUserId) {
+            return;
+        }
         Cache::forget("phoning_queue_user_{$this->selectedUserId}");
         $this->loadProspects();
         Notification::make()->title('Ordre réinitialisé')->warning()->send();
@@ -226,9 +263,11 @@ class PhoningBackOffice extends Page
     // ── Sauvegarde cache ─────────────────────────────────────────────
     protected function saveQueue(): void
     {
-        if (! $this->selectedUserId) return;
+        if (! $this->selectedUserId) {
+            return;
+        }
         $queue = collect($this->prospectList)
-            ->map(fn($p) => ['type' => 'prospect', 'id' => $p['id']])
+            ->map(fn ($p) => ['type' => 'prospect', 'id' => $p['id']])
             ->toArray();
         Cache::put("phoning_queue_user_{$this->selectedUserId}", $queue, now()->addHours(24));
     }
@@ -236,8 +275,11 @@ class PhoningBackOffice extends Page
     protected function findIndex(int $prospectId): ?int
     {
         foreach ($this->prospectList as $i => $p) {
-            if ($p['id'] === $prospectId) return $i;
+            if ($p['id'] === $prospectId) {
+                return $i;
+            }
         }
+
         return null;
     }
 
@@ -246,11 +288,11 @@ class PhoningBackOffice extends Page
     {
         return $this->queryTeleprospecteurs()
             ->get()
-            ->map(fn($u) => [
-                'id'          => $u->id,
+            ->map(fn ($u) => [
+                'id' => $u->id,
                 'nom_complet' => trim("{$u->prenom} {$u->nom}"),
-                'initiales'   => $u->initiales,
-                'nb_actifs'   => Prospect::query()
+                'initiales' => $u->initiales,
+                'nb_actifs' => Prospect::query()
                     ->where('teleprospecteur_id', $u->id)
                     ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
                     ->whereNull('deleted_at')
@@ -261,13 +303,18 @@ class PhoningBackOffice extends Page
 
     public function getSelectedUser(): ?array
     {
-        if (! $this->selectedUserId) return null;
+        if (! $this->selectedUserId) {
+            return null;
+        }
         $u = User::find($this->selectedUserId);
-        if (! $u) return null;
+        if (! $u) {
+            return null;
+        }
+
         return [
-            'id'          => $u->id,
+            'id' => $u->id,
             'nom_complet' => trim("{$u->prenom} {$u->nom}"),
-            'initiales'   => $u->initiales,
+            'initiales' => $u->initiales,
         ];
     }
 
@@ -275,11 +322,12 @@ class PhoningBackOffice extends Page
     {
         if (empty($this->selectedIds)) {
             Notification::make()->title('Aucun prospect sélectionné')->warning()->send();
+
             return;
         }
 
-        $selected   = [];
-        $remaining  = [];
+        $selected = [];
+        $remaining = [];
 
         foreach ($this->prospectList as $p) {
             if (in_array($p['id'], $this->selectedIds)) {
@@ -291,11 +339,11 @@ class PhoningBackOffice extends Page
 
         // Les sélectionnés en tête, dans leur ordre relatif actuel
         $this->prospectList = array_merge($selected, $remaining);
-        $this->selectedIds  = [];
+        $this->selectedIds = [];
         $this->saveQueue();
 
         Notification::make()
-            ->title(count($selected) . ' prospect(s) mis en tête ✓')
+            ->title(count($selected).' prospect(s) mis en tête ✓')
             ->success()
             ->send();
     }
@@ -304,6 +352,7 @@ class PhoningBackOffice extends Page
     {
         if (empty($this->selectedIds)) {
             Notification::make()->title('Aucun prospect sélectionné')->warning()->send();
+
             return;
         }
 
@@ -312,7 +361,7 @@ class PhoningBackOffice extends Page
         $this->prospectList = array_values(
             array_filter(
                 $this->prospectList,
-                fn($p) => ! in_array($p['id'], $this->selectedIds)
+                fn ($p) => ! in_array($p['id'], $this->selectedIds)
             )
         );
 
@@ -333,7 +382,7 @@ class PhoningBackOffice extends Page
                 ->label('→ Workflow d\'appels')
                 ->icon('heroicon-o-phone-arrow-up-right')
                 ->color('success')
-                ->url(fn() => route('filament.ns-conseil.pages.phoning-workflow')),
+                ->url(fn () => route('filament.ns-conseil.pages.phoning-workflow')),
 
             Action::make('reset_order')
                 ->label('Réinitialiser l\'ordre')
@@ -342,7 +391,7 @@ class PhoningBackOffice extends Page
                 ->requiresConfirmation()
                 ->modalHeading('Réinitialiser l\'ordre ?')
                 ->modalDescription('L\'ordre par défaut (par statut et rappel) sera restauré.')
-                ->action(fn() => $this->resetOrder()),
+                ->action(fn () => $this->resetOrder()),
         ];
     }
 }

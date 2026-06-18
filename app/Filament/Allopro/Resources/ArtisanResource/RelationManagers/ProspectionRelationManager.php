@@ -1,18 +1,18 @@
 <?php
+
 namespace App\Filament\Allopro\Resources\ArtisanResource\RelationManagers;
 
-use App\Enums\StatutCampagneProspection;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
 
 class ProspectionRelationManager extends RelationManager
 {
     protected static string $relationship = 'prospection';
+
     protected static ?string $title = 'Fiche de prospection';
-    protected static ?string $icon  = 'heroicon-o-megaphone';
+
+    protected static ?string $icon = 'heroicon-o-megaphone';
 
     public function table(Table $table): Table
     {
@@ -20,13 +20,13 @@ class ProspectionRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('statut_campagne')
                     ->label('Statut campagne')
-                    ->formatStateUsing(fn($state) => $state->label())
-                    ->color(fn($state) => $state->color()),
+                    ->formatStateUsing(fn ($state) => $state->label())
+                    ->color(fn ($state) => $state->color()),
 
                 Tables\Columns\TextColumn::make('priorite_segment')
                     ->label('Priorité')
-                    ->formatStateUsing(fn($state) => $state->label())
-                    ->color(fn($state) => $state->color()),
+                    ->formatStateUsing(fn ($state) => $state->label())
+                    ->color(fn ($state) => $state->color()),
 
                 Tables\Columns\IconColumn::make('accord_verbal')
                     ->label('Accord verbal')
@@ -44,8 +44,7 @@ class ProspectionRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('teleprospecteur.nom')
                     ->label('Téléprospecteur')
-                    ->formatStateUsing(fn($state, $record) =>
-                        trim($record->teleprospecteur?->prenom . ' ' . $record->teleprospecteur?->nom) ?: '—'
+                    ->formatStateUsing(fn ($state, $record) => trim($record->teleprospecteur?->prenom.' '.$record->teleprospecteur?->nom) ?: '—'
                     ),
             ])
             ->actions([

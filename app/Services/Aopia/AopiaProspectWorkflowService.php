@@ -3,15 +3,24 @@
 namespace App\Services\Aopia;
 
 use App\Enums\ProspectStatut;
+use App\Models\Appel;
+use App\Models\Document;
+use App\Models\FicheTemplate;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use App\Services\Crm\CrmProfileService;
+use App\Services\Crm\CrmSettingsService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class AopiaProspectWorkflowService
 {
+    public function __construct(
+        private readonly CrmSettingsService $settings,
+    ) {}
+
     /**
      * Change le statut en respectant la matrice CDC AOPIA.
      */
@@ -39,17 +48,21 @@ class AopiaProspectWorkflowService
 
         if ($nouveauStatut === ProspectStatut::STD_NR) {
             $this->verifierTentativesStandard($prospect);
-            $prospect->rappel_planifie_at = now()->addDays(config('aopia.prospection.std_nr_reminder_days', 2));
+            $prospect->rappel_planifie_at = now()->addDays(
+                (int) $this->settings->get('prospection.std_nr_reminder_days', 2)
+            );
         }
 
         if ($nouveauStatut === ProspectStatut::RPC && ! $prospect->rappel_planifie_at) {
-            $prospect->rappel_planifie_at = now()->addHours(config('aopia.prospection.rpc_delay_hours', 48));
+            $prospect->rappel_planifie_at = now()->addHours(
+                (int) $this->settings->get('prospection.rpc_delay_hours', 48)
+            );
         }
 
         $prospect->statut = $nouveauStatut;
 
         if ($note) {
-            $prospect->description = trim(($prospect->description ? $prospect->description . "\n" : '') . '[' . now()->format('d/m/Y H:i') . '] ' . $note);
+            $prospect->description = trim(($prospect->description ? $prospect->description."\n" : '').'['.now()->format('d/m/Y H:i').'] '.$note);
         }
 
         if ($nouveauStatut === ProspectStatut::KO) {
@@ -73,7 +86,7 @@ class AopiaProspectWorkflowService
         $manquants = $this->champsManquantsPourQf($prospect);
 
         if (! empty($manquants)) {
-            throw new RuntimeException('Passage QF bloqué. Éléments manquants : ' . implode(', ', $manquants));
+            throw new RuntimeException('Passage QF bloqué. Éléments manquants : '.implode(', ', $manquants));
         }
 
         return DB::transaction(function () use ($prospect, $acteur) {
@@ -111,7 +124,7 @@ class AopiaProspectWorkflowService
 
         if (blank($prospect->nb_salaries)) {
             $missing[] = 'Effectif total';
-        } elseif ((int) $prospect->nb_salaries < config('aopia.qf.minimum_employee_count', 12)) {
+        } elseif ((int) $prospect->nb_salaries < (int) $this->settings->get('qf.minimum_employee_count', 12)) {
             $missing[] = 'Effectif insuffisant pour QF';
         }
 
@@ -175,7 +188,11 @@ class AopiaProspectWorkflowService
 
     private function estTeamLeader(User $user): bool
     {
-        $roles = config('aopia.qf.team_leader_roles', ['team_leader', 'administrateur', 'super_admin']);
+        if (app(CrmProfileService::class)->userHasCapability($user, 'validate_qf')) {
+            return true;
+        }
+
+        $roles = $this->settings->get('qf.team_leader_roles', []);
 
         return method_exists($user, 'hasAnyRole')
             ? $user->hasAnyRole($roles)
@@ -184,16 +201,16 @@ class AopiaProspectWorkflowService
 
     private function verifierTentativesStandard(Prospect $prospect): void
     {
-        $max = (int) config('aopia.prospection.max_standard_attempts', 3);
+        $max = (int) $this->settings->get('prospection.max_standard_attempts', 3);
 
         // Le projet possède déjà Appel, mais les colonnes peuvent évoluer.
         // On applique une vérification souple : si aucune table d'appels exploitable n'est liée,
         // on laisse la transition et on délègue le contrôle fin à l'action UI/CTI.
-        if (! class_exists(\App\Models\Appel::class)) {
+        if (! class_exists(Appel::class)) {
             return;
         }
 
-        $count = \App\Models\Appel::query()
+        $count = Appel::query()
             ->where('appelable_type', Prospect::class)
             ->where('appelable_id', $prospect->id)
             ->count();
@@ -201,5 +218,33 @@ class AopiaProspectWorkflowService
         if ($count > 0 && $count < $max) {
             throw new RuntimeException("STD-NR nécessite {$max} tentatives à des horaires différents. Tentatives actuelles : {$count}.");
         }
+    }
+
+    /**
+     * Déclenche la génération automatique des fiches Word liées à un code statut phoning.
+     *
+     * @return list<Document>
+     */
+    public function genererFichesAutoPourStatut(string $statutPhoningCode, Prospect $prospect): array
+    {
+        $templates = FicheTemplate::autoGenerationPourStatut($statutPhoningCode);
+
+        if ($templates->isEmpty()) {
+            return [];
+        }
+
+        $ficheService = app(FicheGenerationService::class);
+        $rdv = $this->dernierRendezVous($prospect);
+        $documents = [];
+
+        foreach ($templates as $template) {
+            try {
+                $documents[] = $ficheService->generer($template, $prospect, $rdv);
+            } catch (\Throwable $e) {
+                Log::warning("Échec auto-génération fiche [{$template->nom}] pour prospect #{$prospect->id}: {$e->getMessage()}");
+            }
+        }
+
+        return $documents;
     }
 }

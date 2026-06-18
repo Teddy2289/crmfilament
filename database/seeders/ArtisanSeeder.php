@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Artisan;
-use App\Enums\CorpsDeMetier;
 use App\Enums\CanalAlerte;
+use App\Enums\CorpsDeMetier;
 use App\Enums\StatutCompteArtisan;
+use App\Models\Artisan;
 use Illuminate\Database\Seeder;
 
 class ArtisanSeeder extends Seeder
@@ -88,6 +88,6 @@ class ArtisanSeeder extends Seeder
             $this->command->line("  ✓ Artisan: {$artisan->prenom} {$artisan->nom} ({$label})");
         }
 
-        $this->command->info('✅ ' . count($artisans) . ' artisans synchronisés');
+        $this->command->info('✅ '.count($artisans).' artisans synchronisés');
     }
 }

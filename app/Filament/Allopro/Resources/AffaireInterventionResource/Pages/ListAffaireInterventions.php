@@ -2,7 +2,6 @@
 
 namespace App\Filament\Allopro\Resources\AffaireInterventionResource\Pages;
 
-use App\Enums\StatutAffaireIntervention;
 use App\Filament\Allopro\Resources\AffaireInterventionResource;
 use App\Models\AffaireIntervention;
 use Filament\Actions;
@@ -19,7 +18,7 @@ class ListAffaireInterventions extends ListRecords
             Actions\CreateAction::make()
                 ->label('Nouvelle affaire')
                 ->icon('heroicon-o-plus')
-                ->visible(fn() => auth()->user()?->hasAnyRole(['operateur_n1', 'responsable_plateau'])),
+                ->visible(fn () => auth()->user()?->hasAnyRole(['operateur_n1', 'responsable_plateau'])),
         ];
     }
 
@@ -32,31 +31,31 @@ class ListAffaireInterventions extends ListRecords
             'en_attente' => Tab::make('En attente')
                 ->badge(AffaireIntervention::enAttente()->count())
                 ->badgeColor('warning')
-                ->modifyQueryUsing(fn($q) => $q->enAttente()),
+                ->modifyQueryUsing(fn ($q) => $q->enAttente()),
 
             'confirmees' => Tab::make('Confirmées')
                 ->badge(AffaireIntervention::confirmees()->count())
                 ->badgeColor('primary')
-                ->modifyQueryUsing(fn($q) => $q->confirmees()),
+                ->modifyQueryUsing(fn ($q) => $q->confirmees()),
 
             'en_cours' => Tab::make('En cours')
                 ->badge(AffaireIntervention::enCours()->count())
                 ->badgeColor('info')
-                ->modifyQueryUsing(fn($q) => $q->enCours()),
+                ->modifyQueryUsing(fn ($q) => $q->enCours()),
 
             'realisees' => Tab::make('Réalisées')
                 ->badge(AffaireIntervention::realisees()->count())
                 ->badgeColor('success')
-                ->modifyQueryUsing(fn($q) => $q->realisees()),
+                ->modifyQueryUsing(fn ($q) => $q->realisees()),
 
             'echec' => Tab::make('Échecs & Annulations')
                 ->badge(AffaireIntervention::enEchec()->count())
                 ->badgeColor('danger')
-                ->modifyQueryUsing(fn($q) => $q->enEchec()),
+                ->modifyQueryUsing(fn ($q) => $q->enEchec()),
 
             'du_jour' => Tab::make("Aujourd'hui")
                 ->badge(AffaireIntervention::duJour()->count())
-                ->modifyQueryUsing(fn($q) => $q->duJour()),
+                ->modifyQueryUsing(fn ($q) => $q->duJour()),
         ];
     }
 }

@@ -2,15 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 class StatutPhoning extends Model
 {
     protected $fillable = [
         'model_type',
+        'groupe',
+        'groupe_label',
         'code',
         'label',
         'description',
+        'action_immediate',
+        'note_obligatoire',
+        'message_note_obligatoire',
+        'delai_rappel_jours',
+        'prioritaire',
+        'fiche_type',
+        'retire_de_file',
+        'pipeline_statut',
+        'compte_comme_tentative',
         'couleur',
         'icone',
         'ordre',
@@ -20,29 +32,34 @@ class StatutPhoning extends Model
     protected $casts = [
         'actif' => 'boolean',
         'ordre' => 'integer',
+        'note_obligatoire' => 'boolean',
+        'prioritaire' => 'boolean',
+        'retire_de_file' => 'boolean',
+        'compte_comme_tentative' => 'boolean',
+        'delai_rappel_jours' => 'integer',
     ];
 
     const MODEL_TYPES = [
-        'prospect'    => 'Prospect',
-        'partenaire'  => 'Partenaire',
+        'prospect' => 'Prospect',
+        'partenaire' => 'Partenaire',
         'opportunite' => 'Opportunité',
-        'client'      => 'Client',
+        'client' => 'Client',
     ];
 
     const COULEURS = [
-        'gray'   => 'Gris',
-        'blue'   => 'Bleu',
+        'gray' => 'Gris',
+        'blue' => 'Bleu',
         'orange' => 'Orange',
-        'green'  => 'Vert',
-        'teal'   => 'Turquoise',
-        'mint'   => 'Menthe',
-        'red'    => 'Rouge',
+        'green' => 'Vert',
+        'teal' => 'Turquoise',
+        'mint' => 'Menthe',
+        'red' => 'Rouge',
         'yellow' => 'Jaune',
         'purple' => 'Violet',
-        'pink'   => 'Rose',
+        'pink' => 'Rose',
     ];
 
-    public static function forModelType(string $modelType): \Illuminate\Database\Eloquent\Collection
+    public static function forModelType(string $modelType): Collection
     {
         return static::where('model_type', $modelType)
             ->where('actif', true)
@@ -53,32 +70,32 @@ class StatutPhoning extends Model
     public function getCouleurCssAttribute(): string
     {
         return match ($this->couleur) {
-            'blue'   => 'background:rgb(59 130 246)',
+            'blue' => 'background:rgb(59 130 246)',
             'orange' => 'background:rgb(249 115 22)',
-            'green'  => 'background:rgb(34 197 94)',
-            'teal'   => 'background:rgb(20 184 166)',
-            'mint'   => 'background:rgb(0 206 201)',
-            'red'    => 'background:rgb(239 68 68)',
+            'green' => 'background:rgb(34 197 94)',
+            'teal' => 'background:rgb(20 184 166)',
+            'mint' => 'background:rgb(0 206 201)',
+            'red' => 'background:rgb(239 68 68)',
             'yellow' => 'background:rgb(234 179 8)',
             'purple' => 'background:rgb(168 85 247)',
-            'pink'   => 'background:rgb(236 72 153)',
-            default  => 'background:rgb(156 163 175)',
+            'pink' => 'background:rgb(236 72 153)',
+            default => 'background:rgb(156 163 175)',
         };
     }
 
     public function getCouleurFilamentAttribute(): string
     {
         return match ($this->couleur) {
-            'blue'   => 'info',
+            'blue' => 'info',
             'orange' => 'warning',
-            'green'  => 'success',
-            'teal'   => 'success',
-            'mint'   => 'success',
-            'red'    => 'danger',
+            'green' => 'success',
+            'teal' => 'success',
+            'mint' => 'success',
+            'red' => 'danger',
             'yellow' => 'warning',
             'purple' => 'primary',
-            'pink'   => 'danger',
-            default  => 'gray',
+            'pink' => 'danger',
+            default => 'gray',
         };
     }
 }

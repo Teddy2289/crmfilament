@@ -27,9 +27,9 @@ class DossierFormation extends Model
     ];
 
     protected $casts = [
-        'montant_ht'  => 'decimal:2',
+        'montant_ht' => 'decimal:2',
         'montant_cpf' => 'decimal:2',
-        'date_vente'  => 'date',
+        'date_vente' => 'date',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────
@@ -77,6 +77,7 @@ class DossierFormation extends Model
             'annule' => 'Annulé',
             'reporte' => 'Reporté',
         ];
+
         return $mapping[$this->statut_formation] ?? $this->statut_formation ?? '—';
     }
 
@@ -90,6 +91,7 @@ class DossierFormation extends Model
             'rejete' => 'Rejeté',
             'cloture' => 'Clôturé',
         ];
+
         return $mapping[$this->etat] ?? $this->etat ?? '—';
     }
 
@@ -103,6 +105,7 @@ class DossierFormation extends Model
             'annule' => 'danger',
             'reporte' => 'info',
         ];
+
         return $mapping[$this->statut_formation] ?? 'gray';
     }
 
@@ -116,6 +119,7 @@ class DossierFormation extends Model
             'rejete' => 'danger',
             'cloture' => 'success',
         ];
+
         return $mapping[$this->etat] ?? 'gray';
     }
 }

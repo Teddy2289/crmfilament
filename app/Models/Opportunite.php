@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class Opportunite extends Model
 {
@@ -47,12 +47,14 @@ class Opportunite extends Model
     ];
 
     // ── Constantes ──────────────────────────────────────────────────
+    // Statuts alignés sur le CDC §4.3 (Nouveau / En cours d'évaluation / Qualifiée / Converti / Perdue).
     const STATUTS = [
         'nouveau' => 'Nouveau',
-        'en_qualification' => 'En qualification',
+        'en_cours_evaluation' => "En cours d'évaluation",
         'contacte' => 'Contacté',
         'rdv_planifie' => 'RDV planifié',
         'en_negociation' => 'En négociation',
+        'qualifiee' => 'Qualifiée',
         'converti' => 'Converti',
         'perdu' => 'Perdu',
     ];
@@ -64,14 +66,15 @@ class Opportunite extends Model
         'tres_eleve' => 'Très élevé',
     ];
 
+    // Sources de détection alignées sur le CDC §4.3.
     const SOURCES = [
-        'salon' => 'Salon professionnel',
-        'recommandation' => 'Recommandation',
-        'site_web' => 'Site web',
+        'reseau_commercial' => 'Réseau commercial',
+        'client_existant' => 'Client existant',
+        'parrainage' => 'Parrainage',
+        'phoning_entrant' => 'Phoning entrant',
+        'salon' => 'Salon',
         'linkedin' => 'LinkedIn',
-        'prospection_telephonique' => 'Prospection téléphonique',
-        'emailing' => 'Emailing',
-        'partenaire' => 'Partenaire',
+        'fichier_externe' => 'Fichier externe',
         'autre' => 'Autre',
     ];
 
@@ -83,12 +86,13 @@ class Opportunite extends Model
 
     public function getStatutColorAttribute(): string
     {
-        return match($this->statut) {
+        return match ($this->statut) {
             'nouveau' => 'info',
-            'en_qualification' => 'warning',
+            'en_cours_evaluation' => 'warning',
             'contacte' => 'primary',
             'rdv_planifie' => 'orange',
             'en_negociation' => 'purple',
+            'qualifiee' => 'primary',
             'converti' => 'success',
             'perdu' => 'danger',
             default => 'gray',
@@ -102,7 +106,7 @@ class Opportunite extends Model
 
     public function getPotentielColorAttribute(): string
     {
-        return match($this->potentiel) {
+        return match ($this->potentiel) {
             'faible' => 'gray',
             'moyen' => 'info',
             'eleve' => 'warning',
@@ -135,22 +139,24 @@ class Opportunite extends Model
 
     public function getEstConvertibleAttribute(): bool
     {
-        return in_array($this->statut, ['en_negociation', 'rdv_planifie']);
+        return in_array($this->statut, ['qualifiee', 'en_negociation', 'rdv_planifie']);
     }
 
     public function getInterlocuteurCompletAttribute(): string
     {
-        if (!$this->interlocuteur_nom) return 'Non défini';
+        if (! $this->interlocuteur_nom) {
+            return 'Non défini';
+        }
 
         return trim(
-            $this->interlocuteur_nom .
-            ($this->interlocuteur_fonction ? ' - ' . $this->interlocuteur_fonction : '')
+            $this->interlocuteur_nom.
+            ($this->interlocuteur_fonction ? ' - '.$this->interlocuteur_fonction : '')
         );
     }
 
     public function getValeurEstimeeAttribute(): float
     {
-        return match($this->potentiel) {
+        return match ($this->potentiel) {
             'faible' => $this->chiffre_affaires * 0.01 ?? 1000,
             'moyen' => $this->chiffre_affaires * 0.02 ?? 5000,
             'eleve' => $this->chiffre_affaires * 0.05 ?? 10000,
@@ -178,6 +184,11 @@ class Opportunite extends Model
         $this->update(['statut' => 'en_negociation']);
     }
 
+    public function marquerQualifiee(): void
+    {
+        $this->update(['statut' => 'qualifiee']);
+    }
+
     public function convertirEnProspect(): ?Prospect
     {
         $prospect = Prospect::create([
@@ -195,7 +206,7 @@ class Opportunite extends Model
             'interlocuteur_fonction' => $this->interlocuteur_fonction,
             'interlocuteur_telephone' => $this->interlocuteur_telephone,
             'interlocuteur_email' => $this->interlocuteur_email,
-            'description' => "Converti depuis opportunité #{$this->id}\n" . $this->notes,
+            'description' => "Converti depuis opportunité #{$this->id}\n".$this->notes,
         ]);
 
         $this->update([
@@ -221,7 +232,7 @@ class Opportunite extends Model
 
     public function qualifier(string $statut): void
     {
-        if (!array_key_exists($statut, self::STATUTS)) {
+        if (! array_key_exists($statut, self::STATUTS)) {
             throw new \InvalidArgumentException("Statut invalide : {$statut}");
         }
 
@@ -232,8 +243,8 @@ class Opportunite extends Model
     {
         $this->update([
             'notes' => $this->notes
-                ? $this->notes . "\n[" . now()->format('d/m/Y H:i') . "] {$note}"
-                : "[". now()->format('d/m/Y H:i') . "] {$note}",
+                ? $this->notes."\n[".now()->format('d/m/Y H:i')."] {$note}"
+                : '['.now()->format('d/m/Y H:i')."] {$note}",
         ]);
     }
 
@@ -291,25 +302,25 @@ class Opportunite extends Model
     public function scopeAnciennes($query, int $jours = 30): Builder
     {
         return $query->where('date_detection', '<', now()->subDays($jours))
-                     ->whereIn('statut', ['nouveau', 'en_qualification']);
+            ->whereIn('statut', ['nouveau', 'en_cours_evaluation']);
     }
 
     public function scopeDuMois($query): Builder
     {
         return $query->whereMonth('date_detection', now()->month)
-                     ->whereYear('date_detection', now()->year);
+            ->whereYear('date_detection', now()->year);
     }
 
     public function scopeSansContact($query): Builder
     {
         return $query->whereNull('date_premier_contact')
-                     ->where('statut', '!=', 'converti');
+            ->where('statut', '!=', 'converti');
     }
 
     public function scopeARelancer($query): Builder
     {
-        return $query->whereIn('statut', ['contacte', 'en_qualification'])
-                     ->where('updated_at', '<', now()->subDays(7));
+        return $query->whereIn('statut', ['contacte', 'en_cours_evaluation'])
+            ->where('updated_at', '<', now()->subDays(7));
     }
 
     // ── Méthodes statiques KPIs ─────────────────────────────────────
@@ -332,25 +343,31 @@ class Opportunite extends Model
     public static function getTauxConversion(): float
     {
         $total = static::count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $converties = static::where('statut', 'converti')->count();
+
         return round(($converties / $total) * 100, 1);
     }
 
     public static function getTauxPerte(): float
     {
         $total = static::count();
-        if ($total === 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $perdues = static::where('statut', 'perdu')->count();
+
         return round(($perdues / $total) * 100, 1);
     }
 
     public static function getValeurPipeline(): float
     {
         return static::whereIn('statut', [
-            'en_qualification', 'contacte', 'rdv_planifie', 'en_negociation'
+            'en_cours_evaluation', 'contacte', 'rdv_planifie', 'en_negociation', 'qualifiee',
         ])->get()->sum(function ($opp) {
             return $opp->valeur_estimee;
         });
@@ -389,10 +406,10 @@ class Opportunite extends Model
     protected static function booted(): void
     {
         static::creating(function (Opportunite $opportunite) {
-            if (!$opportunite->date_detection) {
+            if (! $opportunite->date_detection) {
                 $opportunite->date_detection = now();
             }
-            if (!$opportunite->statut) {
+            if (! $opportunite->statut) {
                 $opportunite->statut = 'nouveau';
             }
         });

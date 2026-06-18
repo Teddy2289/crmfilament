@@ -21,8 +21,8 @@ class Parrain extends Model
     ];
 
     protected $casts = [
-        'super_parrain'  => 'boolean',
-        'date_creation'  => 'date',
+        'super_parrain' => 'boolean',
+        'date_creation' => 'date',
     ];
 
     public function personnes()

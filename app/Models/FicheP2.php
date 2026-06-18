@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use App\Enums\CorpsDeMetier;
 use App\Enums\AncienneteProbleme;
+use App\Enums\CorpsDeMetier;
 use App\Enums\NiveauPriorite;
-use App\Enums\TypeLogement;
 use App\Enums\StatutOccupant;
+use App\Enums\TypeLogement;
 use Illuminate\Database\Eloquent\Model;
 
 class FicheP2 extends Model
@@ -14,17 +14,17 @@ class FicheP2 extends Model
     protected $table = 'fiche_p2s';
 
     protected $casts = [
-        'corps_de_metier'          => CorpsDeMetier::class,
-        'anciennete_probleme'      => AncienneteProbleme::class,
-        'niveau_priorite'          => NiveauPriorite::class,
-        'type_logement'            => TypeLogement::class,
-        'statut_occupant'          => StatutOccupant::class,
-        'presence_client'          => 'boolean',
-        'bascule_p5_requise'       => 'boolean',
-        'fiche_complete'           => 'boolean',
-        'reponses_metier'          => 'array',
+        'corps_de_metier' => CorpsDeMetier::class,
+        'anciennete_probleme' => AncienneteProbleme::class,
+        'niveau_priorite' => NiveauPriorite::class,
+        'type_logement' => TypeLogement::class,
+        'statut_occupant' => StatutOccupant::class,
+        'presence_client' => 'boolean',
+        'bascule_p5_requise' => 'boolean',
+        'fiche_complete' => 'boolean',
+        'reponses_metier' => 'array',
         'date_qualification_complete' => 'datetime',
-        'duree_appel_p2'           => 'integer',
+        'duree_appel_p2' => 'integer',
     ];
 
     protected $fillable = [
@@ -154,7 +154,7 @@ class FicheP2 extends Model
         ];
 
         $manquants = collect($required)
-            ->filter(fn($field) => empty($this->$field))
+            ->filter(fn ($field) => empty($this->$field))
             ->values()
             ->toArray();
 
@@ -172,7 +172,7 @@ class FicheP2 extends Model
         static::saving(function (FicheP2 $fiche) {
             $fiche->fiche_complete = $fiche->isFicheComplete();
 
-            if (!$fiche->date_qualification_complete && $fiche->fiche_complete) {
+            if (! $fiche->date_qualification_complete && $fiche->fiche_complete) {
                 $fiche->date_qualification_complete = now();
             }
         });

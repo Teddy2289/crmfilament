@@ -16,10 +16,10 @@ class ContactPartenaire extends Model
      * Permet de retrouver directement le Secrétaire CSE, Trésorier CSE et DS.
      */
     public const ROLES = [
-        'SECRETAIRE'   => 'Secrétaire CSE',
-        'TRESORIER'    => 'Trésorier CSE',
-        'SYNDICAT_DS'  => 'Délégué syndical (DS)',
-        'AUTRE'        => 'Autre',
+        'SECRETAIRE' => 'Secrétaire CSE',
+        'TRESORIER' => 'Trésorier CSE',
+        'SYNDICAT_DS' => 'Délégué syndical (DS)',
+        'AUTRE' => 'Autre',
     ];
 
     protected $fillable = [
@@ -47,8 +47,8 @@ class ContactPartenaire extends Model
     ];
 
     protected $casts = [
-        'date_naissance'    => 'date',
-        'est_principal'     => 'boolean',
+        'date_naissance' => 'date',
+        'est_principal' => 'boolean',
         'est_decisionnaire' => 'boolean',
     ];
 
@@ -57,21 +57,21 @@ class ContactPartenaire extends Model
     public function getNomCompletAttribute(): string
     {
         return trim(
-            ($this->civilite ? $this->civilite . ' ' : '') .
-            $this->prenom . ' ' .
+            ($this->civilite ? $this->civilite.' ' : '').
+            $this->prenom.' '.
             $this->nom
         );
     }
 
     public function getNomAffichageAttribute(): string
     {
-        return trim($this->prenom . ' ' . $this->nom);
+        return trim($this->prenom.' '.$this->nom);
     }
 
     public function getInitialesAttribute(): string
     {
         return strtoupper(
-            substr($this->prenom, 0, 1) .
+            substr($this->prenom, 0, 1).
             substr($this->nom, 0, 1)
         );
     }
@@ -84,8 +84,13 @@ class ContactPartenaire extends Model
     public function getFonctionCompleteAttribute(): string
     {
         $parts = [];
-        if ($this->fonction) $parts[] = $this->fonction;
-        if ($this->service)  $parts[] = $this->service;
+        if ($this->fonction) {
+            $parts[] = $this->fonction;
+        }
+        if ($this->service) {
+            $parts[] = $this->service;
+        }
+
         return implode(' - ', $parts);
     }
 
@@ -101,14 +106,14 @@ class ContactPartenaire extends Model
 
     public function getEstContactableAttribute(): bool
     {
-        return !empty($this->telephone_direct) ||
-               !empty($this->telephone_mobile) ||
-               !empty($this->email);
+        return ! empty($this->telephone_direct) ||
+               ! empty($this->telephone_mobile) ||
+               ! empty($this->email);
     }
 
     public function getNiveauInfluenceLabelAttribute(): string
     {
-        return match($this->niveau_influence) {
+        return match ($this->niveau_influence) {
             1 => 'Faible',
             2 => 'Moyen',
             3 => 'Fort',
@@ -120,7 +125,7 @@ class ContactPartenaire extends Model
 
     public function getNiveauInfluenceColorAttribute(): string
     {
-        return match($this->niveau_influence) {
+        return match ($this->niveau_influence) {
             1 => 'gray',
             2 => 'info',
             3 => 'warning',
@@ -145,7 +150,7 @@ class ContactPartenaire extends Model
     {
         $this->update([
             'est_decisionnaire' => true,
-            'niveau_influence'  => 5,
+            'niveau_influence' => 5,
         ]);
     }
 
@@ -162,8 +167,8 @@ class ContactPartenaire extends Model
     {
         $this->update([
             'notes' => $this->notes
-                ? $this->notes . "\n[" . now()->format('d/m/Y H:i') . "] {$note}"
-                : "[". now()->format('d/m/Y H:i') . "] {$note}",
+                ? $this->notes."\n[".now()->format('d/m/Y H:i')."] {$note}"
+                : '['.now()->format('d/m/Y H:i')."] {$note}",
         ]);
     }
 
@@ -208,8 +213,8 @@ class ContactPartenaire extends Model
     {
         return $query->where(function ($q) {
             $q->whereNotNull('email')
-              ->orWhereNotNull('telephone_direct')
-              ->orWhereNotNull('telephone_mobile');
+                ->orWhereNotNull('telephone_direct')
+                ->orWhereNotNull('telephone_mobile');
         });
     }
 
@@ -223,7 +228,7 @@ class ContactPartenaire extends Model
     protected static function booted(): void
     {
         static::creating(function (ContactPartenaire $contact) {
-            if (!static::where('partenaire_id', $contact->partenaire_id)->exists()) {
+            if (! static::where('partenaire_id', $contact->partenaire_id)->exists()) {
                 $contact->est_principal = true;
             }
         });

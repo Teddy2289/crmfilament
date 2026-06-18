@@ -15,11 +15,16 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             UsersSeeder::class,
+            CrmSettingSeeder::class,
+            WorkflowGroupeSeeder::class,
+            PipelineStatutSeeder::class,
+            StatutPhoningSeeder::class,
             DiagnosticSeeder::class,
             FixAlexSeeder::class,
             AlloproUsersSeeder::class,
             ArtisanSeeder::class,
-            StatutPhoningSeeder::class
+            StatutPhoningSeeder::class,
+            FicheTemplateSeeder::class,
         ]);
     }
 }
