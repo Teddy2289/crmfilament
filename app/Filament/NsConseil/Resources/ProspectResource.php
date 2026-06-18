@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Resources;
 
 use App\Enums\OrganizationType;
+use App\Enums\ProspectStatut;
 use App\Events\Mail2EnvoyeEvent;
 use App\Filament\NsConseil\Resources\ProspectResource\Pages;
 use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers;
