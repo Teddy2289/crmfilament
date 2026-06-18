@@ -524,6 +524,11 @@ class Ticket extends Model
         return $this->belongsTo(ContactParticulier::class);
     }
 
+    public function sentEmails(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(\App\Models\SentEmail::class, 'emailable');
+    }
+
     public function artisan(): BelongsTo
     {
         return $this->belongsTo(Artisan::class);

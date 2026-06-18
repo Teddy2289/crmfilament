@@ -13,7 +13,11 @@ use App\Filament\Allopro\Resources\ArtisanResource\Pages\ViewArtisan;
 use App\Filament\Allopro\Resources\ArtisanResource\RelationManagers\ProspectionRelationManager;
 use App\Filament\Allopro\Resources\ArtisanResource\RelationManagers\RapportsSatisfactionRelationManager;
 use App\Filament\Allopro\Resources\ArtisanResource\RelationManagers\TicketsRelationManager;
+use App\Filament\Shared\Actions\SendEmailAction;
+use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
+use App\Mail\BienvenuArtisanMail;
 use App\Models\Artisan;
+use Illuminate\Support\Facades\Mail;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -287,6 +291,24 @@ class ArtisanResource extends Resource
 
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
+
+                // ── Actions email contextuelles ──────────────────────
+                Tables\Actions\Action::make('envoyer_bienvenue')
+                    ->label('Envoyer bienvenue')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('info')
+                    ->visible(fn (Artisan $r) => !empty($r->email))
+                    ->requiresConfirmation()
+                    ->modalHeading('Envoyer l\'email de bienvenue ?')
+                    ->modalDescription(fn (Artisan $r) => 'Destinataire : ' . $r->email)
+                    ->action(function (Artisan $record) {
+                        $mailable = new BienvenuArtisanMail($record);
+                        Mail::to($record->email)->send($mailable);
+                        $mailable->logEnvoi($record, $record->email);
+                        Notification::make()->title('Email de bienvenue envoyé')->success()->send();
+                    }),
+
+                SendEmailAction::make(fn (Artisan $r) => $r->email),
             ])
 
             ->bulkActions([
@@ -337,6 +359,7 @@ class ArtisanResource extends Resource
             TicketsRelationManager::class,
             ProspectionRelationManager::class,
             RapportsSatisfactionRelationManager::class,
+            SentEmailsRelationManager::class,
         ];
     }
 

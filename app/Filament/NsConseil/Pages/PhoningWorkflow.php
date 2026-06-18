@@ -30,6 +30,10 @@ class PhoningWorkflow extends Page
     // protected static ?string $navigationGroup   = 'Activités';
     // protected static ?int    $navigationSort    = 2;
     protected static string  $view              = 'filament.ns-conseil.pages.phoning-workflow';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false; // Désactive complètement la page de la navigation
+    }
 
     public ?Model  $currentContact     = null;
     public string  $contactType        = '';
@@ -231,14 +235,28 @@ class PhoningWorkflow extends Page
         $this->loadScripts();
 
         $this->reset([
-            'commentaires', 'statut_resultat', 'rappel_date', 'rappel_heure',
-            'nom_interlocuteur_standard', 'creneaux_permanence_cse', 'email_general_standard',
-            'interlocuteur_nom', 'interlocuteur_fonction', 'interlocuteur_telephone', 'interlocuteur_email',
+            'commentaires',
+            'statut_resultat',
+            'rappel_date',
+            'rappel_heure',
+            'nom_interlocuteur_standard',
+            'creneaux_permanence_cse',
+            'email_general_standard',
+            'interlocuteur_nom',
+            'interlocuteur_fonction',
+            'interlocuteur_telephone',
+            'interlocuteur_email',
             // Fiche Bleue
-            'lieu_rdv', 'invitation_agenda_envoyee', 'enregistrement_appel_joint',
-            'enregistrement_raison', 'besoins_exprimes', 'objections_soulevees', 'points_attention_rdv',
+            'lieu_rdv',
+            'invitation_agenda_envoyee',
+            'enregistrement_appel_joint',
+            'enregistrement_raison',
+            'besoins_exprimes',
+            'objections_soulevees',
+            'points_attention_rdv',
             // Fiche Verte
-            'presence_cse', 'jour_dispo_appel',
+            'presence_cse',
+            'jour_dispo_appel',
         ]);
 
         // Pre-fill prospect interlocutor fields from the loaded model
@@ -630,7 +648,7 @@ class PhoningWorkflow extends Page
                 'jour_dispo_appel'   => $this->jour_dispo_appel ?: null,
                 'commentaires'       => $this->commentaires ?: null,
                 'date_rdv_a_prendre' => $this->rappel_date ?: null,
-                'heure_rdv_a_prendre'=> $this->rappel_heure ?: null,
+                'heure_rdv_a_prendre' => $this->rappel_heure ?: null,
             ]),
             default => [],
         };

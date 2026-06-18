@@ -6,6 +6,7 @@ use App\Enums\OrganizationType;
 use App\Filament\NsConseil\Resources\PartenaireResource\Actions\ImportPartenairesAction;
 use App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 use App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
+use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Models\Consultant;
 use App\Models\Partenaire;
 use Filament\Forms;
@@ -342,6 +343,8 @@ class PartenaireResource extends Resource
                     ))
                     ->modalHeading('Changer le statut du partenaire')
                     ->modalWidth('md'),
+
+                \App\Filament\Shared\Actions\SendEmailAction::make(fn (Partenaire $r) => $r->email ?? ''),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -939,6 +942,7 @@ class PartenaireResource extends Resource
             RelationManagers\AppelsRelationManager::class,
             RelationManagers\RendezVousRelationManager::class,
             RelationManagers\DocumentsRelationManager::class,
+            SentEmailsRelationManager::class,
         ];
     }
 

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\AircallService;
+use App\Services\Aopia\AopiaIcsService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,6 +15,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AircallService::class);
+        $this->app->singleton(AopiaIcsService::class);
 
         // Telescope reste un paquet dev (composer require-dev) : on ne
         // l'enregistre qu'en local pour ne jamais casser
