@@ -979,8 +979,7 @@ class PhoningWorkflow extends Page
     {
         return $this->compterTentativesNonAbouties();
     }
-
-    public function selectCampagne(int $campagneId): void
+public function selectCampagne(int $campagneId): void
     {
         $this->currentCampagneId = $campagneId;
         $this->completed = 0;
@@ -1051,15 +1050,16 @@ class PhoningWorkflow extends Page
             ->toArray();
     }
 
+
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('choisir_campagne')
+             Action::make('choisir_campagne')
                 ->label('Choisir une campagne')
                 ->icon('heroicon-o-megaphone')
                 ->color('info')
                 ->form([
-                    Select::make('campagne_id')
+                    \Filament\Forms\Components\Select::make('campagne_id')
                         ->label('Campagne')
                         ->options(function () {
                             $userId = $this->supervisedUserId ?? Auth::id();

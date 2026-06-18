@@ -10,16 +10,16 @@ use Illuminate\Console\Command;
 class SendWeeklyReport extends Command
 {
     protected $signature = 'crm:weekly-report
-                            {--roles= : Rôles ciblés, séparés par des virgules (défaut: teleprospecteur,commercial)}
+                            {--roles= : Rôles ciblés, séparés par des virgules (défaut: teleprospecteur,commercial,responsable_plateau)}
                             {--sync : Exécuter immédiatement sans passer par la file}';
 
-    protected $description = 'Envoie le rapport hebdomadaire CRM aux téléprospecteurs et commerciaux';
+  protected $description = 'Envoie le rapport hebdomadaire CRM aux téléprospecteurs, commerciaux et Team Leaders';
 
     public function handle(): int
     {
         $roles = $this->option('roles')
             ? array_map('trim', explode(',', (string) $this->option('roles')))
-            : [User::ROLE_TELEPROSPECTEUR, User::ROLE_COMMERCIAL];
+             : [User::ROLE_TELEPROSPECTEUR, User::ROLE_COMMERCIAL, User::ROLE_SUPERVISEUR];
 
         $job = new SendWeeklyReportJob($roles);
 
