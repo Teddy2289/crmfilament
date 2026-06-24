@@ -17,6 +17,7 @@ class Appel extends Model
         'date_heure' => 'datetime',
         'duree_secondes' => 'integer',
         'fiche_data' => 'array',
+        'fiche_word_generated_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -47,6 +48,9 @@ class Appel extends Model
         // Fiches récap
         'fiche_type',
         'fiche_data',
+        // Fiche Word générée
+        'fiche_word_path',
+        'fiche_word_generated_at',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────

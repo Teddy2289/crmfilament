@@ -105,6 +105,8 @@ class PhoningWorkflow extends Page
 
     public bool $isSupervisorMode = false;
 
+    public ?int $lastAppelId = null;
+
     public array $contactQueue = [];
 
     public ?int $currentCampagneId = null;
@@ -536,7 +538,10 @@ class PhoningWorkflow extends Page
 
         $this->enregistrerAppel();
 
-        // Auto-génération des fiches Word liées au statut phoning
+        // Dispatch job de génération de fiche Word si applicable
+        $this->dispatchFicheGenerationJob();
+
+        // Auto-génération des fiches Word liées au statut phoning (système existant)
         if ($this->contactType === 'prospect' && $this->currentContact instanceof Prospect) {
             try {
                 $ficheService = app(FicheGenerationService::class);
@@ -850,7 +855,7 @@ class PhoningWorkflow extends Page
 
         $ficheType = $this->determineFicheType();
 
-        Appel::create([
+        $appel = Appel::create([
             'appelable_type' => get_class($this->currentContact),
             'appelable_id' => $this->currentContact->id,
             'user_id' => Auth::id(),
@@ -867,6 +872,19 @@ class PhoningWorkflow extends Page
             'fiche_type' => $ficheType,
             'fiche_data' => $ficheType ? $this->buildFicheData($ficheType) : null,
         ]);
+
+        // Store the appel ID for job dispatch
+        $this->lastAppelId = $appel->id;
+    }
+
+    protected function dispatchFicheGenerationJob(): void
+    {
+        if (! isset($this->lastAppelId) || ! $this->lastAppelId) {
+            return;
+        }
+
+        // Dispatch job pour générer la fiche Word depuis le template
+        dispatch(new \App\Jobs\GenerateFicheWordJob($this->lastAppelId));
     }
 
     public function getCallHistory(): array
