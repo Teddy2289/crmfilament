@@ -17,3 +17,8 @@ Schedule::command('aircall:sync --pages=2 --per-page=50')
 Schedule::command('crm:weekly-report')
     ->weeklyOn(1, '07:30')
     ->withoutOverlapping();
+
+// Fiches Word : envoi automatique fiches jaunes J+7 (quotidien 08h00).
+Schedule::job(new \App\Jobs\SendFicheJauneJ7Job())
+    ->dailyAt('08:00')
+    ->withoutOverlapping();

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class TemplateFiche extends Model
 {
+    protected $table = 'templates_fiches';
+
     protected $fillable = [
         'code',
         'nom',
