@@ -25,6 +25,10 @@ class Prospect extends Model
         'nb_salaries' => 'integer',
         'chiffre_affaires' => 'decimal:2',
         'numero_ordre' => 'integer',
+        'mail1_envoye' => 'boolean',
+        'mail1_envoye_at' => 'datetime',
+        'mail2_envoye' => 'boolean',
+        'mail2_envoye_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -100,6 +104,10 @@ class Prospect extends Model
         'nom_interlocuteur_standard',
         'creneaux_permanence_cse',
         'email_general_standard',
+        'mail1_envoye',
+        'mail1_envoye_at',
+        'mail2_envoye',
+        'mail2_envoye_at',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -247,6 +255,18 @@ class Prospect extends Model
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────
+    public function peutPasserEnQF(): bool
+    {
+        return $this->mail1_envoye
+            && $this->mail2_envoye
+            && !empty($this->interlocuteur_email);
+    }
+
+    public function sentEmails(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(\App\Models\SentEmail::class, 'emailable');
+    }
+
     public function marquerContact(): void
     {
         $this->update([

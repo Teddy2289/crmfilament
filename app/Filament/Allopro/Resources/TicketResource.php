@@ -17,7 +17,11 @@ use App\Filament\Allopro\Resources\TicketResource\RelationManagers\FacturesRelat
 use App\Filament\Allopro\Resources\TicketResource\RelationManagers\FicheP2RelationManager;
 use App\Filament\Allopro\Resources\TicketResource\RelationManagers\RapportsSatisfactionRelationManager;
 use App\Filament\Allopro\Resources\TicketResource\RelationManagers\ReclamationsRelationManager;
+use App\Filament\Shared\Actions\SendEmailAction;
+use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
+use App\Mail\OuvertureTicketMail;
 use App\Models\Artisan;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Ticket;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -429,6 +433,29 @@ class TicketResource extends Resource
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+
+                // ── Actions email contextuelles ──────────────────────
+                Tables\Actions\Action::make('notifier_ouverture')
+                    ->label('Notifier ouverture')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('info')
+                    ->visible(fn (Ticket $r) => !empty($r->contactParticulier?->email))
+                    ->requiresConfirmation()
+                    ->modalHeading('Envoyer la notification d\'ouverture ?')
+                    ->modalDescription(fn (Ticket $r) => 'Destinataire : ' . $r->contactParticulier?->email)
+                    ->action(function (Ticket $record) {
+                        $email = $record->contactParticulier?->email;
+                        if (!$email) {
+                            Notification::make()->title('Email de contact manquant')->danger()->send();
+                            return;
+                        }
+                        $mailable = new OuvertureTicketMail($record);
+                        Mail::to($email)->send($mailable);
+                        $mailable->logEnvoi($record, $email);
+                        Notification::make()->title('Notification d\'ouverture envoyée')->success()->send();
+                    }),
+
+                SendEmailAction::make(fn (Ticket $r) => $r->contactParticulier?->email ?? $r->artisan?->email ?? ''),
             ])
 
             ->bulkActions([
@@ -453,6 +480,7 @@ class TicketResource extends Resource
             ReclamationsRelationManager::class,
             DevisRelationManager::class,
             FacturesRelationManager::class,
+            SentEmailsRelationManager::class,
         ];
     }
 

@@ -342,6 +342,11 @@ class Partenaire extends Model
         return $this->belongsTo(Prospect::class);
     }
 
+    public function sentEmails(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(\App\Models\SentEmail::class, 'emailable');
+    }
+
     public function contacts()
     {
         return $this->hasMany(ContactPartenaire::class);
