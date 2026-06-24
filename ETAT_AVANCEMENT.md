@@ -8,23 +8,23 @@
 
 | Module | État CDC | État Implémentation | Avancement |
 |--------|----------|---------------------|------------|
-| Partenaires | ✅ Spécifié | ✅ Implémenté | 95% |
+| Partenaires | ✅ Spécifié | ✅ Implémenté | 100% |
 | Prospects | ✅ Spécifié | ✅ Implémenté | 100% |
 | Opportunités | ✅ Spécifié | ✅ Implémenté | 100% |
-| Clients | ✅ Spécifié | ✅ Implémenté | 95% |
+| Clients | ✅ Spécifié | ✅ Implémenté | 100% |
 | Agenda/RDV | ✅ Spécifié | ✅ Implémenté | 95% |
 | Emails & Templates | ✅ Spécifié | ✅ Implémenté | 100% |
 | Base de Connaissances | ✅ Spécifié | ❌ Non implémenté | 0% |
-| Workflow Phoning CSE | ✅ Spécifié | ✅ Implémenté | 95% |
+| Workflow Phoning CSE | ✅ Spécifié | ✅ Implémenté | 100% |
 | Droits Utilisateurs | ✅ Spécifié | ✅ Implémenté | 90% |
-| Automatisations | ✅ Spécifié | ✅ Implémenté | 95% |
+| Automatisations | ✅ Spécifié | ✅ Implémenté | 100% |
 | Fiches Word | ❌ Non spécifié | ✅ Implémenté | 100% |
 | Synchronisation Dolibarr | ✅ Spécifié | ✅ Implémenté | 100% |
 | Sync Google Calendar | ✅ Spécifié | ✅ Implémenté | 100% |
 | Sync Outlook | ✅ Spécifié | ❌ Hors scope | 0% |
 | Proposition créneaux RDV | ✅ Spécifié | ✅ Implémenté | 100% |
 
-**Avancement Global: ~97%** (hors scope: Outlook, Base de Connaissances)
+**Avancement Global: ~99%** (hors scope: Outlook, Base de Connaissances)
 
 ---
 
@@ -70,13 +70,15 @@
 | Bloc Dirigeant | ✅ | Champs dirigeant entreprise mère |
 | Contacts liés | ✅ | `ContactPartenaire` relation |
 | Nomenclature | ✅ | Validation règle `[Type] [Entreprise] [Ville]` |
+| Validation stricte | ✅ | Helper action "Générer" + règle validation |
 | Statuts pipeline | ✅ | 5 statuts CDC implémentés |
 | Documents | ✅ | Relation `Document` polymorphique |
+| Permanences | ✅ | Via `ActivitePermanence` (derniere_permanence, nbre_2025, nbre_2026) |
 
 **Manquants:**
 - Aucun
 
-**Avancement: 95%**
+**Avancement: 100%**
 
 ---
 
@@ -162,14 +164,15 @@
 | Pipeline statuts | ✅ | 5 statuts CDC (nouveau, en_cours_evaluation, qualifiee, converti, perdu) |
 | Sources détection | ✅ | Enum `OpportuniteSource` avec valeurs CDC |
 | Champs principaux | ✅ | Tous champs CDC implémentés |
+| Raison perte | ✅ | Champ `raison_perte` avec méthode `marquerPerdue()` |
+| Interlocuteur identifié | ✅ | Champs nom/fonction/téléphone/email |
 | Conversion → Prospect | ✅ | Méthode `convertirEnProspect()` |
 | Visibilité par profil | ✅ | Scopes par secteur/assigné |
 
 **Manquants:**
-- Raison de perte (obligatoire si statut = Perdu)
-- Interlocuteur identifié (champs séparés nom/fonction/téléphone/email)
+- Aucun
 
-**Avancement: 85%**
+**Avancement: 100%**
 
 ---
 
@@ -197,22 +200,21 @@
 | Resource Filament | ✅ | `ClientResource.php` |
 | Modèle Eloquent | ✅ | `Client.php` |
 | Champs principaux | ✅ | Nom, prénom, adresse, téléphone, email |
+| Date naissance | ✅ | Champ `date_naissance` |
 | Partenaire d'origine | ✅ | Relation `Partenaire` |
 | Statut formation | ✅ | Enum `ClientStatut` |
-| Parrainages | ✅ | Compteur `nombre_parrainages` |
-| Palier calculé | ❌ | Non implémenté (50€/100€) |
-| Import Dolibarr | ❌ | Non implémenté |
-| Export Excel | ❌ | Non implémenté |
+| Commercial assigné | ✅ | Champ `commercial_id` |
+| Notes commerciales | ✅ | Champ `notes_commerciales` |
+| Heures formation | ✅ | Méthode `getTotalHeuresFormation()` |
+| Parrainages | ✅ | Compteur via `extra_data` |
+| Palier calculé | ✅ | Accessor `palier_parrainage` (50€/100€) |
+| Import Dolibarr | ✅ | Commande `dolibarr:import-clients` |
+| Export Excel | ✅ | `ClientExporter` + bouton header |
 
 **Manquants:**
-- Import automatique depuis Dolibarr
-- Calcul palier parrainage
-- Date naissance
-- Heures formation
-- Commercial assigné
-- Notes commerciales
+- Aucun
 
-**Avancement: 40%**
+**Avancement: 100%**
 
 ---
 
@@ -239,18 +241,18 @@
 | Resource Filament | ✅ | `RendezVousResource.php` |
 | Modèle Eloquent | ✅ | `RendezVous.php` |
 | Types de RDV | ✅ | Enum `RendezVousType` |
-- Champs RDV | ✅ | Date, heure, lieu, type, statut |
+| Champs RDV | ✅ | Date, heure, lieu, type, statut |
 | Génération fiche récap | ✅ | `FicheGenerationService` (PDF) |
 | Génération fiche Word | ✅ | `FicheWordService` (nouveau) |
-| Sync Outlook | ❌ | Non implémenté |
-| Sync Google Calendar | ❌ | Non implémenté |
-| Créneaux automatiques | ❌ | Non implémenté |
+| Sync Outlook | ❌ | Hors scope (Microsoft Graph API) |
+| Sync Google Calendar | ✅ | `GoogleCalendarService` complet |
+| Observer sync auto | ✅ | `RendezVousObserver` |
+| Créneaux automatiques | ✅ | `CreneauPropositionService` |
 
 **Manquants:**
-- Synchronisation calendriers externes
-- Proposition automatique créneaux
+- Aucun (Outlook hors scope)
 
-**Avancement: 80%**
+**Avancement: 95%**
 
 ---
 
@@ -270,16 +272,16 @@
 | Resource Filament | ✅ | `EmailTemplateResource.php` |
 | Modèle Eloquent | ✅ | `EmailTemplate.php` |
 | Template 1 (Confirmation RDV) | ✅ | `rdv.confirmation_cse` |
-| Template 2 (Invitation agenda) | ✅ | `rdv.invitation_responsable` |
+| Template 2 (Invitation agenda) | ✅ | `rdv.invitation_responsable` + CC Bruno & Nérina |
 | Rappel J-1 CSE | ✅ | `rdv.rappel_cse` |
 | Rappel J-1 Responsable | ✅ | `rdv.rappel_responsable` |
 | Mail hebdomadaire | ✅ | `SendWeeklyReportCommand` (lundi 07h30) |
 | 16 templates totaux | ✅ | `EmailTemplateSeeder` |
 
 **Manquants:**
-- CC automatique Bruno & Nérina dans Template 2
+- Aucun
 
-**Avancement: 90%**
+**Avancement: 100%**
 
 ---
 
@@ -355,11 +357,12 @@ Base de connaissances
 | Visibilité par profil | ✅ | Filtres par rôle |
 | Groupes workflow | ✅ | `WorkflowGroupe` |
 | Scripts d'appel | ✅ | `ScriptAppel` |
+| Rappel STD-NR J+2 | ✅ | Job `SendRappelStdNrJob` quotidien 09h00 |
 
 **Manquants:**
-- Rappel automatique J+2 pour STD-NR (optionnel)
+- Aucun
 
-**Avancement: 95%**
+**Avancement: 100%**
 
 ---
 
@@ -429,14 +432,15 @@ Base de connaissances
 | WF4 — Blocage QF | ✅ | Validation 7 éléments |
 | WF5 — Reporting Phoning | ✅ | `SendWeeklyReportCommand` (07h30) |
 | WF6 — Reporting Commerciaux | ✅ | Inclus dans WF5 |
-| WF7 — Rappel RP | ❌ | Non implémenté |
+| WF7 — Rappel RP | ✅ | Job `SendRappelRpJob` (toutes les 30 min) |
 | **Nouveau** — Fiches Word | ✅ | `GenerateFicheWordJob` |
 | **Nouveau** — Fiche Jaune J+7 | ✅ | `SendFicheJauneJ7Job` (08h00) |
+| **Nouveau** — Rappel STD-NR J+2 | ✅ | Job `SendRappelStdNrJob` (09h00) |
 
 **Manquants:**
-- WF7 — Rappel RP (tâche automatique)
+- Aucun
 
-**Avancement: 60%**
+**Avancement: 100%**
 
 ---
 
