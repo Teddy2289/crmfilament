@@ -257,6 +257,11 @@ class Artisan extends Model
     }
 
     // ── Relations ────────────────────────────────────────────────────
+    public function sentEmails(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(\App\Models\SentEmail::class, 'emailable');
+    }
+
     public function tickets()
     {
         return $this->hasMany(Ticket::class);

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\CrmSetting;
 use App\Services\AircallService;
+use App\Services\Aopia\AopiaIcsService;
 use App\Services\Crm\CrmSettingsService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
@@ -17,6 +18,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AircallService::class);
+        $this->app->singleton(AopiaIcsService::class);
         $this->app->singleton(CrmSettingsService::class);
 
         // Telescope reste un paquet dev (composer require-dev) : on ne

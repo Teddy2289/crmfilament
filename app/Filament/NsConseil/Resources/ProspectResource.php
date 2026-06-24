@@ -4,8 +4,12 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Enums\OrganizationType;
 use App\Enums\ProspectStatut;
+use App\Events\Mail2EnvoyeEvent;
 use App\Filament\NsConseil\Resources\ProspectResource\Pages;
 use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers;
+use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
+use App\Mail\ConfirmationRdvCseMail;
+use App\Mail\InvitationAgendaResponsableMail;
 use App\Models\Prospect;
 use App\Models\User;
 use Carbon\Carbon;
@@ -25,6 +29,7 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Mail;
 
 class ProspectResource extends Resource
 {
@@ -370,6 +375,75 @@ class ProspectResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
 
+                Tables\Actions\Action::make('envoyer_mail1')
+                    ->label('Mail 1 — CSE')
+                    ->icon('heroicon-o-envelope')
+                    ->color('primary')
+                    ->visible(fn (Prospect $record) =>
+                        $record->statut === ProspectStatut::RPC
+                        && $record->rendezVous()->exists()
+                        && !$record->mail1_envoye
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading('Envoyer la confirmation de RDV au CSE ?')
+                    ->modalDescription(fn (Prospect $record) => 'Destinataire : ' . ($record->interlocuteur_email ?: 'email manquant'))
+                    ->action(function (Prospect $record) {
+                        if (!$record->interlocuteur_email) {
+                            Notification::make()->title('Email interlocuteur manquant')->danger()->send();
+                            return;
+                        }
+
+                        $rdv = $record->rendezVous()->latest()->first();
+                        $mailable = new ConfirmationRdvCseMail($record, $rdv);
+
+                        Mail::to($record->interlocuteur_email)->send($mailable);
+                        $mailable->logEnvoi($record, $record->interlocuteur_email);
+
+                        $record->update([
+                            'mail1_envoye'    => true,
+                            'mail1_envoye_at' => now(),
+                        ]);
+
+                        Notification::make()->title('Mail 1 envoyé au CSE')->success()->send();
+                    }),
+
+                Tables\Actions\Action::make('envoyer_mail2')
+                    ->label('Mail 2 — Invitation agenda')
+                    ->icon('heroicon-o-calendar')
+                    ->color('success')
+                    ->visible(fn (Prospect $record) => $record->mail1_envoye && !$record->mail2_envoye)
+                    ->disabled(fn (Prospect $record) => !$record->mail1_envoye)
+                    ->requiresConfirmation()
+                    ->modalHeading('Envoyer l\'invitation agenda au Responsable de Secteur ?')
+                    ->action(function (Prospect $record) {
+                        $rdv = $record->rendezVous()->latest()->first();
+
+                        if (!$rdv?->commercial?->email) {
+                            Notification::make()->title('Email du Responsable de Secteur manquant')->danger()->send();
+                            return;
+                        }
+
+                        $mailable = new InvitationAgendaResponsableMail(
+                            $record,
+                            $rdv,
+                            $record->fiche_recap_pdf_path ?? null,
+                            $record->enregistrement_audio_path ?? null,
+                        );
+
+                        $cc = implode(', ', InvitationAgendaResponsableMail::CC_FIXES);
+                        Mail::to($rdv->commercial->email)->send($mailable);
+                        $mailable->logEnvoi($record, $rdv->commercial->email, $cc);
+
+                        $record->update([
+                            'mail2_envoye'    => true,
+                            'mail2_envoye_at' => now(),
+                        ]);
+
+                        event(new Mail2EnvoyeEvent($record));
+
+                        Notification::make()->title('Invitation agenda envoyée au Responsable de Secteur')->success()->send();
+                    }),
+
                 Tables\Actions\Action::make('qualifier_qf')
                     ->label('Qualifier QF')
                     ->icon('heroicon-o-check-badge')
@@ -668,6 +742,42 @@ class ProspectResource extends Resource
                     ]),
                 ]),
 
+            // ── Section : Emails AOPIA (Mail 1 + Mail 2) ──
+            Section::make('Envois emails AOPIA')
+                ->icon('heroicon-o-envelope')
+                ->collapsible()
+                ->schema([
+                    Grid::make(4)->schema([
+                        IconEntry::make('mail1_envoye')
+                            ->label('Mail 1 — CSE')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->trueColor('success')
+                            ->falseColor('danger'),
+
+                        TextEntry::make('mail1_envoye_at')
+                            ->label('Envoyé le')
+                            ->dateTime('d/m/Y H:i')
+                            ->placeholder('—')
+                            ->visible(fn ($record) => $record->mail1_envoye),
+
+                        IconEntry::make('mail2_envoye')
+                            ->label('Mail 2 — Invitation agenda')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->trueColor('success')
+                            ->falseColor('danger'),
+
+                        TextEntry::make('mail2_envoye_at')
+                            ->label('Envoyé le')
+                            ->dateTime('d/m/Y H:i')
+                            ->placeholder('—')
+                            ->visible(fn ($record) => $record->mail2_envoye),
+                    ]),
+                ]),
+
             // ── Section 5 : Qualification QF ──
             Section::make('Validation QF')
                 ->icon('heroicon-o-clipboard-document-check')
@@ -890,6 +1000,7 @@ class ProspectResource extends Resource
             RelationManagers\AppelsRelationManager::class,
             RelationManagers\RendezVousRelationManager::class,
             RelationManagers\DocumentsRelationManager::class,
+            SentEmailsRelationManager::class,
         ];
     }
 
