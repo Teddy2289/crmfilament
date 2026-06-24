@@ -10,7 +10,9 @@ use App\Filament\NsConseil\Resources\RendezVousResource\Pages\ListRendezVous;
 use App\Filament\NsConseil\Resources\RendezVousResource\Pages\ViewRendezVous;
 use App\Models\RendezVous;
 use App\Models\User;
+use App\Services\CreneauPropositionService;
 use App\Services\GoogleCalendarService;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -79,7 +81,36 @@ class RendezVousResource extends Resource
                         ->required()
                         ->displayFormat('d/m/Y H:i')
                         ->seconds(false)
-                        ->default(now()->addHour()->startOfHour()),
+                        ->default(now()->addHour()->startOfHour())
+                        ->live(),
+
+                    Forms\Components\Select::make('creneaux_proposes')
+                        ->label('Ou utiliser une proposition')
+                        ->placeholder('Sélectionner un créneau proposé')
+                        ->options(function () {
+                            $user = auth()->user();
+                            if (! $user) {
+                                return [];
+                            }
+
+                            $service = app(CreneauPropositionService::class);
+                            $creneaux = $service->genererPropositions($user);
+                            
+                            return $service->formaterPourSelect($creneaux);
+                        })
+                        ->searchable()
+                        ->preload()
+                        ->native(false)
+                        ->hint('Les créneaux sont basés sur votre agenda Google Calendar si connecté')
+                        ->reactive()
+                        ->afterStateUpdated(function (Forms\Components\Select $component, $state) {
+                            // Quand un créneau est sélectionné, mettre à jour la date_heure
+                            if ($state) {
+                                $component->getContainer()
+                                    ->getComponent('date_heure')
+                                    ->state(Carbon::parse($state));
+                            }
+                        }),
 
                     Forms\Components\TextInput::make('lieu')
                         ->label('Lieu'),
