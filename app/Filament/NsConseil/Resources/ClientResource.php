@@ -9,6 +9,7 @@ use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRe
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DossierFormationsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\PropositionsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
+use App\Filament\Exports\ClientExporter;
 use App\Models\Client;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -367,6 +368,12 @@ class ClientResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(ClientExporter::class)
+                    ->label('Exporter les clients')
+                    ->icon('heroicon-o-arrow-down-tray'),
             ])
             ->emptyStateHeading('Aucun client')
             ->emptyStateDescription('Importez des clients depuis un fichier CSV.')
