@@ -18,6 +18,7 @@ class Appel extends Model
         'duree_secondes' => 'integer',
         'fiche_data' => 'array',
         'fiche_word_generated_at' => 'datetime',
+        'fiche_jaune_j7_envoye_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -51,6 +52,7 @@ class Appel extends Model
         // Fiche Word générée
         'fiche_word_path',
         'fiche_word_generated_at',
+        'fiche_jaune_j7_envoye_at',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────

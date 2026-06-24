@@ -7,6 +7,7 @@ use App\Filament\NsConseil\Widgets\CommercialKpiWidget;
 use App\Filament\NsConseil\Widgets\DirectionDerniersPartenairesWidget;
 use App\Filament\NsConseil\Widgets\DirectionKpiWidget;
 use App\Filament\NsConseil\Widgets\DirectionRdvParDepartementChart;
+use App\Filament\NsConseil\Widgets\FichesWordRecentesWidget;
 use App\Filament\NsConseil\Widgets\MesPartenairesRecentWidget;
 use App\Filament\NsConseil\Widgets\PipelinePartenairesWidget;
 use App\Filament\NsConseil\Widgets\ProspectionKpiWidget;
@@ -55,6 +56,7 @@ class Dashboard extends BaseDashboard
             $widgets[] = DirectionDerniersPartenairesWidget::class;
             $widgets[] = DirectionRdvParDepartementChart::class;
             $widgets[] = PipelinePartenairesWidget::class;
+            $widgets[] = FichesWordRecentesWidget::class;
         }
 
         // Team Leader / Superviseur
@@ -68,6 +70,7 @@ class Dashboard extends BaseDashboard
             $widgets[] = ProspectionKpiWidget::class;
             $widgets[] = ProspectionStatutsChart::class;
             $widgets[] = RappelsDuJourWidget::class;
+            $widgets[] = FichesWordRecentesWidget::class;
         }
 
         // Commercial
@@ -75,6 +78,7 @@ class Dashboard extends BaseDashboard
             $widgets[] = CommercialKpiWidget::class;
             $widgets[] = CommercialAgendaWidget::class;
             $widgets[] = MesPartenairesRecentWidget::class;
+            $widgets[] = FichesWordRecentesWidget::class;
         }
 
         return array_unique($widgets);

@@ -1,8 +1,8 @@
 <?php
 
-// ╔══════════════════════════════════════════════════════════════════╗
+// ╔════════════════════════════════════════════════════════════════════╗
 // ║  database/seeders/DatabaseSeeder.php                            ║
-// ╚══════════════════════════════════════════════════════════════════╝
+// ╚═══════════════════════════════════════════════════════════════════╝
 
 namespace Database\Seeders;
 
@@ -23,8 +23,9 @@ class DatabaseSeeder extends Seeder
             FixAlexSeeder::class,
             AlloproUsersSeeder::class,
             ArtisanSeeder::class,
-            StatutPhoningSeeder::class,
             FicheTemplateSeeder::class,
+            TemplateFicheSeeder::class,
+            EmailTemplateSeeder::class,
         ]);
     }
 }

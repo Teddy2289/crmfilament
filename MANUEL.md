@@ -1,0 +1,674 @@
+# Manuel CRM Filament - Déploiement & Développement
+
+## 📋 Table des matières
+
+- [1. Manuel de Déploiement](#1-manuel-de-déploiement)
+  - [1.1 Prérequis](#11-prérequis)
+  - [1.2 Installation](#12-installation)
+  - [1.3 Configuration](#13-configuration)
+  - [1.4 Mise en Production](#14-mise-en-production)
+  - [1.5 Mise à jour](#15-mise-à-jour)
+- [2. Manuel de Développement](#2-manuel-de-développement)
+  - [2.1 Structure du Projet](#21-structure-du-projet)
+  - [2.2 Ajout d'un Nouveau Module](#22-ajout-dun-nouveau-module)
+  - [2.3 Conventions de Code](#23-conventions-de-code)
+  - [2.4 Tests](#24-tests)
+  - [2.5 Workflow Git](#25-workflow-git)
+- [3. Modules Existants](#3-modules-existants)
+- [4. Bonnes Pratiques](#4-bonnes-pratiques)
+
+---
+
+## 1. Manuel de Déploiement
+
+### 1.1 Prérequis
+
+**Serveur:**
+- PHP 8.2 ou supérieur
+- MySQL 8.0 ou MariaDB 10.6+
+- Composer 2.x
+- Node.js 18+ et npm 9+
+- Redis (optionnel, pour queue/cache)
+- Laragon (environnement de développement recommandé)
+
+**Extensions PHP:**
+- php-mbstring
+- php-xml
+- php-curl
+- php-zip
+- php-gd
+- php-mysql
+- php-bcmath
+
+### 1.2 Installation
+
+#### Installation locale (Laragon)
+
+```bash
+# 1. Cloner le repository
+git clone https://github.com/votre-org/crmfilament.git
+cd crmfilament
+
+# 2. Installer les dépendances
+composer install
+npm install
+
+# 3. Configuration de l'environnement
+cp .env.example .env
+php artisan key:generate
+
+# 4. Configurer la base de données dans .env
+# DB_DATABASE=filamentcrm
+# DB_USERNAME=root
+# DB_PASSWORD=
+
+# 5. Exécuter les migrations
+php artisan migrate
+
+# 6. Lancer les seeders
+php artisan db:seed --class=DatabaseSeeder
+
+# 7. Compiler les assets
+npm run build
+
+# 8. Lancer le serveur de développement
+php artisan serve
+```
+
+#### Installation production
+
+```bash
+# 1. Cloner sur le serveur
+git clone https://github.com/votre-org/crmfilament.git
+cd crmfilament
+
+# 2. Installer les dépendances en mode production
+composer install --no-dev --optimize-autoloader
+npm ci --production
+
+# 3. Configuration
+cp .env.example .env
+php artisan key:generate
+# Éditer .env avec les variables de production
+
+# 4. Optimiser
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# 5. Migrations
+php artisan migrate --force
+
+# 6. Permissions
+chmod -R 775 storage bootstrap/cache
+
+# 7. Compiler les assets
+npm run build
+```
+
+### 1.3 Configuration
+
+**Variables d'environnement essentielles:**
+
+```env
+APP_NAME="CRM Filament"
+APP_ENV=production
+APP_KEY=base64:...
+APP_DEBUG=false
+APP_URL=https://crm.votre-domaine.com
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=filamentcrm
+DB_USERNAME=crm_user
+DB_PASSWORD=votre_password_secure
+
+# Mail
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=noreply@votre-domaine.com
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Filesystem
+FILESYSTEM_DISK=public
+
+# Queue
+QUEUE_CONNECTION=database
+# ou redis pour la production
+```
+
+### 1.4 Mise en Production
+
+**Avec Supervisor (Queue Workers):**
+
+```ini
+# /etc/supervisor/conf.d/crm-worker.conf
+[program:crm-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/crmfilament/artisan queue:work --sleep=3 --tries=3
+autostart=true
+autorestart=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/crmfilament/storage/logs/worker.log
+```
+
+**Avec Cron (Scheduler):**
+
+```bash
+# Ajouter au crontab
+* * * * * cd /var/www/crmfilament && php artisan schedule:run >> /dev/null 2>&1
+```
+
+**Nginx Configuration:**
+
+```nginx
+server {
+    listen 80;
+    server_name crm.votre-domaine.com;
+    root /var/www/crmfilament/public;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+
+    index index.php;
+
+    charset utf-8;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+```
+
+### 1.5 Mise à jour
+
+```bash
+# 1. Récupérer les dernières modifications
+git pull origin main
+
+# 2. Mettre à jour les dépendances
+composer update
+npm update
+
+# 3. Exécuter les migrations
+php artisan migrate --force
+
+# 4. Nettoyer les caches
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan cache:clear
+
+# 5. Recompiler les assets
+npm run build
+
+# 6. Redémarrer les workers (si nécessaire)
+php artisan queue:restart
+```
+
+---
+
+## 2. Manuel de Développement
+
+### 2.1 Structure du Projet
+
+```
+crmfilament/
+├── app/
+│   ├── Enums/                    # Énumérations PHP 8.1
+│   ├── Filament/                 # Resources Filament
+│   │   ├── NsConseil/           # Panel principal
+│   │   ├── SuperAdmin/          # Panel administration
+│   │   └── Allopro/             # Panel Allopro
+│   ├── Http/
+│   │   ├── Controllers/         # Contrôleurs API/Web
+│   │   └── Middleware/          # Middleware personnalisés
+│   ├── Jobs/                    # Jobs Laravel Queue
+│   ├── Mail/                    # Mailables
+│   ├── Models/                  # Modèles Eloquent
+│   ├── Services/                # Services métier
+│   │   ├── Aopia/              # Services AOPIA
+│   │   └── Crm/                # Services CRM
+│   └── Support/                 # Classes utilitaires
+├── database/
+│   ├── migrations/              # Migrations BDD
+│   ├── seeders/                 # Seeders
+│   └── data/                    # Données de référence
+├── resources/
+│   ├── views/                   # Vues Blade
+│   ├── stubs/                   # Templates/Stub
+│   └── css/                     # Styles Tailwind
+├── routes/
+│   ├── web.php                  # Routes web
+│   ├── api.php                  # Routes API
+│   └── console.php              # Commandes console
+└── tests/                       # Tests
+```
+
+### 2.2 Ajout d'un Nouveau Module
+
+#### Étape 1: Créer le modèle
+
+```bash
+php artisan make:model ModuleName -m
+```
+
+**Exemple de modèle:**
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class ModuleName extends Model
+{
+    protected $fillable = [
+        'nom',
+        'description',
+        'actif',
+    ];
+
+    protected $casts = [
+        'actif' => 'boolean',
+    ];
+
+    // Relations
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Scopes
+    public function scopeActifs($query)
+    {
+        return $query->where('actif', true);
+    }
+}
+```
+
+#### Étape 2: Créer la migration
+
+```bash
+php artisan make:migration create_module_names_table
+```
+
+```php
+Schema::create('module_names', function (Blueprint $table) {
+    $table->id();
+    $table->string('nom');
+    $table->text('description')->nullable();
+    $table->boolean('actif')->default(true);
+    $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+    $table->timestamps();
+});
+```
+
+#### Étape 3: Créer la Resource Filament
+
+```bash
+php artisan make:filament-resource ModuleName --generate --panel=NsConseil
+```
+
+Cela crée:
+- `ModuleResource.php` - Configuration de la resource
+- `Pages/ListModuleNames.php` - Liste
+- `Pages/CreateModuleName.php` - Création
+- `Pages/EditModuleName.php` - Édition
+
+#### Étape 4: Personnaliser la Resource
+
+```php
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            TextInput::make('nom')
+                ->required()
+                ->maxLength(255),
+            Textarea::make('description')
+                ->columnSpanFull(),
+            Toggle::make('actif')
+                ->default(true),
+        ]);
+}
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->columns([
+            TextColumn::make('nom')
+                ->searchable()
+                ->sortable(),
+            TextColumn::make('description')
+                ->limit(50),
+            ToggleColumn::make('actif'),
+        ])
+        ->filters([
+            // Filtres personnalisés
+        ])
+        ->actions([
+            Tables\Actions\EditAction::make(),
+        ]);
+}
+```
+
+#### Étape 5: Créer un Service (si logique métier)
+
+```bash
+# Créer manuellement dans app/Services/Crm/
+```
+
+```php
+<?php
+
+namespace App\Services\Crm;
+
+use App\Models\ModuleName;
+
+class ModuleNameService
+{
+    public function creer(array $data): ModuleName
+    {
+        return ModuleName::create($data);
+    }
+
+    public function mettreAJour(ModuleName $module, array $data): ModuleName
+    {
+        $module->update($data);
+        return $module->fresh();
+    }
+
+    public function supprimer(ModuleName $module): void
+    {
+        $module->delete();
+    }
+}
+```
+
+#### Étape 6: Créer des Tests
+
+```bash
+php artisan make:test ModuleNameTest
+```
+
+```php
+public function test_peut_creer_un_module()
+{
+    $module = ModuleName::factory()->create([
+        'nom' => 'Test Module',
+    ]);
+
+    $this->assertDatabaseHas('module_names', [
+        'nom' => 'Test Module',
+    ]);
+}
+```
+
+#### Étape 7: Lancer les migrations et tests
+
+```bash
+php artisan migrate
+php artisan test --filter ModuleNameTest
+```
+
+### 2.3 Conventions de Code
+
+**Nommage:**
+- **Classes:** PascalCase (ex: `ProspectService`)
+- **Méthodes:** camelCase (ex: `creerProspect`)
+- **Variables:** camelCase (ex: `$nomClient`)
+- **Constantes:** UPPER_SNAKE_CASE (ex: `MAX_ITEMS`)
+- **Tables:** snake_case (ex: `prospects`)
+- **Colonnes:** snake_case (ex: `date_creation`)
+
+**Style:**
+- Utiliser Laravel Pint pour le formatage:
+  ```bash
+  ./vendor/bin/pint
+  ```
+- Respecter PSR-12
+- Indentation: 4 espaces
+- Longueur max ligne: 120 caractères
+
+**Commentaires:**
+- Docblocks pour les classes et méthodes publiques
+- Commentaires inline pour la logique complexe
+- Éviter les commentaires évidents
+
+```php
+/**
+ * Crée un nouveau prospect avec les données fournies.
+ *
+ * @param array $data Données du prospect
+ * @return Prospect
+ */
+public function creer(array $data): Prospect
+{
+    // Validation des données avant création
+    $validated = $this->valider($data);
+    
+    return Prospect::create($validated);
+}
+```
+
+### 2.4 Tests
+
+**Types de tests:**
+- **Unit tests:** Tests de méthodes isolées
+- **Feature tests:** Tests de fonctionnalités complètes
+- **Browser tests:** Tests avec Dusk (optionnel)
+
+**Lancer les tests:**
+
+```bash
+# Tous les tests
+php artisan test
+
+# Tests spécifiques
+php artisan test --filter ProspectTest
+
+# Avec coverage
+php artisan test --coverage
+```
+
+**Structure des tests:**
+
+```php
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Prospect;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class ProspectTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_un_utilisateur_peut_creer_un_prospect()
+    {
+        $response = $this->actingAs($user)
+            ->post(route('prospects.store'), [
+                'nom' => 'Test Company',
+                'email' => 'test@example.com',
+            ]);
+
+        $response->assertStatus(302);
+        $this->assertDatabaseHas('prospects', [
+            'nom' => 'Test Company',
+        ]);
+    }
+}
+```
+
+### 2.5 Workflow Git
+
+**Branches:**
+- `main` - Production
+- `develop` - Développement
+- `feature/nom-feature` - Nouvelle fonctionnalité
+- `fix/nom-bug` - Correction de bug
+- `hotfix/nom-hotfix` - Correction urgente en production
+
+**Processus:**
+
+```bash
+# 1. Créer une branche feature
+git checkout -b feature/ajout-module-phoning
+
+# 2. Travailler sur la feature
+git add .
+git commit -m "feat: ajouter module phoning"
+
+# 3. Pusher la branche
+git push origin feature/ajout-module-phoning
+
+# 4. Créer une Pull Request sur GitHub/GitLab
+
+# 5. Après review et merge, supprimer la branche
+git checkout develop
+git branch -d feature/ajout-module-phoning
+```
+
+**Messages de commit (Conventional Commits):**
+
+```
+feat: ajouter la génération de fiches Word
+fix: corriger le bug de validation email
+docs: mettre à jour le README
+refactor: optimiser le service ProspectService
+test: ajouter tests pour le module Phoning
+chore: mettre à jour les dépendances
+```
+
+---
+
+## 3. Modules Existants
+
+### 3.1 Phoning Workflow
+- **Fichier:** `app/Filament/NsConseil/Pages/PhoningWorkflow.php`
+- **Service:** `app/Support/CsePhoningWorkflow.php`
+- **Modèles:** `Prospect`, `Appel`, `StatutPhoning`
+- **Description:** Gestion du workflow de téléprospection CSE
+
+### 3.2 Fiches Word
+- **Service:** `app/Services/Crm/FicheWordService.php`
+- **Job:** `app/Jobs/GenerateFicheWordJob.php`
+- **Modèles:** `TemplateFiche`, `Appel`
+- **Description:** Génération automatique de fiches Word (bleue, jaune, verte)
+
+### 3.3 Opportunities
+- **Resource:** `app/Filament/NsConseil/Resources/OpportuniteResource.php`
+- **Modèle:** `app/Models/Opportunite.php`
+- **Description:** Gestion des opportunités commerciales
+
+### 3.4 Weekly Report
+- **Command:** `app/Console/Commands/SendWeeklyReport.php`
+- **Service:** `app/Services/Crm/WeeklyReportService.php`
+- **Description:** Rapport hebdomadaire automatique
+
+---
+
+## 4. Bonnes Pratiques
+
+### 4.1 Sécurité
+- Toujours valider les entrées utilisateur
+- Utiliser les policies Laravel pour les autorisations
+- Ne jamais stocker de mots de passe en clair
+- Utiliser HTTPS en production
+- Limiter les permissions des fichiers
+
+### 4.2 Performance
+- Utiliser eager loading pour les relations
+- Mettre en cache les données statiques
+- Utiliser les jobs pour les tâches longues
+- Optimiser les requêtes SQL avec indexes
+- Utiliser pagination pour les listes
+
+### 4.3 Maintenance
+- Garder les dépendances à jour
+- Documenter les changements majeurs
+- Faire des backups réguliers
+- Surveiller les logs d'erreurs
+- Faire des revues de code régulières
+
+### 4.4 Documentation
+- Commenter le code complexe
+- Mettre à jour ce manuel lors de changements
+- Documenter les API avec OpenAPI
+- Garder le README à jour
+
+---
+
+## 5. Dépannage
+
+### 5.1 Problèmes courants
+
+**Erreur de migration:**
+```bash
+php artisan migrate:rollback
+php artisan migrate
+```
+
+**Cache corrompu:**
+```bash
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+```
+
+**Queue worker bloqué:**
+```bash
+php artisan queue:restart
+```
+
+**Problème de permissions:**
+```bash
+chmod -R 775 storage bootstrap/cache
+```
+
+### 5.2 Logs
+
+Les logs sont situés dans `storage/logs/`:
+- `laravel.log` - Logs généraux
+- `worker.log` - Logs des queue workers
+
+---
+
+## 6. Contact Support
+
+Pour toute question ou problème:
+- **Email:** support@votre-domaine.com
+- **Documentation:** https://docs.votre-domaine.com
+- **Issues:** https://github.com/votre-org/crmfilament/issues
+
+---
+
+*Dernière mise à jour: 24 Juin 2026*
