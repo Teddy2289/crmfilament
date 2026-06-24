@@ -41,6 +41,8 @@ class Client extends Model
         'ne_plus_contacter',
         'partenaire_id',
         'parrain_id',
+        'commercial_id',
+        'notes_commerciales',
         'extra_data',
     ];
 
@@ -169,6 +171,38 @@ class Client extends Model
         }
 
         return round(($this->getTotalHeuresRealisees() / $total) * 100, 1);
+    }
+
+    public function getPalierParrainageAttribute(): ?string
+    {
+        // Compter le nombre de parrainages réalisés
+        $nombreParrainages = $this->parrain_id ? 1 : 0;
+        
+        // Ajouter les parrainages via propositions si disponibles
+        if ($this->ref_client) {
+            $nombreParrainages += $this->propositions()->where('est_parrainage', true)->count();
+        }
+
+        return match (true) {
+            $nombreParrainages >= 4 => '100€',
+            $nombreParrainages >= 1 => '50€',
+            default => null,
+        };
+    }
+
+    public function getMontantParrainageAttribute(): float
+    {
+        $nombreParrainages = $this->parrain_id ? 1 : 0;
+        
+        if ($this->ref_client) {
+            $nombreParrainages += $this->propositions()->where('est_parrainage', true)->count();
+        }
+
+        return match (true) {
+            $nombreParrainages >= 4 => 100.0,
+            $nombreParrainages >= 1 => 50.0,
+            default => 0.0,
+        };
     }
 
     public function getDernierePropositionAttribute(): ?Proposition
@@ -315,6 +349,11 @@ class Client extends Model
     public function parrain()
     {
         return $this->belongsTo(Parrain::class);
+    }
+
+    public function commercial()
+    {
+        return $this->belongsTo(User::class, 'commercial_id');
     }
 
     public function dossierFormations()

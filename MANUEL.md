@@ -662,7 +662,143 @@ Les logs sont situés dans `storage/logs/`:
 
 ---
 
-## 6. Contact Support
+## 6. Seeders (Données de référence)
+
+## 6.1 Liste Complète des Seeders
+
+Le CRM utilise 14 seeders pour initialiser les données de référence. Ils sont exécutés dans l'ordre défini dans `DatabaseSeeder.php`.
+
+### Seeders Principaux (Obligatoires)
+
+| Seeder | Taille | Description | Dépendances |
+|--------|--------|-------------|-------------|
+| **RolesAndPermissionsSeeder** | 1.6 KB | Crée les rôles (admin, superviseur, commercial, téléprospecteur, etc.) et permissions Spatie. Charge les profils CRM depuis `database/seeders/data/crm_profiles.php` | Aucune |
+| **UsersSeeder** | 3.9 KB | Crée les utilisateurs par défaut avec leurs rôles et secteurs. Mot de passe par défaut: `changeme123` | RolesAndPermissionsSeeder |
+| **CrmSettingSeeder** | 559 B | Initialise les paramètres globaux du CRM depuis `database/seeders/data/crm_settings.php` | Aucune |
+| **WorkflowGroupeSeeder** | - | Crée les groupes de workflow (Appel non abouti, Élu CSE joint, etc.) depuis `database/seeders/data/workflow_groupes.php` | Aucune |
+| **PipelineStatutSeeder** | 836 B | Initialise les statuts de pipeline (nouveau, en_cours, converti, etc.) depuis `database/seeders/data/pipeline_statuts.php` | Aucune |
+| **StatutPhoningSeeder** | 4.5 KB | Crée les statuts de phoning pour prospects, partenaires, clients et opportunités depuis `database/seeders/data/statuts_phoning_prospect.php` | WorkflowGroupeSeeder |
+| **EmailTemplateSeeder** | 11.7 KB | Initialise 16 templates d'emails (confirmation RDV, rappels, bienvenue, factures, etc.) | Aucune |
+
+### Seeders Module Fiches Word
+
+| Seeder | Taille | Description | Dépendances |
+|--------|--------|-------------|-------------|
+| **TemplateFicheSeeder** | 4.4 KB | Importe les 3 modèles Word (bleue, jaune, verte) depuis `resources/stubs/fiche-templates/` vers storage | Aucune |
+
+### Seeders AlloPro (Optionnel)
+
+| Seeder | Taille | Description | Dépendances |
+|--------|--------|-------------|-------------|
+| **AlloproUsersSeeder** | 4.1 KB | Utilisateurs spécifiques AlloPro 24/24 | RolesAndPermissionsSeeder |
+| **ArtisanSeeder** | 3.8 KB | Données de test pour artisans | Aucune |
+| **DiagnosticSeeder** | 2.7 KB | Diagnostics pour module AlloPro | Aucune |
+| **FixAlexSeeder** | 2.3 KB | Fix de données spécifique (temporaire) | Aucune |
+
+### Seeders Additionnels
+
+| Seeder | Taille | Description | Utilisation |
+|--------|--------|-------------|-------------|
+| **FicheTemplateSeeder** | 2.9 KB | Système de templates de fiches (ancien) | Optionnel - Système legacy |
+| **CrmProfileSeeder** | 1.9 KB | Profils CRM (appelé automatiquement par RolesAndPermissionsSeeder) | Interne |
+
+## 6.2 Exécution des Seeders
+
+**Exécuter tous les seeders:**
+```bash
+php artisan db:seed
+```
+
+**Exécuter un seeder spécifique:**
+```bash
+php artisan db:seed --class=RolesAndPermissionsSeeder
+php artisan db:seed --class=TemplateFicheSeeder
+php artisan db:seed --class=StatutPhoningSeeder
+```
+
+**Recharger les données de référence (sans perdre les données utilisateurs):**
+```bash
+php artisan db:seed --force
+```
+
+## 6.3 Fichiers de Données
+
+Les seeders chargent leurs données depuis les fichiers suivants:
+
+- `database/seeders/data/crm_profiles.php` - Profils et rôles CRM
+- `database/seeders/data/crm_settings.php` - Paramètres globaux
+- `database/seeders/data/workflow_groupes.php` - Groupes de workflow
+- `database/seeders/data/pipeline_statuts.php` - Statuts de pipeline
+- `database/seeders/data/statuts_phoning_prospect.php` - Statuts de phoning prospects
+- `resources/stubs/fiche-templates/` - Modèles Word pour les fiches
+
+## 6.4 Ordre d'Exécution Recommandé
+
+Pour une installation fraîche:
+
+```bash
+# 1. Migrations
+php artisan migrate
+
+# 2. Seeders principaux
+php artisan db:seed --class=RolesAndPermissionsSeeder
+php artisan db:seed --class=UsersSeeder
+php artisan db:seed --class=CrmSettingSeeder
+php artisan db:seed --class=WorkflowGroupeSeeder
+php artisan db:seed --class=PipelineStatutSeeder
+php artisan db:seed --class=StatutPhoningSeeder
+php artisan db:seed --class=EmailTemplateSeeder
+
+# 3. Module Fiches Word
+php artisan db:seed --class=TemplateFicheSeeder
+
+# 4. (Optionnel) AlloPro
+php artisan db:seed --class=AlloproUsersSeeder
+php artisan db:seed --class=ArtisanSeeder
+```
+
+Ou simplement:
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+---
+
+## 6.5 Import Dolibarr
+
+Le CRM peut importer les clients depuis un export Excel de Dolibarr.
+
+**Commande d'import:**
+```bash
+php artisan dolibarr:import-clients path/to/export_dolibarr.xlsx
+```
+
+**Colonnes Excel attendues:**
+- `civilite` - Civilité (M/Mme)
+- `nom` - Nom du client
+- `prenom` - Prénom du client
+- `date_naissance` - Date de naissance (format Excel ou dd/mm/YYYY)
+- `adresse` - Adresse
+- `code_postal` - Code postal
+- `ville` - Ville
+- `departement` - Département
+- `telephone` - Téléphone
+- `email` - Email (utilisé comme clé unique)
+- `partenaire_nom` - Nom du partenaire d'origine (recherche partielle)
+- `statut_formation` - Statut de formation (En formation / Terminé)
+- `heures_formation` - Nombre d'heures de formation
+- `nombre_parrainages` - Nombre de parrainages réalisés
+
+**Comportement:**
+- Les clients sont créés ou mis à jour via l'email (clé unique)
+- Le partenaire est recherché par nom (correspondance partielle)
+- Les heures de formation et parrainages sont stockés dans `extra_data`
+- L'import logue les créations, mises à jour et erreurs
+
+---
+
+# 7. Contact Support
 
 Pour toute question ou problème:
 - **Email:** support@votre-domaine.com

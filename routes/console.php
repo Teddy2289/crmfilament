@@ -22,3 +22,13 @@ Schedule::command('crm:weekly-report')
 Schedule::job(new \App\Jobs\SendFicheJauneJ7Job())
     ->dailyAt('08:00')
     ->withoutOverlapping();
+
+// WF7 — Rappel RP : créer tâches de rappel pour téléprospecteurs (toutes les 30 min).
+Schedule::job(new \App\Jobs\SendRappelRpJob())
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();
+
+// Rappel STD-NR J+2 : créer tâches de rappel pour prospects STD-NR (quotidien 09h00).
+Schedule::job(new \App\Jobs\SendRappelStdNrJob())
+    ->dailyAt('09:00')
+    ->withoutOverlapping();
