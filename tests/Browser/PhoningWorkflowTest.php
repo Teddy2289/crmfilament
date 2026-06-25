@@ -6,13 +6,11 @@ use App\Models\Prospect;
 use App\Models\User;
 use App\Models\StatutPhoning;
 use App\Models\Appel;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 class PhoningWorkflowTest extends DuskTestCase
 {
-    use DatabaseMigrations;
 
     /**
      * Test d'accès à la page workflow phoning
