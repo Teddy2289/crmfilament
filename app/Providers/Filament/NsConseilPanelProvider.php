@@ -7,6 +7,7 @@ use App\Filament\NsConseil\Pages\Auth\Login as NsConseilLogin;
 use App\Filament\NsConseil\Pages\Dashboard;
 use App\Http\Middleware\SetLocale;
 use App\Http\Responses\NsConseil\LoginResponse;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -52,6 +53,8 @@ class NsConseilPanelProvider extends PanelProvider
                 'info' => Color::Sky,
                 'gray' => Color::Slate,
             ])
+            ->defaultThemeMode(ThemeMode::Light)
+            ->darkMode(false)
             ->navigationGroups([
                 NavigationGroup::make('Pipeline')
                     ->icon('heroicon-o-chart-bar'),
@@ -111,6 +114,10 @@ class NsConseilPanelProvider extends PanelProvider
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('filament.shared.espo-theme'),
+            )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => view('filament.ns-conseil.auth.login-styles'),
