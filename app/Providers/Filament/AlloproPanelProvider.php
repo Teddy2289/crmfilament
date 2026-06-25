@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Allopro\Pages\Auth\Login as AlloproLogin;
 use App\Http\Responses\Allopro\LoginResponse;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -48,6 +49,8 @@ class AlloproPanelProvider extends PanelProvider
                 'info' => Color::Sky,
                 'gray' => Color::Slate,
             ])
+            ->defaultThemeMode(ThemeMode::Light)
+            ->darkMode(false)
             ->navigationGroups([
                 NavigationGroup::make('Tickets')
                     ->icon('heroicon-o-ticket'),
@@ -94,6 +97,10 @@ class AlloproPanelProvider extends PanelProvider
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('filament.shared.espo-theme'),
+            )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => view('filament.allopro.auth.login-styles'),

@@ -6,6 +6,7 @@ use App\Filament\SuperAdmin\Pages\Dashboard;
 use App\Filament\SuperAdmin\Pages\DatabaseManager;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SetLocale;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -13,6 +14,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -39,6 +41,8 @@ class SuperAdminPanelProvider extends PanelProvider
                 'info' => Color::Cyan,
                 'gray' => Color::Zinc,
             ])
+            ->defaultThemeMode(ThemeMode::Light)
+            ->darkMode(false)
             ->navigationGroups([
                 NavigationGroup::make('Utilisateurs & Accès')
                     ->icon('heroicon-o-shield-check'),
@@ -89,6 +93,10 @@ class SuperAdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
-            ->spa();
+            ->spa()
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('filament.shared.espo-theme'),
+            );
     }
 }
