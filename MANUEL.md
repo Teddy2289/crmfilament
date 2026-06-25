@@ -798,7 +798,72 @@ php artisan dolibarr:import-clients path/to/export_dolibarr.xlsx
 
 ---
 
-# 7. Contact Support
+# 7. Tests E2E (Laravel Dusk)
+
+## 7.1 Configuration
+
+Laravel Dusk est installé et configuré pour les tests E2E. ChromeDriver est automatiquement téléchargé.
+
+## 7.2 Lancer les tests
+
+```bash
+# Lancer tous les tests E2E
+php artisan dusk
+
+# Lancer un test spécifique
+php artisan dusk --filter test_user_can_login
+
+# Lancer en mode headless (sans interface graphique)
+php artisan dusk --headless
+```
+
+## 7.3 Tests disponibles
+
+### LoginTest
+- `test_user_can_login`: Test de connexion utilisateur Filament
+- `test_user_cannot_login_with_wrong_password`: Test d'échec de connexion
+- `test_user_can_logout`: Test de déconnexion
+
+### PartenaireCrudTest
+- `test_can_create_partenaire`: Test de création d'un partenaire
+- `test_can_view_partenaire`: Test de lecture d'un partenaire
+- `test_can_edit_partenaire`: Test de modification d'un partenaire
+- `test_can_delete_partenaire`: Test de suppression d'un partenaire
+- `test_partenaire_validation`: Test de validation du formulaire
+- `test_can_search_partenaire`: Test de recherche de partenaire
+
+### ProspectCrudTest
+- `test_can_create_prospect`: Test de création d'un prospect
+- `test_can_view_prospect`: Test de lecture d'un prospect
+- `test_can_edit_prospect`: Test de modification d'un prospect
+- `test_can_delete_prospect`: Test de suppression d'un prospect
+- `test_prospect_validation`: Test de validation du formulaire
+- `test_can_change_prospect_statut`: Test de changement de statut
+- `test_can_search_prospect`: Test de recherche de prospect
+
+### PhoningWorkflowTest
+- `test_can_access_phoning_workflow`: Test d'accès à la page workflow
+- `test_can_load_queue`: Test de chargement de la file d'attente
+- `test_can_call_prospect`: Test d'appel d'un prospect
+- `test_can_change_phoning_statut`: Test de changement de statut phoning
+- `test_qf_validation_blocks`: Test de validation des éléments bloquants QF
+- `test_can_create_rdv_from_workflow`: Test de création de RDV depuis workflow
+- `test_can_record_call_with_note`: Test d'enregistrement d'appel avec note
+- `test_can_go_to_next_prospect`: Test de passage au prospect suivant
+- `test_can_reset_queue`: Test de réinitialisation de la file d'attente
+- `test_can_filter_by_phoning_statut`: Test de filtrage par statut phoning
+
+## 7.4 Environnement de test
+
+Les tests utilisent une base de données SQLite en mémoire (`database/database.sqlite`). Les migrations sont automatiquement exécutées avant chaque test.
+
+## 7.5 Screenshots
+
+En cas d'échec de test, des screenshots sont automatiquement générés dans `tests/Browser/screenshots/`.
+
+---
+
+# 8. Contact Support
 
 Pour toute question ou problème:
 - **Email:** support@votre-domaine.com
