@@ -6,13 +6,11 @@ use App\Models\Partenaire;
 use App\Models\User;
 use App\Enums\OrganizationType;
 use App\Enums\OrganizationStatus;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 class PartenaireCrudTest extends DuskTestCase
 {
-    use DatabaseMigrations;
 
     /**
      * Test de création d'un partenaire

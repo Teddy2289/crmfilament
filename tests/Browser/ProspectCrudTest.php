@@ -5,13 +5,11 @@ namespace Tests\Browser;
 use App\Models\Prospect;
 use App\Models\User;
 use App\Models\StatutPhoning;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 class ProspectCrudTest extends DuskTestCase
 {
-    use DatabaseMigrations;
 
     /**
      * Test de création d'un prospect
