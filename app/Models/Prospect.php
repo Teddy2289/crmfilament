@@ -5,14 +5,16 @@ namespace App\Models;
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
 use App\Enums\ProspectStatut;
+use Database\Factories\ProspectFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 class Prospect extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'prospects';
 
