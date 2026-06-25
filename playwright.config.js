@@ -26,7 +26,7 @@ export default defineConfig({
     use: {
         baseURL,
         locale: 'fr-FR',
-        screenshot: 'only-on-failure',
+        screenshot: 'on',
         timezoneId: 'Europe/Paris',
         trace: 'on-first-retry',
         video: 'retain-on-failure',
