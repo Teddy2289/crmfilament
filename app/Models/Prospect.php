@@ -623,46 +623,92 @@ class Prospect extends Model
                 'statut' => OrganizationStatus::AProspecter,
                 'notes' => "Converti depuis prospect #{$this->id}\n{$this->description}",
 
-                // Dirigeant
-                'dirigeant_nom' => $this->dirigeant_nom,
-                'dirigeant_prenom' => $this->dirigeant_prenom,
-                'dirigeant_fonction' => $this->dirigeant_fonction,
-                'dirigeant_telephone' => $this->dirigeant_telephone,
-                'dirigeant_email' => $this->dirigeant_email,
-
-                // CSE
-                'cse_secretaire_nom' => $this->cse_secretaire_nom,
-                'cse_secretaire_prenom' => $this->cse_secretaire_prenom,
-                'cse_secretaire_tel_direct' => $this->cse_secretaire_tel_direct,
-                'cse_secretaire_tel_perso' => $this->cse_secretaire_tel_perso,
-                'cse_secretaire_email_pro' => $this->cse_secretaire_email_pro,
-                'cse_secretaire_email_perso' => $this->cse_secretaire_email_perso,
-                'cse_tresorier_nom' => $this->cse_tresorier_nom,
-                'cse_tresorier_prenom' => $this->cse_tresorier_prenom,
-                'cse_tresorier_tel_direct' => $this->cse_tresorier_tel_direct,
-                'cse_tresorier_tel_perso' => $this->cse_tresorier_tel_perso,
-                'cse_tresorier_email_pro' => $this->cse_tresorier_email_pro,
-                'cse_tresorier_email_perso' => $this->cse_tresorier_email_perso,
+                // CSE (informations générales conservées dans partenaire)
                 'cse_nb_elus' => $this->cse_nb_elus,
                 'cse_date_fin_mandat' => $this->cse_date_fin_mandat,
                 'cse_existence_juridique' => $this->cse_existence_juridique,
                 'cse_notes' => $this->cse_notes,
 
-                // Syndicat
+                // Syndicat (informations générales conservées dans partenaire)
                 'syndicat_appartenance' => $this->syndicat_appartenance,
                 'syndicat_nom_organisation' => $this->syndicat_nom_organisation,
-                'syndicat_responsable_nom' => $this->syndicat_responsable_nom,
-                'syndicat_responsable_prenom' => $this->syndicat_responsable_prenom,
-                'syndicat_responsable_fonction' => $this->syndicat_responsable_fonction,
-                'syndicat_tel_direct' => $this->syndicat_tel_direct,
-                'syndicat_tel_perso' => $this->syndicat_tel_perso,
-                'syndicat_email_pro' => $this->syndicat_email_pro,
-                'syndicat_email_perso' => $this->syndicat_email_perso,
                 'syndicat_perimetre' => $this->syndicat_perimetre,
                 'syndicat_notes' => $this->syndicat_notes,
             ]);
 
+            // Migrer le dirigeant vers ContactPartenaire
+            if ($this->dirigeant_nom || $this->dirigeant_prenom) {
+                ContactPartenaire::create([
+                    'partenaire_id' => $partenaire->id,
+                    'civilite' => 'M.',
+                    'nom' => $this->dirigeant_nom,
+                    'prenom' => $this->dirigeant_prenom,
+                    'fonction' => $this->dirigeant_fonction,
+                    'role' => 'AUTRE',
+                    'email' => $this->dirigeant_email,
+                    'telephone_direct' => $this->dirigeant_telephone,
+                    'est_principal' => true,
+                    'est_decisionnaire' => true,
+                    'niveau_influence' => 5,
+                    'notes' => 'Migré depuis prospect (dirigeant)',
+                ]);
+            }
+
+            // Migrer le secrétaire CSE vers ContactPartenaire
+            if ($this->cse_secretaire_nom || $this->cse_secretaire_prenom) {
+                ContactPartenaire::create([
+                    'partenaire_id' => $partenaire->id,
+                    'civilite' => 'Mme',
+                    'nom' => $this->cse_secretaire_nom,
+                    'prenom' => $this->cse_secretaire_prenom,
+                    'role' => 'SECRETAIRE',
+                    'email' => $this->cse_secretaire_email_pro,
+                    'email_perso' => $this->cse_secretaire_email_perso,
+                    'telephone_direct' => $this->cse_secretaire_tel_direct,
+                    'telephone_perso' => $this->cse_secretaire_tel_perso,
+                    'est_principal' => false,
+                    'notes' => 'Migré depuis prospect (secrétaire CSE)',
+                ]);
+            }
+
+            // Migrer le trésorier CSE vers ContactPartenaire
+            if ($this->cse_tresorier_nom || $this->cse_tresorier_prenom) {
+                ContactPartenaire::create([
+                    'partenaire_id' => $partenaire->id,
+                    'civilite' => 'M.',
+                    'nom' => $this->cse_tresorier_nom,
+                    'prenom' => $this->cse_tresorier_prenom,
+                    'role' => 'TRESORIER',
+                    'email' => $this->cse_tresorier_email_pro,
+                    'email_perso' => $this->cse_tresorier_email_perso,
+                    'telephone_direct' => $this->cse_tresorier_tel_direct,
+                    'telephone_perso' => $this->cse_tresorier_tel_perso,
+                    'est_principal' => false,
+                    'notes' => 'Migré depuis prospect (trésorier CSE)',
+                ]);
+            }
+
+            // Migrer le responsable syndical vers ContactPartenaire
+            if ($this->syndicat_responsable_nom || $this->syndicat_responsable_prenom) {
+                ContactPartenaire::create([
+                    'partenaire_id' => $partenaire->id,
+                    'civilite' => 'M.',
+                    'nom' => $this->syndicat_responsable_nom,
+                    'prenom' => $this->syndicat_responsable_prenom,
+                    'fonction' => $this->syndicat_responsable_fonction,
+                    'role' => 'SYNDICAT_DS',
+                    'nom_syndicat' => $this->syndicat_appartenance,
+                    'email' => $this->syndicat_email_pro,
+                    'email_perso' => $this->syndicat_email_perso,
+                    'telephone_direct' => $this->syndicat_tel_direct,
+                    'telephone_perso' => $this->syndicat_tel_perso,
+                    'est_principal' => false,
+                    'notes' => 'Migré depuis prospect (responsable syndical)',
+                ]);
+            }
+
             $this->update([
+                'converti_partenaire_id' => $partenaire->id,
                 'description' => $this->description."\n[Conversion] Partenaire créé le ".now()->format('d/m/Y H:i'),
             ]);
 
