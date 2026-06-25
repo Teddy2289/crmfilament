@@ -630,6 +630,11 @@ chore: mettre à jour les dépendances
 
 ### 5.1 Problèmes courants
 
+**Erreur: MissingAppKeyException (APP_KEY manquant):**
+```bash
+php artisan key:generate
+```
+
 **Erreur de migration:**
 ```bash
 php artisan migrate:rollback

@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
+use Spatie\Permission\Models\Role;
 
 abstract class DuskTestCase extends BaseTestCase
 {
@@ -30,9 +31,14 @@ abstract class DuskTestCase extends BaseTestCase
     {
         parent::setUp();
 
-        // Run migrations and seed only test roles
+        // Run migrations
         Artisan::call('migrate:fresh');
-        Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\TestRolesSeeder']);
+
+        // Create roles directly
+        $roles = ['admin', 'teleprospecteur', 'team_leader', 'commercial', 'superviseur'];
+        foreach ($roles as $role) {
+            Role::firstOrCreate(['name' => $role]);
+        }
     }
 
     /**
