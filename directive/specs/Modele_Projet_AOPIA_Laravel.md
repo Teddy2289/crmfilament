@@ -196,6 +196,13 @@ Fonctions principales:
 - conversion en prospect;
 - perte avec raison.
 
+Regles alignees CDC:
+
+- statuts proposes: `nouveau`, `en_cours_evaluation`, `qualifiee`, `converti`, `perdu`;
+- conversion possible uniquement depuis `qualifiee`;
+- la source, les details source et les notes sont reprises dans la description du Prospect converti;
+- la raison de perte est obligatoire pour passer au statut `perdu`.
+
 ### 5.5 Appel
 
 Model: `App\Models\Appel`
@@ -475,7 +482,6 @@ La validation QF tient aussi compte des appels Ringover `RDV`: tags complets `DE
 | P0 | Appliquer `show` aux infolists/tables sensibles de toutes les resources |
 | P0 | Ajouter un test navigateur pour un role selectif par champ |
 | P1 | Connecter le webhook Ringover au compte de production et renseigner `RINGOVER_WEBHOOK_SECRET` |
-| P1 | Finaliser l'alignement Opportunites avec les libelles metier definitifs |
 | P1 | Clarifier le module base de connaissances attendu |
 | P2 | Completer la documentation avec captures apres validation UI |
 

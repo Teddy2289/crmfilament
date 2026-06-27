@@ -47,8 +47,8 @@ class Opportunite extends Model
     ];
 
     // ── Constantes ──────────────────────────────────────────────────
-    // Statuts alignés sur le CDC §4.3 (Nouveau / En cours d'évaluation / Qualifiée / Converti / Perdue).
-    const STATUTS = [
+    // Conserve les anciens libelles en lecture; statutsPourSelect expose seulement le CDC §4.3.
+    public const STATUTS = [
         'nouveau' => 'Nouveau',
         'en_cours_evaluation' => "En cours d'évaluation",
         'contacte' => 'Contacté',
@@ -59,7 +59,7 @@ class Opportunite extends Model
         'perdu' => 'Perdu',
     ];
 
-    const POTENTIELS = [
+    public const POTENTIELS = [
         'faible' => 'Faible',
         'moyen' => 'Moyen',
         'eleve' => 'Élevé',
@@ -67,26 +67,33 @@ class Opportunite extends Model
     ];
 
     // Sources de détection alignées sur le CDC §4.3.
-    const SOURCES = [
+    public const SOURCES = [
         'reseau_commercial' => 'Réseau commercial',
         'client_existant' => 'Client existant',
-        'parrainage' => 'Parrainage',
+        'parrainage' => 'Parrainage / recommandation',
         'phoning_entrant' => 'Phoning entrant',
-        'salon' => 'Salon',
-        'linkedin' => 'LinkedIn',
+        'salon' => 'Salon / événement',
+        'linkedin' => 'LinkedIn / réseaux sociaux',
         'fichier_externe' => 'Fichier externe',
         'autre' => 'Autre',
     ];
 
-    // ── Accesseurs ──────────────────────────────────────────────────
-    public function getStatutLabelAttribute(): string
+    public static function statutsPourSelect(): array
     {
-        return self::STATUTS[$this->statut] ?? $this->statut;
+        return collect(self::STATUTS)
+            ->only([
+                'nouveau',
+                'en_cours_evaluation',
+                'qualifiee',
+                'converti',
+                'perdu',
+            ])
+            ->all();
     }
 
-    public function getStatutColorAttribute(): string
+    public static function statutColor(string $statut): string
     {
-        return match ($this->statut) {
+        return match ($statut) {
             'nouveau' => 'info',
             'en_cours_evaluation' => 'warning',
             'contacte' => 'primary',
@@ -97,6 +104,17 @@ class Opportunite extends Model
             'perdu' => 'danger',
             default => 'gray',
         };
+    }
+
+    // ── Accesseurs ──────────────────────────────────────────────────
+    public function getStatutLabelAttribute(): string
+    {
+        return self::STATUTS[$this->statut] ?? $this->statut;
+    }
+
+    public function getStatutColorAttribute(): string
+    {
+        return self::statutColor($this->statut);
     }
 
     public function getPotentielLabelAttribute(): string
@@ -139,7 +157,7 @@ class Opportunite extends Model
 
     public function getEstConvertibleAttribute(): bool
     {
-        return in_array($this->statut, ['qualifiee', 'en_negociation', 'rdv_planifie']);
+        return $this->statut === 'qualifiee';
     }
 
     public function getInterlocuteurCompletAttribute(): string
@@ -169,19 +187,19 @@ class Opportunite extends Model
     public function contacter(): void
     {
         $this->update([
-            'statut' => 'contacte',
+            'statut' => 'en_cours_evaluation',
             'date_premier_contact' => $this->date_premier_contact ?? now(),
         ]);
     }
 
     public function planifierRDV(): void
     {
-        $this->update(['statut' => 'rdv_planifie']);
+        $this->marquerQualifiee();
     }
 
     public function demarrerNegociation(): void
     {
-        $this->update(['statut' => 'en_negociation']);
+        $this->marquerQualifiee();
     }
 
     public function marquerQualifiee(): void
@@ -191,6 +209,10 @@ class Opportunite extends Model
 
     public function convertirEnProspect(): ?Prospect
     {
+        if (! $this->est_convertible) {
+            throw new \LogicException('Seule une opportunite qualifiee peut etre convertie en prospect.');
+        }
+
         $prospect = Prospect::create([
             'nom' => $this->nom_entite,
             'type_pressenti' => $this->type_pressenti,
@@ -206,7 +228,7 @@ class Opportunite extends Model
             'interlocuteur_fonction' => $this->interlocuteur_fonction,
             'interlocuteur_telephone' => $this->interlocuteur_telephone,
             'interlocuteur_email' => $this->interlocuteur_email,
-            'description' => "Converti depuis opportunité #{$this->id}\n".$this->notes,
+            'description' => $this->descriptionProspectConverti(),
         ]);
 
         $this->update([
@@ -217,8 +239,36 @@ class Opportunite extends Model
         return $prospect;
     }
 
+    private function descriptionProspectConverti(): string
+    {
+        $lignes = [
+            "Converti depuis opportunite #{$this->id}",
+        ];
+
+        if ($this->source_detection) {
+            $lignes[] = "Source detection: {$this->source_label}";
+        }
+
+        if ($this->details_source) {
+            $lignes[] = "Details source: {$this->details_source}";
+        }
+
+        if ($this->notes) {
+            $lignes[] = 'Notes opportunite:';
+            $lignes[] = $this->notes;
+        }
+
+        return implode(PHP_EOL, $lignes);
+    }
+
     public function marquerPerdue(string $raison): void
     {
+        $raison = trim($raison);
+
+        if ($raison === '') {
+            throw new \InvalidArgumentException('La raison de perte est obligatoire.');
+        }
+
         $this->update([
             'statut' => 'perdu',
             'raison_perte' => $raison,
@@ -232,7 +282,7 @@ class Opportunite extends Model
 
     public function qualifier(string $statut): void
     {
-        if (! array_key_exists($statut, self::STATUTS)) {
+        if (! array_key_exists($statut, self::statutsPourSelect())) {
             throw new \InvalidArgumentException("Statut invalide : {$statut}");
         }
 
@@ -271,7 +321,7 @@ class Opportunite extends Model
 
     public function scopeEnNegociation($query): Builder
     {
-        return $query->where('statut', 'en_negociation');
+        return $query->whereIn('statut', ['qualifiee', 'en_negociation']);
     }
 
     public function scopePotentielEleve($query): Builder
@@ -319,7 +369,7 @@ class Opportunite extends Model
 
     public function scopeARelancer($query): Builder
     {
-        return $query->whereIn('statut', ['contacte', 'en_cours_evaluation'])
+        return $query->whereIn('statut', ['en_cours_evaluation', 'contacte'])
             ->where('updated_at', '<', now()->subDays(7));
     }
 
@@ -367,7 +417,12 @@ class Opportunite extends Model
     public static function getValeurPipeline(): float
     {
         return static::whereIn('statut', [
-            'en_cours_evaluation', 'contacte', 'rdv_planifie', 'en_negociation', 'qualifiee',
+            'nouveau',
+            'en_cours_evaluation',
+            'contacte',
+            'rdv_planifie',
+            'en_negociation',
+            'qualifiee',
         ])->get()->sum(function ($opp) {
             return $opp->valeur_estimee;
         });
@@ -375,7 +430,7 @@ class Opportunite extends Model
 
     public static function getRepartitionParStatut(): array
     {
-        return collect(self::STATUTS)
+        return collect(self::statutsPourSelect())
             ->mapWithKeys(function ($label, $statut) {
                 return [$statut => static::where('statut', $statut)->count()];
             })

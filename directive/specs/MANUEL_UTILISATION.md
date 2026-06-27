@@ -168,9 +168,9 @@ Une opportunite sert a suivre un signal faible avant qu'il devienne un prospect.
 Actions possibles:
 
 - creer une opportunite;
+- passer en evaluation;
 - qualifier;
-- planifier un RDV;
-- convertir en prospect;
+- convertir en prospect lorsque l'opportunite est qualifiee;
 - marquer perdue avec une raison.
 
 ---

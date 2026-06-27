@@ -125,7 +125,7 @@ class OpportuniteResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('statut')
                         ->label('Statut')
-                        ->options(Opportunite::STATUTS)
+                        ->options(Opportunite::statutsPourSelect())
                         ->default('nouveau')
                         ->required()
                         ->native(false)
@@ -202,17 +202,7 @@ class OpportuniteResource extends Resource
                     ->label('Statut')
                     ->badge()
                     ->formatStateUsing(fn ($state) => Opportunite::STATUTS[$state] ?? $state)
-                    ->color(fn ($state) => match ($state) {
-                        'nouveau' => 'info',
-                        'en_cours_evaluation' => 'warning',
-                        'contacte' => 'primary',
-                        'rdv_planifie' => 'orange',
-                        'en_negociation' => 'purple',
-                        'qualifiee' => 'primary',
-                        'converti' => 'success',
-                        'perdu' => 'danger',
-                        default => 'gray',
-                    }),
+                    ->color(fn ($state) => Opportunite::statutColor($state)),
 
                 Tables\Columns\TextColumn::make('potentiel')
                     ->label('Potentiel')
@@ -248,7 +238,7 @@ class OpportuniteResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
-                    ->options(Opportunite::STATUTS)
+                    ->options(Opportunite::statutsPourSelect())
                     ->label('Statut'),
 
                 Tables\Filters\SelectFilter::make('potentiel')
