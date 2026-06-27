@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Allopro\Pages\Auth\Login as AlloproLogin;
 use App\Filament\Themes\AlloproTheme;
 use App\Http\Responses\Allopro\LoginResponse;
+use App\Models\Theme as ThemeModel;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -37,11 +38,15 @@ class AlloproPanelProvider extends PanelProvider
 
     public function panel(Panel $panel): Panel
     {
+        $theme = ThemeModel::getActiveForPanel('allopro');
+        
         return $panel
             ->id('allopro')
             ->path('allopro')
             ->login(AlloproLogin::class)
-            ->brandName('AlloPro 24/24 — Centre de Contact')
+            ->brandName($theme?->brand_name ?? 'AlloPro 24/24 — Centre de Contact')
+            ->brandLogo($theme?->brand_logo_path)
+            ->favicon($theme?->favicon_path)
             ->theme(AlloproTheme::class)
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
@@ -105,6 +110,12 @@ class AlloproPanelProvider extends PanelProvider
                 PanelsRenderHook::BODY_START,
                 fn () => view('filament.allopro.auth.login-sidebar'),
                 scopes: [AlloproLogin::class],
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => $theme?->custom_css 
+                    ? '<style>' . $theme->custom_css . '</style>' 
+                    : '',
             );
     }
 }

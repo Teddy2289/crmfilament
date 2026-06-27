@@ -6,6 +6,7 @@ use App\Filament\SuperAdmin\Pages\Dashboard;
 use App\Filament\SuperAdmin\Pages\DatabaseManager;
 use App\Filament\Themes\SuperAdminTheme;
 use App\Http\Middleware\EnsureSuperAdmin;
+use App\Models\Theme as ThemeModel;
 use App\Http\Middleware\SetLocale;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -28,12 +29,15 @@ class SuperAdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $theme = ThemeModel::getActiveForPanel('super-admin');
+        
         return $panel
             ->id('super-admin')
             ->path('super-admin')
             ->login()
-            ->brandName('⚙️ Super Administration')
-            ->brandLogo(null)
+            ->brandName($theme?->brand_name ?? '⚙️ Super Administration')
+            ->brandLogo($theme?->brand_logo_path)
+            ->favicon($theme?->favicon_path)
             ->theme(SuperAdminTheme::class)
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
@@ -92,6 +96,12 @@ class SuperAdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => view('filament.shared.espo-theme'),
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => $theme?->custom_css 
+                    ? '<style>' . $theme->custom_css . '</style>' 
+                    : '',
             );
     }
 }

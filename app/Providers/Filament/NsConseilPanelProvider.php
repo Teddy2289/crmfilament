@@ -9,6 +9,7 @@ use App\Filament\NsConseil\Pages\RingoverDashboard;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserInteractions;
 use App\Http\Responses\NsConseil\LoginResponse;
+use App\Models\Theme as ThemeModel;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -42,11 +43,15 @@ class NsConseilPanelProvider extends PanelProvider
 
     public function panel(Panel $panel): Panel
     {
+        $theme = ThemeModel::getActiveForPanel('ns-conseil');
+        
         return $panel
             ->id('ns-conseil')
             ->path('ns-conseil')
             ->login(NsConseilLogin::class)
-            ->brandName('NS CONSEIL — CRM Partenaires')
+            ->brandName($theme?->brand_name ?? 'NS CONSEIL — CRM Partenaires')
+            ->brandLogo($theme?->brand_logo_path)
+            ->favicon($theme?->favicon_path)
             ->theme(NsConseilTheme::class)
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
@@ -136,6 +141,12 @@ class NsConseilPanelProvider extends PanelProvider
                 PanelsRenderHook::TOPBAR_END,
                 fn () => auth()->user()?->isSuperAdmin()
                     ? view('filament.shared.admin-button')
+                    : '',
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => $theme?->custom_css 
+                    ? '<style>' . $theme->custom_css . '</style>' 
                     : '',
             );
     }
