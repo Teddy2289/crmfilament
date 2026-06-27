@@ -516,7 +516,8 @@ class PhoningWorkflow extends Page
             return;
         }
         $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
-        $this->redirect("https://phone.aircall.io/call/{$phoneNumber}");
+        $template = config('ringover.dial_url_template', 'tel:{phone}');
+        $this->redirect(str_replace('{phone}', rawurlencode($phoneNumber), $template));
     }
 
     // ── Enregistrement ────────────────────────────────────────────────

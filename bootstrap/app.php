@@ -81,9 +81,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('filament.ns-conseil.auth.login'));
 
         // ── Exclusions CSRF ─────────────────────────────────────────
-        // Webhooks Aircall (POST sans token CSRF)
+        // Webhooks Ringover (POST sans token CSRF)
         $middleware->validateCsrfTokens(except: [
-            'api/aircall/*',
+            'api/ringover/*',
             'api/webhooks/*',
         ]);
 

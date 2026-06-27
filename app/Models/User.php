@@ -27,6 +27,8 @@ class User extends Authenticatable implements FilamentUser
         'actif',
         'role_cache',
         'google_token',
+        'ringover_user_id',
+        'ringover_email',
     ];
 
     protected $hidden = [

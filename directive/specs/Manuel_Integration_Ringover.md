@@ -1,7 +1,7 @@
-# Telephonie - Ringover / Aircall
+# Telephonie - Ringover
 
-**Date**: 26 Juin 2026
-**Statut**: document de cadrage. L'implementation Laravel actuelle est principalement Aircall, avec une regle metier Ringover conservee dans les settings CRM.
+**Date**: 27 Juin 2026
+**Statut**: document de cadrage et d'implementation Laravel Ringover.
 
 ---
 
@@ -13,16 +13,16 @@ Le CDC et les workflows AOPIA mentionnent Ringover et la regle:
 DEP_XX + tag statut obligatoire par appel
 ```
 
-Dans le code Laravel actuel, les elements implementes visibles sont surtout:
+Dans le code Laravel, les elements actifs sont:
 
-- `app/Services/AircallService.php`
-- `app/Console/Commands/SyncAircallCalls.php`
-- `app/Filament/NsConseil/Pages/AircallDashboard.php`
-- widgets Aircall du panel Ns Conseil
-- champs Aircall sur `app/Models/Appel.php`
+- `app/Services/RingoverService.php`
+- `app/Console/Commands/SyncRingoverCalls.php`
+- `app/Filament/NsConseil/Pages/RingoverDashboard.php`
+- widgets Ringover du panel Ns Conseil
+- champs `ringover_*` sur `app/Models/Appel.php`, `app/Models/Ticket.php` et `app/Models/User.php`
 - setting CRM `prospection.ringover_rule`
 
-Ce document ne doit donc pas etre lu comme une preuve que toute l'integration Ringover EspoCRM historique est active dans Laravel.
+Les anciennes colonnes de telephonie sont renommees vers `ringover_*` par migration de transition.
 
 ---
 
@@ -38,25 +38,37 @@ Ce document ne doit donc pas etre lu comme une preuve que toute l'integration Ri
 
 ---
 
-## Si Ringover doit etre implemente en Laravel
+## Configuration
 
-Prevoir:
+Variables `.env` attendues:
 
-1. service API Ringover equivalent a `AircallService`;
-2. configuration `.env` pour API key et webhook secret;
-3. controller webhook public avec validation signature;
-4. normalisation des evenements vers `appels`;
-5. mapping utilisateur Ringover -> User Laravel;
-6. test d'idempotence webhook;
-7. mise a jour du workflow phoning pour consommer les tags.
+```env
+RINGOVER_API_TOKEN=
+RINGOVER_AUTH_SCHEME=Bearer
+RINGOVER_BASE_URL=https://public-api.ringover.com/v2
+RINGOVER_TIMEOUT=10
+RINGOVER_DIAL_URL_TEMPLATE=tel:{phone}
+```
+
+`RINGOVER_DIAL_URL_TEMPLATE` doit etre ajuste avec l'URL click-to-call Ringover du compte si l'ouverture directe du softphone est souhaitee.
 
 ---
 
-## Verification actuelle
+## A completer si synchronisation temps reel demandee
+
+1. controller webhook public avec validation de signature;
+2. normalisation des evenements vers `appels`;
+3. mapping utilisateur Ringover -> User Laravel;
+4. test d'idempotence webhook;
+5. consommation des tags Ringover dans le workflow phoning.
+
+---
+
+## Verification
 
 Commandes utiles:
 
 ```powershell
-rg -n "Ringover|Aircall|Telephony" app routes database tests
+rg -n "Ringover|ringover" app routes database tests
 php artisan test --filter RoleAccessRightsTest
 ```

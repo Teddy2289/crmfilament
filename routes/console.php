@@ -8,7 +8,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('aircall:sync --pages=2 --per-page=50')
+Schedule::command('ringover:sync --pages=2 --per-page=50')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();

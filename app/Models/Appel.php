@@ -31,13 +31,12 @@ class Appel extends Model
         'duree_secondes',
         'commentaire',
         'enregistrement_audio',
-        'aircall_call_id',
-        'aircall_user_id',
-        'aircall_number_id',
+        'ringover_call_id',
+        'ringover_user_id',
+        'ringover_number_id',
         'direction',
         'numero_appelant',
-        'aircall_email',
-        'aircall_agent_nom',
+        'ringover_agent_nom',
         'campagne_id',
         // Champs phoning workflow
         'phoning_status',
@@ -203,9 +202,9 @@ class Appel extends Model
         $this->update(['enregistrement_audio' => $path]);
     }
 
-    public function associerAircall(string $callId): void
+    public function associerRingover(string $callId): void
     {
-        $this->update(['aircall_call_id' => $callId]);
+        $this->update(['ringover_call_id' => $callId]);
     }
 
     // ── Scopes ──────────────────────────────────────────────────────
@@ -285,9 +284,9 @@ class Appel extends Model
         return $query->whereNotNull('enregistrement_audio');
     }
 
-    public function scopeDepuisAircall($query): Builder
+    public function scopeDepuisRingover($query): Builder
     {
-        return $query->whereNotNull('aircall_call_id');
+        return $query->whereNotNull('ringover_call_id');
     }
 
     public function scopeByUser($query, int $userId): Builder

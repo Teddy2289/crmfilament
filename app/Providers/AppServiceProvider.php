@@ -3,9 +3,9 @@
 namespace App\Providers;
 
 use App\Models\CrmSetting;
-use App\Services\AircallService;
 use App\Services\Aopia\AopiaIcsService;
 use App\Services\Crm\CrmSettingsService;
+use App\Services\RingoverService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Telescope\TelescopeServiceProvider;
@@ -17,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(AircallService::class);
+        $this->app->singleton(RingoverService::class);
         $this->app->singleton(AopiaIcsService::class);
         $this->app->singleton(CrmSettingsService::class);
 

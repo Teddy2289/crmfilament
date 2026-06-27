@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('tickets', function (Blueprint $table) {
             // NOUVEAU CHAMP SOURCE APPEL
-            $table->string('source_appel', 50)->nullable()->after('aircall_call_id')
+            $table->string('source_appel', 50)->nullable()->after('ringover_call_id')
                 ->comment('Source de l\'appel (via CTI/téléphonie) : web, mobile, partenaire, etc.');
 
             // Index pour la recherche par source d'appel

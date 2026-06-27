@@ -27,7 +27,7 @@ Ces fichiers restent utiles pour comprendre les decisions metier, mais ne decriv
 |---|---|
 | `CDC_CRM_EspoCRM_AOPIA (2).md` | CDC historique EspoCRM, source metier |
 | `Guide_Developpement_EspoCRM.md` | Guide historique EspoCRM, non applicable directement au code Laravel |
-| `Manuel_Integration_Ringover.md` | Manuel fonctionnel Ringover historique; implementation Laravel actuelle surtout Aircall/settings |
+| `Manuel_Integration_Ringover.md` | Manuel fonctionnel et technique Ringover |
 | `split-account-table.md` | Ancienne strategie EspoCRM AccountDetails; traduite en tables satellites Laravel |
 | `directive/archive/*.md` | Comptes-rendus et syntheses historiques |
 
@@ -79,7 +79,7 @@ tests/
 | Imports prospects | `app/Filament/NsConseil/Resources/ProspectResource/Import/` |
 | Workflow phoning | `app/Filament/NsConseil/Pages/PhoningWorkflow.php`, `app/Support/CsePhoningWorkflow.php` |
 | Calendrier | `app/Services/GoogleCalendarService.php`, `app/Observers/RendezVousObserver.php` |
-| Aircall | `app/Services/AircallService.php`, `app/Console/Commands/SyncAircallCalls.php` |
+| Ringover | `app/Services/RingoverService.php`, `app/Console/Commands/SyncRingoverCalls.php` |
 
 ---
 
