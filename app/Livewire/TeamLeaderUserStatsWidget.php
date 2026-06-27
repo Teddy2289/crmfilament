@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class TeamLeaderUserStatsWidget extends BaseWidget
 {
     protected static ?string $pollingInterval = '60s';
-    protected static int $sort = 2;
+    protected static ?int $sort = 2;
     protected static bool $isLazy = false;
 
     protected function getStats(): array

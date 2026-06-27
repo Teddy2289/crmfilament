@@ -55,7 +55,6 @@ class NsConseilPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->defaultThemeMode(ThemeMode::Light)
-            ->darkMode(false)
             ->navigationGroups([
                 NavigationGroup::make('Pipeline')
                     ->icon('heroicon-o-chart-bar'),

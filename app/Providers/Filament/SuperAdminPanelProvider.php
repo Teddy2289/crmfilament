@@ -42,7 +42,6 @@ class SuperAdminPanelProvider extends PanelProvider
                 'gray' => Color::Zinc,
             ])
             ->defaultThemeMode(ThemeMode::Light)
-            ->darkMode(false)
             ->navigationGroups([
                 NavigationGroup::make('Utilisateurs & Accès')
                     ->icon('heroicon-o-shield-check'),
