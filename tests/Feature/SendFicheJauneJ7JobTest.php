@@ -21,6 +21,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         Storage::fake('public');
         Mail::fake();
 
+        $service = $this->createMock(\App\Services\Crm\FicheWordService::class);
         $user = User::factory()->create(['email' => 'test@example.com']);
         $prospect = Prospect::factory()->create();
 
@@ -31,7 +32,7 @@ class SendFicheJauneJ7JobTest extends TestCase
             'type' => \App\Enums\EventType::Appel,
             'date_heure' => now()->subDays(7),
             'resultat' => \App\Enums\EventResult::Realise,
-            'phoning_status' => 'cse_ni',
+            'phoning_status' => 'CSE-NI',
             'fiche_type' => 'jaune',
             'fiche_word_path' => 'fiches/test.docx',
             'fiche_word_generated_at' => now()->subDays(7),
@@ -40,9 +41,9 @@ class SendFicheJauneJ7JobTest extends TestCase
         Storage::disk('public')->put('fiches/test.docx', 'fake content');
 
         $job = new SendFicheJauneJ7Job();
-        $job->handle();
+        $job->handle($service);
 
-        Mail::assertSent(\App\Mail\FicheJauneJ7Mail::class, function ($mail) use ($user) {
+        Mail::assertQueued(\App\Mail\FicheJauneJ7Mail::class, function ($mail) use ($user) {
             return $mail->hasTo($user->email);
         });
     }
@@ -52,6 +53,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         Storage::fake('public');
         Mail::fake();
 
+        $service = $this->createMock(\App\Services\Crm\FicheWordService::class);
         $user = User::factory()->create(['email' => 'test@example.com']);
         $prospect = Prospect::factory()->create();
 
@@ -62,7 +64,7 @@ class SendFicheJauneJ7JobTest extends TestCase
             'type' => \App\Enums\EventType::Appel,
             'date_heure' => now()->subDays(7),
             'resultat' => \App\Enums\EventResult::Realise,
-            'phoning_status' => 'cse_ni',
+            'phoning_status' => 'CSE-NI',
             'fiche_type' => 'jaune',
             'fiche_word_path' => 'fiches/test.docx',
             'fiche_word_generated_at' => now()->subDays(7),
@@ -72,7 +74,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         Storage::disk('public')->put('fiches/test.docx', 'fake content');
 
         $job = new SendFicheJauneJ7Job();
-        $job->handle();
+        $job->handle($service);
 
         Mail::assertNothingSent();
     }
@@ -82,6 +84,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         Storage::fake('public');
         Mail::fake();
 
+        $service = $this->createMock(\App\Services\Crm\FicheWordService::class);
         $user = User::factory()->create();
         $prospect = Prospect::factory()->create();
 
@@ -97,7 +100,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         ]);
 
         $job = new SendFicheJauneJ7Job();
-        $job->handle();
+        $job->handle($service);
 
         Mail::assertNothingSent();
     }
@@ -107,6 +110,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         Storage::fake('public');
         Mail::fake();
 
+        $service = $this->createMock(\App\Services\Crm\FicheWordService::class);
         $user = User::factory()->create(['email' => 'test@example.com']);
         $prospect = Prospect::factory()->create();
 
@@ -117,7 +121,7 @@ class SendFicheJauneJ7JobTest extends TestCase
             'type' => \App\Enums\EventType::Appel,
             'date_heure' => now()->subDays(7),
             'resultat' => \App\Enums\EventResult::Realise,
-            'phoning_status' => 'cse_ni',
+            'phoning_status' => 'CSE-NI',
             'fiche_type' => 'jaune',
             'fiche_word_path' => 'fiches/test.docx',
             'fiche_word_generated_at' => now()->subDays(7),
@@ -126,7 +130,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         Storage::disk('public')->put('fiches/test.docx', 'fake content');
 
         $job = new SendFicheJauneJ7Job();
-        $job->handle();
+        $job->handle($service);
 
         $appel->refresh();
 
@@ -138,8 +142,9 @@ class SendFicheJauneJ7JobTest extends TestCase
         Storage::fake('public');
         Mail::fake();
 
+        $service = $this->createMock(\App\Services\Crm\FicheWordService::class);
         $job = new SendFicheJauneJ7Job();
-        $job->handle();
+        $job->handle($service);
 
         Mail::assertNothingSent();
     }
