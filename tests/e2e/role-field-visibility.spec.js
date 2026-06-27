@@ -14,7 +14,7 @@ function setupFieldVisibilityScenario() {
 }
 
 test.describe('Droits par champ', () => {
-    test('masque les champs prospects sans droit show pour un role selectif', async ({ page }) => {
+    test('applique show create et edit sur les champs prospects pour un role selectif', async ({ page }) => {
         test.setTimeout(90_000);
 
         const scenario = setupFieldVisibilityScenario();
@@ -36,6 +36,20 @@ test.describe('Droits par champ', () => {
         await expect(page.getByRole('heading', { name: /prospect/i })).toBeVisible();
         await expect(page.locator('body')).toContainText(scenario.prospect.name);
         await expect(page.locator('body')).toContainText(scenario.prospect.phone);
+        await expect(page.locator('body')).toContainText(scenario.prospect.siret);
         await expect(page.locator('body')).not.toContainText(scenario.prospect.email);
+
+        await page.goto('/ns-conseil/prospects/create');
+        await expect(page.getByRole('heading', { name: /créer prospect|nouveau prospect|prospect/i })).toBeVisible();
+        await expect(page.getByLabel(/nom de l.entit/i)).toBeEnabled();
+        await expect(page.getByLabel(/t.l.phone principal/i)).toBeEnabled();
+        await expect(page.getByLabel(/siret/i)).toHaveCount(0);
+        await expect(page.getByLabel('Email', { exact: true })).toHaveCount(0);
+
+        await page.goto(`/ns-conseil/prospects/${scenario.prospect.id}/edit`);
+        await expect(page.getByRole('heading', { name: /modifier prospect|prospect/i })).toBeVisible();
+        await expect(page.getByLabel(/nom de l.entit/i)).toBeEnabled();
+        await expect(page.getByLabel(/siret/i)).toBeDisabled();
+        await expect(page.getByLabel('Email', { exact: true })).toHaveCount(0);
     });
 });
