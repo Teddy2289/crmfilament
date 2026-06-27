@@ -21,6 +21,7 @@ $password = 'changeme123';
 $prospectEmail = 'hidden-field-e2e@example.test';
 $prospectName = 'E2E Prospect Champs';
 $prospectPhone = '0102030405';
+$prospectSiret = '12345678901234';
 
 AccessRightsCatalog::ensurePermissionsExist();
 
@@ -32,8 +33,11 @@ $role = Role::firstOrCreate([
 AccessRightsCatalog::syncSelectiveAccess($role, [
     'prospects.view_any',
     'prospects.view',
-    'fields.prospects.nom.show',
-    'fields.prospects.telephone.show',
+    'prospects.create',
+    'prospects.update',
+    'fields.prospects.nom.all',
+    'fields.prospects.telephone.all',
+    'fields.prospects.siret.show',
 ]);
 
 CrmProfile::updateOrCreate(
@@ -77,6 +81,7 @@ $prospect = Prospect::withTrashed()->updateOrCreate(
     [
         'nom' => $prospectName,
         'telephone' => $prospectPhone,
+        'siret' => $prospectSiret,
         'ville' => 'Paris',
         'departement' => '75',
         'statut' => ProspectStatut::AC->value,
@@ -98,6 +103,7 @@ echo json_encode([
         'name' => $prospectName,
         'phone' => $prospectPhone,
         'email' => $prospectEmail,
+        'siret' => $prospectSiret,
     ],
     'checks' => [
         'password_ok' => Hash::check($password, $user->password),
