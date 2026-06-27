@@ -79,7 +79,7 @@ tests/
 | Imports prospects | `app/Filament/NsConseil/Resources/ProspectResource/Import/` |
 | Workflow phoning | `app/Filament/NsConseil/Pages/PhoningWorkflow.php`, `app/Support/CsePhoningWorkflow.php` |
 | Calendrier | `app/Services/GoogleCalendarService.php`, `app/Observers/RendezVousObserver.php` |
-| Ringover | `app/Services/RingoverService.php`, `app/Console/Commands/SyncRingoverCalls.php` |
+| Ringover | `app/Services/RingoverService.php`, `app/Services/RingoverCallSyncService.php`, `app/Services/RingoverTagService.php`, `app/Services/RingoverUserMapper.php`, `app/Http/Controllers/RingoverWebhookController.php`, `app/Console/Commands/SyncRingoverCalls.php`, `tests/Feature/RingoverAdvancedIntegrationTest.php` |
 
 ---
 
