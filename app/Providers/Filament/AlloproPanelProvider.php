@@ -50,7 +50,6 @@ class AlloproPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->defaultThemeMode(ThemeMode::Light)
-            ->darkMode(false)
             ->navigationGroups([
                 NavigationGroup::make('Tickets')
                     ->icon('heroicon-o-ticket'),
