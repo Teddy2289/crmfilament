@@ -24,6 +24,7 @@ class RingoverIntegrationTest extends TestCase
         $this->assertFalse($this->routeExists('ns-conseil/aircall/recording/{callId}'));
 
         $this->assertFileDoesNotExist(config_path('aircall.php'));
+        $this->assertFileDoesNotExist(app_path('Filament/NsConseil/Widgets/AircallKpisChart.php'));
         $this->assertFileExists(config_path('ringover.php'));
     }
 
