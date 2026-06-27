@@ -1,21 +1,10 @@
-<div x-data="{
-    theme: '{{ $theme }}',
-    mode: '{{ $mode }}',
-    applyTheme() {
-        document.documentElement.setAttribute('data-theme', this.theme);
-        if (this.mode === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }
-}" x-init="applyTheme()" @theme-changed.window="event.detail.theme && (theme = event.detail.theme); event.detail.mode && (mode = event.detail.mode); applyTheme()">
-    <div class="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+<div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="flex items-center gap-4">
         <div class="flex items-center gap-2">
+            <x-heroicon-o-sun class="w-5 h-5 text-yellow-500" />
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Thème:</span>
             <select 
-                x-model="theme" 
-                @change="$wire.set('theme', $event.target.value)"
+                wire:model.live="theme"
                 class="text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             >
                 <option value="light">Clair</option>
@@ -25,10 +14,10 @@
         </div>
         <div class="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
         <div class="flex items-center gap-2">
+            <x-heroicon-o-moon class="w-5 h-5 text-indigo-500" />
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mode:</span>
             <select 
-                x-model="mode" 
-                @change="$wire.set('mode', $event.target.value)"
+                wire:model.live="mode"
                 class="text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             >
                 <option value="light">Clair</option>
@@ -36,4 +25,10 @@
             </select>
         </div>
     </div>
+    <x-filament::button 
+        wire:click="saveTheme"
+        size="sm"
+    >
+        Sauvegarder
+    </x-filament::button>
 </div>

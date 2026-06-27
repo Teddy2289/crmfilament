@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\Widget;
-use Filament\Forms\Form;
 use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,6 +13,8 @@ class ThemeSelectorWidget extends Widget
     protected static bool $isLazy = false;
 
     protected static ?int $sort = -1;
+
+    protected int | string | array $columnSpan = 'full';
 
     public ?string $theme = null;
 
@@ -26,50 +27,39 @@ class ThemeSelectorWidget extends Widget
         $this->mode = $user->theme_mode ?? 'light';
     }
 
-    public function form(Form $form): Form
+    public function saveTheme(): void
     {
-        return $form
-            ->schema([
-                Select::make('theme')
-                    ->label('Thème')
-                    ->options([
-                        'light' => 'Clair',
-                        'dark' => 'Sombre',
-                        'system' => 'Système',
-                    ])
-                    ->default($this->theme)
-                    ->live()
-                    ->afterStateUpdated(function ($state) {
-                        $user = Auth::user();
-                        $user->theme_preference = $state;
-                        $user->save();
-                        $this->theme = $state;
-                        $this->applyTheme();
-                    }),
-                Select::make('mode')
-                    ->label('Mode')
-                    ->options([
-                        'light' => 'Clair',
-                        'dark' => 'Sombre',
-                    ])
-                    ->default($this->mode)
-                    ->live()
-                    ->afterStateUpdated(function ($state) {
-                        $user = Auth::user();
-                        $user->theme_mode = $state;
-                        $user->save();
-                        $this->mode = $state;
-                        $this->applyTheme();
-                    }),
-            ]);
+        $user = Auth::user();
+        $user->theme_preference = $this->theme;
+        $user->theme_mode = $this->mode;
+        $user->save();
+        
+        $this->dispatch('closeModal');
+        $this->dispatch('themeUpdated');
     }
 
-    protected function applyTheme(): void
+    protected function getFormSchema(): array
     {
-        // This will be handled by JavaScript in the view
-        $this->dispatch('themeChanged', [
-            'theme' => $this->theme,
-            'mode' => $this->mode,
-        ]);
+        return [
+            Select::make('theme')
+                ->label('Thème')
+                ->options([
+                    'light' => 'Clair',
+                    'dark' => 'Sombre',
+                    'system' => 'Système',
+                ])
+                ->default($this->theme)
+                ->live()
+                ->required(),
+            Select::make('mode')
+                ->label('Mode')
+                ->options([
+                    'light' => 'Clair',
+                    'dark' => 'Sombre',
+                ])
+                ->default($this->mode)
+                ->live()
+                ->required(),
+        ];
     }
 }
