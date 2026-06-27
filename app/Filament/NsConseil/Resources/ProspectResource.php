@@ -97,7 +97,7 @@ class ProspectResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
             Forms\Components\Section::make('Identification')
                 ->icon('heroicon-o-building-office')
                 ->schema([
@@ -296,7 +296,7 @@ class ProspectResource extends Resource
                         ->rows(2)
                         ->columnSpanFull(),
                 ])->columns(3),
-        ]);
+        ]));
     }
 
     // ─────────────────────────────────────────────────────────────────

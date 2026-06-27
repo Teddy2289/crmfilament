@@ -105,7 +105,7 @@ class TicketResource extends Resource
     // ── Formulaire ───────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
 
             Forms\Components\Section::make('Ticket')
                 ->icon('heroicon-o-ticket')
@@ -241,7 +241,7 @@ class TicketResource extends Resource
                         ->rows(4)
                         ->columnSpanFull(),
                 ]),
-        ]);
+        ]));
     }
 
     // ── Table ────────────────────────────────────────────────────
