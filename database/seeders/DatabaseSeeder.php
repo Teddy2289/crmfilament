@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             FicheTemplateSeeder::class,
             TemplateFicheSeeder::class,
             EmailTemplateSeeder::class,
+            DocumentKnowledgeSeeder::class,
         ]);
     }
 }
