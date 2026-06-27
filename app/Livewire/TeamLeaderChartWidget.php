@@ -20,6 +20,7 @@ class TeamLeaderChartWidget extends ChartWidget
 
         // Si l'utilisateur est un Team Leader, obtenir les stats de son équipe
         $teamUserIds = $this->getTeamUserIds($user);
+        $teamUsers = User::whereIn('id', $teamUserIds)->get();
 
         // Données des 4 dernières semaines
         $weeks = [];
@@ -43,6 +44,25 @@ class TeamLeaderChartWidget extends ChartWidget
                 ->count();
         }
 
+        // Données détaillées par utilisateur pour la semaine en cours
+        $currentWeekStart = now()->startOfWeek();
+        $currentWeekEnd = now()->endOfWeek();
+        
+        $userStats = [];
+        foreach ($teamUsers as $teamUser) {
+            $userStats[] = [
+                'name' => $teamUser->name,
+                'conversions_qf' => Prospect::where('teleprospecteur_id', $teamUser->id)
+                    ->where('statut', 'QF')
+                    ->whereBetween('updated_at', [$currentWeekStart, $currentWeekEnd])
+                    ->count(),
+                'conversions_partenaire' => Prospect::where('teleprospecteur_id', $teamUser->id)
+                    ->whereNotNull('converti_partenaire_id')
+                    ->whereBetween('updated_at', [$currentWeekStart, $currentWeekEnd])
+                    ->count(),
+            ];
+        }
+
         return [
             'datasets' => [
                 [
@@ -59,6 +79,7 @@ class TeamLeaderChartWidget extends ChartWidget
                 ],
             ],
             'labels' => $weeks,
+            'user_stats' => $userStats,
         ];
     }
 
