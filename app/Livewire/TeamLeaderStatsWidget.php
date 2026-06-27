@@ -61,7 +61,7 @@ class TeamLeaderStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-o-calendar')
                 ->color('purple'),
 
-            BaseWidget\Stat::make('Partenaires Actifs', Partenaire::whereIn('commercial_id', $teamUserIds)
+            BaseWidget\Stat::make('Partenaires Actifs', Partenaire::whereIn('conseiller_id', $teamUserIds)
                 ->where('statut', 'convention_engagement')
                 ->count())
                 ->description('Total')
