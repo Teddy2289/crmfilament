@@ -10,6 +10,11 @@ class EditProspect extends EditRecord
 {
     protected static string $resource = ProspectResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return ProspectResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

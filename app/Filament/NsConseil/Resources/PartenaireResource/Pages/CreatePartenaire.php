@@ -16,6 +16,8 @@ class CreatePartenaire extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $data = PartenaireResource::filterFormDataForFieldPermissions($data, 'create');
+
         // Forcer date_modification_statut à la création
         $data['date_modification_statut'] = now();
 

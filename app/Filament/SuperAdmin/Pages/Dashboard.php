@@ -57,7 +57,7 @@ class Dashboard extends Page
 
             return $size.' MB';
         } catch (\Exception $e) {
-            return '—';
+            return 'n/a';
         }
     }
 

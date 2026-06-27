@@ -86,7 +86,7 @@ class ViewTicket extends ViewRecord
 
     public function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
+        return $infolist->schema(TicketResource::applyShowFieldPermissions([
 
             Section::make('Pipeline')
                 ->icon('heroicon-o-arrows-right-left')
@@ -218,6 +218,20 @@ class ViewTicket extends ViewRecord
                         ->prose()
                         ->placeholder('Aucune note'),
                 ]),
-        ]);
+        ], [
+            'progression_pourcentage' => 'statut',
+            'duree_traitement_formatee' => 'statut',
+            'sla_respecte' => 'niveau_priorite',
+            'contactParticulier.nom' => 'contact_particulier_id',
+            'contactParticulier.telephone' => 'contact_particulier_id',
+            'contactParticulier.adresse_complete' => 'contact_particulier_id',
+            'contactParticulier.type_logement' => 'contact_particulier_id',
+            'contactParticulier.statut_occupant' => 'contact_particulier_id',
+            'artisan.nom' => 'artisan_id',
+            'artisan.telephone_principal' => 'artisan_id',
+            'artisan.corps_de_metier' => 'corps_de_metier',
+            'operateur.prenom' => 'operateur_id',
+            'date_cloture' => 'statut',
+        ]));
     }
 }

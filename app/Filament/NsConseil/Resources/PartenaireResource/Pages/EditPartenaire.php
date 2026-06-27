@@ -43,6 +43,12 @@ class EditPartenaire extends EditRecord
 
         return false;
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return PartenaireResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

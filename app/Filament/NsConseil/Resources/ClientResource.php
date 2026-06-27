@@ -11,6 +11,7 @@ use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\Proposition
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\Exports\ClientExporter;
 use App\Models\Client;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -19,12 +20,16 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class ClientResource extends Resource
 {
     use HasRoleAccess;
+    use UsesResourcePermissions;
 
     protected static ?string $model = Client::class;
+
+    protected static string $permissionPrefix = 'clients';
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
@@ -36,7 +41,32 @@ class ClientResource extends Resource
 
     public static function canAccess(): bool
     {
-        return static::userHasAnyRole(['admin', 'superviseur', 'commercial']);
+        return static::userCanViewResourceList();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return static::userCanResourcePermission('view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::userCanResourcePermission('create');
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::userCanResourcePermission('update');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::userCanResourcePermission('delete');
     }
 
     public static function getNavigationBadge(): ?string
@@ -168,7 +198,7 @@ class ClientResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 // 🔵 Colonne principale : Nom + Civilité
                 Tables\Columns\TextColumn::make('nom_tiers')
                     ->label('Client')
@@ -177,7 +207,9 @@ class ClientResource extends Resource
                     ->weight('bold')
                     ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').$state)
                     )
-                    ->description(fn (Client $record) => $record->email ?? $record->telephone)
+                    ->description(fn (Client $record) => static::userCanShowField('email') && filled($record->email)
+                        ? $record->email
+                        : (static::userCanShowField('telephone') ? $record->telephone : null))
                     ->toggleable(),
 
                 // 📞 Contact
@@ -265,7 +297,10 @@ class ClientResource extends Resource
                     ->sortable()
                     ->toggleable()
                     ->toggledHiddenByDefault(),
-            ])
+            ], [
+                'partenaire.nom' => 'partenaire_id',
+                'parrain.nom_prenom' => 'parrain_id',
+            ]))
             ->filters([
                 // 📊 Filtres principaux
                 Tables\Filters\SelectFilter::make('etat')
@@ -390,7 +425,7 @@ class ClientResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
+        return $infolist->schema(static::applyShowFieldPermissions([
             Infolists\Components\Section::make('Identité')
                 ->schema([
                     Infolists\Components\TextEntry::make('nom_tiers')
@@ -486,7 +521,18 @@ class ClientResource extends Resource
                         ->money('EUR')
                         ->placeholder('0,00 €'),
                 ])->columns(3),
-        ]);
+        ], [
+            'age' => 'date_naissance',
+            'partenaire.nom' => 'partenaire_id',
+            'parrain.nom_prenom' => 'parrain_id',
+            'adresse_complete' => 'adresse',
+            'localisation' => 'ville',
+            'total_heures_formation' => 'etat',
+            'total_heures_realisees' => 'etat',
+            'total_heures_restantes' => 'etat',
+            'progression_formation' => 'etat',
+            'montant_total_cpf' => 'montant_cpf',
+        ]));
     }
 
     public static function getRelations(): array

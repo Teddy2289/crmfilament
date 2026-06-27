@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\CrmProfile;
+use App\Support\AccessRightsCatalog;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -27,6 +28,8 @@ class CrmProfileSeeder extends Seeder
 
     private function syncRolePermissions(array $profile): void
     {
+        AccessRightsCatalog::ensurePermissionsExist();
+
         $role = Role::firstOrCreate([
             'name' => $profile['role_name'],
             'guard_name' => 'web',
@@ -35,20 +38,13 @@ class CrmProfileSeeder extends Seeder
         $perms = $profile['permissions'] ?? [];
 
         if ($perms === '*') {
-            $role->syncPermissions(Permission::all());
+            $role->syncPermissions(AccessRightsCatalog::allPermissionNames());
 
             return;
         }
 
         if ($perms === 'allopro') {
-            $role->syncPermissions(Permission::where('name', 'like', 'tickets.%')
-                ->orWhere('name', 'like', 'fiche_p2.%')
-                ->orWhere('name', 'like', 'artisans.%')
-                ->orWhere('name', 'like', 'reclamations.%')
-                ->orWhere('name', 'like', 'rapports_satisfaction.%')
-                ->orWhere('name', 'like', 'prospection_artisans.%')
-                ->orWhere('name', 'like', 'dashboard.%')
-                ->get());
+            $role->syncPermissions(AccessRightsCatalog::permissionNamesForPanel('allopro'));
 
             return;
         }

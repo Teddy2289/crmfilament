@@ -21,8 +21,8 @@ use App\Filament\Shared\Actions\SendEmailAction;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Mail\OuvertureTicketMail;
 use App\Models\Artisan;
-use Illuminate\Support\Facades\Mail;
 use App\Models\Ticket;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -30,10 +30,20 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Mail;
 
 class TicketResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = Ticket::class;
+
+    protected static string $permissionPrefix = 'tickets';
+
+    protected static array $permissionActionMap = [
+        'update' => 'update_statut',
+    ];
 
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
 
@@ -46,6 +56,31 @@ class TicketResource extends Resource
     protected static ?string $recordTitleAttribute = 'reference';
 
     // ── Navigation badge ─────────────────────────────────────────
+    public static function canAccess(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return static::userCanResourcePermission('view');
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::userCanResourcePermission('update');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
     public static function getNavigationBadge(): ?string
     {
         $count = Ticket::whereNotIn('statut', [
@@ -215,7 +250,7 @@ class TicketResource extends Resource
         return $table
             ->defaultSort('date_creation', 'desc')
             ->poll('30s')
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('reference')
                     ->label('Réf.')
                     ->searchable()
@@ -248,7 +283,9 @@ class TicketResource extends Resource
                 Tables\Columns\TextColumn::make('artisan.nom')
                     ->label('Artisan')
                     ->formatStateUsing(fn ($state, $record) => $record->artisan?->nom_complet ?? '—')
-                    ->description(fn ($record) => $record->artisan?->corps_de_metier?->label())
+                    ->description(fn ($record) => static::userCanShowField('corps_de_metier')
+                        ? $record->artisan?->corps_de_metier?->label()
+                        : null)
                     ->placeholder('Non assigné'),
 
                 Tables\Columns\TextColumn::make('corps_de_metier')
@@ -283,7 +320,12 @@ class TicketResource extends Resource
                         fn ($state, $record) => trim(($record->operateur?->prenom ?? '').' '.($record->operateur?->nom ?? '')) ?: '—'
                     )
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ], [
+                'contactParticulier.nom' => 'contact_particulier_id',
+                'artisan.nom' => 'artisan_id',
+                'operateur.prenom' => 'operateur_id',
+                'sla_respecte' => 'niveau_priorite',
+            ]))
 
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
@@ -496,6 +538,6 @@ class TicketResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->hasAnyRole(['operateur_n1', 'responsable_plateau']) ?? false;
+        return static::userCanResourcePermission('create');
     }
 }

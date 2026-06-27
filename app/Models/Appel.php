@@ -387,6 +387,8 @@ class Appel extends Model
                 $appel->type = EventType::Appel;
             }
         });
+
+        static::observe(\App\Observers\AppelObserver::class);
     }
 
     // ── Relations ────────────────────────────────────────────────────

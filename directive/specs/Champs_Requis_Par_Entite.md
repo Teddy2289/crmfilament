@@ -1,132 +1,252 @@
-# Champs Requis par Entité — CRM EspoCRM AOPIA / LIKE Formation
+# Champs requis par entite - CRM AOPIA / LIKE Formation
 
-*Extrait du Cahier des Charges et des Comptes-Rendus de Réunion*
-
----
-
-## 1. Partenaire (Account)
-
-| Champ | Type | Remarque |
-|---|---|---|
-| Nom du partenaire | Texte | Nomenclature imposée : `[Type] [Nom entreprise] [Ville]` |
-| Type | Liste | CSE / Syndicat / Association-Club / Entreprise / Partenariat annulé |
-| État / Statut | Liste | À prospecter / En cours de prospection / Signé accord cadre / Convention engagement / Refus |
-| Adresse complète | Adresse | Rue, CP, Ville |
-| Département | Texte | Pour filtrer par zone commerciale |
-| Commercial / Mandataire | Lien Utilisateur | Commercial assigné |
+**Version**: 1.1
+**Date**: 26 Juin 2026
+**Reference**: implementation Laravel/Filament `crmfilament`
 
 ---
 
-## 2. Prospect (Lead / LeadPhoning)
+## 1. Regle generale
 
-| Champ | Type | Remarque |
-|---|---|---|
-| Raison sociale (name) | Texte | Nom du prospect |
-| Statut | Liste | AC / En cours / STD-NR / STD-Joint / CSE-NR / RP / RPC / KO / QF |
-| Conseiller (assignedUser) | Lien Utilisateur | Téléprospecteur affecté |
+Ce document liste les champs metier importants et les regles de droits par champ.
 
-### Champs obligatoires pour transition AC → En cours
+Les champs techniquement disponibles sont definis par les models Eloquent et les formulaires Filament. Les droits par champ sont centralises dans:
 
-| Champ | Type |
+```text
+app/Support/AccessRightsCatalog.php
+```
+
+Format des permissions champ:
+
+```text
+fields.{entity}.{field}.{action}
+```
+
+Actions supportees:
+
+| Action | Sens |
 |---|---|
-| Date de l'appel | Date |
-| Heure de l'appel | Heure |
-| Résultat de l'appel | Liste |
+| `show` | autorise l'affichage ou la lecture |
+| `create` | autorise la saisie a la creation |
+| `edit` | autorise la modification |
+| `flux` | autorise l'usage dans un flux/workflow |
+| `all` | autorise toutes les actions |
 
-### Champs obligatoires pour passage en QF (7 éléments bloquants)
+---
 
-| # | Élément | Source |
+## 2. Prospects
+
+Entite: `prospects`
+Model: `App\Models\Prospect`
+
+### Champs metier requis
+
+| Champ | Usage | Remarque |
 |---|---|---|
-| 1 | RDV créé dans le CRM (date, heure, lieu sur site) | Téléprospecteur |
-| 2 | Email de confirmation envoyé au CSE | Automatique (Template 1) |
-| 3 | Tous les champs obligatoires de la fiche renseignés | Téléprospecteur |
-| 4 | Fichier récap PDF généré | Automatique |
-| 5 | Enregistrement audio de la conversation | Téléprospecteur |
-| 6 | Email invitation agenda envoyé au commercial | Automatique (Template 2) |
-| 7 | Validation Team Leader effectuée | Team Leader |
+| `nom` | identification | requis pour identifier la fiche |
+| `type_pressenti` | qualification | CSE, syndicat, entreprise, autre |
+| `telephone` | phoning | prioritaire pour import et appels |
+| `departement` | affectation | utile pour secteur et campagne |
+| `statut` | pipeline | enum `ProspectStatut` |
+| `teleprospecteur_id` | affectation phoning | selon campagne |
+| `commercial_id` | relais commercial | requis pour suivi RDV |
+| `campagne_id` | import/campagne | si import Top 500 |
+| `motif_ko` | sortie KO | requis si statut KO |
+| `rappel_planifie_at` | rappel | requis si rappel planifie |
 
-### Champs obligatoires pour statut KO
+### Champs utiles aux droits par champ
 
-| Champ | Type |
+| Champ | Droits typiques |
 |---|---|
-| Motif KO | Liste (obligatoire) |
+| `nom` | show, create, edit, all |
+| `telephone` | show, create, edit, flux |
+| `email` | show, create, edit |
+| `adresse`, `code_postal`, `ville` | show, create, edit |
+| `siret` | show, create, edit |
+| `statut` | show, edit, flux |
+| `teleprospecteur_id` | show, edit, flux |
+| `commercial_id` | show, edit, flux |
+| `interlocuteur_nom`, `interlocuteur_email` | show, create, edit |
+| `description` | show, create, edit |
 
----
+### QF - 7 elements bloquants
 
-## 3. Opportunité
-
-| Champ | Type | Remarque |
-|---|---|---|
-| Nom de l'entité ciblée | Texte | Raison sociale |
-| Source de détection | Liste | Réseau commercial / Client existant / Parrainage / Phoning entrant / Salon / LinkedIn / Fichier externe / Autre |
-| Statut | Liste | Nouveau / En cours d'évaluation / Qualifiée / Converti / Perdue |
-| Date de détection | Date | Auto-remplie à la création |
-
-### Champ obligatoire conditionnel
-
-| Condition | Champ requis | Type |
-|---|---|---|
-| Statut = Perdue | Raison de perte | Liste |
-
----
-
-## 4. Client / Bénéficiaire (Contact importé Dolibarr)
-
-Les champs ci-dessous sont importés depuis Dolibarr et considérés comme requis pour l'identification :
-
-| Champ | Type | Remarque |
-|---|---|---|
-| Nom (lastName) | Texte | Séparation depuis le champ "Tiers" Dolibarr |
-| Prénom (firstName) | Texte | Séparation depuis le champ "Tiers" Dolibarr |
-
-### Clé de déduplication
-
-| Priorité | Champs |
+| # | Element |
 |---|---|
-| 1 (principale) | Réf. client (ID technique Dolibarr) |
-| 2 (fallback) | Nom + Prénom + Date de naissance |
+| 1 | RDV cree avec date, heure et lieu |
+| 2 | Email confirmation CSE envoye |
+| 3 | Champs obligatoires de la fiche renseignes |
+| 4 | Fiche recap generee |
+| 5 | Enregistrement audio disponible |
+| 6 | Email invitation agenda envoye au commercial |
+| 7 | Validation Team Leader |
 
 ---
 
-## 5. RDV / Appel (Call / Meeting)
+## 3. Partenaires
 
-### Champs obligatoires pour un RDV commercial
+Entite: `partenaires`
+Model: `App\Models\Partenaire`
 
-| Champ | Type | Remarque |
+### Champs metier requis
+
+| Champ | Usage | Remarque |
 |---|---|---|
-| Date et heure | DateTime | |
-| Lieu (sur site uniquement) | Adresse structurée | Rue / Code postal / Ville |
-| Nom de l'interlocuteur | Texte | Contact CSE |
-| Commercial assigné | Lien Utilisateur | |
+| `nom` | nom public | peut etre genere par nomenclature |
+| `entreprise` | organisation | source fichier partenaire |
+| `nom_retenu` | nom commercial | utilise pour matching |
+| `type` | type partenaire | enum `OrganizationType` |
+| `statut` | cycle partenaire | enum `OrganizationStatus` |
+| `adresse`, `code_postal`, `ville` | localisation | requis pour secteur et RDV |
+| `departement` | secteur | filtrage commercial |
+| `commercial_id` | responsable | affectation commerciale |
+| `conseiller_id` | suivi | selon fichier partenaire |
+| `date_signature` | suivi accord | si signe |
+| `date_convention` | activation | si convention engagement |
 
-### Champs obligatoires pour un appel (historique)
+### Champs utiles aux droits par champ
 
-| Champ | Type |
+| Champ | Droits typiques |
 |---|---|
-| Date et heure | DateTime |
-| Résultat | Liste (STD-Joint / STD-NR / CSE-NR / KO / RPC / RP / QF) |
-| Commercial / Téléprospecteur concerné | Lien Utilisateur |
+| `nom`, `entreprise`, `nom_retenu` | show, create, edit |
+| `siret` | show, create, edit |
+| `type`, `statut` | show, edit, flux |
+| `telephone`, `email` | show, create, edit |
+| `adresse`, `code_postal`, `ville` | show, create, edit |
+| `commercial_id`, `conseiller_id` | show, edit, flux |
+| `date_signature`, `date_convention` | show, edit |
+| `notes`, `commentaires` | show, create, edit |
 
 ---
 
-## 6. Contact (lié au Partenaire)
+## 4. Clients
 
-Aucun champ strictement obligatoire selon le CDC — tous les champs du bloc Contact sont optionnels. Les contacts sont des interlocuteurs libres associés au partenaire.
+Entite: `clients`
+Model: `App\Models\Client`
 
----
+### Champs metier requis
 
-## 7. Règles de transition entre statuts (récapitulatif)
-
-| Statut source | Statut cible | Champs obligatoires pour la transition |
+| Champ | Usage | Remarque |
 |---|---|---|
-| AC | En cours | Date, heure, résultat (au moins 1 appel) |
-| En cours | STD-NR | 3 entrées historique (3 tentatives horaires distincts) |
-| En cours | CSE-NR | Nom standard si obtenu |
-| En cours / RP / RPC | Prise de RDV | Date RDV, lieu, nom interlocuteur |
-| Prise de RDV | QF | PDF + audio + emails + validation TL (7 éléments) |
-| Tout statut | KO | Motif KO (liste obligatoire) |
-| Refus | À prospecter | Note de reprise de contact |
+| `ref_client` | deduplication | cle prioritaire Dolibarr |
+| `nom_tiers` | identification | peut contenir nom/prenom source |
+| `date_naissance` | dedup fallback | avec nom/prenom |
+| `telephone` | contact | si present |
+| `email` | contact | si present |
+| `adresse`, `code_postal`, `ville` | localisation | import Dolibarr |
+| `partenaire_id` | rattachement | matching partenaire |
+| `ne_plus_contacter` | exclusion commerciale | doit etre respecte |
+
+### Champs utiles aux droits par champ
+
+| Champ | Droits typiques |
+|---|---|
+| `ref_client` | show, create |
+| `civilite`, `nom_tiers` | show, create, edit |
+| `email`, `telephone` | show, create, edit |
+| `adresse`, `code_postal`, `ville` | show, create, edit |
+| `date_naissance` | show, create, edit |
+| `entreprise` | show, create, edit |
+| `etat` | show, edit, flux |
+| `montant_cpf` | show seulement ou masque selon politique metier |
+| `ne_plus_contacter` | show, edit, flux |
+| `partenaire_id` | show, edit |
+| `notes_commerciales` | show, create, edit |
 
 ---
 
-*Document généré depuis le CDC v1.0 et les CR de réunion — Mai 2026*
+## 5. Tickets AlloPro
+
+Entite: `tickets`
+Model: `App\Models\Ticket`
+
+### Champs utiles aux droits par champ
+
+| Champ | Droits typiques |
+|---|---|
+| `reference` | show |
+| `contact_particulier_id` | show, create, edit |
+| `artisan_id` | show, edit, flux |
+| `operateur_id` | show, edit |
+| `statut` | show, edit, flux |
+| `niveau_priorite` | show, create, edit, flux |
+| `corps_de_metier` | show, create, edit, flux |
+| `rdv_planifie_at` | show, edit, flux |
+| `rappel_promise_at` | show, edit, flux |
+| `aircall_call_id` | show |
+| `source_appel` | show, create |
+| `notes` | show, create, edit |
+
+---
+
+## 6. Appels
+
+Model: `App\Models\Appel`
+
+Champs fonctionnels importants:
+
+| Champ | Usage |
+|---|---|
+| `appelable_type`, `appelable_id` | lien polymorphe |
+| `type` | appel, permanence, presentation |
+| `resultat` | resultat generique |
+| `phoning_result` | code statut phoning |
+| `date_heure` | horodatage |
+| `duree_secondes` | duree |
+| `enregistrement_audio` | audio QF |
+| `aircall_call_id` | lien telephonie |
+| `campagne_id` | campagne phoning |
+| `user_id` | agent |
+
+---
+
+## 7. Rendez-vous
+
+Model: `App\Models\RendezVous`
+
+Champs fonctionnels importants:
+
+| Champ | Usage |
+|---|---|
+| `rdvable_type`, `rdvable_id` | lien polymorphe |
+| `date_heure` | date et heure |
+| `lieu`, `adresse`, `code_postal`, `ville` | lieu structure |
+| `interlocuteur_nom` | contact RDV |
+| `commercial_id` | commercial assigne |
+| `teleprospecteur_id` | createur ou suivi phoning |
+| `type` | type RDV |
+| `statut` | etat RDV |
+| `google_event_id` | sync calendrier |
+
+---
+
+## 8. Regles de transition principales
+
+| Transition | Conditions minimales |
+|---|---|
+| AC -> en cours / appel traite | appel enregistre avec date, heure et resultat |
+| Standard non repondu | tentatives selon configuration CRM |
+| RP / RPC -> RDV | date RDV, lieu et interlocuteur |
+| RDV -> QF | 7 elements bloquants valides |
+| Tout statut -> KO | motif KO renseigne |
+| Prospect -> Partenaire | QF valide et role autorise |
+| Refus -> reprise | note de reprise recommandee |
+
+---
+
+## 9. Tests a maintenir
+
+Test automatise principal:
+
+```powershell
+php artisan test --filter RoleAccessRightsTest
+```
+
+Scenarios a couvrir lors des evolutions:
+
+- role complet;
+- role selectif par module;
+- role selectif par champ;
+- interdiction create/edit sur champ;
+- affichage show dans les vues sensibles;
+- usage flux dans le workflow phoning.

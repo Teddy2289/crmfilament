@@ -1,81 +1,105 @@
-Index et structure du projet CRM AOPIA / LIKE Formation
-=======================================================
+# Index et structure documentaire - CRM AOPIA / LIKE Formation
 
-Résumé rapide
--------------
-
-Ce dépôt contient le CRM commercial NS Conseil (Laravel + Filament) et la documentation CDC issue du cahier des charges EspoCRM initial.
-
-**Document principal de modélisation** : [`Modele_Projet_AOPIA_Laravel.md`](Modele_Projet_AOPIA_Laravel.md)
-
-| Document | Contenu |
-|---|---|
-| `Modele_Projet_AOPIA_Laravel.md` | Modèle de données, workflows, mapping Excel, écarts CDC |
-| `CDC_CRM_EspoCRM_AOPIA (2).md` | Cahier des charges fonctionnel complet |
-| `Champs_Requis_Par_Entite.md` | Champs obligatoires par entité |
-| `Manuel_Integration_Ringover.md` | Intégration téléphonie |
-| `split-account-table.md` | Découpage fiche partenaire (satellites) |
-| `directive/new directive aopiacrm/` | Workflows HTML v2 (prospection + statuts) |
-| `directive/archive/` | Fichiers Excel réels + CR réunions |
+**Date**: 26 Juin 2026
+**Projet courant**: Laravel 12 + Filament 3.3 (`crmfilament`)
 
 ---
 
-Index EspoCRM (référence historique)
------------------------------------
+## 1. Documentation courante
 
-Ce document donne un index concis des dossiers principaux du projet EspoCRM d'origine et la logique d'organisation.
+| Document | Role |
+|---|---|
+| `../../README.md` | Vue projet, stack, panels, commandes rapides |
+| `../../ETAT_AVANCEMENT.md` | Etat d'avancement courant et backlog |
+| `../../MANUEL.md` | Manuel technique de deploiement/developpement |
+| `Modele_Projet_AOPIA_Laravel.md` | Reference fonctionnelle Laravel/Filament |
+| `MANUEL_UTILISATION.md` | Manuel utilisateur Ns Conseil et Super Admin |
+| `Champs_Requis_Par_Entite.md` | Champs requis et droits par champ |
+| `../../tests/e2e/README.md` | Tests navigateur Playwright |
 
-Structure principale
--------------------
+---
 
-- Racine: fichiers de configuration, scripts, Docker et outils de build.
-- `application/`: cœur PHP de l'application (namespace `Espo`). Contrôleurs, modèles, services.
-- `client/`: sources et assets front (css, `src/`, images, fonts, modules JS).
-- `custom/`: personnalisations et extensions (`custom/Espo/`) — éviter de modifier le core.
-- `data/`: configurations runtime (`config.php`, `config-db.php`), `cache/`, `logs/`, `upload/`, `tmp/`.
-- `dev/`: scripts et utilitaires de développement, seeds et helpers (PHPStan, debug helpers).
-- `frontend/`: configuration et outils de build frontend (`less/`, `bundle-config.json`).
-- `public/`: point d'entrée web public (index.php, `api/`, `portal/`, `install/`).
-- `build/` / `upgrades/`: artefacts de build et scripts de migration.
-- `scripts/`: scripts d'import et utilitaires (imports Excel, etc.).
-- `templates/`: gabarits (emails, etc.).
-- `tests/`, `playwright-tests/`: suites de tests unitaires et E2E.
-- `vendor/`: dépendances gérées par Composer.
+## 2. Documentation source ou historique
 
-Fichiers clés à la racine
--------------------------
+Ces fichiers restent utiles pour comprendre les decisions metier, mais ne decrivent pas toujours l'implementation Laravel actuelle.
 
-- `composer.json` / `composer.lock` — dépendances PHP.
-- `package.json`, `Gruntfile.js`, `tsconfig.json`, `jsconfig.json` — tooling frontend.
-- `README.md`, `INSTALL_STEPS.md` — documentation d'installation.
-- `Dockerfile`, `docker-compose.yml` — configuration conteneurisée.
+| Document | Statut |
+|---|---|
+| `CDC_CRM_EspoCRM_AOPIA (2).md` | CDC historique EspoCRM, source metier |
+| `Guide_Developpement_EspoCRM.md` | Guide historique EspoCRM, non applicable directement au code Laravel |
+| `Manuel_Integration_Ringover.md` | Manuel fonctionnel Ringover historique; implementation Laravel actuelle surtout Aircall/settings |
+| `split-account-table.md` | Ancienne strategie EspoCRM AccountDetails; traduite en tables satellites Laravel |
+| `directive/archive/*.md` | Comptes-rendus et syntheses historiques |
 
-Logique d'organisation
-----------------------
+---
 
-- Séparation clair backend/frontend: backend dans `application/`, frontend dans `client/` + `frontend/`, `public/` expose l'application.
-- Personnalisation via `custom/` pour éviter les modifications du core et faciliter les mises à jour.
-- `data/` contient l'état et la configuration du site — conserver ces fichiers hors du contrôle de version sensible (ex: backups, `.env`).
-- `vendor/` ne doit pas être modifié manuellement — gérer via Composer.
-- Les scripts d'upgrade et `upgrades/` gèrent les migrations de schéma et opérations post-update.
+## 3. Structure Laravel actuelle
 
-Où ajouter une customisation
----------------------------
+```text
+app/
+  Models/                  Entites Eloquent
+  Filament/
+    NsConseil/             CRM AOPIA / LIKE
+    Allopro/               Centre de contact artisans
+    SuperAdmin/            Administration, roles, settings
+  Services/
+    Aopia/                 Workflows AOPIA
+    Crm/                   Profils, settings, fiches, reporting
+  Support/                 AccessRightsCatalog, helpers permissions
 
-- Pour ajouter/override une entité, vue ou logique PHP: créer `custom/Espo/<Module>/...` suivant l'arborescence du core.
-- Pour ajouter des assets front: travailler dans `client/custom/` ou ajouter des modules dans `client/src/` puis rebuild.
+database/
+  migrations/              Schema
+  seeders/                 Seeders
+  seeders/data/            Donnees de reference
 
-Conseils rapides
-----------------
+directive/
+  specs/                   Documentation metier et technique
+  archive/                 Sources historiques et fichiers Excel
 
-- Avant mise en production, vérifier `data/config-*.php` et sécuriser `public/`.
-- Utiliser Composer et npm/Grunt pour gérer dépendances et builds.
-- Lancer les tests (PHPUnit, Playwright) après modifications critiques.
+tests/
+  Feature/                 Tests backend
+  Browser/                 Tests Dusk historiques
+  e2e/                     Tests Playwright courants
+```
 
-Exemples de prochaines étapes
-----------------------------
+---
 
-- Documenter l'emplacement exact pour une surcharge type (ex: `custom/Espo/Resources/metadata/entity.json`).
-- Générer un `tree` détaillé pour indexation automatique si nécessaire.
+## 4. Fichiers techniques importants
 
-Fin
+| Sujet | Fichiers |
+|---|---|
+| Droits d'acces | `app/Support/AccessRightsCatalog.php`, `app/Support/UsesResourcePermissions.php` |
+| Interface roles | `app/Filament/SuperAdmin/Resources/RoleResource.php` |
+| Tests droits | `tests/Feature/RoleAccessRightsTest.php` |
+| Prospects | `app/Models/Prospect.php`, `app/Filament/NsConseil/Resources/ProspectResource.php` |
+| Partenaires | `app/Models/Partenaire.php`, `app/Filament/NsConseil/Resources/PartenaireResource.php` |
+| Clients | `app/Models/Client.php`, `app/Filament/NsConseil/Resources/ClientResource.php` |
+| Imports clients | `app/Filament/NsConseil/Resources/ClientResource/Import/` |
+| Imports partenaires | `app/Filament/NsConseil/Resources/PartenaireResource/Import/` |
+| Imports prospects | `app/Filament/NsConseil/Resources/ProspectResource/Import/` |
+| Workflow phoning | `app/Filament/NsConseil/Pages/PhoningWorkflow.php`, `app/Support/CsePhoningWorkflow.php` |
+| Calendrier | `app/Services/GoogleCalendarService.php`, `app/Observers/RendezVousObserver.php` |
+| Aircall | `app/Services/AircallService.php`, `app/Console/Commands/SyncAircallCalls.php` |
+
+---
+
+## 5. Regles de mise a jour documentaire
+
+- Mettre a jour `README.md` pour les changements visibles de stack, panels ou commandes.
+- Mettre a jour `ETAT_AVANCEMENT.md` pour les livraisons et le backlog.
+- Mettre a jour `MANUEL.md` pour les commandes, deploiement, tests ou architecture technique.
+- Mettre a jour `MANUEL_UTILISATION.md` pour les changements d'interface utilisateur.
+- Mettre a jour `Champs_Requis_Par_Entite.md` pour les champs, transitions et droits par champ.
+- Ne pas modifier les comptes-rendus d'archive sauf demande explicite; ils servent de trace historique.
+
+---
+
+## 6. Commandes utiles
+
+```powershell
+php artisan test --filter RoleAccessRightsTest
+php artisan test
+npm run e2e
+npm run build
+rg --files -g '*.md' -g '!vendor/**' -g '!node_modules/**'
+```

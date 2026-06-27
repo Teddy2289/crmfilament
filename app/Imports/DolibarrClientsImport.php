@@ -5,11 +5,50 @@ namespace App\Imports;
 use App\Models\Client;
 use App\Models\Partenaire;
 use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 
-class DolibarrClientsImport implements ToCollection, WithHeadingRow
+class DolibarrClientsImport implements WithMultipleSheets, SkipsUnknownSheets
 {
+    public int $created = 0;
+    public int $updated = 0;
+    public int $errors = 0;
+    public array $sheetStats = [];
+
+    public function sheets(): array
+    {
+        return [
+            'CRM LIKE' => new ClientSheetImport('CRM LIKE', $this),
+            'CRM AOPIA-ABO' => new ClientSheetImport('CRM AOPIA-ABO', $this),
+            'CRM 01FC' => new ClientSheetImport('CRM 01FC', $this),
+        ];
+    }
+
+    public function onUnknownSheet($sheetName)
+    {
+        // Ignorer les feuilles inconnues
+    }
+
+    public function addStats(string $sheetName, int $created, int $updated, int $errors): void
+    {
+        $this->created += $created;
+        $this->updated += $updated;
+        $this->errors += $errors;
+        $this->sheetStats[$sheetName] = [
+            'created' => $created,
+            'updated' => $updated,
+            'errors' => $errors,
+        ];
+    }
+}
+
+class ClientSheetImport implements \Maatwebsite\Excel\Concerns\ToCollection, \Maatwebsite\Excel\Concerns\WithHeadingRow
+{
+    public function __construct(
+        public string $sheetName,
+        public DolibarrClientsImport $parentImport
+    ) {}
+
     public int $created = 0;
     public int $updated = 0;
     public int $errors = 0;
@@ -22,20 +61,18 @@ class DolibarrClientsImport implements ToCollection, WithHeadingRow
             } catch (\Exception $e) {
                 $this->errors++;
                 \Log::error('Erreur import ligne', [
+                    'sheet' => $this->sheetName,
                     'row' => $row->toArray(),
                     'error' => $e->getMessage(),
                 ]);
             }
         }
+
+        $this->parentImport->addStats($this->sheetName, $this->created, $this->updated, $this->errors);
     }
 
     protected function processRow($row)
     {
-        // Mapping des colonnes Dolibarr vers le modèle Client
-        // Colonnes attendues: nom, prenom, date_naissance, adresse, code_postal, ville, 
-        // telephone, email, partenaire_nom, statut_formation, heures_formation, 
-        // nombre_parrainages
-        
         $partenaire = null;
         if (! empty($row['partenaire_nom'])) {
             $partenaire = Partenaire::where('nom', 'like', '%'.$row['partenaire_nom'].'%')->first();
@@ -60,6 +97,7 @@ class DolibarrClientsImport implements ToCollection, WithHeadingRow
                     'heures_formation' => $row['heures_formation'] ?? 0,
                     'nombre_parrainages' => $row['nombre_parrainages'] ?? 0,
                     'source_import' => 'dolibarr',
+                    'source_sheet' => $this->sheetName,
                     'date_import' => now()->toDateString(),
                 ],
             ]
@@ -79,7 +117,6 @@ class DolibarrClientsImport implements ToCollection, WithHeadingRow
         }
 
         try {
-            // Format Excel ou format français dd/mm/YYYY
             if (is_numeric($date)) {
                 return \Carbon\Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($date));
             }

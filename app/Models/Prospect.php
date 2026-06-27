@@ -597,6 +597,23 @@ class Prospect extends Model
         });
     }
 
+    /**
+     * Convertit un Prospect en Partenaire.
+     *
+     * Règle actuelle (implémentation):
+     * - Le prospect doit être qualifié (statut QF) et validé par un Team Leader
+     * - Le partenaire créé a le statut "À prospecter" (OrganizationStatus::AProspecter)
+     * - Les contacts (dirigeant, CSE, syndicat) sont automatiquement migrés vers ContactPartenaire
+     *
+     * Note CDC vs Implémentation:
+     * - CDC §4.4: "Conversion Prospect → Partenaire : Team Leader uniquement | Statut = QF validé"
+     * - CDC mentionne également "Convention signée" comme condition, mais l'implémentation actuelle
+     *   utilise QF comme critère principal pour permettre la conversion et la signature ultérieure
+     * - Le partenaire créé démarre en statut "À prospecter" pour permettre le workflow de signature
+     *
+     * @throws \Exception Si le prospect n'est pas qualifié (QF)
+     * @return Partenaire|null Le partenaire créé ou null en cas d'échec
+     */
     public function convertirEnPartenaire(): ?Partenaire
     {
         if (! $this->estQualifie) {
@@ -765,5 +782,10 @@ class Prospect extends Model
     public function convertiEnPartenaire()
     {
         return $this->belongsTo(Partenaire::class, 'converti_partenaire_id');
+    }
+
+    public function historiqueInteractions()
+    {
+        return $this->morphMany(HistoriqueInteractionUser::class, 'interactable');
     }
 }

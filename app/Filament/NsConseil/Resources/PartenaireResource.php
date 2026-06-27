@@ -10,6 +10,8 @@ use App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Models\Consultant;
 use App\Models\Partenaire;
+use App\Rules\PartenaireNomenclatureRule;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -20,12 +22,16 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class PartenaireResource extends Resource
 {
     use HasRoleAccess;
+    use UsesResourcePermissions;
 
     protected static ?string $model = Partenaire::class;
+
+    protected static string $permissionPrefix = 'partenaires';
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
 
@@ -37,7 +43,32 @@ class PartenaireResource extends Resource
 
     public static function canAccess(): bool
     {
-        return static::userHasAnyRole(['admin', 'superviseur', 'commercial']);
+        return static::userCanViewResourceList();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return static::userCanResourcePermission('view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::userCanResourcePermission('create');
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::userCanResourcePermission('update');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::userCanResourcePermission('delete');
     }
 
     public static function getNavigationBadge(): ?string
@@ -71,6 +102,7 @@ class PartenaireResource extends Resource
                         ->columnSpan(2)
                         ->helperText('Nomenclature imposée : [Type] [Entreprise] [Ville]')
                         ->rules([
+                            new PartenaireNomenclatureRule(),
                             function (Get $get) {
                                 return function (string $attribute, $value, callable $fail) use ($get) {
                                     $type = $get('type');
@@ -264,7 +296,7 @@ class PartenaireResource extends Resource
         return $table
             ->defaultSort('date_modification_statut', 'desc')
 
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('nom')
                     ->label('Nom légal')->searchable()->sortable()->weight('bold'),
 
@@ -326,7 +358,9 @@ class PartenaireResource extends Resource
                     ->description(fn ($record) => $record->statut === OrganizationStatus::RdvEnCours
                         && $record->date_modification_statut?->lt(now()->subDays(80))
                         ? '⚠️ Approche 90j' : null),
-            ])
+            ], [
+                'conseiller.nom' => 'conseiller_id',
+            ]))
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
                     ->options(OrganizationStatus::class)->label('Statut')->multiple(),
@@ -434,7 +468,7 @@ class PartenaireResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
+        return $infolist->schema(static::applyShowFieldPermissions([
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // SECTION 1 : IDENTIFICATION
@@ -952,6 +986,49 @@ class PartenaireResource extends Resource
                 ]),
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION : HISTORIQUE INTERACTIONS
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make('Historique des interactions')
+                ->icon('heroicon-o-clock')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    \Filament\Infolists\Components\RepeatableEntry::make('historiqueInteractions')
+                        ->label('')
+                        ->schema([
+                            Infolists\Components\Grid::make(4)->schema([
+                                Infolists\Components\TextEntry::make('date_interaction')
+                                    ->label('Date')
+                                    ->dateTime('d/m/Y H:i')
+                                    ->weight(FontWeight::Bold),
+                                Infolists\Components\TextEntry::make('type_interaction_label')
+                                    ->label('Type')
+                                    ->badge()
+                                    ->color(fn ($state) => match($state) {
+                                        'Consultation' => 'info',
+                                        'Modification' => 'warning',
+                                        'Appel' => 'success',
+                                        'Rendez-vous' => 'primary',
+                                        'Email' => 'gray',
+                                        'Conversion' => 'danger',
+                                        'Création' => 'success',
+                                        default => 'gray',
+                                    }),
+                                Infolists\Components\TextEntry::make('user.name')
+                                    ->label('Utilisateur')
+                                    ->icon('heroicon-m-user'),
+                                Infolists\Components\TextEntry::make('description')
+                                    ->label('Description')
+                                    ->columnSpan(4)
+                                    ->placeholder('—'),
+                            ]),
+                        ])
+                        ->hiddenLabel()
+                        ->columnSpanFull()
+                        ->default([]),
+                ]),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // SECTION 9 : MÉTADONNÉES
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             Infolists\Components\Section::make('Métadonnées')
@@ -979,7 +1056,13 @@ class PartenaireResource extends Resource
                             ->visible(fn ($record) => $record->trashed()),
                     ]),
                 ]),
-        ]);
+        ], [
+            'entite.nom' => 'entite_id',
+            'entrepriseMere.nom' => 'entreprise_mere_id',
+            'filiales_count' => 'entreprise_mere_id',
+            'conseiller.nom' => 'conseiller_id',
+            'commercial.nom' => 'commercial_id',
+        ]));
     }
 
     public static function getRelations(): array

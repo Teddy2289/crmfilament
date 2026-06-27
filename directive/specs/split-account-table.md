@@ -1,41 +1,48 @@
-# Spécification Technique : Découpage de la table Account
+# Decoupage de la fiche partenaire - reference Laravel
 
-## Objectif
-Alléger la table `Account` pour résoudre l'erreur MySQL `Row size too large (> 8126)` et améliorer les performances en déplaçant les champs dépréciés et les métadonnées volumineuses vers une entité dédiée.
+**Date**: 26 Juin 2026
+**Statut**: traduction Laravel de l'ancienne specification EspoCRM `AccountDetails`
 
-## Entité Cible : `AccountDetails`
-- **Type** : Entité personnalisée EspoCRM.
-- **Relation** : `hasOne` (Account -> AccountDetails), `belongsTo` (AccountDetails -> Account).
+---
 
-## Champs à migrer
-Tous les champs marqués `[DÉPRÉCIÉ - utiliser Contact]` dans `Account.json` ainsi que les champs de gestion interne volumineux.
+## Objectif historique
 
-### Liste des champs :
-- **Dirigeant** : `dirigeantNom`, `dirigeantPrenom`, `dirigeantFonction`, `dirigeantTelephone`, `dirigeantEmail`, `dirigeantNotes`.
-- **Secrétaire CSE** : `secretaireNom`, `secretairePrenom`, `secretaireTelDirect`, `secretaireTelPerso`, `secretaireEmailPro`, `secretaireEmailPerso`.
-- **Trésorier CSE** : `tresorierNom`, `tresorierPrenom`, `tresorierTelDirect`, `tresorierTelPerso`, `tresorierEmailPro`, `tresorierEmailPerso`.
-- **Secrétaire Adjoint** : `secretaireAdjointNom`, `secretaireAdjointPrenom`, `secretaireAdjointTel`, `secretaireAdjointEmail`.
-- **Syndicat (Détaillé)** : `responsableSyndicalNom`, `responsableSyndicalPrenom`, `responsableSyndicalFonction`, `syndicatTelDirect`, `syndicatTelPerso`, `syndicatEmailPro`, `syndicatEmailPerso`, `notesSyndicat`.
+La specification initiale EspoCRM proposait de decouper la table `Account` pour eviter l'erreur MySQL `Row size too large (> 8126)`.
 
-## Structure de la nouvelle entité (`AccountDetails`)
-```json
-{
-    "fields": {
-        "account": { "type": "link" },
-        "dirigeantNom": { "type": "text" },
-        ...
-    },
-    "links": {
-        "account": { "type": "belongsTo", "entity": "Account" }
-    }
-}
-```
+Dans le projet Laravel actuel, il ne faut pas creer `custom/Espo/Custom/Resources/metadata/entityDefs/AccountDetails.json`. Le decoupage est traite par des models et tables satellites autour de `partenaires`.
 
-## Plan de Migration
-1. **Création** : Définir `AccountDetails` dans `custom/Espo/Custom/Resources/metadata/entityDefs/`.
-2. **Migration (Script)** : Développer un script PHP (`ConsoleCommand`) pour :
-    - Créer une instance `AccountDetails` pour chaque `Account` existant.
-    - Copier les valeurs des champs dépréciés de `Account` vers `AccountDetails`.
-    - Sauvegarder les instances.
-3. **Suppression** : Une fois la migration validée, retirer les champs de `Account.json` et exécuter `php rebuild.php`.
-4. **UI** : Mettre à jour les vues (`views/`) pour afficher les données depuis `AccountDetails` si nécessaire.
+---
+
+## Mapping Laravel actuel
+
+| Besoin EspoCRM historique | Implementation Laravel |
+|---|---|
+| Compte partenaire principal | `partenaires` / `App\Models\Partenaire` |
+| Contacts dirigeants, CSE, syndicat | `contact_partenaires`, `autres_interlocuteurs` |
+| Adresse CSE separee | `adresse_cses` |
+| Tarification | `tarifications` |
+| Activite ventes | `activite_ventes` |
+| Activite permanences | `activite_permanences` |
+| Remboursements employeur | `remboursements_employeur` |
+| Historique conseiller | `historique_conseillers` |
+
+---
+
+## Regle de developpement
+
+Pour une nouvelle information partenaire:
+
+1. verifier si elle appartient a la fiche `partenaires`;
+2. si elle est volumineuse ou repetable, preferer une table satellite;
+3. exposer la relation dans `PartenaireResource`;
+4. ajouter le champ au catalogue de droits si l'information doit etre controlee par role;
+5. ajouter un test si la regle de creation, edition ou import change.
+
+---
+
+## Fichiers utiles
+
+- `app/Models/Partenaire.php`
+- `app/Filament/NsConseil/Resources/PartenaireResource.php`
+- `app/Filament/NsConseil/Resources/PartenaireResource/Import/`
+- `app/Support/AccessRightsCatalog.php`
