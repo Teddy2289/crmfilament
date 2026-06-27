@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\SuperAdmin\Pages\Dashboard;
 use App\Filament\SuperAdmin\Pages\DatabaseManager;
+use App\Filament\Themes\SuperAdminTheme;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SetLocale;
 use Filament\Enums\ThemeMode;
@@ -33,14 +34,7 @@ class SuperAdminPanelProvider extends PanelProvider
             ->login()
             ->brandName('⚙️ Super Administration')
             ->brandLogo(null)
-            ->colors([
-                'primary' => Color::Violet,
-                'success' => Color::Emerald,
-                'warning' => Color::Amber,
-                'danger' => Color::Rose,
-                'info' => Color::Cyan,
-                'gray' => Color::Zinc,
-            ])
+            ->theme(SuperAdminTheme::class)
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
                 NavigationGroup::make('Utilisateurs & Accès')
@@ -70,7 +64,9 @@ class SuperAdminPanelProvider extends PanelProvider
                 Dashboard::class,
                 DatabaseManager::class,
             ])
-            ->widgets([])
+            ->widgets([
+                \App\Filament\Widgets\ThemeSelectorWidget::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
