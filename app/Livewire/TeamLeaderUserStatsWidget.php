@@ -13,6 +13,13 @@ class TeamLeaderUserStatsWidget extends BaseWidget
     protected static ?int $sort = 2;
     protected static bool $isLazy = false;
 
+    protected function getViewData(): array
+    {
+        return [
+            'data-widget' => 'team-leader-user-stats',
+        ];
+    }
+
     protected function getStats(): array
     {
         $userId = auth()->id();

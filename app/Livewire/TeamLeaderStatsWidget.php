@@ -14,6 +14,13 @@ class TeamLeaderStatsWidget extends BaseWidget
 {
     protected static ?string $pollingInterval = '60s';
 
+    protected function getViewData(): array
+    {
+        return [
+            'data-widget' => 'team-leader-stats',
+        ];
+    }
+
     protected function getStats(): array
     {
         $userId = auth()->id();
