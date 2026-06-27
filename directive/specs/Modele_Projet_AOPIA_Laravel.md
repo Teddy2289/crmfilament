@@ -450,6 +450,8 @@ Implementation principale:
 | Rappel STD-NR J+2 | `SendRappelStdNrJob` |
 | Reporting hebdo | `SendWeeklyReport`, `SendWeeklyReportJob`, `WeeklyReportService` |
 
+La validation QF tient aussi compte des appels Ringover `RDV`: tags complets `DEP_XX + RDV` obligatoires si l'appel Ringover existe, et l'audio peut provenir du RDV ou de cet appel.
+
 ---
 
 ## 10. Documents source

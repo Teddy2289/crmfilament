@@ -75,6 +75,12 @@ Normalisation:
 - `RingoverUserMapper` mappe `ringover_user_id` / `ringover_email` vers `users`;
 - les champs `ringover_tags`, `ringover_department_tag`, `ringover_status_tag`, `ringover_tag_validation`, `ringover_tag_is_complete`, `ringover_payload`, `ringover_synced_at`, `ringover_webhook_received_at` et `ringover_sync_source` tracent la synchronisation.
 
+Impact QF:
+
+- si un appel Ringover `RDV` existe sur le prospect, le passage QF exige des tags complets `DEP_XX + RDV`;
+- l'audio QF peut venir du RDV ou de l'appel Ringover `RDV` rattache au prospect;
+- un appel Ringover `RDV` incomplet bloque QF avec le motif `Tags Ringover DEP_XX + statut`.
+
 Le dashboard Ringover affiche un diagnostic:
 
 - URL webhook;
@@ -95,5 +101,6 @@ Commandes utiles:
 rg -n "Ringover|ringover" app routes database tests
 php artisan test --filter RingoverAdvancedIntegrationTest
 php artisan test --filter RingoverIntegrationTest
+php artisan test --filter RingoverQfWorkflowTest
 php artisan test --filter RoleAccessRightsTest
 ```
