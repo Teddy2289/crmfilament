@@ -13,6 +13,13 @@ class TeamLeaderChartWidget extends ChartWidget
     protected static ?string $pollingInterval = '60s';
     protected static string $color = 'info';
 
+    protected function getViewData(): array
+    {
+        return [
+            'data-widget' => 'team-leader-chart',
+        ];
+    }
+
     protected function getData(): array
     {
         $userId = auth()->id();

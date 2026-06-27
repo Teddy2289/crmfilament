@@ -10,8 +10,15 @@ export default async function globalSetup() {
 
     if (laravelE2eEnv.DB_CONNECTION === 'sqlite' && playwrightDatabase !== ':memory:') {
         mkdirSync(path.dirname(playwrightDatabase), { recursive: true });
-        rmSync(playwrightDatabase, { force: true });
-        rmSync(`${playwrightDatabase}-journal`, { force: true });
+        try {
+            rmSync(playwrightDatabase, { force: true });
+            rmSync(`${playwrightDatabase}-journal`, { force: true });
+        } catch (error) {
+            // Ignore permission errors, file might be locked
+            if (error.code !== 'EPERM' && error.code !== 'ENOENT') {
+                throw error;
+            }
+        }
         closeSync(openSync(playwrightDatabase, 'a'));
     }
 
