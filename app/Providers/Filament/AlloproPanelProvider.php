@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Allopro\Pages\Auth\Login as AlloproLogin;
+use App\Filament\Themes\AlloproTheme;
 use App\Http\Responses\Allopro\LoginResponse;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -41,14 +42,7 @@ class AlloproPanelProvider extends PanelProvider
             ->path('allopro')
             ->login(AlloproLogin::class)
             ->brandName('AlloPro 24/24 — Centre de Contact')
-            ->colors([
-                'primary' => Color::Orange,
-                'success' => Color::Emerald,
-                'warning' => Color::Amber,
-                'danger' => Color::Rose,
-                'info' => Color::Sky,
-                'gray' => Color::Slate,
-            ])
+            ->theme(AlloproTheme::class)
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
                 NavigationGroup::make('Tickets')
@@ -76,7 +70,9 @@ class AlloproPanelProvider extends PanelProvider
                 in: app_path('Filament/Allopro/Widgets'),
                 for: 'App\\Filament\\Allopro\\Widgets'
             )
-            ->widgets([])
+            ->widgets([
+                \App\Filament\Widgets\ThemeSelectorWidget::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

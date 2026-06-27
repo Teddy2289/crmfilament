@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Themes\NsConseilTheme;
 use App\Filament\NsConseil\Pages\Auth\Login as NsConseilLogin;
 use App\Filament\NsConseil\Pages\Dashboard;
 use App\Filament\NsConseil\Pages\RingoverDashboard;
@@ -46,14 +47,7 @@ class NsConseilPanelProvider extends PanelProvider
             ->path('ns-conseil')
             ->login(NsConseilLogin::class)
             ->brandName('NS CONSEIL — CRM Partenaires')
-            ->colors([
-                'primary' => Color::Blue,
-                'success' => Color::Emerald,
-                'warning' => Color::Amber,
-                'danger' => Color::Rose,
-                'info' => Color::Sky,
-                'gray' => Color::Slate,
-            ])
+            ->theme(NsConseilTheme::class)
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
                 NavigationGroup::make('Pipeline')
@@ -94,6 +88,7 @@ class NsConseilPanelProvider extends PanelProvider
                 RingoverDashboard::class,
             ])
             ->widgets([
+                \App\Filament\Widgets\ThemeSelectorWidget::class,
                 \App\Livewire\TeamLeaderStatsWidget::class,
                 \App\Livewire\TeamLeaderChartWidget::class,
                 \App\Livewire\TeamLeaderUserStatsWidget::class,
