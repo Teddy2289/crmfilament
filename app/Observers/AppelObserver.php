@@ -23,7 +23,7 @@ class AppelObserver
     public function updated(Appel $appel): void
     {
         // Si phoning_result a changé, mettre à jour le statut du prospect
-        if ($appel->isDirty('phoning_result')) {
+        if ($appel->isDirty('phoning_result') || $appel->isDirty('phoning_status')) {
             $this->updateProspectStatutFromPhoningResult($appel);
         }
     }
@@ -33,8 +33,10 @@ class AppelObserver
      */
     protected function updateProspectStatutFromPhoningResult(Appel $appel): void
     {
+        $phoningCode = $appel->phoning_status ?: $appel->phoning_result;
+
         // Vérifier si l'appel est lié à un prospect
-        if ($appel->appelable_type !== Prospect::class || !$appel->phoning_result) {
+        if ($appel->appelable_type !== Prospect::class || ! $phoningCode) {
             return;
         }
 
@@ -45,7 +47,7 @@ class AppelObserver
 
         // Récupérer le statut phoning correspondant
         $statutPhoning = StatutPhoning::where('model_type', 'prospect')
-            ->where('code', $appel->phoning_result)
+            ->where('code', $phoningCode)
             ->where('actif', true)
             ->first();
 

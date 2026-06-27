@@ -409,9 +409,14 @@ Le test couvre:
 Implementation actuelle:
 
 - `app/Services/RingoverService.php`
+- `app/Services/RingoverCallSyncService.php`
+- `app/Services/RingoverTagService.php`
+- `app/Services/RingoverUserMapper.php`
+- `app/Http/Controllers/RingoverWebhookController.php`
 - `app/Console/Commands/SyncRingoverCalls.php`
 - widgets Ringover dans Ns Conseil
 - champs Ringover dans `app/Models/Appel.php`
+- route webhook `/api/ringover/webhook`
 
 La directive metier conserve la regle:
 
@@ -419,7 +424,7 @@ La directive metier conserve la regle:
 DEP_XX + tag statut obligatoire par appel
 ```
 
-Cette regle est stockee dans les settings CRM.
+Cette regle est stockee dans les settings CRM et controlee par `RingoverTagService`.
 
 ### Calendrier
 
@@ -467,7 +472,7 @@ Implementation principale:
 |---|---|
 | P0 | Appliquer `show` aux infolists/tables sensibles de toutes les resources |
 | P0 | Ajouter un test navigateur pour un role selectif par champ |
-| P1 | Finaliser les webhooks Ringover et le mapping des tags si synchronisation temps reel demandee |
+| P1 | Connecter le webhook Ringover au compte de production et renseigner `RINGOVER_WEBHOOK_SECRET` |
 | P1 | Finaliser l'alignement Opportunites avec les libelles metier definitifs |
 | P1 | Clarifier le module base de connaissances attendu |
 | P2 | Completer la documentation avec captures apres validation UI |

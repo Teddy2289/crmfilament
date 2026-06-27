@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\GoogleOAuthController;
 use App\Http\Controllers\PdfController;
+use App\Http\Controllers\RingoverWebhookController;
 use App\Models\GoogleToken;
 use App\Services\RingoverService;
 use GuzzleHttp\Client;
@@ -17,6 +18,9 @@ Route::get('/ns-conseil/ringover/recording/{callId}', function (string $callId) 
 
     return response()->json(['url' => $call['recording'] ?? null]);
 })->middleware(['auth', 'web']);
+
+Route::post('/api/ringover/webhook', RingoverWebhookController::class)
+    ->middleware('throttle:60,1');
 
 Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/google/redirect', [GoogleOAuthController::class, 'redirect'])->name('google.redirect');

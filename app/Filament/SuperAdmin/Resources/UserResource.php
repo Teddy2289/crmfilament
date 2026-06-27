@@ -85,6 +85,21 @@ class UserResource extends Resource
                         ->gridDirection('row'),
                 ]),
 
+            Forms\Components\Section::make('Ringover')
+                ->icon('heroicon-o-phone')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\TextInput::make('ringover_user_id')
+                        ->label('Ringover user ID')
+                        ->maxLength(255)
+                        ->unique(ignoreRecord: true),
+
+                    Forms\Components\TextInput::make('ringover_email')
+                        ->label('Email Ringover')
+                        ->email()
+                        ->maxLength(255),
+                ]),
+
             Forms\Components\Section::make('Mot de passe')
                 ->icon('heroicon-o-lock-closed')
                 ->collapsible()
@@ -139,6 +154,12 @@ class UserResource extends Resource
 
                 Tables\Columns\TextColumn::make('secteur')
                     ->label('Secteur')->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('ringover_user_id')
+                    ->label('Ringover')
+                    ->placeholder('Non mappe')
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\IconColumn::make('actif')
                     ->label('Actif')->boolean()
@@ -282,6 +303,12 @@ class UserResource extends Resource
                             'administrateur' => 'warning',
                             default => 'gray',
                         }),
+                ]),
+            Section::make('Ringover')
+                ->columns(2)
+                ->schema([
+                    TextEntry::make('ringover_user_id')->label('Ringover user ID')->placeholder('Non mappe')->copyable(),
+                    TextEntry::make('ringover_email')->label('Email Ringover')->placeholder('Non mappe')->copyable(),
                 ]),
         ]);
     }

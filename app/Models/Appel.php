@@ -19,6 +19,12 @@ class Appel extends Model
         'fiche_data' => 'array',
         'fiche_word_generated_at' => 'datetime',
         'fiche_jaune_j7_envoye_at' => 'datetime',
+        'ringover_tags' => 'array',
+        'ringover_tag_validation' => 'array',
+        'ringover_tag_is_complete' => 'boolean',
+        'ringover_payload' => 'array',
+        'ringover_synced_at' => 'datetime',
+        'ringover_webhook_received_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -37,6 +43,15 @@ class Appel extends Model
         'direction',
         'numero_appelant',
         'ringover_agent_nom',
+        'ringover_tags',
+        'ringover_department_tag',
+        'ringover_status_tag',
+        'ringover_tag_validation',
+        'ringover_tag_is_complete',
+        'ringover_payload',
+        'ringover_synced_at',
+        'ringover_webhook_received_at',
+        'ringover_sync_source',
         'campagne_id',
         // Champs phoning workflow
         'phoning_status',
@@ -287,6 +302,21 @@ class Appel extends Model
     public function scopeDepuisRingover($query): Builder
     {
         return $query->whereNotNull('ringover_call_id');
+    }
+
+    public function scopeRingoverTagsComplets($query): Builder
+    {
+        return $query->where('ringover_tag_is_complete', true);
+    }
+
+    public function scopeRingoverTagsIncomplets($query): Builder
+    {
+        return $query->whereNotNull('ringover_call_id')
+            ->where(function ($query): void {
+                $query->where('ringover_tag_is_complete', false)
+                    ->orWhereNull('ringover_department_tag')
+                    ->orWhereNull('ringover_status_tag');
+            });
     }
 
     public function scopeByUser($query, int $userId): Builder

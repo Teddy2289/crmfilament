@@ -4,7 +4,9 @@ namespace App\Filament\NsConseil\Pages;
 
 use App\Filament\NsConseil\Widgets\RingoverAppelsRecents;
 use App\Filament\NsConseil\Widgets\RingoverStatsOverview;
+use App\Services\RingoverTagService;
 use App\Services\RingoverService;
+use App\Services\RingoverUserMapper;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -27,6 +29,8 @@ class RingoverDashboard extends Page
 
     public bool $connexionOk = false;
 
+    public array $diagnostic = [];
+
     public static function canAccess(): bool
     {
         return static::userHasAnyRole(['admin', 'superviseur']);
@@ -35,6 +39,7 @@ class RingoverDashboard extends Page
     public function mount(): void
     {
         $this->connexionOk = app(RingoverService::class)->testConnection();
+        $this->refreshDiagnostic();
     }
 
     protected function getHeaderActions(): array
@@ -56,8 +61,30 @@ class RingoverDashboard extends Page
                         ->body(\Artisan::output())
                         ->success()
                         ->send();
+
+                    $this->refreshDiagnostic();
+                }),
+            Action::make('sync_users')
+                ->label('Mapper utilisateurs')
+                ->icon('heroicon-o-user-group')
+                ->action(function () {
+                    $ringoverUsers = app(RingoverService::class)->getUsers();
+                    $result = app(RingoverUserMapper::class)->syncFromRingoverUsers($ringoverUsers);
+
+                    $this->refreshDiagnostic();
+
+                    Notification::make()
+                        ->title('Mapping utilisateurs Ringover termine')
+                        ->body("Mappes: {$result['mapped']} | Mis a jour: {$result['updated']} | Non trouves: {$result['unmatched']}")
+                        ->success()
+                        ->send();
                 }),
         ];
+    }
+
+    public function refreshDiagnostic(): void
+    {
+        $this->diagnostic = app(RingoverTagService::class)->diagnostic();
     }
 
     protected function getHeaderWidgets(): array

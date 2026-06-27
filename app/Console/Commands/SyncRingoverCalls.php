@@ -2,14 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\EventResult;
-use App\Enums\EventType;
-use App\Models\Appel;
-use App\Models\User;
+use App\Services\RingoverCallSyncService;
 use App\Services\RingoverService;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
 
 class SyncRingoverCalls extends Command
 {
@@ -20,7 +15,7 @@ class SyncRingoverCalls extends Command
 
     protected $description = 'Synchronise les appels Ringover vers la base de donnees';
 
-    public function handle(RingoverService $ringover): int
+    public function handle(RingoverService $ringover, RingoverCallSyncService $sync): int
     {
         $pages = (int) $this->option('pages');
         $perPage = (int) $this->option('per-page');
@@ -29,9 +24,10 @@ class SyncRingoverCalls extends Command
         $this->info("Synchronisation Ringover - {$pages} pages x {$perPage} appels...");
 
         $ringoverUsers = collect($ringover->getUsers())->keyBy('id');
-        $synced = 0;
-        $skipped = 0;
+        $created = 0;
+        $updated = 0;
         $errors = 0;
+        $incompleteTags = 0;
 
         $bar = $this->output->createProgressBar($pages * $perPage);
         $bar->start();
@@ -51,8 +47,12 @@ class SyncRingoverCalls extends Command
 
             foreach ($calls as $call) {
                 try {
-                    $result = $this->syncCall($call, $ringoverUsers);
-                    $result ? $synced++ : $skipped++;
+                    $result = $sync->sync($call, $ringoverUsers, 'command');
+                    $result['created'] ? $created++ : $updated++;
+
+                    if (! $result['tag_validation']['complete']) {
+                        $incompleteTags++;
+                    }
                 } catch (\Exception $e) {
                     $errors++;
                     $this->newLine();
@@ -66,66 +66,10 @@ class SyncRingoverCalls extends Command
         $bar->finish();
         $this->newLine(2);
         $this->table(
-            ['Synchronises', 'Deja existants', 'Erreurs'],
-            [[$synced, $skipped, $errors]]
+            ['Crees', 'Mis a jour', 'Tags incomplets', 'Erreurs'],
+            [[$created, $updated, $incompleteTags, $errors]]
         );
 
         return self::SUCCESS;
-    }
-
-    private function syncCall(array $call, Collection $ringoverUsers): bool
-    {
-        if (Appel::where('ringover_call_id', (string) $call['id'])->exists()) {
-            return false;
-        }
-
-        $userId = null;
-        $agentNom = null;
-
-        if (! empty($call['user']['id'])) {
-            $localUser = User::where('ringover_user_id', (string) $call['user']['id'])->first();
-
-            if ($localUser) {
-                $userId = $localUser->id;
-                $agentNom = "{$localUser->prenom} {$localUser->nom}";
-            } else {
-                $ringoverUser = $ringoverUsers->get($call['user']['id']);
-                $agentNom = $ringoverUser['name'] ?? "Agent #{$call['user']['id']}";
-            }
-        }
-
-        $resultat = $this->mapStatut($call['status'] ?? '');
-        $type = ($call['direction'] ?? '') === 'inbound'
-            ? EventType::Permanence
-            : EventType::Appel;
-
-        Appel::create([
-            'ringover_call_id' => (string) $call['id'],
-            'ringover_user_id' => $call['user']['id'] ?? null,
-            'ringover_number_id' => $call['number']['id'] ?? null,
-            'ringover_agent_nom' => $agentNom,
-            'user_id' => $userId,
-            'type' => $type,
-            'resultat' => $resultat,
-            'date_heure' => Carbon::createFromTimestamp($call['started_at']),
-            'duree_secondes' => $call['duration'] ?? null,
-            'direction' => $call['direction'] ?? null,
-            'numero_appelant' => $call['raw_digits'] ?? null,
-            'enregistrement_audio' => $call['recording'] ?? null,
-            'commentaire' => $call['comments'][0]['content'] ?? null,
-        ]);
-
-        return true;
-    }
-
-    private function mapStatut(string $ringoverStatus): ?EventResult
-    {
-        return match ($ringoverStatus) {
-            'answered', 'done' => EventResult::Realise,
-            'missed_customer', 'missed' => EventResult::NonAbouti,
-            'voicemail' => EventResult::Rappel,
-            'blocked', 'abandoned' => EventResult::Annule,
-            default => null,
-        };
     }
 }
