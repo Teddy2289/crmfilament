@@ -97,6 +97,7 @@ class NsConseilPanelProvider extends PanelProvider
             ->widgets([
                 \App\Livewire\TeamLeaderStatsWidget::class,
                 \App\Livewire\TeamLeaderChartWidget::class,
+                \App\Livewire\TeamLeaderUserStatsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
