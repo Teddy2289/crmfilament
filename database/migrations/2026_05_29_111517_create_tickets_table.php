@@ -25,7 +25,7 @@ return new class extends Migration
             $table->dateTime('date_cloture')->nullable();
             $table->dateTime('rdv_planifie_at')->nullable();
             $table->dateTime('rappel_promise_at')->nullable();
-            $table->string('aircall_call_id')->nullable();
+            $table->string('ringover_call_id')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();

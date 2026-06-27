@@ -237,7 +237,7 @@ class AccessRightsCatalog
                     'corps_de_metier' => 'Corps de metier',
                     'rdv_planifie_at' => 'RDV planifie',
                     'rappel_promise_at' => 'Rappel promis',
-                    'aircall_call_id' => 'Aircall call ID',
+                    'ringover_call_id' => 'Ringover call ID',
                     'source_appel' => 'Source appel',
                     'notes' => 'Notes',
                 ]),

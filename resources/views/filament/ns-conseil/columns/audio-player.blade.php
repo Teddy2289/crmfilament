@@ -1,9 +1,9 @@
-@if ($getRecord()->aircall_call_id && $getState())
+@if ($getRecord()->ringover_call_id && $getState())
     <div x-data="{ url: null, loading: false, error: false, open: false }" class="flex flex-col gap-1">
         <button x-on:click="
                     if (open) { open = false; url = null; return; }
                     loading = true;
-                    fetch('/ns-conseil/aircall/recording/{{ $getRecord()->aircall_call_id }}')
+                    fetch('/ns-conseil/ringover/recording/{{ $getRecord()->ringover_call_id }}')
                         .then(r => r.json())
                         .then(d => {
                             url = d.url;

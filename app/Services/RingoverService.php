@@ -7,38 +7,43 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class AircallService
+class RingoverService
 {
     private string $baseUrl;
 
-    private string $apiId;
+    private ?string $apiToken;
 
-    private string $apiToken;
+    private string $authScheme;
 
     private int $timeout;
 
     public function __construct()
     {
-        $this->baseUrl = config('aircall.base_url');
-        $this->apiId = config('aircall.api_id');
-        $this->apiToken = config('aircall.api_token');
-        $this->timeout = config('aircall.timeout');
+        $this->baseUrl = config('ringover.base_url');
+        $this->apiToken = config('ringover.api_token');
+        $this->authScheme = config('ringover.auth_scheme', 'Bearer');
+        $this->timeout = config('ringover.timeout');
     }
 
-    // ── HTTP client ────────────────────────────────────────────────
     private function client(): PendingRequest
     {
-        return Http::withBasicAuth($this->apiId, $this->apiToken)
-            ->timeout($this->timeout)
+        $client = Http::timeout($this->timeout)
             ->baseUrl($this->baseUrl)
             ->acceptJson();
+
+        if (filled($this->apiToken)) {
+            $client = $client->withHeaders([
+                'Authorization' => trim($this->authScheme.' '.$this->apiToken),
+            ]);
+        }
+
+        return $client;
     }
 
-    // ── Calls ──────────────────────────────────────────────────────
     public function getCalls(array $filters = []): array
     {
         return Cache::remember(
-            'aircall_calls_'.md5(serialize($filters)),
+            'ringover_calls_'.md5(serialize($filters)),
             now()->addMinutes(2),
             fn () => $this->client()->get('/calls', $filters)->json('calls', [])
         );
@@ -47,7 +52,7 @@ class AircallService
     public function getAllCalls(int $perPage = 50, int $page = 1): array
     {
         return Cache::remember(
-            "aircall_all_calls_{$page}",
+            "ringover_all_calls_{$page}",
             now()->addMinutes(2),
             fn () => $this->client()->get('/calls', [
                 'per_page' => $perPage,
@@ -70,24 +75,21 @@ class AircallService
         try {
             return $this->client()->get("/calls/{$callId}")->json('call');
         } catch (\Exception $e) {
-            Log::error('Aircall getCall error', ['id' => $callId, 'error' => $e->getMessage()]);
+            Log::error('Ringover getCall error', ['id' => $callId, 'error' => $e->getMessage()]);
 
             return null;
         }
     }
 
-    // ── Users ──────────────────────────────────────────────────────
     public function getUsers(): array
     {
-        return Cache::remember('aircall_users', now()->addMinutes(10), function () {
+        return Cache::remember('ringover_users', now()->addMinutes(10), function () {
             return $this->client()->get('/users')->json('users', []);
         });
     }
 
-    // ── Stats ──────────────────────────────────────────────────────
     public function getStats(?int $from = null, ?int $to = null): array
     {
-        // Récupérer TOUTES les pages pour avoir l'historique complet
         $allCalls = [];
         $page = 1;
 
@@ -101,30 +103,25 @@ class AircallService
             }
 
             $calls = Cache::remember(
-                'aircall_stats_p'.$page.'_'.md5(serialize($filters)),
+                'ringover_stats_p'.$page.'_'.md5(serialize($filters)),
                 now()->addMinutes(10),
                 fn () => $this->client()->get('/calls', $filters)->json('calls', [])
             );
 
             $allCalls = array_merge($allCalls, $calls);
             $page++;
-
-        } while (count($calls) === 50 && $page <= 20); // max 20 pages = 1000 appels
+        } while (count($calls) === 50 && $page <= 20);
 
         $collection = collect($allCalls);
 
         $total = $collection->count();
         $entrants = $collection->where('direction', 'inbound')->count();
         $sortants = $collection->where('direction', 'outbound')->count();
-
-        // ✅ Tous les appels répondus (entrants ET sortants)
         $repondus = $collection->whereIn('status', ['answered', 'done'])->count();
-
-        // ✅ Manqués = missed_customer (entrant non décroché) + missed (sortant sans réponse)
         $manques = $collection->whereIn('status', ['missed_customer', 'missed'])->count();
         $manquesEntrants = $collection->where('direction', 'inbound')
-            ->whereIn('status', ['missed_customer', 'missed'])->count();
-
+            ->whereIn('status', ['missed_customer', 'missed'])
+            ->count();
         $dureeTotale = $collection->sum('duration');
 
         return [
@@ -140,14 +137,11 @@ class AircallService
         ];
     }
 
-    // ── Santé de la connexion ──────────────────────────────────────
     public function testConnection(): bool
     {
         try {
-            $response = $this->client()->get('/ping');
-
-            return $response->successful();
-        } catch (\Exception $e) {
+            return $this->client()->get('/ping')->successful();
+        } catch (\Exception) {
             return false;
         }
     }

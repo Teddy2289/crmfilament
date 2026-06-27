@@ -203,8 +203,8 @@ class ViewTicket extends ViewRecord
                         ->formatStateUsing(fn ($state, $record) => trim(($record->operateur?->prenom ?? '').' '.($record->operateur?->nom ?? '')) ?: '—'
                         ),
 
-                    TextEntry::make('aircall_call_id')
-                        ->label('ID Aircall')
+                    TextEntry::make('ringover_call_id')
+                        ->label('ID Ringover')
                         ->copyable()
                         ->placeholder('—'),
                 ]),

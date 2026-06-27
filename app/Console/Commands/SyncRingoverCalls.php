@@ -6,32 +6,29 @@ use App\Enums\EventResult;
 use App\Enums\EventType;
 use App\Models\Appel;
 use App\Models\User;
-use App\Services\AircallService;
+use App\Services\RingoverService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 
-class SyncAircallCalls extends Command
+class SyncRingoverCalls extends Command
 {
-    protected $signature = 'aircall:sync
-                            {--pages=5 : Nombre de pages à récupérer}
+    protected $signature = 'ringover:sync
+                            {--pages=5 : Nombre de pages a recuperer}
                             {--per-page=50 : Appels par page}
-                            {--from= : Timestamp de début (optionnel)}';
+                            {--from= : Timestamp de debut optionnel}';
 
-    protected $description = 'Synchronise les appels Aircall vers la base de données';
+    protected $description = 'Synchronise les appels Ringover vers la base de donnees';
 
-    public function handle(AircallService $aircall): int
+    public function handle(RingoverService $ringover): int
     {
         $pages = (int) $this->option('pages');
         $perPage = (int) $this->option('per-page');
         $from = $this->option('from');
 
-        $this->info("Synchronisation Aircall — {$pages} pages x {$perPage} appels...");
+        $this->info("Synchronisation Ringover - {$pages} pages x {$perPage} appels...");
 
-        // Charger les users Aircall pour faire le lien avec User local
-        $aircallUsers = collect($aircall->getUsers())
-            ->keyBy('id'); // indexed par aircall user id
-
+        $ringoverUsers = collect($ringover->getUsers())->keyBy('id');
         $synced = 0;
         $skipped = 0;
         $errors = 0;
@@ -46,15 +43,15 @@ class SyncAircallCalls extends Command
                 $filters['from'] = $from;
             }
 
-            $calls = $aircall->getCalls($filters);
+            $calls = $ringover->getCalls($filters);
 
             if (empty($calls)) {
-                break; // Plus de données
+                break;
             }
 
             foreach ($calls as $call) {
                 try {
-                    $result = $this->syncCall($call, $aircallUsers);
+                    $result = $this->syncCall($call, $ringoverUsers);
                     $result ? $synced++ : $skipped++;
                 } catch (\Exception $e) {
                     $errors++;
@@ -69,16 +66,16 @@ class SyncAircallCalls extends Command
         $bar->finish();
         $this->newLine(2);
         $this->table(
-            ['Synchronisés', 'Déjà existants', 'Erreurs'],
+            ['Synchronises', 'Deja existants', 'Erreurs'],
             [[$synced, $skipped, $errors]]
         );
 
         return self::SUCCESS;
     }
 
-    private function syncCall(array $call, Collection $aircallUsers): bool
+    private function syncCall(array $call, Collection $ringoverUsers): bool
     {
-        if (Appel::where('aircall_call_id', (string) $call['id'])->exists()) {
+        if (Appel::where('ringover_call_id', (string) $call['id'])->exists()) {
             return false;
         }
 
@@ -86,17 +83,14 @@ class SyncAircallCalls extends Command
         $agentNom = null;
 
         if (! empty($call['user']['id'])) {
-            // ✅ 1. Chercher par aircall_user_id (mapping explicite)
-            $localUser = User::where('aircall_user_id', (string) $call['user']['id'])->first();
+            $localUser = User::where('ringover_user_id', (string) $call['user']['id'])->first();
 
             if ($localUser) {
                 $userId = $localUser->id;
                 $agentNom = "{$localUser->prenom} {$localUser->nom}";
             } else {
-                // ✅ 2. Pas de mapping → stocker le nom Aircall tel quel
-                $aircallUser = $aircallUsers->get($call['user']['id']);
-                $agentNom = $aircallUser['name'] ?? "Agent #{$call['user']['id']}";
-                // user_id reste null — pas de fallback User::first()
+                $ringoverUser = $ringoverUsers->get($call['user']['id']);
+                $agentNom = $ringoverUser['name'] ?? "Agent #{$call['user']['id']}";
             }
         }
 
@@ -106,11 +100,11 @@ class SyncAircallCalls extends Command
             : EventType::Appel;
 
         Appel::create([
-            'aircall_call_id' => (string) $call['id'],
-            'aircall_user_id' => $call['user']['id'] ?? null,
-            'aircall_number_id' => $call['number']['id'] ?? null,
-            'aircall_agent_nom' => $agentNom,             // ✅ Nom Aircall toujours stocké
-            'user_id' => $userId,               // ✅ Null si pas de mapping local
+            'ringover_call_id' => (string) $call['id'],
+            'ringover_user_id' => $call['user']['id'] ?? null,
+            'ringover_number_id' => $call['number']['id'] ?? null,
+            'ringover_agent_nom' => $agentNom,
+            'user_id' => $userId,
             'type' => $type,
             'resultat' => $resultat,
             'date_heure' => Carbon::createFromTimestamp($call['started_at']),
@@ -124,11 +118,11 @@ class SyncAircallCalls extends Command
         return true;
     }
 
-    private function mapStatut(string $aircallStatus): ?EventResult
+    private function mapStatut(string $ringoverStatus): ?EventResult
     {
-        return match ($aircallStatus) {
+        return match ($ringoverStatus) {
             'answered', 'done' => EventResult::Realise,
-            'missed_customer' => EventResult::NonAbouti,
+            'missed_customer', 'missed' => EventResult::NonAbouti,
             'voicemail' => EventResult::Rappel,
             'blocked', 'abandoned' => EventResult::Annule,
             default => null,

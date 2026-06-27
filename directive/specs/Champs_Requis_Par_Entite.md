@@ -173,7 +173,7 @@ Model: `App\Models\Ticket`
 | `corps_de_metier` | show, create, edit, flux |
 | `rdv_planifie_at` | show, edit, flux |
 | `rappel_promise_at` | show, edit, flux |
-| `aircall_call_id` | show |
+| `ringover_call_id` | show |
 | `source_appel` | show, create |
 | `notes` | show, create, edit |
 
@@ -194,7 +194,7 @@ Champs fonctionnels importants:
 | `date_heure` | horodatage |
 | `duree_secondes` | duree |
 | `enregistrement_audio` | audio QF |
-| `aircall_call_id` | lien telephonie |
+| `ringover_call_id` | lien telephonie |
 | `campagne_id` | campagne phoning |
 | `user_id` | agent |
 

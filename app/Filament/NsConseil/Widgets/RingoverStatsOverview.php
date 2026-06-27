@@ -2,11 +2,11 @@
 
 namespace App\Filament\NsConseil\Widgets;
 
-use App\Services\AircallService;
+use App\Services\RingoverService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
-class AircallStatsOverview extends BaseWidget
+class RingoverStatsOverview extends BaseWidget
 {
     protected static ?int $sort = 1;
 
@@ -16,11 +16,9 @@ class AircallStatsOverview extends BaseWidget
 
     protected static bool $isLazy = true;
 
-    // AircallStatsOverview.php
-
     protected function getStats(): array
     {
-        $stats = app(AircallService::class)->getStats();
+        $stats = app(RingoverService::class)->getStats();
 
         $dureeMin = floor($stats['duree_moyenne'] / 60);
         $dureeSec = $stats['duree_moyenne'] % 60;
@@ -28,22 +26,22 @@ class AircallStatsOverview extends BaseWidget
 
         return [
             Stat::make('Total appels', $stats['total'])
-                ->description("📥 {$stats['entrants']} entrants · 📤 {$stats['sortants']} sortants")
+                ->description("{$stats['entrants']} entrants - {$stats['sortants']} sortants")
                 ->color('primary')
                 ->icon('heroicon-o-phone'),
 
-            Stat::make('Taux de réponse', $stats['taux_reponse'].'%')
-                ->description("{$stats['repondus']} répondus · {$stats['manques']} manqués")
+            Stat::make('Taux de reponse', $stats['taux_reponse'].'%')
+                ->description("{$stats['repondus']} repondus - {$stats['manques']} manques")
                 ->color($stats['taux_reponse'] >= 80 ? 'success' : 'warning')
                 ->icon('heroicon-o-check-circle'),
 
-            Stat::make('Durée moyenne', $dureeLabel)
+            Stat::make('Duree moyenne', $dureeLabel)
                 ->description('Par appel')
                 ->color('info')
                 ->icon('heroicon-o-clock'),
 
-            Stat::make('Entrants manqués', $stats['manques_entrants'])
-                ->description('Appels entrants sans réponse')
+            Stat::make('Entrants manques', $stats['manques_entrants'])
+                ->description('Appels entrants sans reponse')
                 ->color($stats['manques_entrants'] > 0 ? 'danger' : 'success')
                 ->icon('heroicon-o-phone-x-mark'),
         ];

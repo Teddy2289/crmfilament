@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('appels', function (Blueprint $table) {
-            $table->string('aircall_agent_nom')->nullable()->after('aircall_user_id');
+            $table->string('ringover_agent_nom')->nullable()->after('ringover_user_id');
         });
     }
 

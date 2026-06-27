@@ -26,7 +26,7 @@ return new class extends Migration
             $table->integer('duree_secondes')->nullable();
             $table->text('commentaire')->nullable();
             $table->string('enregistrement_audio')->nullable();
-            $table->string('aircall_call_id')->nullable();
+            $table->string('ringover_call_id')->nullable();
             $table->timestamps();
         });
     }

@@ -29,7 +29,7 @@ class Ticket extends Model
         'date_cloture',
         'rdv_planifie_at',
         'rappel_promise_at',
-        'aircall_call_id',
+        'ringover_call_id',
         'source_appel',        // NOUVEAU : Via CTI / téléphonie
         'notes',
     ];

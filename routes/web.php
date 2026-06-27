@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\GoogleOAuthController;
 use App\Http\Controllers\PdfController;
 use App\Models\GoogleToken;
-use App\Services\AircallService;
+use App\Services\RingoverService;
 use GuzzleHttp\Client;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
@@ -12,8 +12,8 @@ Route::get('/', function () {
     return view('home');
 });
 
-Route::get('/ns-conseil/aircall/recording/{callId}', function (string $callId) {
-    $call = app(AircallService::class)->getCall($callId);
+Route::get('/ns-conseil/ringover/recording/{callId}', function (string $callId) {
+    $call = app(RingoverService::class)->getCall($callId);
 
     return response()->json(['url' => $call['recording'] ?? null]);
 })->middleware(['auth', 'web']);

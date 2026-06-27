@@ -2,10 +2,10 @@
 
 namespace App\Filament\NsConseil\Widgets;
 
-use App\Services\AircallService;
+use App\Services\RingoverService;
 use Filament\Widgets\Widget;
 
-class AircallAppelsRecents extends Widget
+class RingoverAppelsRecents extends Widget
 {
     protected static ?int $sort = 2;
 
@@ -13,7 +13,9 @@ class AircallAppelsRecents extends Widget
 
     protected static ?string $pollingInterval = '60s';
 
-    protected static string $view = 'filament.ns-conseil.widgets.aircall-appels-recents';
+    protected static string $view = 'filament.ns-conseil.widgets.ringover-appels-recents';
+
+    protected static bool $isLazy = true;
 
     public array $calls = [];
 
@@ -22,8 +24,6 @@ class AircallAppelsRecents extends Widget
     public int $perPage = 25;
 
     public string $filterDirection = '';
-
-    protected static bool $isLazy = true;
 
     public function mount(): void
     {
@@ -37,7 +37,7 @@ class AircallAppelsRecents extends Widget
             $filters['direction'] = $this->filterDirection;
         }
 
-        $this->calls = app(AircallService::class)->getCalls($filters);
+        $this->calls = app(RingoverService::class)->getCalls($filters);
     }
 
     public function setDirection(string $direction): void

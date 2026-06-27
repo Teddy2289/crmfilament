@@ -33,7 +33,7 @@ Le dashboard affiche les indicateurs selon le role de l'utilisateur:
 - RDV a venir;
 - indicateurs commerciaux;
 - alertes Team Leader;
-- widgets Aircall ou calendrier selon configuration.
+- widgets Ringover ou calendrier selon configuration.
 
 La visibilite depend des droits du role et du profil CRM.
 

@@ -208,7 +208,7 @@ Points importants:
 - date/heure et duree;
 - statut phoning;
 - audio;
-- lien Aircall;
+- lien Ringover;
 - campagne;
 - agent.
 
@@ -404,16 +404,14 @@ Le test couvre:
 
 ## 8. Telephonie et calendrier
 
-### Aircall
+### Ringover
 
 Implementation actuelle:
 
-- `app/Services/AircallService.php`
-- `app/Console/Commands/SyncAircallCalls.php`
-- widgets Aircall dans Ns Conseil
-- champs Aircall dans `app/Models/Appel.php`
-
-### Ringover
+- `app/Services/RingoverService.php`
+- `app/Console/Commands/SyncRingoverCalls.php`
+- widgets Ringover dans Ns Conseil
+- champs Ringover dans `app/Models/Appel.php`
 
 La directive metier conserve la regle:
 
@@ -421,7 +419,7 @@ La directive metier conserve la regle:
 DEP_XX + tag statut obligatoire par appel
 ```
 
-Cette regle est stockee dans les settings CRM. Le manuel Ringover historique reste une reference fonctionnelle, pas une preuve d'implementation Laravel complete.
+Cette regle est stockee dans les settings CRM.
 
 ### Calendrier
 
@@ -469,7 +467,7 @@ Implementation principale:
 |---|---|
 | P0 | Appliquer `show` aux infolists/tables sensibles de toutes les resources |
 | P0 | Ajouter un test navigateur pour un role selectif par champ |
-| P1 | Confirmer le statut exact de Ringover si remplacement d'Aircall demande |
+| P1 | Finaliser les webhooks Ringover et le mapping des tags si synchronisation temps reel demandee |
 | P1 | Finaliser l'alignement Opportunites avec les libelles metier definitifs |
 | P1 | Clarifier le module base de connaissances attendu |
 | P2 | Completer la documentation avec captures apres validation UI |

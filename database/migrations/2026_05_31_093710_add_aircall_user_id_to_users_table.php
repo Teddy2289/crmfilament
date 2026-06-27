@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('aircall_user_id')->nullable()->unique()->after('email');
-            $table->string('aircall_email')->nullable()->after('aircall_user_id');
+            $table->string('ringover_user_id')->nullable()->unique()->after('email');
+            $table->string('ringover_email')->nullable()->after('ringover_user_id');
         });
     }
 
@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['aircall_user_id', 'aircall_email']);
+            $table->dropColumn(['ringover_user_id', 'ringover_email']);
         });
     }
 };
