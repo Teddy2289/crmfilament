@@ -13,9 +13,14 @@ Schedule::command('aircall:sync --pages=2 --per-page=50')
     ->withoutOverlapping()
     ->runInBackground();
 
-// CDC WF5 / WF6 : rapport hebdomadaire (lundi 07h30).
-Schedule::command('crm:weekly-report')
+// CDC WF5 / WF6 : rapport hebdomadaire téléprospecteurs (lundi 07h30).
+Schedule::job(new \App\Jobs\SendWeeklyRecapJob('teleprospecteurs'))
     ->weeklyOn(1, '07:30')
+    ->withoutOverlapping();
+
+// CDC WF5 / WF6 : rapport hebdomadaire commerciaux (lundi 08h00).
+Schedule::job(new \App\Jobs\SendWeeklyRecapJob('commerciaux'))
+    ->weeklyOn(1, '08:00')
     ->withoutOverlapping();
 
 // Fiches Word : envoi automatique fiches jaunes J+7 (quotidien 08h00).

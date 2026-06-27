@@ -10,6 +10,11 @@ class EditTicket extends EditRecord
 {
     protected static string $resource = TicketResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return TicketResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -415,4 +415,9 @@ class Partenaire extends Model
     {
         return $this->hasMany(Client::class, 'partenaire_id');
     }
+
+    public function historiqueInteractions()
+    {
+        return $this->morphMany(HistoriqueInteractionUser::class, 'interactable');
+    }
 }

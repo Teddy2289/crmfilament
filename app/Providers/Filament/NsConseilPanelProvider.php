@@ -6,6 +6,7 @@ use App\Filament\NsConseil\Pages\AircallDashboard;
 use App\Filament\NsConseil\Pages\Auth\Login as NsConseilLogin;
 use App\Filament\NsConseil\Pages\Dashboard;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\TrackUserInteractions;
 use App\Http\Responses\NsConseil\LoginResponse;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -93,7 +94,9 @@ class NsConseilPanelProvider extends PanelProvider
                 Dashboard::class,
                 AircallDashboard::class,
             ])
-            ->widgets([])
+            ->widgets([
+                \App\Livewire\TeamLeaderStatsWidget::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -105,6 +108,7 @@ class NsConseilPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
                 SetLocale::class,
+                TrackUserInteractions::class,
             ])
             ->authMiddleware([Authenticate::class])
             ->authGuard('web')

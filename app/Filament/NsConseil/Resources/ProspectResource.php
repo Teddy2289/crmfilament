@@ -12,6 +12,7 @@ use App\Mail\ConfirmationRdvCseMail;
 use App\Mail\InvitationAgendaResponsableMail;
 use App\Models\Prospect;
 use App\Models\User;
+use App\Support\UsesResourcePermissions;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -29,11 +30,16 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Mail;
 
 class ProspectResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = Prospect::class;
+
+    protected static string $permissionPrefix = 'prospects';
 
     protected static ?string $navigationIcon = 'heroicon-o-funnel';
 
@@ -42,6 +48,36 @@ class ProspectResource extends Resource
     protected static ?string $navigationLabel = 'Prospects';
 
     protected static ?int $navigationSort = 2;
+
+    public static function canAccess(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return static::userCanResourcePermission('view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::userCanResourcePermission('create');
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::userCanResourcePermission('update');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::userCanResourcePermission('delete');
+    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -270,7 +306,7 @@ class ProspectResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('nom')
                     ->label("Nom de l'entité")
                     ->searchable()
@@ -329,7 +365,9 @@ class ProspectResource extends Resource
                     ->label('QF')
                     ->boolean()
                     ->toggleable(),
-            ])
+            ], [
+                'teleprospecteur.nom' => 'teleprospecteur_id',
+            ]))
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
                     ->options(ProspectStatut::class)
@@ -508,7 +546,7 @@ class ProspectResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
+        return $infolist->schema(static::applyShowFieldPermissions([
 
             // ── Ligne 1 : Statut + KPIs engagement ──
             Split::make([
@@ -929,6 +967,47 @@ class ProspectResource extends Resource
                         ->html(),
                 ]),
 
+            // ── Section : Historique Interactions ──
+            Section::make('Historique des interactions')
+                ->icon('heroicon-o-clock')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    \Filament\Infolists\Components\RepeatableEntry::make('historiqueInteractions')
+                        ->label('')
+                        ->schema([
+                            Grid::make(4)->schema([
+                                TextEntry::make('date_interaction')
+                                    ->label('Date')
+                                    ->dateTime('d/m/Y H:i')
+                                    ->weight(FontWeight::Bold),
+                                TextEntry::make('type_interaction_label')
+                                    ->label('Type')
+                                    ->badge()
+                                    ->color(fn ($state) => match($state) {
+                                        'Consultation' => 'info',
+                                        'Modification' => 'warning',
+                                        'Appel' => 'success',
+                                        'Rendez-vous' => 'primary',
+                                        'Email' => 'gray',
+                                        'Conversion' => 'danger',
+                                        'Création' => 'success',
+                                        default => 'gray',
+                                    }),
+                                TextEntry::make('user.name')
+                                    ->label('Utilisateur')
+                                    ->icon('heroicon-m-user'),
+                                TextEntry::make('description')
+                                    ->label('Description')
+                                    ->columnSpan(4)
+                                    ->placeholder('—'),
+                            ]),
+                        ])
+                        ->hiddenLabel()
+                        ->columnSpanFull()
+                        ->default([]),
+                ]),
+
             // ── Section 8 : Métadonnées ──
             Section::make('Métadonnées')
                 ->icon('heroicon-o-information-circle')
@@ -955,7 +1034,14 @@ class ProspectResource extends Resource
                             ->visible(fn (Prospect $r) => $r->trashed()),
                     ]),
                 ]),
-        ]);
+        ], [
+            'type_pressenti_label' => 'type_pressenti',
+            'statut_description' => 'statut',
+            'jours_depuis_premier_contact' => 'date_premier_contact',
+            'jours_avant_rappel' => 'rappel_planifie_at',
+            'taux_engagement' => 'statut',
+            'validePar.nom' => 'valide_par',
+        ]));
     }
  /**
      * WF4 — Champs obligatoires pour le passage en QF (CDC §9).

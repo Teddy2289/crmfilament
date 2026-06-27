@@ -10,6 +10,11 @@ class EditClient extends EditRecord
 {
     protected static string $resource = ClientResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return ClientResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

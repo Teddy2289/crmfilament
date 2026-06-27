@@ -1,58 +1,117 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CRM AOPIA / LIKE Formation
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+CRM commercial Laravel/Filament pour AOPIA, LIKE Formation et le domaine AlloPro.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.3
+- Laravel 12
+- Filament 3.3
+- MySQL en environnement principal, SQLite pour certains tests
+- Spatie Permission pour les roles et droits
+- PhpSpreadsheet pour les imports Excel
+- Dompdf et generation de fiches
+- Google Calendar / Microsoft Graph selon les integrations activees
+- Playwright pour les tests navigateur du panel Ns Conseil
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Panels
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Panel | URL | Usage |
+|---|---|---|
+| Ns Conseil | `/ns-conseil` | CRM AOPIA / LIKE: prospects, partenaires, clients, appels, RDV, phoning |
+| AlloPro | `/allopro` | Centre de contact artisans et tickets |
+| Admin | `/admin` | Administration generale |
+| Super Admin | `/super-admin` | Utilisateurs, roles, permissions, profils, dictionnaires et parametres CRM |
 
-## Learning Laravel
+## Modules principaux
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- Prospects: pipeline phoning, statuts CSE, appels, rappels, QF et conversion partenaire.
+- Partenaires: fiche partenaire, contacts, CSE, syndicat, dirigeant, activites MEA, permanences.
+- Clients: imports Dolibarr multi-feuilles, rattachement partenaire, deduplication par reference client.
+- Opportunites: sas de detection avant conversion en prospect.
+- Appels et RDV: historique polymorphe, fiches recap, emails et synchronisation calendrier.
+- Imports Excel: Top 500 prospects, MAJ partenaires, exports clients Dolibarr.
+- Droits d'acces: mode global ou selectif par module, puis par champ.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Droits d'acces
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+La gestion des droits se fait dans `Super Admin > Roles`.
 
-## Agentic Development
+Un role peut etre configure en deux modes:
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- `Acces complet`: toutes les permissions connues sont synchronisees.
+- `Acces selectif`: l'administrateur coche uniquement les modules et champs autorises.
 
-```bash
-composer require laravel/boost --dev
+Les droits module couvrent les entites principales: prospects, partenaires, clients, opportunites, appels, RDV, campagnes, statuts, utilisateurs et tickets AlloPro.
 
-php artisan boost:install
+Les droits par champ sont geres par entite et par action:
+
+| Action | Effet |
+|---|---|
+| `show` | autorise la lecture du champ |
+| `create` | autorise la valeur du champ a la creation |
+| `edit` | autorise la modification du champ |
+| `flux` | autorise l'usage du champ dans les vues de flux/workflow |
+| `all` | autorise toutes les actions du champ |
+
+Les formulaires Prospects, Partenaires, Clients et Tickets filtrent les donnees de creation et modification selon ces droits.
+
+Fichiers principaux:
+
+- `app/Support/AccessRightsCatalog.php`
+- `app/Support/UsesResourcePermissions.php`
+- `app/Filament/SuperAdmin/Resources/RoleResource.php`
+- `tests/Feature/RoleAccessRightsTest.php`
+
+## Imports Excel
+
+Les importeurs utilisent PhpSpreadsheet et les resolvers Filament du panel Ns Conseil.
+
+| Import | Source | Code |
+|---|---|---|
+| Prospects Top 500 | fichiers departementaux Top 500 | `app/Filament/NsConseil/Resources/ProspectResource/Import/` |
+| Partenaires MAJ | feuille `MAJ` du fichier partenaires | `app/Filament/NsConseil/Resources/PartenaireResource/Import/` |
+| Clients Dolibarr | feuilles `CRM LIKE`, `CRM AOPIA-ABO`, `CRM 01FC` | `app/Filament/NsConseil/Resources/ClientResource/Import/` |
+
+Les fichiers source d'exemple sont conserves dans `directive/archive/`.
+
+## Installation locale
+
+```powershell
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Avec Laragon, le projet est attendu dans `C:\laragon\www\crmfilament` et l'URL locale est generalement `http://crmfilament.test/`.
 
-## Contributing
+## Commandes utiles
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```powershell
+php artisan test
+php artisan test --filter RoleAccessRightsTest
+npm run e2e
+npm run e2e:headed
+npm run build
+php artisan view:clear
+php artisan config:clear
+```
 
-## Code of Conduct
+## Documentation
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Document | Role |
+|---|---|
+| `ETAT_AVANCEMENT.md` | Avancement courant du projet |
+| `MANUEL.md` | Manuel technique de deploiement, developpement et tests |
+| `directive/specs/Modele_Projet_AOPIA_Laravel.md` | Modele fonctionnel Laravel/Filament |
+| `directive/specs/MANUEL_UTILISATION.md` | Manuel utilisateur du panel Ns Conseil |
+| `directive/specs/Champs_Requis_Par_Entite.md` | Champs requis et droits par champ |
+| `tests/e2e/README.md` | Lancement des tests Playwright |
 
-## Security Vulnerabilities
+## Licence
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Projet proprietaire AOPIA / LIKE Formation / NS Conseil.

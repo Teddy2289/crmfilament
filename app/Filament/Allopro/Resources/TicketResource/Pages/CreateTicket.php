@@ -12,6 +12,8 @@ class CreateTicket extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $data = TicketResource::filterFormDataForFieldPermissions($data, 'create');
+
         $data['operateur_id'] = $data['operateur_id'] ?? auth()->id();
         $data['date_creation'] = now();
         $data['reference'] = Ticket::genererReference();
