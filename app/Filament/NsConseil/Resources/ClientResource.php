@@ -79,7 +79,7 @@ class ClientResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
             Forms\Components\Section::make('Identité')
                 ->icon('heroicon-o-user')
                 ->schema([
@@ -188,7 +188,7 @@ class ClientResource extends Resource
                 ])
                 ->collapsible()
                 ->collapsed(),
-        ]);
+        ]));
     }
 
     // ─────────────────────────────────────────────────────────────────

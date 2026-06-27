@@ -204,6 +204,51 @@ class RoleAccessRightsTest extends TestCase
         $this->assertTrue($nestedSection->getChildComponents()[0]->isHidden());
     }
 
+    #[Test]
+    public function form_field_permissions_apply_create_edit_show_and_all_rules_by_role(): void
+    {
+        $role = Role::create(['name' => 'test_form_field_components', 'guard_name' => 'web']);
+        $role->syncPermissions([
+            'fields.prospects.nom.create',
+            'fields.prospects.email.show',
+            'fields.prospects.telephone.edit',
+            'fields.prospects.siret.all',
+        ]);
+
+        $user = $this->userWithRole($role);
+        $this->actingAs($user);
+
+        $resourceClass = get_class(new class {
+            use \App\Support\UsesResourcePermissions;
+
+            protected static string $permissionPrefix = 'prospects';
+        });
+
+        $this->assertFalse($resourceClass::shouldHideFormField('nom', 'create'));
+        $this->assertTrue($resourceClass::shouldHideFormField('email', 'create'));
+
+        $this->assertFalse($resourceClass::shouldHideFormField('email', 'edit'));
+        $this->assertTrue($resourceClass::shouldDisableFormField('email', 'edit'));
+
+        $this->assertFalse($resourceClass::shouldHideFormField('telephone', 'edit'));
+        $this->assertFalse($resourceClass::shouldDisableFormField('telephone', 'edit'));
+
+        $this->assertFalse($resourceClass::shouldHideFormField('siret', 'create'));
+        $this->assertFalse($resourceClass::shouldDisableFormField('siret', 'edit'));
+
+        $this->assertFalse($resourceClass::shouldHideFormField('computed_metric', 'create'));
+        $this->assertFalse($resourceClass::shouldHideFormField('email', null));
+
+        [$lockedComponent] = $resourceClass::applyFormFieldPermissions([
+            \Filament\Forms\Components\TextInput::make('email')->disabled(),
+        ]);
+
+        $disabledCondition = new \ReflectionProperty($lockedComponent, 'isDisabled');
+        $disabledCondition->setAccessible(true);
+
+        $this->assertTrue($disabledCondition->getValue($lockedComponent));
+    }
+
     private function userWithRole(Role $role): User
     {
         $user = User::factory()->create([

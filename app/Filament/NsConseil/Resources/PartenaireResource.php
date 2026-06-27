@@ -86,7 +86,7 @@ class PartenaireResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
             Forms\Components\Section::make('Identification')
                 ->icon('heroicon-o-identification')
                 ->schema([
@@ -285,7 +285,7 @@ class PartenaireResource extends Resource
                     Forms\Components\Textarea::make('commentaires')->label('Commentaires')->rows(3)->columnSpanFull(),
                     Forms\Components\Textarea::make('notes')->label('Notes internes')->rows(3)->columnSpanFull(),
                 ]),
-        ]);
+        ]));
     }
 
     // ─────────────────────────────────────────────────────────────────
