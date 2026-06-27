@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Themes\AdminTheme;
 use App\Http\Middleware\EnsureSuperAdmin;
+use App\Models\Theme as ThemeModel;
 use App\Http\Middleware\SetLocale;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -27,11 +28,16 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $theme = ThemeModel::getActiveForPanel('admin');
+        
         return $panel
             ->default()
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName($theme?->brand_name ?? 'Admin')
+            ->brandLogo($theme?->brand_logo_path)
+            ->favicon($theme?->favicon_path)
             ->theme(AdminTheme::class)
             ->defaultThemeMode(ThemeMode::Light)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
@@ -69,6 +75,12 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::TOPBAR_END,
                 fn () => auth()->user()?->isSuperAdmin()
                     ? view('filament.shared.admin-button')
+                    : '',
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => $theme?->custom_css 
+                    ? '<style>' . $theme->custom_css . '</style>' 
                     : '',
             );
     }
