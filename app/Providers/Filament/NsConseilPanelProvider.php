@@ -2,9 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\NsConseil\Pages\AircallDashboard;
 use App\Filament\NsConseil\Pages\Auth\Login as NsConseilLogin;
 use App\Filament\NsConseil\Pages\Dashboard;
+use App\Filament\NsConseil\Pages\RingoverDashboard;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserInteractions;
 use App\Http\Responses\NsConseil\LoginResponse;
@@ -92,10 +92,11 @@ class NsConseilPanelProvider extends PanelProvider
             )
             ->pages([
                 Dashboard::class,
-                AircallDashboard::class,
+                RingoverDashboard::class,
             ])
             ->widgets([
                 \App\Livewire\TeamLeaderStatsWidget::class,
+                \App\Livewire\TeamLeaderChartWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
