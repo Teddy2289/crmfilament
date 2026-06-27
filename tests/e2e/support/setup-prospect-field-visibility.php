@@ -22,6 +22,8 @@ $prospectEmail = 'hidden-field-e2e@example.test';
 $prospectName = 'E2E Prospect Champs';
 $prospectPhone = '0102030405';
 $prospectSiret = '12345678901234';
+$commercialEmail = 'e2e-hidden-commercial@example.test';
+$commercialName = 'Commercial Masque E2E';
 
 AccessRightsCatalog::ensurePermissionsExist();
 
@@ -76,6 +78,22 @@ if (method_exists($user, 'restore') && $user->trashed()) {
 
 $user->syncRoles([$role]);
 
+$commercial = User::withTrashed()->updateOrCreate(
+    ['email' => $commercialEmail],
+    [
+        'nom' => 'Masque E2E',
+        'prenom' => 'Commercial',
+        'password' => Hash::make($password),
+        'secteur' => 'national',
+        'actif' => true,
+        'role_cache' => $roleName,
+    ],
+);
+
+if (method_exists($commercial, 'restore') && $commercial->trashed()) {
+    $commercial->restore();
+}
+
 $prospect = Prospect::withTrashed()->updateOrCreate(
     ['email' => $prospectEmail],
     [
@@ -86,6 +104,7 @@ $prospect = Prospect::withTrashed()->updateOrCreate(
         'departement' => '75',
         'statut' => ProspectStatut::AC->value,
         'teleprospecteur_id' => $user->id,
+        'commercial_id' => $commercial->id,
     ],
 );
 
@@ -104,6 +123,7 @@ echo json_encode([
         'phone' => $prospectPhone,
         'email' => $prospectEmail,
         'siret' => $prospectSiret,
+        'commercial' => $commercialName,
     ],
     'checks' => [
         'password_ok' => Hash::check($password, $user->password),

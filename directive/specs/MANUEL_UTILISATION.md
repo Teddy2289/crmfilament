@@ -278,6 +278,8 @@ Exemple:
 
 Si aucun droit champ n'est configure pour une entite, les droits module restent le comportement principal.
 
+Les champs relationnels affiches dans les listes ou fiches, par exemple `Commercial - Nom`, suivent le droit du champ source comme `commercial_id`.
+
 ---
 
 ## 11. Tests par role a effectuer
@@ -296,6 +298,7 @@ Tests automatises disponibles:
 
 ```powershell
 php artisan test --filter RoleAccessRightsTest
+npx playwright test tests/e2e/role-field-visibility.spec.js
 ```
 
 ---

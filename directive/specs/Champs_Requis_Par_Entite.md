@@ -240,6 +240,7 @@ Test automatise principal:
 
 ```powershell
 php artisan test --filter RoleAccessRightsTest
+npx playwright test tests/e2e/role-field-visibility.spec.js
 ```
 
 Scenarios a couvrir lors des evolutions:
@@ -249,4 +250,5 @@ Scenarios a couvrir lors des evolutions:
 - role selectif par champ;
 - interdiction create/edit sur champ;
 - affichage show dans les vues sensibles;
+- champs relationnels affiches rattaches a leur cle etrangere;
 - usage flux dans le workflow phoning.

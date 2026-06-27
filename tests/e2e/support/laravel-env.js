@@ -14,4 +14,5 @@ export const laravelE2eEnv = {
     MAIL_MAILER: process.env.PLAYWRIGHT_MAIL_MAILER ?? 'array',
     QUEUE_CONNECTION: process.env.PLAYWRIGHT_QUEUE_CONNECTION ?? 'sync',
     SESSION_DRIVER: process.env.PLAYWRIGHT_SESSION_DRIVER ?? 'file',
+    TELESCOPE_ENABLED: process.env.PLAYWRIGHT_TELESCOPE_ENABLED ?? 'false',
 };
