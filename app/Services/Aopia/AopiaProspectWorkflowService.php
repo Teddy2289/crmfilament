@@ -169,7 +169,13 @@ class AopiaProspectWorkflowService
                 $missing[] = 'Fiche récap PDF générée';
             }
 
-            if (blank($rdv->enregistrement_audio)) {
+            $appelRingoverRdv = $this->dernierAppelRingoverRdv($prospect);
+
+            if ($appelRingoverRdv && ! (bool) $appelRingoverRdv->ringover_tag_is_complete) {
+                $missing[] = 'Tags Ringover DEP_XX + statut';
+            }
+
+            if (blank($rdv->enregistrement_audio) && blank($appelRingoverRdv?->enregistrement_audio)) {
                 $missing[] = 'Enregistrement audio joint';
             }
         }
@@ -182,6 +188,20 @@ class AopiaProspectWorkflowService
         return RendezVous::query()
             ->where('rdvable_type', Prospect::class)
             ->where('rdvable_id', $prospect->id)
+            ->latest('date_heure')
+            ->first();
+    }
+
+    public function dernierAppelRingoverRdv(Prospect $prospect): ?Appel
+    {
+        return Appel::query()
+            ->where('appelable_type', Prospect::class)
+            ->where('appelable_id', $prospect->id)
+            ->whereNotNull('ringover_call_id')
+            ->where(function ($query): void {
+                $query->where('phoning_status', 'rdv')
+                    ->orWhere('ringover_status_tag', 'RDV');
+            })
             ->latest('date_heure')
             ->first();
     }
