@@ -31,6 +31,7 @@ test.describe('Droits par champ', () => {
         await expect(page.locator('body')).toContainText(scenario.prospect.name);
         await expect(page.locator('body')).toContainText(scenario.prospect.phone);
         await expect(page.locator('body')).not.toContainText(scenario.prospect.email);
+        await expect(page.locator('body')).not.toContainText(scenario.prospect.commercial);
 
         await page.goto(`/ns-conseil/prospects/${scenario.prospect.id}`, { waitUntil: 'commit' });
         await expect(page.getByRole('heading', { name: /prospect/i })).toBeVisible();
@@ -38,6 +39,7 @@ test.describe('Droits par champ', () => {
         await expect(page.locator('body')).toContainText(scenario.prospect.phone);
         await expect(page.locator('body')).toContainText(scenario.prospect.siret);
         await expect(page.locator('body')).not.toContainText(scenario.prospect.email);
+        await expect(page.locator('body')).not.toContainText(scenario.prospect.commercial);
 
         await page.goto('/ns-conseil/prospects/create');
         await expect(page.getByRole('heading', { name: /créer prospect|nouveau prospect|prospect/i })).toBeVisible();

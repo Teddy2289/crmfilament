@@ -381,6 +381,8 @@ Comportement:
 
 - si aucun droit champ n'est configure pour une entite, le comportement module reste applique;
 - si des droits champ existent pour une entite, les champs non autorises sont filtres a la creation et a l'edition;
+- `show` masque les champs non autorises dans les tables et infolists sensibles;
+- les entrees relationnelles de type `commercial.nom` sont rattachees au champ FK catalogue, par exemple `commercial_id`;
 - `all` donne toutes les actions pour le champ;
 - `view` est normalise vers `show`, `update` vers `edit`.
 
@@ -390,12 +392,14 @@ Test principal:
 
 ```text
 tests/Feature/RoleAccessRightsTest.php
+tests/e2e/role-field-visibility.spec.js
 ```
 
 Commande:
 
 ```powershell
 php artisan test --filter RoleAccessRightsTest
+npx playwright test tests/e2e/role-field-visibility.spec.js
 ```
 
 Le test couvre:
@@ -405,7 +409,8 @@ Le test couvre:
 - acces selectif AlloPro;
 - generation du catalogue;
 - droits `show`, `create`, `edit`, `flux`, `all`;
-- filtrage des donnees interdites.
+- filtrage des donnees interdites;
+- masquage `show` dans les tables, infolists et relations affichees.
 
 ---
 
@@ -479,8 +484,6 @@ La validation QF tient aussi compte des appels Ringover `RDV`: tags complets `DE
 
 | Priorite | Sujet |
 |---|---|
-| P0 | Appliquer `show` aux infolists/tables sensibles de toutes les resources |
-| P0 | Ajouter un test navigateur pour un role selectif par champ |
 | P1 | Connecter le webhook Ringover au compte de production et renseigner `RINGOVER_WEBHOOK_SECRET` |
 | P1 | Clarifier le module base de connaissances attendu |
 | P2 | Completer la documentation avec captures apres validation UI |

@@ -168,7 +168,21 @@ trait UsesResourcePermissions
             return $fieldMap[$componentName];
         }
 
-        return str($componentName)->before('.')->snake()->toString();
+        $field = str($componentName)->before('.')->snake()->toString();
+
+        if (str_contains($componentName, '.')) {
+            if (AccessRightsCatalog::hasFieldDefinition(static::$permissionPrefix, $field)) {
+                return $field;
+            }
+
+            $foreignKey = "{$field}_id";
+
+            if (AccessRightsCatalog::hasFieldDefinition(static::$permissionPrefix, $foreignKey)) {
+                return $foreignKey;
+            }
+        }
+
+        return $field;
     }
 
     protected static function componentHasCustomDisabledCondition(object $component): bool

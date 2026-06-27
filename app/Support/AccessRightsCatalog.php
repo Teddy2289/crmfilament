@@ -567,7 +567,7 @@ class AccessRightsCatalog
             ->all();
     }
 
-    private static function hasFieldDefinition(string $entity, string $field): bool
+    public static function hasFieldDefinition(string $entity, string $field): bool
     {
         $entity = Str::snake($entity);
         $field = Str::snake($field);

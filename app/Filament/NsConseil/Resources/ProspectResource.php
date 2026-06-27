@@ -1039,6 +1039,10 @@ class ProspectResource extends Resource
             'statut_description' => 'statut',
             'jours_depuis_premier_contact' => 'date_premier_contact',
             'jours_avant_rappel' => 'rappel_planifie_at',
+            'adresse_complete' => 'adresse',
+            'interlocuteur_complet' => 'interlocuteur_nom',
+            'localisation' => 'ville',
+            'dernier_contact' => 'date_premier_contact',
             'taux_engagement' => 'statut',
             'validePar.nom' => 'valide_par',
         ]));

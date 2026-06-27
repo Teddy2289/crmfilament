@@ -205,6 +205,34 @@ class RoleAccessRightsTest extends TestCase
     }
 
     #[Test]
+    public function show_field_permissions_resolve_relation_entries_to_foreign_keys(): void
+    {
+        $role = Role::create(['name' => 'test_show_field_relations', 'guard_name' => 'web']);
+        $role->syncPermissions([
+            'fields.prospects.commercial_id.show',
+        ]);
+
+        $user = $this->userWithRole($role);
+        $this->actingAs($user);
+
+        $resourceClass = get_class(new class {
+            use \App\Support\UsesResourcePermissions;
+
+            protected static string $permissionPrefix = 'prospects';
+        });
+
+        [$commercialColumn, $teleprospecteurColumn, $validatorColumn] = $resourceClass::applyShowFieldPermissions([
+            TextColumn::make('commercial.nom'),
+            TextColumn::make('teleprospecteur.nom'),
+            TextColumn::make('validePar.nom'),
+        ]);
+
+        $this->assertFalse($commercialColumn->isHidden());
+        $this->assertTrue($teleprospecteurColumn->isHidden());
+        $this->assertTrue($validatorColumn->isHidden());
+    }
+
+    #[Test]
     public function form_field_permissions_apply_create_edit_show_and_all_rules_by_role(): void
     {
         $role = Role::create(['name' => 'test_form_field_components', 'guard_name' => 'web']);
