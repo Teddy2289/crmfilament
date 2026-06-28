@@ -196,6 +196,17 @@ class ClientResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function table(Table $table): Table
     {
+        $currentView = session()->get('view_clients', 'list');
+
+        if ($currentView === 'kanban') {
+            return static::kanbanTable($table);
+        }
+
+        return static::listTable($table);
+    }
+
+    protected static function listTable(Table $table): Table
+    {
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns(static::applyShowFieldPermissions([
@@ -405,6 +416,15 @@ class ClientResource extends Resource
                 ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('switch_view')
+                    ->label(session()->get('view_clients', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
+                    ->icon(session()->get('view_clients', 'list') === 'kanban' ? 'heroicon-o-list-bullets' : 'heroicon-o-squares-2x2')
+                    ->color('gray')
+                    ->action(function () {
+                        $currentView = session()->get('view_clients', 'list');
+                        session()->put('view_clients', $currentView === 'kanban' ? 'list' : 'kanban');
+                        return redirect()->back();
+                    }),
                 Tables\Actions\ExportAction::make()
                     ->exporter(ClientExporter::class)
                     ->label('Exporter les clients')
@@ -439,6 +459,57 @@ class ClientResource extends Resource
                     ->label('Importer des clients')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->url(ImportClientsAction::class),
+            ]);
+    }
+
+    protected static function kanbanTable(Table $table): Table
+    {
+        return $table
+            ->defaultSort('created_at', 'desc')
+            ->columns([
+                Tables\Columns\TextColumn::make('nom_tiers')
+                    ->label('Client')
+                    ->searchable()
+                    ->weight('bold')
+                    ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').$state)),
+
+                Tables\Columns\TextColumn::make('etat')
+                    ->label('État')
+                    ->badge()
+                    ->color(fn ($state) => match($state) {
+                        'en_cours' => 'info',
+                        'termine' => 'success',
+                        'prospect' => 'warning',
+                        default => 'gray',
+                    }),
+
+                Tables\Columns\TextColumn::make('type_tiers')
+                    ->label('Type')
+                    ->badge()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('ville')
+                    ->label('Ville')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('telephone')
+                    ->label('Téléphone')
+                    ->copyable()
+                    ->toggleable(),
+            ])
+            ->groups([
+                'etat',
+            ])
+            ->contentGrid()
+            ->reorderable('etat')
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 

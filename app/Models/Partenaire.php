@@ -61,6 +61,7 @@ class Partenaire extends Model
         'parrain_marraine_texte', // ✅ Ajout MEA : texte libre du parrain/marraine
         // ── Clés étrangères ───────────────────────────────────────────
         'entite_id',             // ✅ Ajout MEA : FK vers ENTITE_COMMERCIALE
+        'entreprise_id',         // FK vers ENTREPRISE
         'commercial_id',
         'conseiller_id',
         'parrain_partenaire_id',
@@ -305,6 +306,11 @@ class Partenaire extends Model
     public function entite()
     {
         return $this->belongsTo(EntiteCommerciale::class, 'entite_id');
+    }
+
+    public function entreprise()
+    {
+        return $this->belongsTo(Entreprise::class, 'entreprise_id');
     }
 
     public function entrepriseMere()
