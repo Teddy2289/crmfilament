@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\GoogleOAuthController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\RingoverWebhookController;
+use App\Models\CrmSetting;
 use App\Models\GoogleToken;
 use App\Services\RingoverService;
 use GuzzleHttp\Client;
@@ -10,7 +11,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home');
+    $defaultCrm = CrmSetting::where('cle', 'default_crm')->first()?->default_crm ?? 'ns-conseil';
+    
+    return redirect()->to("/{$defaultCrm}");
 });
 
 Route::get('/ns-conseil/ringover/recording/{callId}', function (string $callId) {
