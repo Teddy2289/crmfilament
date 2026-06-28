@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class CrmSetting extends Model
 {
     protected $fillable = [
+        'default_crm',
         'groupe',
         'cle',
         'valeur',
