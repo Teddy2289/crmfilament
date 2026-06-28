@@ -59,7 +59,7 @@ class ImportClientsAction extends Action
                             ->default('merge')
                             ->required()
                             ->native(false)
-                            ->helperText('Fusion intelligente : préserve parrain, source et notes'),
+                            ->helperText('Fusion intelligente : préserve état (si ≠ prospect), statut_formation (si ≠ a_venir), parrain, consultants et notes'),
                     ])
                     ->columns(1),
             ])
