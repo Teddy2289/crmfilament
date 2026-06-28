@@ -101,7 +101,7 @@ class ImportResolver
     }
 
     /** @param class-string<BaseClientImporter>|null $importerClass */
-    public static function importFile(string $path, ?string $importerClass = null): array
+    public static function importFile(string $path, ?string $importerClass = null, string $strategy = 'merge'): array
     {
         $sheets = static::parseFile($path);
         $results = [];
@@ -123,7 +123,7 @@ class ImportResolver
 
             /** @var BaseClientImporter $importer */
             $importer = new $class;
-            $results[$sheetName] = $importer->import($sheetData['rows'], $sheetName);
+            $results[$sheetName] = $importer->import($sheetData['rows'], $sheetName, $strategy);
             $results[$sheetName]['model'] = $class::getName();
         }
 

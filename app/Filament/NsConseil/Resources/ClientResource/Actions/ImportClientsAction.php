@@ -44,6 +44,24 @@ class ImportClientsAction extends Action
                     ->options(ImportResolver::getOptions())
                     ->searchable()
                     ->helperText('Laissez vide pour laisser le système détecter le modèle automatiquement.'),
+
+                Forms\Components\Section::make('Stratégie pour clients existants')
+                    ->icon('heroicon-o-arrows-merge')
+                    ->description('Comportement si un client existe déjà (même ref_client ou email).')
+                    ->schema([
+                        Forms\Components\Select::make('strategy')
+                            ->label('Stratégie de mise à jour')
+                            ->options([
+                                'merge' => 'Fusion intelligente (recommandé)',
+                                'overwrite' => 'Écraser toutes les données',
+                                'skip' => 'Ignorer les existants',
+                            ])
+                            ->default('merge')
+                            ->required()
+                            ->native(false)
+                            ->helperText('Fusion intelligente : préserve parrain, source et notes'),
+                    ])
+                    ->columns(1),
             ])
             ->action(function (array $data): void {
                 // Avec storeFiles(false), $data['file'] est un TemporaryUploadedFile (Livewire)
@@ -78,7 +96,8 @@ class ImportClientsAction extends Action
                 try {
                     $results = ImportResolver::importFile(
                         $resolvedPath,
-                        $data['force_model'] ?? null
+                        $data['force_model'] ?? null,
+                        $data['strategy'] ?? 'merge'
                     );
                 } catch (\Throwable $e) {
                     Notification::make()
