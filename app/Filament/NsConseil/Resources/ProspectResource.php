@@ -304,6 +304,17 @@ class ProspectResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function table(Table $table): Table
     {
+        $currentView = session()->get('view_prospects', 'list');
+
+        if ($currentView === 'kanban') {
+            return static::kanbanTable($table);
+        }
+
+        return static::listTable($table);
+    }
+
+    protected static function listTable(Table $table): Table
+    {
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns(static::applyShowFieldPermissions([
@@ -563,6 +574,61 @@ class ProspectResource extends Resource
             ])
             ->emptyStateHeading('Aucun prospect')
             ->emptyStateDescription('Créez votre premier prospect.');
+    }
+
+    protected static function kanbanTable(Table $table): Table
+    {
+        return $table
+            ->defaultSort('created_at', 'desc')
+            ->columns([
+                Tables\Columns\TextColumn::make('nom')
+                    ->label("Nom de l'entité")
+                    ->searchable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('statut')
+                    ->label('Statut')
+                    ->badge()
+                    ->formatStateUsing(
+                        fn ($state) => $state instanceof ProspectStatut
+                            ? $state->label()
+                            : ProspectStatut::tryFrom($state)?->label() ?? $state
+                    )
+                    ->color(
+                        fn ($state) => $state instanceof ProspectStatut
+                            ? $state->color()
+                            : ProspectStatut::tryFrom($state)?->color() ?? 'gray'
+                    ),
+
+                Tables\Columns\TextColumn::make('teleprospecteur.nom')
+                    ->label('Commercial')
+                    ->formatStateUsing(fn ($record) => $record->teleprospecteur
+                        ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}"
+                        : '—'),
+
+                Tables\Columns\TextColumn::make('departement')
+                    ->label('Dép.')
+                    ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('telephone')
+                    ->label('Téléphone')
+                    ->copyable()
+                    ->toggleable(),
+            ])
+            ->groups([
+                'statut',
+            ])
+            ->contentGrid()
+            ->reorderable('statut')
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
     // ─────────────────────────────────────────────────────────────────
