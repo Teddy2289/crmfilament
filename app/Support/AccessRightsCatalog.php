@@ -77,6 +77,17 @@ class AccessRightsCatalog
                     'rapports.export' => 'Exporter',
                 ],
             ],
+            'document_knowledges' => [
+                'label' => 'AOPIA - Base de connaissances',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'document_knowledges.view_any' => 'Lister',
+                    'document_knowledges.view' => 'Voir',
+                    'document_knowledges.create' => 'Creer',
+                    'document_knowledges.update' => 'Modifier',
+                    'document_knowledges.delete' => 'Supprimer',
+                ],
+            ],
             'tickets' => [
                 'label' => 'AlloPro - Tickets',
                 'panel' => 'allopro',

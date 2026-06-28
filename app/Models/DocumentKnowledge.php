@@ -32,18 +32,26 @@ class DocumentKnowledge extends Model
         'ordre' => 'integer',
     ];
 
-    const TYPES = [
+    public const TYPES = [
         'procedure' => 'Procédure',
+        'script' => 'Script',
+        'checklist' => 'Checklist',
+        'politique' => 'Politique',
         'template' => 'Template',
         'guide' => 'Guide',
+        'faq' => 'FAQ / Objections',
+        'modele_mail' => 'Modèle mail',
+        'modele_fiche' => 'Modèle fiche recap',
         'cdc' => 'Cahier des Charges',
         'autre' => 'Autre',
     ];
 
-    const CATEGORIES = [
+    public const CATEGORIES = [
         'cdc' => 'CDC',
         'commercial' => 'Commercial',
+        'operationnel' => 'Opérationnel',
         'technique' => 'Technique',
+        'it' => 'IT',
         'rh' => 'RH',
         'juridique' => 'Juridique',
         'autre' => 'Autre',

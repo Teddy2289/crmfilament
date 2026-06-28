@@ -5,9 +5,12 @@ use App\Http\Controllers\PdfController;
 use App\Http\Controllers\RingoverWebhookController;
 use App\Models\CrmSetting;
 use App\Models\GoogleToken;
+use App\Models\User;
 use App\Services\RingoverService;
 use GuzzleHttp\Client;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -15,6 +18,21 @@ Route::get('/', function () {
     
     return redirect()->to("/{$defaultCrm}");
 });
+
+if (app()->environment('testing')) {
+    Route::get('/__e2e/login', function (Request $request) {
+        $redirect = $request->query('redirect', '/ns-conseil');
+
+        abort_unless(is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//'), 400);
+
+        $user = User::where('email', $request->query('email', 'a.florek@ns-conseil.com'))->firstOrFail();
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->to($redirect);
+    })->middleware('web');
+}
 
 Route::get('/ns-conseil/ringover/recording/{callId}', function (string $callId) {
     $call = app(RingoverService::class)->getCall($callId);

@@ -79,6 +79,7 @@ CRM NS Conseil
     Dossiers formation
     Parrainage
   Administration
+    Base de connaissances
     Statuts phoning
     Pipeline statuts
     Groupes workflow
@@ -235,6 +236,22 @@ Points importants:
 - synchronisation calendrier;
 - fiches recap et invitations.
 
+### 5.7 Base de connaissances
+
+Model: `App\Models\DocumentKnowledge`
+Resource: `app/Filament/NsConseil/Resources/DocumentKnowledgeResource.php`
+
+Role: module Documents du CDC pour procedures, scripts, FAQ/objections, modeles mails et modeles de fiche recap.
+
+Regles d'acces CDC:
+
+- teleprospecteur: lecture uniquement;
+- Team Leader: lecture, creation, modification, suppression;
+- commercial: aucun acces;
+- administrateur/super-admin: acces total via le mode `Tout`.
+
+Le catalogue de droits utilise le prefixe `document_knowledges`.
+
 ---
 
 ## 6. Imports Excel
@@ -336,6 +353,7 @@ Modules couverts:
 | clients | Ns Conseil |
 | activites | Ns Conseil |
 | rapports | Ns Conseil |
+| document_knowledges | Ns Conseil |
 | tickets | AlloPro |
 | fiche_p2 | AlloPro |
 | artisans | AlloPro |
@@ -485,7 +503,6 @@ La validation QF tient aussi compte des appels Ringover `RDV`: tags complets `DE
 | Priorite | Sujet |
 |---|---|
 | P1 | Connecter le webhook Ringover au compte de production et renseigner `RINGOVER_WEBHOOK_SECRET` |
-| P1 | Clarifier le module base de connaissances attendu |
 | P2 | Completer la documentation avec captures apres validation UI |
 
 ---

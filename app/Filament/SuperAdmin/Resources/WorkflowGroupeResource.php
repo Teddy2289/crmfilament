@@ -4,7 +4,7 @@ namespace App\Filament\SuperAdmin\Resources;
 
 use App\Filament\SuperAdmin\Resources\WorkflowGroupeResource\Pages\EditWorkflowGroupe;
 use App\Filament\SuperAdmin\Resources\WorkflowGroupeResource\Pages\ListWorkflowGroupes;
-use App\Filament\SuperAdmin\Resources\WorkflowGroupeResource\RelationManagers;
+use App\Filament\SuperAdmin\Resources\WorkflowGroupeResource\RelationManagers\WorkflowStepsRelationManager;
 use App\Models\WorkflowGroupe;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -59,7 +59,7 @@ class WorkflowGroupeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\WorkflowStepsRelationManager::class,
+            WorkflowStepsRelationManager::class,
         ];
     }
 

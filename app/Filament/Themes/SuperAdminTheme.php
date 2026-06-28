@@ -4,10 +4,9 @@ namespace App\Filament\Themes;
 
 use App\Models\Theme as ThemeModel;
 use Filament\Support\Colors\Color;
-use Filament\Support\Themes\Contracts\Theme as FilamentTheme;
 use Illuminate\Support\Facades\Auth;
 
-class SuperAdminTheme implements FilamentTheme
+class SuperAdminTheme
 {
     protected ?ThemeModel $theme = null;
 

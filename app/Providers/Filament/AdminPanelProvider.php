@@ -38,7 +38,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName($theme?->brand_name ?? 'Admin')
             ->brandLogo($theme?->brand_logo_path)
             ->favicon($theme?->favicon_path)
-            ->theme(AdminTheme::class)
+            ->colors(fn (): array => app(AdminTheme::class)->getColors())
             ->defaultThemeMode(ThemeMode::Light)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

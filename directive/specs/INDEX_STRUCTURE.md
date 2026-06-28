@@ -74,6 +74,7 @@ tests/
 | Prospects | `app/Models/Prospect.php`, `app/Filament/NsConseil/Resources/ProspectResource.php` |
 | Partenaires | `app/Models/Partenaire.php`, `app/Filament/NsConseil/Resources/PartenaireResource.php` |
 | Clients | `app/Models/Client.php`, `app/Filament/NsConseil/Resources/ClientResource.php` |
+| Base de connaissances | `app/Models/DocumentKnowledge.php`, `app/Filament/NsConseil/Resources/DocumentKnowledgeResource.php`, `database/seeders/DocumentKnowledgeSeeder.php` |
 | Imports clients | `app/Filament/NsConseil/Resources/ClientResource/Import/` |
 | Imports partenaires | `app/Filament/NsConseil/Resources/PartenaireResource/Import/` |
 | Imports prospects | `app/Filament/NsConseil/Resources/ProspectResource/Import/` |
