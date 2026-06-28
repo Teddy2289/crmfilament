@@ -96,14 +96,24 @@ class PartenaireImporter
 
     protected int $skipped = 0;
 
+    protected string $strategy = 'merge'; // 'overwrite', 'merge', 'skip'
+
+    public const STRATEGY_OVERWRITE = 'overwrite';
+
+    public const STRATEGY_MERGE = 'merge';
+
+    public const STRATEGY_SKIP = 'skip';
+
     private array $entiteCache = [];
 
     private array $conseillerCache = [];
 
     // ─── Point d'entrée ──────────────────────────────────────────────
 
-    public function import(array $rows, array $defaults = []): array
+    public function import(array $rows, array $defaults = [], string $strategy = self::STRATEGY_MERGE): array
     {
+        $this->strategy = $strategy;
+
         for ($i = 1; $i < count($rows); $i++) {
             $row = $rows[$i];
 
@@ -178,12 +188,34 @@ class PartenaireImporter
             'nomenclature_interne' => $defaults['nomenclature_interne'] ?? null,
         ], fn ($v) => $v !== null && $v !== '');
 
-        // ── Upsert Partenaire ─────────────────────────────────────────
-        $partenaire = Partenaire::updateOrCreate(
-            ['nom' => $nom, 'ville' => $commune ?: null],
-            $data
-        );
-        $partenaire->wasRecentlyCreated ? $this->created++ : $this->updated++;
+        // ── Upsert Partenaire avec stratégie ─────────────────────────────
+        $existingPartenaire = Partenaire::where('nom', $nom)
+            ->where('ville', $commune ?: null)
+            ->first();
+
+        if ($existingPartenaire) {
+            // Partenaire existe déjà - appliquer la stratégie
+            if ($this->strategy === self::STRATEGY_SKIP) {
+                $this->skipped++;
+                return;
+            }
+
+            if ($this->strategy === self::STRATEGY_MERGE) {
+                // Fusion intelligente : ne pas écraser les données importantes
+                $data = $this->mergePartenaireData($existingPartenaire, $data);
+                $existingPartenaire->update($data);
+                $this->updated++;
+            } else {
+                // STRATEGY_OVERWRITE : écraser tout
+                $existingPartenaire->update($data);
+                $this->updated++;
+            }
+            $partenaire = $existingPartenaire;
+        } else {
+            // Nouveau partenaire
+            $partenaire = Partenaire::create($data);
+            $this->created++;
+        }
 
         // ── Relations ─────────────────────────────────────────────────
 
@@ -738,5 +770,33 @@ class PartenaireImporter
             'skipped' => $this->skipped,
             'errors' => $this->errors,
         ];
+    }
+
+    // ── Fusion intelligente des données Partenaire ─────────────────────
+    protected function mergePartenaireData(Partenaire $existing, array $newData): array
+    {
+        // Champs à préserver (ne pas écraser s'ils existent)
+        $preserveFields = [
+            'statut',
+            'commentaires',
+            'date_signature',
+            'conseiller_id',
+            'entite_id',
+            'nomenclature_interne',
+        ];
+
+        // Si le statut n'est pas "À prospecter", le préserver absolument
+        if ($existing->statut && $existing->statut !== 'a_prospecter') {
+            unset($newData['statut']);
+        }
+
+        // Fusionner : ne mettre à jour que si vide dans l'existant
+        foreach ($preserveFields as $field) {
+            if (isset($existing->$field) && $existing->$field !== null && $existing->$field !== '') {
+                unset($newData[$field]);
+            }
+        }
+
+        return $newData;
     }
 }
