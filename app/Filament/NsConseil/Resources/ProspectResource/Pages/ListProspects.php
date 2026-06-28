@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources\ProspectResource\Pages;
 use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\ProspectResource;
 use App\Filament\NsConseil\Resources\ProspectResource\Actions\ImportProspectsAction;
+use App\Filament\Widgets\ViewSelectorWidget;
 use App\Models\Prospect;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
@@ -14,6 +15,13 @@ use Illuminate\Database\Eloquent\Builder;
 class ListProspects extends ListRecords
 {
     protected static string $resource = ProspectResource::class;
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            ViewSelectorWidget::make()->resource('prospects'),
+        ];
+    }
 
     protected function getHeaderActions(): array
     {
