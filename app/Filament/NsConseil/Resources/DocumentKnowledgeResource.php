@@ -4,16 +4,24 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\DocumentKnowledgeResource\Pages;
 use App\Models\DocumentKnowledge;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentKnowledgeResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = DocumentKnowledge::class;
+
+    protected static string $permissionPrefix = 'document_knowledges';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
@@ -21,7 +29,41 @@ class DocumentKnowledgeResource extends Resource
 
     protected static ?string $navigationLabel = 'Base de connaissances';
 
+    protected static ?string $modelLabel = 'document';
+
+    protected static ?string $pluralModelLabel = 'Base de connaissances';
+
     protected static ?int $navigationSort = 10;
+
+    public static function canAccess(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return static::userCanResourcePermission('view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::userCanResourcePermission('create');
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::userCanResourcePermission('update');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::userCanResourcePermission('delete');
+    }
 
     public static function form(Form $form): Form
     {
@@ -61,21 +103,23 @@ class DocumentKnowledgeResource extends Resource
                     ->schema([
                         Forms\Components\FileUpload::make('fichier_path')
                             ->label('Fichier')
+                            ->disk('public')
                             ->directory('knowledge-base')
                             ->preserveFilenames()
+                            ->downloadable()
+                            ->openable()
                             ->maxSize(10240) // 10MB
-                            ->acceptedFileTypes(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'])
-                            ->required()
-                            ->saveUploadedFileUsing(function ($file) {
-                                $fileName = $file->getClientOriginalName();
-                                $filePath = $file->storeAs('knowledge-base', $fileName, 'public');
-                                return [
-                                    'fichier_path' => $filePath,
-                                    'fichier_nom' => $fileName,
-                                    'fichier_type' => $file->getClientOriginalExtension(),
-                                    'taille_octets' => $file->getSize(),
-                                ];
-                            }),
+                            ->acceptedFileTypes([
+                                'application/pdf',
+                                'application/msword',
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                'application/vnd.ms-excel',
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                'application/vnd.ms-powerpoint',
+                                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                                'text/plain',
+                            ])
+                            ->required(fn (string $operation): bool => $operation === 'create'),
                     ]),
             ]);
     }
@@ -132,6 +176,11 @@ class DocumentKnowledgeResource extends Resource
                     ->falseLabel('Privé'),
             ])
             ->actions([
+                Tables\Actions\Action::make('open_file')
+                    ->label('Ouvrir')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->url(fn (DocumentKnowledge $record): string => $record->url, true)
+                    ->visible(fn (DocumentKnowledge $record): bool => filled($record->fichier_path)),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -142,6 +191,97 @@ class DocumentKnowledgeResource extends Resource
                 ]),
             ])
             ->defaultSort('ordre');
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Document')
+                ->schema([
+                    Infolists\Components\TextEntry::make('titre')
+                        ->label('Titre')
+                        ->weight('bold'),
+                    Infolists\Components\TextEntry::make('description')
+                        ->label('Description')
+                        ->columnSpanFull()
+                        ->placeholder('Aucune description'),
+                    Infolists\Components\TextEntry::make('type')
+                        ->label('Type')
+                        ->badge()
+                        ->formatStateUsing(fn ($state) => DocumentKnowledge::TYPES[$state] ?? $state),
+                    Infolists\Components\TextEntry::make('categorie')
+                        ->label('Categorie')
+                        ->badge()
+                        ->formatStateUsing(fn ($state) => DocumentKnowledge::CATEGORIES[$state] ?? $state),
+                    Infolists\Components\IconEntry::make('est_publique')
+                        ->label('Public')
+                        ->boolean(),
+                    Infolists\Components\TextEntry::make('ordre')
+                        ->label('Ordre'),
+                ])
+                ->columns(3),
+
+            Infolists\Components\Section::make('Fichier')
+                ->schema([
+                    Infolists\Components\TextEntry::make('fichier_nom')
+                        ->label('Nom du fichier')
+                        ->placeholder('Aucun fichier'),
+                    Infolists\Components\TextEntry::make('fichier_type')
+                        ->label('Type fichier')
+                        ->placeholder('-'),
+                    Infolists\Components\TextEntry::make('taille_formatee')
+                        ->label('Taille'),
+                    Infolists\Components\TextEntry::make('url')
+                        ->label('Lien')
+                        ->state(fn (DocumentKnowledge $record): string => $record->fichier_path ? 'Ouvrir le fichier' : 'Aucun fichier')
+                        ->url(fn (DocumentKnowledge $record): ?string => $record->fichier_path ? $record->url : null, true),
+                ])
+                ->columns(4),
+
+            Infolists\Components\Section::make('Suivi')
+                ->schema([
+                    Infolists\Components\TextEntry::make('createdBy.name')
+                        ->label('Cree par')
+                        ->placeholder('-'),
+                    Infolists\Components\TextEntry::make('updatedBy.name')
+                        ->label('Mis a jour par')
+                        ->placeholder('-'),
+                    Infolists\Components\TextEntry::make('created_at')
+                        ->label('Cree le')
+                        ->dateTime('d/m/Y H:i'),
+                    Infolists\Components\TextEntry::make('updated_at')
+                        ->label('Mis a jour le')
+                        ->dateTime('d/m/Y H:i'),
+                ])
+                ->columns(4),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function enrichFileMetadata(array $data): array
+    {
+        $path = $data['fichier_path'] ?? null;
+
+        if (is_array($path)) {
+            $path = collect($path)->filter()->first();
+        }
+
+        if (! is_string($path) || $path === '') {
+            return $data;
+        }
+
+        $data['fichier_path'] = $path;
+        $data['fichier_nom'] = basename(str_replace('\\', '/', $path));
+        $data['fichier_type'] = pathinfo($data['fichier_nom'], PATHINFO_EXTENSION) ?: null;
+
+        if (Storage::disk('public')->exists($path)) {
+            $data['taille_octets'] = Storage::disk('public')->size($path);
+        }
+
+        return $data;
     }
 
     public static function getPages(): array

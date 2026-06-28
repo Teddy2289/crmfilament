@@ -52,7 +52,7 @@ class NsConseilPanelProvider extends PanelProvider
             ->brandName($theme?->brand_name ?? 'NS CONSEIL — CRM Partenaires')
             ->brandLogo($theme?->brand_logo_path)
             ->favicon($theme?->favicon_path)
-            ->theme(NsConseilTheme::class)
+            ->colors(fn (): array => app(NsConseilTheme::class)->getColors())
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
                 NavigationGroup::make('Pipeline')

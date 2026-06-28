@@ -220,7 +220,28 @@ Cet historique sert a la tracabilite commerciale.
 
 ---
 
-## 10. Administration des droits d'acces
+## 10. Base de connaissances
+
+Chemin:
+
+```text
+Ns Conseil > Administration > Base de connaissances
+```
+
+Le module regroupe les procedures, scripts, FAQ/objections, modeles mails et modeles de fiche recap.
+
+Droits principaux:
+
+- teleprospecteur: lecture uniquement;
+- Team Leader: lecture et edition;
+- commercial: aucun acces;
+- administrateur: acces total.
+
+Les documents peuvent etre classes par type, categorie, visibilite publique et ordre d'affichage. Le fichier joint est obligatoire a la creation et reste optionnel lors de la modification des documents seedes sans fichier.
+
+---
+
+## 11. Administration des droits d'acces
 
 Chemin:
 
@@ -230,7 +251,7 @@ Super Admin > Roles & Permissions
 
 Cette interface permet de creer ou modifier un role.
 
-### 10.1 Mode Tout
+### 11.1 Mode Tout
 
 Le mode `Tout` donne au role toutes les permissions du catalogue CRM:
 
@@ -241,7 +262,7 @@ Le mode `Tout` donne au role toutes les permissions du catalogue CRM:
 
 A utiliser pour les administrateurs ou super administrateurs uniquement.
 
-### 10.2 Mode Selectif par entite/module
+### 11.2 Mode Selectif par entite/module
 
 Le mode selectif affiche deux onglets:
 
@@ -258,7 +279,7 @@ Exemple module:
 - `AOPIA - Prospects - Modifier`
 - `AOPIA - Prospects - Valider QF`
 
-### 10.3 Droits par champ
+### 11.3 Droits par champ
 
 Actions disponibles:
 
@@ -282,7 +303,7 @@ Les champs relationnels affiches dans les listes ou fiches, par exemple `Commerc
 
 ---
 
-## 11. Tests par role a effectuer
+## 12. Tests par role a effectuer
 
 Apres modification d'un role, tester au minimum:
 
@@ -303,7 +324,7 @@ npx playwright test tests/e2e/role-field-visibility.spec.js
 
 ---
 
-## 12. Imports
+## 13. Imports
 
 Les imports se font depuis les actions des resources Filament ou les commandes dediees selon le cas.
 

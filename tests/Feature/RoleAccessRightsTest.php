@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Filament\Allopro\Resources\TicketResource;
 use App\Filament\NsConseil\Resources\ClientResource;
+use App\Filament\NsConseil\Resources\DocumentKnowledgeResource;
 use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Filament\NsConseil\Resources\ProspectResource;
+use App\Models\DocumentKnowledge;
 use App\Models\User;
 use App\Support\AccessRightsCatalog;
 use Filament\Infolists\Components\Section;
@@ -42,6 +44,8 @@ class RoleAccessRightsTest extends TestCase
         $this->assertTrue(ProspectResource::canAccess());
         $this->assertTrue(PartenaireResource::canAccess());
         $this->assertTrue(ClientResource::canAccess());
+        $this->assertTrue(DocumentKnowledgeResource::canAccess());
+        $this->assertTrue(DocumentKnowledgeResource::canCreate());
         $this->assertTrue(TicketResource::canAccess());
         $this->assertTrue(TicketResource::canCreate());
         $this->assertTrue(AccessRightsCatalog::userCanField($user, 'prospects', 'nom', 'flux'));
@@ -89,6 +93,48 @@ class RoleAccessRightsTest extends TestCase
     }
 
     #[Test]
+    public function knowledge_base_permissions_follow_cdc_read_and_edit_profiles(): void
+    {
+        $record = DocumentKnowledge::make(['titre' => 'Procedure test']);
+
+        $readerRole = Role::create(['name' => 'test_knowledge_reader', 'guard_name' => 'web']);
+        $readerRole->syncPermissions([
+            'document_knowledges.view_any',
+            'document_knowledges.view',
+        ]);
+
+        $this->actingAs($this->userWithRole($readerRole));
+
+        $this->assertTrue(DocumentKnowledgeResource::canAccess());
+        $this->assertTrue(DocumentKnowledgeResource::canView($record));
+        $this->assertFalse(DocumentKnowledgeResource::canCreate());
+        $this->assertFalse(DocumentKnowledgeResource::canEdit($record));
+        $this->assertFalse(DocumentKnowledgeResource::canDelete($record));
+
+        $editorRole = Role::create(['name' => 'test_knowledge_editor', 'guard_name' => 'web']);
+        $editorRole->syncPermissions([
+            'document_knowledges.view_any',
+            'document_knowledges.view',
+            'document_knowledges.create',
+            'document_knowledges.update',
+            'document_knowledges.delete',
+        ]);
+
+        $this->actingAs($this->userWithRole($editorRole));
+
+        $this->assertTrue(DocumentKnowledgeResource::canAccess());
+        $this->assertTrue(DocumentKnowledgeResource::canCreate());
+        $this->assertTrue(DocumentKnowledgeResource::canEdit($record));
+        $this->assertTrue(DocumentKnowledgeResource::canDelete($record));
+
+        $commercialRole = Role::create(['name' => 'test_knowledge_denied', 'guard_name' => 'web']);
+        $this->actingAs($this->userWithRole($commercialRole));
+
+        $this->assertFalse(DocumentKnowledgeResource::canAccess());
+        $this->assertFalse(DocumentKnowledgeResource::canView($record));
+    }
+
+    #[Test]
     public function catalog_groups_permissions_by_entity_or_module(): void
     {
         $groups = AccessRightsCatalog::groupedPermissionOptions();
@@ -96,10 +142,13 @@ class RoleAccessRightsTest extends TestCase
         $fieldOptions = AccessRightsCatalog::fieldPermissionOptions();
 
         $this->assertArrayHasKey('AOPIA - Prospects', $groups);
+        $this->assertArrayHasKey('AOPIA - Base de connaissances', $groups);
         $this->assertArrayHasKey('AlloPro - Tickets', $groups);
         $this->assertArrayHasKey('prospects.view_any', $groups['AOPIA - Prospects']);
+        $this->assertArrayHasKey('document_knowledges.view_any', $groups['AOPIA - Base de connaissances']);
         $this->assertArrayHasKey('tickets.update_statut', $groups['AlloPro - Tickets']);
         $this->assertSame('AOPIA - Prospects - Lister', $flatOptions['prospects.view_any']);
+        $this->assertSame('AOPIA - Base de connaissances - Voir', $flatOptions['document_knowledges.view']);
         $this->assertSame('AlloPro - Tickets - Modifier le statut', $flatOptions['tickets.update_statut']);
         $this->assertSame('AOPIA - Prospects - Nom - Voir', $fieldOptions['fields.prospects.nom.show']);
         $this->assertSame('AOPIA - Prospects - Nom - Tout', $fieldOptions['fields.prospects.nom.all']);

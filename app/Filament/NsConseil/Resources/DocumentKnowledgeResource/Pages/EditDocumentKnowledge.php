@@ -10,6 +10,14 @@ class EditDocumentKnowledge extends EditRecord
 {
     protected static string $resource = DocumentKnowledgeResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data = DocumentKnowledgeResource::enrichFileMetadata($data);
+        $data['updated_by'] = auth()->id();
+
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

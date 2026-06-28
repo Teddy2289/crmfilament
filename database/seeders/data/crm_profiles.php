@@ -53,6 +53,8 @@ return [
             'prospects.view_any', 'prospects.view', 'prospects.create', 'prospects.update', 'prospects.valider_qf',
             'clients.view_any', 'clients.view', 'activites.create', 'activites.update',
             'rapports.view', 'rapports.export',
+            'document_knowledges.view_any', 'document_knowledges.view',
+            'document_knowledges.create', 'document_knowledges.update', 'document_knowledges.delete',
         ],
     ],
     [
@@ -90,6 +92,7 @@ return [
         'permissions' => [
             'partenaires.view_any', 'prospects.view_any', 'prospects.view',
             'prospects.create', 'prospects.update', 'activites.create',
+            'document_knowledges.view_any', 'document_knowledges.view',
             'prospection_artisans.create', 'prospection_artisans.update',
         ],
     ],

@@ -47,7 +47,7 @@ class AlloproPanelProvider extends PanelProvider
             ->brandName($theme?->brand_name ?? 'AlloPro 24/24 — Centre de Contact')
             ->brandLogo($theme?->brand_logo_path)
             ->favicon($theme?->favicon_path)
-            ->theme(AlloproTheme::class)
+            ->colors(fn (): array => app(AlloproTheme::class)->getColors())
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
                 NavigationGroup::make('Tickets')

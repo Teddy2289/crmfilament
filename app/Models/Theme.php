@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Filament\Support\Colors\Color;
+use Illuminate\Support\Facades\Schema;
 
 class Theme extends Model
 {
@@ -46,6 +48,10 @@ class Theme extends Model
      */
     public static function getDefaultForPanel(string $panel): ?self
     {
+        if (! static::tableExists()) {
+            return null;
+        }
+
         return static::where('panel', $panel)
             ->where('is_default', true)
             ->where('is_active', true)
@@ -57,10 +63,23 @@ class Theme extends Model
      */
     public static function getActiveForPanel(string $panel): ?self
     {
+        if (! static::tableExists()) {
+            return null;
+        }
+
         return static::where('panel', $panel)
             ->where('is_active', true)
             ->orderBy('is_default', 'desc')
             ->first();
+    }
+
+    protected static function tableExists(): bool
+    {
+        try {
+            return Schema::hasTable((new static())->getTable());
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -69,12 +88,12 @@ class Theme extends Model
     public function getColors(): array
     {
         return [
-            'primary' => $this->primary_color,
-            'success' => $this->success_color,
-            'warning' => $this->warning_color,
-            'danger' => $this->danger_color,
-            'info' => $this->info_color,
-            'gray' => $this->gray_color,
+            'primary' => static::filamentColor($this->primary_color, Color::Blue),
+            'success' => static::filamentColor($this->success_color, Color::Emerald),
+            'warning' => static::filamentColor($this->warning_color, Color::Amber),
+            'danger' => static::filamentColor($this->danger_color, Color::Rose),
+            'info' => static::filamentColor($this->info_color, Color::Sky),
+            'gray' => static::filamentColor($this->gray_color, Color::Slate),
         ];
     }
 
@@ -84,13 +103,41 @@ class Theme extends Model
     public function getDarkModeColors(): array
     {
         return [
-            'primary' => $this->primary_color_dark ?? $this->primary_color,
-            'success' => $this->success_color_dark ?? $this->success_color,
-            'warning' => $this->warning_color_dark ?? $this->warning_color,
-            'danger' => $this->danger_color_dark ?? $this->danger_color,
-            'info' => $this->info_color_dark ?? $this->info_color,
-            'gray' => $this->gray_color_dark ?? $this->gray_color,
+            'primary' => static::filamentColor($this->primary_color_dark ?? $this->primary_color, Color::Blue),
+            'success' => static::filamentColor($this->success_color_dark ?? $this->success_color, Color::Emerald),
+            'warning' => static::filamentColor($this->warning_color_dark ?? $this->warning_color, Color::Amber),
+            'danger' => static::filamentColor($this->danger_color_dark ?? $this->danger_color, Color::Rose),
+            'info' => static::filamentColor($this->info_color_dark ?? $this->info_color, Color::Sky),
+            'gray' => static::filamentColor($this->gray_color_dark ?? $this->gray_color, Color::Slate),
         ];
+    }
+
+    protected static function filamentColor(?string $name, array $fallback): array
+    {
+        return match ($name) {
+            'slate' => Color::Slate,
+            'gray' => Color::Gray,
+            'zinc' => Color::Zinc,
+            'neutral' => Color::Neutral,
+            'stone' => Color::Stone,
+            'red' => Color::Red,
+            'orange' => Color::Orange,
+            'amber' => Color::Amber,
+            'yellow' => Color::Yellow,
+            'lime' => Color::Lime,
+            'green' => Color::Green,
+            'emerald' => Color::Emerald,
+            'teal' => Color::Teal,
+            'cyan' => Color::Cyan,
+            'sky' => Color::Sky,
+            'blue' => Color::Blue,
+            'indigo' => Color::Indigo,
+            'violet', 'purple' => Color::Purple,
+            'fuchsia' => Color::Fuchsia,
+            'pink' => Color::Pink,
+            'rose' => Color::Rose,
+            default => $fallback,
+        };
     }
 
     /**

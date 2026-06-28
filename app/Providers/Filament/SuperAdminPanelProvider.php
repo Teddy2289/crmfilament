@@ -38,7 +38,7 @@ class SuperAdminPanelProvider extends PanelProvider
             ->brandName($theme?->brand_name ?? '⚙️ Super Administration')
             ->brandLogo($theme?->brand_logo_path)
             ->favicon($theme?->favicon_path)
-            ->theme(SuperAdminTheme::class)
+            ->colors(fn (): array => app(SuperAdminTheme::class)->getColors())
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
                 NavigationGroup::make('Utilisateurs & Accès')
