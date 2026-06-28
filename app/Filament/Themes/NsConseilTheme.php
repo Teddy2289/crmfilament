@@ -5,6 +5,7 @@ namespace App\Filament\Themes;
 use App\Models\Theme as ThemeModel;
 use Filament\Support\Colors\Color;
 use Filament\Support\Themes\Contracts\Theme as FilamentTheme;
+use Illuminate\Support\Facades\Auth;
 
 class NsConseilTheme implements FilamentTheme
 {
@@ -12,7 +13,18 @@ class NsConseilTheme implements FilamentTheme
 
     public function __construct()
     {
-        $this->theme = ThemeModel::getActiveForPanel('ns-conseil');
+        $user = Auth::user();
+        
+        if ($user && $user->theme_preference && $user->theme_preference !== 'default') {
+            $this->theme = ThemeModel::where('name', $user->theme_preference)
+                ->where('panel', 'ns-conseil')
+                ->where('is_active', true)
+                ->first();
+        }
+        
+        if (!$this->theme) {
+            $this->theme = ThemeModel::getActiveForPanel('ns-conseil');
+        }
     }
 
     public function getName(): string
