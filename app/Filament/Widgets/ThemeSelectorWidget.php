@@ -52,13 +52,13 @@ class ThemeSelectorWidget extends Widget
             Select::make('theme')
                 ->label('Thème')
                 ->options([
-                    'default' => 'Thème par défaut',
+                    'default' => 'Filament natif par defaut',
                     ...$availableThemes,
                 ])
                 ->default($this->theme)
                 ->live()
                 ->required()
-                ->helperText('Choisissez un thème pour personnaliser l\'interface'),
+                ->helperText('Choisissez un theme uniquement si vous voulez personnaliser l\'interface.'),
             Select::make('mode')
                 ->label('Mode')
                 ->options([

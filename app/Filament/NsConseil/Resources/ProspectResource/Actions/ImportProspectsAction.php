@@ -85,6 +85,24 @@ class ImportProspectsAction extends Action
                             ->placeholder('ex: Industrie, Commerce…'),
                     ])
                     ->columns(2),
+
+                Forms\Components\Section::make('Stratégie pour prospects existants')
+                    ->icon('heroicon-o-arrows-merge')
+                    ->description('Comportement si un prospect existe déjà (même téléphone).')
+                    ->schema([
+                        Forms\Components\Select::make('strategy')
+                            ->label('Stratégie de mise à jour')
+                            ->options([
+                                'merge' => 'Fusion intelligente (recommandé)',
+                                'overwrite' => 'Écraser toutes les données',
+                                'skip' => 'Ignorer les existants',
+                            ])
+                            ->default('merge')
+                            ->required()
+                            ->native(false)
+                            ->helperText('Fusion intelligente : préserve statut, notes, dates de contact et assignations'),
+                    ])
+                    ->columns(1),
             ])
             ->action(function (array $data): void {
                 $upload = $data['file'];

@@ -3,7 +3,6 @@
 namespace App\Filament\Themes;
 
 use App\Models\Theme as ThemeModel;
-use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Auth;
 
 class SuperAdminTheme
@@ -15,10 +14,7 @@ class SuperAdminTheme
         $user = Auth::user();
         
         if ($user && $user->theme_preference && $user->theme_preference !== 'default') {
-            $this->theme = ThemeModel::where('name', $user->theme_preference)
-                ->where('panel', 'super-admin')
-                ->where('is_active', true)
-                ->first();
+            $this->theme = ThemeModel::resolveForPanel('super-admin', $user);
         }
         
         if (!$this->theme) {
@@ -38,33 +34,19 @@ class SuperAdminTheme
 
     public function getColors(): array
     {
-        if ($this->theme) {
+        if ($this->theme?->shouldApplyColors()) {
             return $this->theme->getColors();
         }
 
-        return [
-            'primary' => Color::Purple,
-            'success' => Color::Emerald,
-            'warning' => Color::Amber,
-            'danger' => Color::Rose,
-            'info' => Color::Sky,
-            'gray' => Color::Slate,
-        ];
+        return [];
     }
 
     public function getDarkModeColors(): array
     {
-        if ($this->theme) {
+        if ($this->theme?->shouldApplyColors()) {
             return $this->theme->getDarkModeColors();
         }
 
-        return [
-            'primary' => Color::Purple,
-            'success' => Color::Emerald,
-            'warning' => Color::Amber,
-            'danger' => Color::Rose,
-            'info' => Color::Sky,
-            'gray' => Color::Slate,
-        ];
+        return [];
     }
 }

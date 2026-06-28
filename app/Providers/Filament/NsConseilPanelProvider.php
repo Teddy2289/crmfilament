@@ -43,7 +43,7 @@ class NsConseilPanelProvider extends PanelProvider
 
     public function panel(Panel $panel): Panel
     {
-        $theme = ThemeModel::getActiveForPanel('ns-conseil');
+        $theme = ThemeModel::resolveForPanel('ns-conseil');
         
         return $panel
             ->id('ns-conseil')
@@ -121,7 +121,9 @@ class NsConseilPanelProvider extends PanelProvider
             ->spa()
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => view('filament.shared.espo-theme'),
+                fn () => ThemeModel::resolveForPanel('ns-conseil', auth()->user())?->usesEspoChrome()
+                    ? view('filament.shared.espo-theme')
+                    : '',
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
@@ -145,8 +147,8 @@ class NsConseilPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => $theme?->custom_css 
-                    ? '<style>' . $theme->custom_css . '</style>' 
+                fn () => ($requestTheme = ThemeModel::resolveForPanel('ns-conseil', auth()->user()))?->custom_css
+                    ? '<style>' . $requestTheme->custom_css . '</style>'
                     : '',
             );
     }

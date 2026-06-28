@@ -28,7 +28,7 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        $theme = ThemeModel::getActiveForPanel('admin');
+        $theme = ThemeModel::resolveForPanel('admin');
         
         return $panel
             ->default()
@@ -69,7 +69,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => view('filament.shared.espo-theme'),
+                fn () => ThemeModel::resolveForPanel('admin', auth()->user())?->usesEspoChrome()
+                    ? view('filament.shared.espo-theme')
+                    : '',
             )
             ->renderHook(
                 PanelsRenderHook::TOPBAR_END,
@@ -79,8 +81,8 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => $theme?->custom_css 
-                    ? '<style>' . $theme->custom_css . '</style>' 
+                fn () => ($requestTheme = ThemeModel::resolveForPanel('admin', auth()->user()))?->custom_css
+                    ? '<style>' . $requestTheme->custom_css . '</style>'
                     : '',
             );
     }

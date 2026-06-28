@@ -303,7 +303,27 @@ Les champs relationnels affiches dans les listes ou fiches, par exemple `Commerc
 
 ---
 
-## 12. Tests par role a effectuer
+## 12. Themes
+
+Chemin:
+
+```text
+Super Admin > Themes
+```
+
+Le theme par defaut est le theme natif Filament. Le style EspoCRM historique peut etre active sur un theme specifique avec le champ `Style interface = EspoCRM legacy`.
+
+Options principales:
+
+- `Style interface`: `Filament natif` ou `EspoCRM legacy`;
+- `Appliquer les couleurs du theme`: applique les couleurs choisies au panel;
+- `CSS personnalise`: ajoute du CSS seulement pour le theme selectionne.
+
+Pour revenir au rendu Filament standard, selectionner `Filament natif par defaut` dans le widget de theme ou utiliser un theme avec `Style interface = Filament natif` et couleurs desactivees.
+
+---
+
+## 13. Tests par role a effectuer
 
 Apres modification d'un role, tester au minimum:
 
@@ -324,7 +344,7 @@ npx playwright test tests/e2e/role-field-visibility.spec.js
 
 ---
 
-## 13. Imports
+## 14. Imports
 
 Les imports se font depuis les actions des resources Filament ou les commandes dediees selon le cas.
 
@@ -342,7 +362,7 @@ php artisan dolibarr:import-clients path\to\export.xlsx
 
 ---
 
-## 13. FAQ
+## 15. FAQ
 
 ### Je ne vois pas un module
 

@@ -70,6 +70,7 @@ tests/
 |---|---|
 | Droits d'acces | `app/Support/AccessRightsCatalog.php`, `app/Support/UsesResourcePermissions.php` |
 | Interface roles | `app/Filament/SuperAdmin/Resources/RoleResource.php` |
+| Themes Filament | `app/Models/Theme.php`, `app/Filament/SuperAdmin/Resources/ThemeResource.php`, `database/seeders/ThemeSeeder.php` |
 | Tests droits | `tests/Feature/RoleAccessRightsTest.php` |
 | Prospects | `app/Models/Prospect.php`, `app/Filament/NsConseil/Resources/ProspectResource.php` |
 | Partenaires | `app/Models/Partenaire.php`, `app/Filament/NsConseil/Resources/PartenaireResource.php` |

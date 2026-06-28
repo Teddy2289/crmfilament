@@ -17,7 +17,7 @@ class ThemeResource extends Resource
 {
     protected static ?string $model = Theme::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-palette';
+    protected static ?string $navigationIcon = 'heroicon-o-paint-brush';
 
     protected static ?string $navigationLabel = 'Thèmes';
 
@@ -36,7 +36,7 @@ class ThemeResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->label('Nom technique')
                             ->required()
-                            ->unique()
+                            ->unique(ignoreRecord: true)
                             ->helperText('Identifiant unique du thème (ex: ns-conseil-blue)'),
                         Forms\Components\TextInput::make('label')
                             ->label('Libellé')
@@ -229,18 +229,23 @@ class ThemeResource extends Resource
 
                 Forms\Components\Section::make('Personnalisation avancée')
                     ->schema([
+                        Forms\Components\Select::make('metadata.chrome')
+                            ->label('Style interface')
+                            ->options([
+                                Theme::CHROME_FILAMENT => 'Filament natif',
+                                Theme::CHROME_ESPO => 'EspoCRM legacy',
+                            ])
+                            ->default(Theme::CHROME_FILAMENT)
+                            ->required()
+                            ->native(false),
+                        Forms\Components\Toggle::make('metadata.apply_colors')
+                            ->label('Appliquer les couleurs du theme')
+                            ->helperText('Desactive par defaut pour conserver les couleurs natives Filament.')
+                            ->default(false),
                         Forms\Components\Textarea::make('custom_css')
                             ->label('CSS personnalisé')
                             ->rows(5)
                             ->helperText('CSS personnalisé à appliquer à ce thème'),
-                        Forms\Components\KeyValue::make('metadata')
-                            ->label('Métadonnées')
-                            ->keyLabel('Clé')
-                            ->valueLabel('Valeur')
-                            ->reorderable()
-                            ->addable()
-                            ->deletable()
-                            ->helperText('Données supplémentaires pour ce thème'),
                     ])
                     ->columns(2),
             ]);
@@ -264,6 +269,16 @@ class ThemeResource extends Resource
                         'purple' => 'super-admin',
                         'orange' => 'allopro',
                     ]),
+                Tables\Columns\TextColumn::make('metadata.chrome')
+                    ->label('Style')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        Theme::CHROME_ESPO => 'EspoCRM',
+                        default => 'Filament',
+                    }),
+                Tables\Columns\IconColumn::make('metadata.apply_colors')
+                    ->label('Couleurs')
+                    ->boolean(),
                 Tables\Columns\IconColumn::make('is_default')
                     ->label('Défaut')
                     ->boolean()
