@@ -60,7 +60,64 @@ class EmailTemplateResource extends Resource
                         ->label('Corps du mail')
                         ->required()
                         ->rows(15)
-                        ->helperText('Variables disponibles entre doubles accolades : {{prenom}}, {{date}}, etc.')
+                        ->columnSpanFull()
+                        ->helperText('Variables disponibles entre doubles accolades : {{prenom}}, {{nom}}, {{date}}, etc.'),
+
+                    Forms\Components\Section::make('Variables disponibles')
+                        ->description('Cliquez sur une variable pour l\'insérer dans le corps du mail')
+                        ->schema([
+                            Forms\Components\Grid::make(4)
+                                ->schema([
+                                    Forms\Components\TextInput::make('var_prenom')
+                                        ->label('Prénom')
+                                        ->default('{{prenom}}')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->size('sm'),
+                                    Forms\Components\TextInput::make('var_nom')
+                                        ->label('Nom')
+                                        ->default('{{nom}}')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->size('sm'),
+                                    Forms\Components\TextInput::make('var_email')
+                                        ->label('Email')
+                                        ->default('{{email}}')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->size('sm'),
+                                    Forms\Components\TextInput::make('var_telephone')
+                                        ->label('Téléphone')
+                                        ->default('{{telephone}}')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->size('sm'),
+                                    Forms\Components\TextInput::make('var_raison_sociale')
+                                        ->label('Raison sociale')
+                                        ->default('{{raison_sociale}}')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->size('sm'),
+                                    Forms\Components\TextInput::make('var_date')
+                                        ->label('Date')
+                                        ->default('{{date}}')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->size('sm'),
+                                    Forms\Components\TextInput::make('var_heure')
+                                        ->label('Heure')
+                                        ->default('{{heure}}')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->size('sm'),
+                                    Forms\Components\TextInput::make('var_lieu')
+                                        ->label('Lieu')
+                                        ->default('{{lieu}}')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->size('sm'),
+                                ]),
+                        ])
                         ->columnSpanFull(),
                 ]),
         ]);

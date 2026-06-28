@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
 class WorkflowGroupe extends Model
@@ -19,6 +20,11 @@ class WorkflowGroupe extends Model
         'actif' => 'boolean',
         'ordre' => 'integer',
     ];
+
+    public function workflowSteps(): HasMany
+    {
+        return $this->hasMany(WorkflowStep::class)->orderBy('ordre');
+    }
 
     public static function forModelType(string $modelType): Collection
     {
