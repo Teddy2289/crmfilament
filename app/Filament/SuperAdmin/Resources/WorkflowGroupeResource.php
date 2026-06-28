@@ -4,6 +4,7 @@ namespace App\Filament\SuperAdmin\Resources;
 
 use App\Filament\SuperAdmin\Resources\WorkflowGroupeResource\Pages\EditWorkflowGroupe;
 use App\Filament\SuperAdmin\Resources\WorkflowGroupeResource\Pages\ListWorkflowGroupes;
+use App\Filament\SuperAdmin\Resources\WorkflowGroupeResource\RelationManagers;
 use App\Models\WorkflowGroupe;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -53,6 +54,13 @@ class WorkflowGroupeResource extends Resource
             ])
             ->reorderable('ordre')
             ->actions([Tables\Actions\EditAction::make()]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\WorkflowStepsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
