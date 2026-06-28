@@ -23,7 +23,6 @@
                 </label>
                 <select 
                     wire:model.live="selectedWorkflowGroupeId"
-                    wire:change="selectWorkflowGroupe(selectedWorkflowGroupeId)"
                     class="fi-input flex-1 max-w-md"
                 >
                     @foreach($this->workflowGroupes as $groupe)
