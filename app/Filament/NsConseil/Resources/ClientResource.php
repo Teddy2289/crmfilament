@@ -409,6 +409,28 @@ class ClientResource extends Resource
                     ->exporter(ClientExporter::class)
                     ->label('Exporter les clients')
                     ->icon('heroicon-o-arrow-down-tray'),
+                Tables\Actions\Action::make('lancer_appels')
+                    ->label('Lancer les appels')
+                    ->icon('heroicon-o-phone-arrow-up-right')
+                    ->color('primary')
+                    ->visible(function () {
+                        $userId = auth()->id();
+                        return \App\Models\CampagnePhoning::active()
+                            ->forUser($userId)
+                            ->where('type_entite', 'clients')
+                            ->exists();
+                    })
+                    ->url(function () {
+                        $userId = auth()->id();
+                        $campagne = \App\Models\CampagnePhoning::active()
+                            ->forUser($userId)
+                            ->where('type_entite', 'clients')
+                            ->first();
+                        
+                        return $campagne 
+                            ? \App\Filament\NsConseil\Pages\PhoningWorkflow::getUrl(['campagne_id' => $campagne->id])
+                            : '#';
+                    }),
             ])
             ->emptyStateHeading('Aucun client')
             ->emptyStateDescription('Importez des clients depuis un fichier CSV.')

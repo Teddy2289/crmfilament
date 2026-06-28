@@ -17,11 +17,13 @@ class Client extends Model
         'montant_cpf' => 'decimal:2',
         'ne_plus_contacter' => 'boolean',
         'extra_data' => 'array',
+        'ref_clients' => 'array',
     ];
 
     protected $fillable = [
         'source_sheet',
         'ref_client',
+        'ref_clients',
         'civilite',
         'prenom',
         'nom_tiers',
@@ -224,6 +226,44 @@ class Client extends Model
             ->whereNotNull('date_debut_formation')
             ->latest('date_debut_formation')
             ->first();
+    }
+
+    // ── Accesseurs pour formations multiples ─────────────────────────────
+
+    public function getDatesDebutFormationAttribute(): array
+    {
+        $dossiers = $this->dossierFormations()
+            ->whereNotNull('date_vente')
+            ->orderBy('date_vente')
+            ->get();
+
+        return $dossiers->pluck('date_vente')->toArray();
+    }
+
+    public function getDatesFinFormationAttribute(): array
+    {
+        // Pour l'instant, on utilise les statuts de formation pour déterminer la fin
+        // À adapter selon la logique métier réelle
+        $dossiers = $this->dossierFormations()
+            ->whereIn('statut_formation', ['termine', 'valide', 'annule'])
+            ->orderBy('updated_at')
+            ->get();
+
+        return $dossiers->pluck('updated_at')->map(fn ($date) => $date->format('Y-m-d'))->toArray();
+    }
+
+    public function getFormationsEnCoursAttribute(): int
+    {
+        return $this->dossierFormations()
+            ->whereIn('statut_formation', ['en_cours', 'a_venir'])
+            ->count();
+    }
+
+    public function getFormationsTermineesAttribute(): int
+    {
+        return $this->dossierFormations()
+            ->whereIn('statut_formation', ['termine', 'valide'])
+            ->count();
     }
 
     // ── Scopes ──────────────────────────────────────────────────────
