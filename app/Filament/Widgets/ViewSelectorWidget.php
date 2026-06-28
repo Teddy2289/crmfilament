@@ -2,11 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\UserView;
+use App\Services\Crm\ViewManagementService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use Filament\Support\Enums\MaxWidth;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,80 +19,59 @@ class ViewSelectorWidget extends Widget
 
     public ?string $currentView = null;
 
+    protected ViewManagementService $viewService;
+
     public function mount(?string $resource = null): void
     {
         $this->resource = $resource;
-        $this->currentView = session()->get("view_{$this->resource}", 'list');
+        $this->viewService = new ViewManagementService();
+        $this->viewService->setResource($resource);
+        $this->currentView = $this->viewService->getCurrentView();
     }
 
     public function getViewSelectorOptions(): array
     {
-        $user = Auth::user();
-        if (! $user) {
-            return ['list' => 'Liste', 'kanban' => 'Kanban'];
-        }
-
-        $customViews = UserView::where('user_id', $user->id)
-            ->where('resource', $this->resource)
-            ->get()
-            ->pluck('name', 'id')
-            ->toArray();
-
-        return array_merge(
-            ['list' => 'Liste', 'kanban' => 'Kanban'],
-            $customViews
-        );
+        return $this->viewService->getAvailableViews();
     }
 
     public function selectView(string $view): void
     {
+        $this->viewService->setCurrentView($view);
         $this->currentView = $view;
-        session()->put("view_{$this->resource}", $view);
 
-        // Rafraîchir la page pour appliquer la vue
         $this->redirect(request()->header('Referer'));
     }
 
     public function saveView(array $data): void
     {
-        $user = Auth::user();
-        if (! $user) {
-            return;
+        try {
+            $this->viewService->saveView($data);
+
+            Notification::make()
+                ->title('Vue sauvegardée')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Erreur lors de la sauvegarde')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
         }
-
-        UserView::updateOrCreate(
-            [
-                'user_id' => $user->id,
-                'resource' => $this->resource,
-                'name' => $data['name'],
-            ],
-            [
-                'type' => $data['type'],
-                'config' => $data['config'] ?? [],
-                'is_default' => $data['is_default'] ?? false,
-            ]
-        );
-
-        Notification::make()
-            ->title('Vue sauvegardée')
-            ->success()
-            ->send();
     }
 
     public function deleteView(int $viewId): void
     {
-        $user = Auth::user();
-        if (! $user) {
-            return;
+        if ($this->viewService->deleteView($viewId)) {
+            Notification::make()
+                ->title('Vue supprimée')
+                ->success()
+                ->send();
+        } else {
+            Notification::make()
+                ->title('Erreur lors de la suppression')
+                ->danger()
+                ->send();
         }
-
-        UserView::where('id', $viewId)
-            ->where('user_id', $user->id)
-            ->delete();
-
-        Notification::make()
-            ->title('Vue supprimée')
-            ->success()
-            ->send();
     }
 }
