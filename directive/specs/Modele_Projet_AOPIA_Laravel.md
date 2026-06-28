@@ -55,6 +55,13 @@ Le CDC EspoCRM reste une reference metier. Les chemins `custom/Espo/...` sont hi
 | `admin` | `/admin` | Administration generale |
 | `super-admin` | `/super-admin` | Users, roles, permissions, profils, parametres, dictionnaires |
 
+Theme UI:
+
+- Le theme Filament natif est le theme par defaut des panels.
+- Le style EspoCRM historique reste disponible comme option de theme via `metadata.chrome = espo`, mais il ne doit plus etre injecte globalement.
+- Les couleurs personnalisees d'un theme ne sont appliquees que si `metadata.apply_colors = true`.
+- La configuration se fait depuis Super Admin > Themes.
+
 ---
 
 ## 4. Arborescence fonctionnelle

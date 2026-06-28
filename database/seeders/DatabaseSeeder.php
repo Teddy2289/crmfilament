@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             UsersSeeder::class,
             CrmSettingSeeder::class,
+            ThemeSeeder::class,
             WorkflowGroupeSeeder::class,
             PipelineStatutSeeder::class,
             StatutPhoningSeeder::class,

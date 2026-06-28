@@ -26,15 +26,24 @@ class ProspectImporter
 
     protected array $rowWarnings = [];
 
+    protected string $strategy = 'merge'; // 'overwrite', 'merge', 'skip'
+
+    public const STRATEGY_OVERWRITE = 'overwrite';
+
+    public const STRATEGY_MERGE = 'merge';
+
+    public const STRATEGY_SKIP = 'skip';
+
     public static function getRequiredColumns(): array
     {
         return ['nom', 'telephone'];
     }
 
     // ── Point d'entrée ────────────────────────────────────────────────
-    public function import(array $rows, string $sourceSheet = '', array $defaults = []): array
+    public function import(array $rows, string $sourceSheet = '', array $defaults = [], string $strategy = self::STRATEGY_MERGE): array
     {
         $this->defaults = $defaults;
+        $this->strategy = $strategy;
 
         $headerRowIndex = $this->findHeaderRow($rows);
 
@@ -70,18 +79,37 @@ class ProspectImporter
 
                 $telephone = $data['telephone'] ?? null;
                 if ($telephone) {
-                    $prospect = Prospect::updateOrCreate(
-                        ['telephone' => $telephone],
-                        $data
-                    );
+                    $existingProspect = Prospect::where('telephone', $telephone)->first();
                 } else {
-                    $prospect = Prospect::updateOrCreate(
-                        ['nom' => $data['nom'], 'departement' => $data['departement'] ?? null],
-                        $data
-                    );
+                    $existingProspect = Prospect::where('nom', $data['nom'])
+                        ->where('departement', $data['departement'] ?? null)
+                        ->first();
                 }
 
-                $prospect->wasRecentlyCreated ? $this->created++ : $this->updated++;
+                if ($existingProspect) {
+                    // Prospect existe déjà - appliquer la stratégie
+                    if ($this->strategy === self::STRATEGY_SKIP) {
+                        $this->skipped++;
+                        $this->errors[] = 'Ligne '.($i + 1).' : Prospect déjà existant (téléphone: '.$telephone.') — ignoré (mode skip)';
+                        continue;
+                    }
+
+                    if ($this->strategy === self::STRATEGY_MERGE) {
+                        // Fusion intelligente : ne pas écraser les données importantes
+                        $data = $this->mergeData($existingProspect, $data);
+                        $existingProspect->update($data);
+                        $this->updated++;
+                        continue;
+                    }
+
+                    // STRATEGY_OVERWRITE : écraser tout
+                    $existingProspect->update($data);
+                    $this->updated++;
+                } else {
+                    // Nouveau prospect
+                    Prospect::create($data);
+                    $this->created++;
+                }
 
             } catch (\Throwable $e) {
                 $this->errors[] = 'Ligne '.($i + 1).' : '.$e->getMessage();
@@ -89,6 +117,42 @@ class ProspectImporter
         }
 
         return $this->getResult();
+    }
+
+    // ── Fusion intelligente des données ─────────────────────────────────
+    protected function mergeData(Prospect $existing, array $newData): array
+    {
+        // Champs à préserver (ne pas écraser s'ils existent)
+        $preserveFields = [
+            'statut',
+            'description',
+            'motif_ko',
+            'date_premier_contact',
+            'rappel_planifie_at',
+            'teleprospecteur_id',
+            'commercial_id',
+            'mail1_envoye',
+            'mail1_envoye_at',
+            'mail2_envoye',
+            'mail2_envoye_at',
+            'qf_valide',
+            'valide_par',
+            'qf_valide_at',
+        ];
+
+        // Si le statut n'est pas AC, le préserver absolument
+        if ($existing->statut && $existing->statut !== 'AC') {
+            unset($newData['statut']);
+        }
+
+        // Fusionner : ne mettre à jour que si vide dans l'existant
+        foreach ($preserveFields as $field) {
+            if (isset($existing->$field) && $existing->$field !== null && $existing->$field !== '') {
+                unset($newData[$field]);
+            }
+        }
+
+        return $newData;
     }
 
     // ── Détection en-tête ─────────────────────────────────────────────
