@@ -17,9 +17,10 @@ class PartenaireImportResolver
     /**
      * @param  string  $filePath  Chemin absolu vers le .xlsx
      * @param  array  $defaults  Valeurs par défaut (entite_id, type, statut, conseiller_id…)
+     * @param  string  $strategy  Stratégie d'importation (merge, overwrite, skip)
      * @return array{created:int, updated:int, skipped:int, errors:list<string>}
      */
-    public static function importFile(string $filePath, array $defaults = []): array
+    public static function importFile(string $filePath, array $defaults = [], string $strategy = 'merge'): array
     {
         $reader = IOFactory::createReaderForFile($filePath);
         $reader->setReadDataOnly(true);
@@ -63,6 +64,6 @@ class PartenaireImportResolver
         // ── Déléguer à l'importer ─────────────────────────────────────
         $importer = new PartenaireImporter;
 
-        return $importer->import($rows, $defaults);
+        return $importer->import($rows, $defaults, $strategy);
     }
 }

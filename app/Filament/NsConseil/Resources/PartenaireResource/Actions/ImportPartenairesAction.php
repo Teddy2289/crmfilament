@@ -99,6 +99,24 @@ class ImportPartenairesAction extends Action
                             ->nullable(),
                     ])
                     ->columns(2),
+
+                Forms\Components\Section::make('Stratégie pour partenaires existants')
+                    ->icon('heroicon-o-arrows-merge')
+                    ->description('Comportement si un partenaire existe déjà (même nom + ville).')
+                    ->schema([
+                        Forms\Components\Select::make('strategy')
+                            ->label('Stratégie de mise à jour')
+                            ->options([
+                                'merge' => 'Fusion intelligente (recommandé)',
+                                'overwrite' => 'Écraser toutes les données',
+                                'skip' => 'Ignorer les existants',
+                            ])
+                            ->default('merge')
+                            ->required()
+                            ->native(false)
+                            ->helperText('Fusion intelligente : préserve statut, commentaires, date signature et assignations'),
+                    ])
+                    ->columns(1),
             ])
             ->action(function (array $data): void {
                 $upload = $data['file'];
@@ -135,8 +153,10 @@ class ImportPartenairesAction extends Action
                     'nomenclature_interne' => $data['nomenclature_interne'] ?? null,
                 ], fn ($v) => $v !== null);
 
+                $strategy = $data['strategy'] ?? 'merge';
+
                 try {
-                    $result = PartenaireImportResolver::importFile($resolvedPath, $defaults);
+                    $result = PartenaireImportResolver::importFile($resolvedPath, $defaults, $strategy);
                 } catch (\Throwable $e) {
                     Notification::make()
                         ->title('Erreur lors de la lecture du fichier')
