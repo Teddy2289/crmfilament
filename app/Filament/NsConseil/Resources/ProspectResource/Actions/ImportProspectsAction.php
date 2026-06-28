@@ -136,8 +136,10 @@ class ImportProspectsAction extends Action
                     'secteur_activite' => $data['secteur_activite'] ?? null,
                 ];
 
+                $strategy = $data['strategy'] ?? 'merge';
+
                 try {
-                    $results = ProspectImportResolver::importFile($resolvedPath, $defaults);
+                    $results = ProspectImportResolver::importFile($resolvedPath, $defaults, $strategy);
                 } catch (\Throwable $e) {
                     Notification::make()
                         ->title('Erreur lors de la lecture du fichier')

@@ -9,7 +9,7 @@ class ProspectImportResolver
     /**
      * Charge le fichier Excel et importe chaque feuille éligible.
      */
-    public static function importFile(string $filePath, array $defaults = []): array
+    public static function importFile(string $filePath, array $defaults = [], string $strategy = 'merge'): array
     {
         $results = [];
         $spreadsheet = IOFactory::load($filePath);
@@ -41,7 +41,7 @@ class ProspectImportResolver
             }
 
             $importer = new ProspectImporter;
-            $results[$sheetName] = $importer->import($rows, $sheetName, $defaults);
+            $results[$sheetName] = $importer->import($rows, $sheetName, $defaults, $strategy);
         }
 
         if (empty($results)) {
