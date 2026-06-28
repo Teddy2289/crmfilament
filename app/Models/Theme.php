@@ -12,6 +12,10 @@ class Theme extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const CHROME_FILAMENT = 'filament';
+
+    public const CHROME_ESPO = 'espo';
+
     protected $fillable = [
         'name',
         'label',
@@ -73,6 +77,28 @@ class Theme extends Model
             ->first();
     }
 
+    public static function resolveForPanel(string $panel, mixed $user = null): ?self
+    {
+        if (! static::tableExists()) {
+            return null;
+        }
+
+        $preferredTheme = $user?->theme_preference;
+
+        if ($preferredTheme && $preferredTheme !== 'default') {
+            $theme = static::where('panel', $panel)
+                ->where('name', $preferredTheme)
+                ->where('is_active', true)
+                ->first();
+
+            if ($theme) {
+                return $theme;
+            }
+        }
+
+        return static::getActiveForPanel($panel);
+    }
+
     protected static function tableExists(): bool
     {
         try {
@@ -95,6 +121,16 @@ class Theme extends Model
             'info' => static::filamentColor($this->info_color, Color::Sky),
             'gray' => static::filamentColor($this->gray_color, Color::Slate),
         ];
+    }
+
+    public function shouldApplyColors(): bool
+    {
+        return filter_var(data_get($this->metadata, 'apply_colors', false), FILTER_VALIDATE_BOOL);
+    }
+
+    public function usesEspoChrome(): bool
+    {
+        return data_get($this->metadata, 'chrome', self::CHROME_FILAMENT) === self::CHROME_ESPO;
     }
 
     /**
