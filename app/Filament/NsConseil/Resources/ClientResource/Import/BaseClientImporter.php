@@ -141,45 +141,66 @@ abstract class BaseClientImporter
             }
         }
 
-        // Clé de match : ref_client > email > création brute
-        $matchKey = ! empty($clientData['ref_client_client'])
-            ? ['ref_client' => $clientData['ref_client_client']]
-            : (! empty($clientData['email']) ? ['email' => $clientData['email']] : null);
+        // Clé de match : email > téléphone > ref_client > création brute
+        $existingClient = null;
+
+        // 1. Chercher par email
+        if (! empty($clientData['email'])) {
+            $existingClient = Client::where('email', $clientData['email'])->first();
+        }
+
+        // 2. Chercher par téléphone si pas trouvé par email
+        if (! $existingClient && ! empty($clientData['telephone'])) {
+            $existingClient = Client::where('telephone', $clientData['telephone'])->first();
+        }
+
+        // 3. Chercher par ref_client si pas trouvé par email/téléphone
+        if (! $existingClient && ! empty($clientData['ref_client_client'])) {
+            $existingClient = Client::where('ref_client', $clientData['ref_client_client'])->first();
+        }
 
         // Nettoyer la clé temporaire
         unset($clientData['ref_client_client']);
 
-        if ($matchKey) {
-            $existingClient = Client::where(key($matchKey), current($matchKey))->first();
+        if ($existingClient) {
+            // Client existe déjà - appliquer la stratégie
+            if ($this->strategy === self::STRATEGY_SKIP) {
+                $this->skipped++;
+                return $existingClient;
+            }
 
-            if ($existingClient) {
-                // Client existe déjà - appliquer la stratégie
-                if ($this->strategy === self::STRATEGY_SKIP) {
-                    $this->skipped++;
-                    return $existingClient;
+            if ($this->strategy === self::STRATEGY_MERGE) {
+                // Fusion intelligente : ne pas écraser les données importantes
+                $clientData = $this->mergeClientData($existingClient, $clientData);
+
+                // Accumuler les ref_clients
+                if (! empty($clientData['ref_client'])) {
+                    $existingRefs = $existingClient->ref_clients ?? [];
+                    if (! in_array($clientData['ref_client'], $existingRefs)) {
+                        $existingRefs[] = $clientData['ref_client'];
+                        $clientData['ref_clients'] = $existingRefs;
+                    }
+                    unset($clientData['ref_client']);
                 }
 
-                if ($this->strategy === self::STRATEGY_MERGE) {
-                    // Fusion intelligente : ne pas écraser les données importantes
-                    $clientData = $this->mergeClientData($existingClient, $clientData);
-                    $existingClient->update($clientData);
-                    $this->updated++;
-                    return $existingClient;
-                }
-
-                // STRATEGY_OVERWRITE : écraser tout
                 $existingClient->update($clientData);
                 $this->updated++;
                 return $existingClient;
             }
 
-            // Nouveau client
-            $client = Client::create($clientData);
-            $this->created++;
-        } else {
-            $client = Client::create($clientData);
-            $this->created++;
+            // STRATEGY_OVERWRITE : écraser tout
+            $existingClient->update($clientData);
+            $this->updated++;
+            return $existingClient;
         }
+
+        // Nouveau client
+        if (! empty($clientData['ref_client'])) {
+            $clientData['ref_clients'] = [$clientData['ref_client']];
+            unset($clientData['ref_client']);
+        }
+        $client = Client::create($clientData);
+        $this->created++;
 
         return $client;
     }
@@ -224,13 +245,11 @@ abstract class BaseClientImporter
             $dossierData = $this->mergeDossierData($existingDossier, $dossierData);
         }
 
-        /** @var DossierFormation $dossier */
-        $dossier = $existingDossier
-            ? $existingDossier->update($dossierData)
-            : DossierFormation::create($dossierData);
-
-        if (! $existingDossier) {
-            $dossier = DossierFormation::where('ref_client', $dossierData['ref_client'])->first();
+        if ($existingDossier) {
+            $existingDossier->update($dossierData);
+            $dossier = $existingDossier;
+        } else {
+            $dossier = DossierFormation::create($dossierData);
         }
 
         // 🔴 Vérifier que le dossier a bien un ID

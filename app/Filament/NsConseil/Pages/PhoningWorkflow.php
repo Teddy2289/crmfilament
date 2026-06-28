@@ -42,7 +42,7 @@ class PhoningWorkflow extends Page
     protected static string  $view              = 'filament.ns-conseil.pages.phoning-workflow';
     public static function shouldRegisterNavigation(): bool
     {
-        return false; // Désactive complètement la page de la navigation
+        return true; // Page accessible via URL pour les boutons de lancement d'appels
     }
 
     public ?Model $currentContact = null;
