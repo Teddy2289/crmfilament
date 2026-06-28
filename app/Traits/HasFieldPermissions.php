@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\FieldPermission;
+use App\Services\Crm\PermissionService;
 use Filament\Forms\Components\Component;
 use Filament\Tables\Columns\Column;
 use Illuminate\Support\Facades\Auth;
@@ -11,33 +11,28 @@ trait HasFieldPermissions
 {
     protected string $resourceName = '';
 
+    protected PermissionService $permissionService;
+
+    protected function initializeFieldPermissions(): void
+    {
+        $this->permissionService = new PermissionService();
+        $this->permissionService->setResource($this->resourceName);
+    }
+
     protected function setResourceName(string $name): void
     {
         $this->resourceName = $name;
-    }
-
-    protected function getUserRole(): string
-    {
-        $user = Auth::user();
-        if (! $user) {
-            return 'guest';
-        }
-
-        return $user->role_cache ?? 'guest';
+        $this->initializeFieldPermissions();
     }
 
     protected function canViewField(string $field, string $context = 'list'): bool
     {
-        $role = $this->getUserRole();
-        
-        return FieldPermission::canViewField($role, $this->resourceName, $field, $context);
+        return $this->permissionService->canViewField($field, $context);
     }
 
     protected function isFieldReadOnly(string $field): bool
     {
-        $role = $this->getUserRole();
-        
-        return FieldPermission::isFieldReadOnly($role, $this->resourceName, $field);
+        return $this->permissionService->isFieldReadOnly($field);
     }
 
     protected function applyFieldPermissions(array $components, string $context = 'list'): array
