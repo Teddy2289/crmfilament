@@ -32,51 +32,69 @@ class CrmSettingResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('groupe')
-                ->label('Groupe')
-                ->options([
-                    'prospection' => 'Prospection',
-                    'qf' => 'Qualification QF',
-                    'roles' => 'Rôles',
-                    'mail' => 'Emails',
+            Forms\Components\Section::make('Configuration CRM par défaut')
+                ->schema([
+                    Forms\Components\Select::make('default_crm')
+                        ->label('CRM par défaut')
+                        ->options([
+                            'ns-conseil' => 'NS Conseil',
+                            'allopro' => 'Allopro',
+                        ])
+                        ->default('ns-conseil')
+                        ->required()
+                        ->helperText('Détermine quel CRM est utilisé par défaut dans l\'application'),
                 ])
-                ->required()
-                ->native(false),
+                ->columns(1),
 
-            Forms\Components\TextInput::make('cle')
-                ->label('Clé technique')
-                ->required()
-                ->helperText('Ex: max_standard_attempts'),
+            Forms\Components\Section::make('Paramètres CRM')
+                ->schema([
+                    Forms\Components\Select::make('groupe')
+                        ->label('Groupe')
+                        ->options([
+                            'prospection' => 'Prospection',
+                            'qf' => 'Qualification QF',
+                            'roles' => 'Rôles',
+                            'mail' => 'Emails',
+                        ])
+                        ->required()
+                        ->native(false),
 
-            Forms\Components\TextInput::make('label')
-                ->label('Libellé')
-                ->required(),
+                    Forms\Components\TextInput::make('cle')
+                        ->label('Clé technique')
+                        ->required()
+                        ->helperText('Ex: max_standard_attempts'),
 
-            Forms\Components\Select::make('type')
-                ->label('Type de valeur')
-                ->options([
-                    'string' => 'Texte',
-                    'int' => 'Nombre entier',
-                    'bool' => 'Oui/Non',
-                    'json' => 'JSON (liste, tableau)',
+                    Forms\Components\TextInput::make('label')
+                        ->label('Libellé')
+                        ->required(),
+
+                    Forms\Components\Select::make('type')
+                        ->label('Type de valeur')
+                        ->options([
+                            'string' => 'Texte',
+                            'int' => 'Nombre entier',
+                            'bool' => 'Oui/Non',
+                            'json' => 'JSON (liste, tableau)',
+                        ])
+                        ->required()
+                        ->native(false),
+
+                    Forms\Components\Textarea::make('valeur')
+                        ->label('Valeur')
+                        ->required()
+                        ->rows(3)
+                        ->helperText('Pour JSON : ["team_leader","administrateur"]'),
+
+                    Forms\Components\Textarea::make('description')
+                        ->label('Description')
+                        ->rows(2),
+
+                    Forms\Components\TextInput::make('ordre')
+                        ->label('Ordre')
+                        ->numeric()
+                        ->default(0),
                 ])
-                ->required()
-                ->native(false),
-
-            Forms\Components\Textarea::make('valeur')
-                ->label('Valeur')
-                ->required()
-                ->rows(3)
-                ->helperText('Pour JSON : ["team_leader","administrateur"]'),
-
-            Forms\Components\Textarea::make('description')
-                ->label('Description')
-                ->rows(2),
-
-            Forms\Components\TextInput::make('ordre')
-                ->label('Ordre')
-                ->numeric()
-                ->default(0),
+                ->columns(2),
         ]);
     }
 
@@ -84,6 +102,13 @@ class CrmSettingResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\BadgeColumn::make('default_crm')
+                    ->label('CRM par défaut')
+                    ->colors([
+                        'blue' => 'ns-conseil',
+                        'orange' => 'allopro',
+                    ])
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('groupe')->label('Groupe')->badge()->sortable(),
                 Tables\Columns\TextColumn::make('label')->label('Paramètre')->searchable()->weight('semibold'),
                 Tables\Columns\TextColumn::make('cle')->label('Clé')->fontFamily('mono')->color('gray'),
@@ -98,6 +123,12 @@ class CrmSettingResource extends Resource
                         'qf' => 'QF',
                         'roles' => 'Rôles',
                         'mail' => 'Emails',
+                    ]),
+                Tables\Filters\SelectFilter::make('default_crm')
+                    ->label('CRM par défaut')
+                    ->options([
+                        'ns-conseil' => 'NS Conseil',
+                        'allopro' => 'Allopro',
                     ]),
             ])
             ->actions([
