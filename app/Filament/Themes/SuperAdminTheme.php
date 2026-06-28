@@ -5,6 +5,7 @@ namespace App\Filament\Themes;
 use App\Models\Theme as ThemeModel;
 use Filament\Support\Colors\Color;
 use Filament\Support\Themes\Contracts\Theme as FilamentTheme;
+use Illuminate\Support\Facades\Auth;
 
 class SuperAdminTheme implements FilamentTheme
 {
@@ -12,7 +13,18 @@ class SuperAdminTheme implements FilamentTheme
 
     public function __construct()
     {
-        $this->theme = ThemeModel::getActiveForPanel('super-admin');
+        $user = Auth::user();
+        
+        if ($user && $user->theme_preference && $user->theme_preference !== 'default') {
+            $this->theme = ThemeModel::where('name', $user->theme_preference)
+                ->where('panel', 'super-admin')
+                ->where('is_active', true)
+                ->first();
+        }
+        
+        if (!$this->theme) {
+            $this->theme = ThemeModel::getActiveForPanel('super-admin');
+        }
     }
 
     public function getName(): string

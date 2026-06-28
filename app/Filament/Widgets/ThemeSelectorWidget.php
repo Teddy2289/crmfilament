@@ -2,9 +2,11 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Theme;
 use Filament\Widgets\Widget;
 use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\Auth;
+use Filament\Facades\Filament;
 
 class ThemeSelectorWidget extends Widget
 {
@@ -23,7 +25,7 @@ class ThemeSelectorWidget extends Widget
     public function mount(): void
     {
         $user = Auth::user();
-        $this->theme = $user->theme_preference ?? 'light';
+        $this->theme = $user->theme_preference ?? 'default';
         $this->mode = $user->theme_mode ?? 'light';
     }
 
@@ -40,17 +42,23 @@ class ThemeSelectorWidget extends Widget
 
     protected function getFormSchema(): array
     {
+        $currentPanel = Filament::getCurrentPanel()->getId();
+        $availableThemes = Theme::where('panel', $currentPanel)
+            ->where('is_active', true)
+            ->pluck('label', 'name')
+            ->toArray();
+
         return [
             Select::make('theme')
                 ->label('Thème')
                 ->options([
-                    'light' => 'Clair',
-                    'dark' => 'Sombre',
-                    'system' => 'Système',
+                    'default' => 'Thème par défaut',
+                    ...$availableThemes,
                 ])
                 ->default($this->theme)
                 ->live()
-                ->required(),
+                ->required()
+                ->helperText('Choisissez un thème pour personnaliser l\'interface'),
             Select::make('mode')
                 ->label('Mode')
                 ->options([
