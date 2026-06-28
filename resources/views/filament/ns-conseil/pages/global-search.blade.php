@@ -142,6 +142,53 @@
                         </div>
                     </div>
                 @endif
+
+                @if(!empty($this->results['entreprises']))
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm">{{ count($this->results['entreprises']) }}</span>
+                            Entreprises
+                        </h3>
+                        <div class="space-y-3">
+                            @foreach($this->results['entreprises'] as $entreprise)
+                                <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <div class="font-semibold text-orange-600">
+                                                {{ $entreprise['nom'] }}
+                                            </div>
+                                            <div class="text-sm text-gray-600 mt-1">
+                                                @if($entreprise['siret'])
+                                                    <span class="mr-3 bg-gray-100 px-2 py-1 rounded text-xs">{{ $entreprise['siret'] }}</span>
+                                                @endif
+                                                @if($entreprise['telephone'])
+                                                    <span class="mr-3">📞 {{ $entreprise['telephone'] }}</span>
+                                                @endif
+                                                @if($entreprise['email'])
+                                                    <span class="mr-3">✉️ {{ $entreprise['email'] }}</span>
+                                                @endif
+                                                @if($entreprise['ville'])
+                                                    <span>📍 {{ $entreprise['ville'] }}</span>
+                                                @endif
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-2">
+                                                @if($entreprise['secteur'])
+                                                    Secteur: {{ $entreprise['secteur'] }}
+                                                @endif
+                                                @if($entreprise['nb_partenaires'] > 0)
+                                                    | {{ $entreprise['nb_partenaires'] }} partenaire(s)
+                                                @endif
+                                                @if($entreprise['nb_clients'] > 0)
+                                                    | {{ $entreprise['nb_clients'] }} client(s)
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
         @elseif($this->searchQuery && strlen($this->searchQuery) >= 3)
             <div class="bg-white rounded-lg shadow p-6 text-center text-gray-500">

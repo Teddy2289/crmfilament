@@ -146,6 +146,37 @@ class GlobalSearch extends Page
         ->toArray();
     }
 
+    protected function searchEntreprises(string $query): array
+    {
+        return Entreprise::where(function ($q) use ($query) {
+            $q->where('raison_sociale', 'like', "%{$query}%")
+                ->orWhere('siret', 'like', "%{$query}%")
+                ->orWhere('siren', 'like', "%{$query}%")
+                ->orWhere('telephone', 'like', "%{$query}%")
+                ->orWhere('email', 'like', "%{$query}%")
+                ->orWhere('ville', 'like', "%{$query}%");
+        })
+        ->with(['partenaires', 'clients'])
+        ->limit(20)
+        ->get()
+        ->map(function ($entreprise) {
+            return [
+                'id' => $entreprise->id,
+                'type' => 'entreprise',
+                'nom' => $entreprise->raison_sociale,
+                'siret' => $entreprise->siret,
+                'telephone' => $entreprise->telephone,
+                'email' => $entreprise->email,
+                'ville' => $entreprise->ville,
+                'secteur' => $entreprise->secteur_activite,
+                'nb_partenaires' => $entreprise->partenaires->count(),
+                'nb_clients' => $entreprise->clients->count(),
+                'url' => '#',
+            ];
+        })
+        ->toArray();
+    }
+
     public function linkEntities(string $fromType, int $fromId, string $toType, int $toId): void
     {
         // Logique de liaison entre entités
