@@ -294,6 +294,17 @@ class PartenaireResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function table(Table $table): Table
     {
+        $currentView = session()->get('view_partenaires', 'list');
+
+        if ($currentView === 'kanban') {
+            return static::kanbanTable($table);
+        }
+
+        return static::listTable($table);
+    }
+
+    protected static function listTable(Table $table): Table
+    {
         return $table
             ->defaultSort('date_modification_statut', 'desc')
 
@@ -461,6 +472,15 @@ class PartenaireResource extends Resource
                 ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('switch_view')
+                    ->label(session()->get('view_partenaires', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
+                    ->icon(session()->get('view_partenaires', 'list') === 'kanban' ? 'heroicon-o-list-bullets' : 'heroicon-o-squares-2x2')
+                    ->color('gray')
+                    ->action(function () {
+                        $currentView = session()->get('view_partenaires', 'list');
+                        session()->put('view_partenaires', $currentView === 'kanban' ? 'list' : 'kanban');
+                        return redirect()->back();
+                    }),
                 Tables\Actions\Action::make('lancer_appels')
                     ->label('Lancer les appels')
                     ->icon('heroicon-o-phone-arrow-up-right')
@@ -486,6 +506,64 @@ class PartenaireResource extends Resource
             ])
             ->emptyStateHeading('Aucun partenaire')
             ->emptyStateDescription('Créez votre premier partenaire ou importez un fichier Excel.');
+    }
+
+    protected static function kanbanTable(Table $table): Table
+    {
+        return $table
+            ->defaultSort('date_modification_statut', 'desc')
+            ->columns([
+                Tables\Columns\TextColumn::make('nom')
+                    ->label('Nom légal')
+                    ->searchable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('statut')
+                    ->label('Statut')
+                    ->badge()
+                    ->formatStateUsing(
+                        fn ($state) => $state instanceof OrganizationStatus
+                            ? $state->label()
+                            : OrganizationStatus::tryFrom($state)?->label() ?? $state
+                    )
+                    ->color(
+                        fn ($state) => $state instanceof OrganizationStatus
+                            ? $state->color()
+                            : OrganizationStatus::tryFrom($state)?->color() ?? 'gray'
+                    ),
+
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Type')
+                    ->badge()
+                    ->formatStateUsing(
+                        fn ($state) => $state instanceof OrganizationType
+                            ? $state->label()
+                            : OrganizationType::tryFrom($state)?->label() ?? $state
+                    ),
+
+                Tables\Columns\TextColumn::make('departement')
+                    ->label('Dép.')
+                    ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('telephone')
+                    ->label('Téléphone')
+                    ->copyable()
+                    ->toggleable(),
+            ])
+            ->groups([
+                'statut',
+            ])
+            ->contentGrid()
+            ->reorderable('statut')
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
     // ─────────────────────────────────────────────────────────────────

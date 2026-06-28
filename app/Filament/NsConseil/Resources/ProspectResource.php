@@ -549,6 +549,15 @@ class ProspectResource extends Resource
                 ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('switch_view')
+                    ->label(session()->get('view_prospects', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
+                    ->icon(session()->get('view_prospects', 'list') === 'kanban' ? 'heroicon-o-list-bullets' : 'heroicon-o-squares-2x2')
+                    ->color('gray')
+                    ->action(function () {
+                        $currentView = session()->get('view_prospects', 'list');
+                        session()->put('view_prospects', $currentView === 'kanban' ? 'list' : 'kanban');
+                        return redirect()->back();
+                    }),
                 Tables\Actions\Action::make('lancer_appels')
                     ->label('Lancer les appels')
                     ->icon('heroicon-o-phone-arrow-up-right')
