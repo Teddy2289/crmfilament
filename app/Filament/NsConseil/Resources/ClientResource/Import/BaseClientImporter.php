@@ -216,11 +216,22 @@ abstract class BaseClientImporter
             throw new \Exception('Impossible de créer/mettre à jour le dossier : ref_client manquant');
         }
 
+        // Appliquer la stratégie pour les dossiers existants
+        $existingDossier = DossierFormation::where('ref_client', $dossierData['ref_client'])->first();
+
+        if ($existingDossier && $this->strategy === self::STRATEGY_MERGE) {
+            // Fusion intelligente : ne pas écraser les statuts critiques
+            $dossierData = $this->mergeDossierData($existingDossier, $dossierData);
+        }
+
         /** @var DossierFormation $dossier */
-        $dossier = DossierFormation::updateOrCreate(
-            ['ref_client' => $dossierData['ref_client']],
-            $dossierData
-        );
+        $dossier = $existingDossier
+            ? $existingDossier->update($dossierData)
+            : DossierFormation::create($dossierData);
+
+        if (! $existingDossier) {
+            $dossier = DossierFormation::where('ref_client', $dossierData['ref_client'])->first();
+        }
 
         // 🔴 Vérifier que le dossier a bien un ID
         if (! $dossier || ! $dossier->id) {
@@ -531,10 +542,49 @@ abstract class BaseClientImporter
     {
         // Champs à préserver (ne pas écraser s'ils existent)
         $preserveFields = [
+            'etat',
             'parrain_id',
             'source_sheet',
-            'notes',
+            'notes_commerciales',
+            'ne_plus_contacter',
         ];
+
+        // Si l'état n'est pas "prospect", le préserver absolument
+        if ($existing->etat && $existing->etat !== 'prospect') {
+            unset($newData['etat']);
+        }
+
+        // Fusionner : ne mettre à jour que si vide dans l'existant
+        foreach ($preserveFields as $field) {
+            if (isset($existing->$field) && $existing->$field !== null && $existing->$field !== '') {
+                unset($newData[$field]);
+            }
+        }
+
+        return $newData;
+    }
+
+    // ── Fusion intelligente des données DossierFormation ─────────────────────
+    protected function mergeDossierData(DossierFormation $existing, array $newData): array
+    {
+        // Champs à préserver (ne pas écraser s'ils existent)
+        $preserveFields = [
+            'statut_formation',
+            'etat',
+            'consultant_accueil_id',
+            'consultant_formateur_id',
+            'entite_id',
+        ];
+
+        // Si le statut_formation n'est pas "a_venir", le préserver absolument
+        if ($existing->statut_formation && $existing->statut_formation !== 'a_venir') {
+            unset($newData['statut_formation']);
+        }
+
+        // Si l'état n'est pas "brouillon", le préserver absolument
+        if ($existing->etat && $existing->etat !== 'brouillon') {
+            unset($newData['etat']);
+        }
 
         // Fusionner : ne mettre à jour que si vide dans l'existant
         foreach ($preserveFields as $field) {
