@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Pages;
 
 use App\Models\Client;
+use App\Models\Entreprise;
 use App\Models\Partenaire;
 use App\Models\Prospect;
 use Filament\Forms;
@@ -57,6 +58,7 @@ class GlobalSearch extends Page
             'prospects' => $this->searchProspects($query),
             'clients' => $this->searchClients($query),
             'partenaires' => $this->searchPartenaires($query),
+            'entreprises' => $this->searchEntreprises($query),
         ];
     }
 
