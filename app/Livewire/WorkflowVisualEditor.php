@@ -71,7 +71,7 @@ class WorkflowVisualEditor extends Component
         $this->dispatch('workflow-saved-successfully');
     }
 
-    public function addNode($type)
+    public function addNode($type, $config = [])
     {
         if (!$this->workflowId) {
             return;
@@ -82,20 +82,36 @@ class WorkflowVisualEditor extends Component
             return;
         }
 
+        $defaultConfig = [
+            'x' => 50 + (count($this->nodes) * 200),
+            'y' => 50,
+        ];
+
+        $config = array_merge($defaultConfig, $config);
+
         $newStep = WorkflowStep::create([
             'workflow_groupe_id' => $this->workflowId,
-            'label' => "Nouveau {$type}",
+            'label' => $config['case_title'] ?? "Nouveau {$type}",
             'code' => strtolower($type) . '_' . time(),
             'type' => $type,
             'ordre' => count($this->nodes) + 1,
             'actif' => true,
-            'config' => [
-                'x' => 50 + (count($this->nodes) * 200),
-                'y' => 50,
-            ],
+            'config' => $config,
         ]);
 
         $this->loadNodes();
+    }
+
+    public function updateNodeConfig($nodeId, $config)
+    {
+        $step = WorkflowStep::find($nodeId);
+        if ($step) {
+            $currentConfig = $step->config ?? [];
+            $step->update([
+                'config' => array_merge($currentConfig, $config),
+            ]);
+            $this->loadNodes();
+        }
     }
 
     public function deleteNode($nodeId)
