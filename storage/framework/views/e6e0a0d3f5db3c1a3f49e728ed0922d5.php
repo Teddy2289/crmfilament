@@ -14,13 +14,14 @@
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        Éditeur de Workflow
+                        Logigramme de prospection CSE
                     </h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Configurez et personnalisez vos workflows de prospection
+                        Visualisation et gestion des workflows de prospection
                     </p>
                 </div>
-                <?php if (isset($component)) { $__componentOriginal6330f08526bbb3ce2a0da37da512a11f = $component; } ?>
+                <div class="flex items-center gap-2">
+                    <?php if (isset($component)) { $__componentOriginal6330f08526bbb3ce2a0da37da512a11f = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal6330f08526bbb3ce2a0da37da512a11f = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.button.index','data' => ['wire:click' => 'window.open(\'/super-admin/workflow-groupes\', \'_blank\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('filament::button'); ?>
@@ -30,7 +31,7 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['wire:click' => 'window.open(\'/super-admin/workflow-groupes\', \'_blank\')']); ?>
-                    <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+                        <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
 <?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('heroicon-o-cog'); ?>
@@ -50,8 +51,8 @@
 <?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
 <?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
 <?php endif; ?>
-                    Gérer les workflows
-                 <?php echo $__env->renderComponent(); ?>
+                        Gérer les workflows
+                     <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal6330f08526bbb3ce2a0da37da512a11f)): ?>
 <?php $attributes = $__attributesOriginal6330f08526bbb3ce2a0da37da512a11f; ?>
@@ -61,6 +62,34 @@
 <?php $component = $__componentOriginal6330f08526bbb3ce2a0da37da512a11f; ?>
 <?php unset($__componentOriginal6330f08526bbb3ce2a0da37da512a11f); ?>
 <?php endif; ?>
+                    <a 
+                        href="<?php echo e(asset('docs/aopiacrm/Workflow_prospection_CSE_v2.html')); ?>"
+                        target="_blank"
+                        class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                        <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
+<?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('heroicon-o-document'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\BladeUI\Icons\Components\Svg::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['class' => 'w-4 h-4 mr-2']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $attributes = $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+                        Voir l'original
+                    </a>
+                </div>
             </div>
 
             <div class="flex items-center gap-4">
@@ -69,7 +98,6 @@
                 </label>
                 <select 
                     wire:model.live="selectedWorkflowGroupeId"
-                    wire:change="selectWorkflowGroupe(selectedWorkflowGroupeId)"
                     class="fi-input flex-1 max-w-md"
                 >
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $this->workflowGroupes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $groupe): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -82,7 +110,7 @@
             </div>
         </div>
 
-        <!-- Workflow visualization -->
+        <!-- Workflow visualization - Logigramme style -->
         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($selectedGroupe): ?>
             <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6">
                 <div class="flex items-center justify-between mb-6">
@@ -102,69 +130,53 @@
                     </div>
                 </div>
 
-                <!-- Workflow steps visualization -->
+                <!-- Workflow steps visualization - Logigramme style -->
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($workflowSteps->count() > 0): ?>
-                    <div class="space-y-4" x-data="{ draggedItem: null }">
+                    <div class="space-y-6">
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $workflowSteps; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $step): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            
                             <div 
-                                class="relative flex items-center gap-4 p-4 rounded-lg border-2 <?php echo e($step->actif ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 opacity-60'); ?> transition-all hover:shadow-md"
-                                draggable="true"
-                                <?php if($index < $workflowSteps->count() - 1): ?>
-                                    x-on:dragstart="draggedItem = <?php echo e($step->id); ?>"
-                                    x-on:dragover.prevent
-                                    x-on:drop="$wire.call('reorderSteps', [<?php echo e($step->id); ?>, draggedItem]); draggedItem = null"
-                                <?php endif; ?>
+                                class="relative border-2 rounded-xl p-5 <?php echo e($step->actif ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 opacity-60'); ?> transition-all hover:shadow-md"
                             >
-                                <!-- Order indicator -->
-                                <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full <?php echo e($step->actif ? 'bg-blue-500 text-white' : 'bg-gray-400 text-white'); ?> font-semibold text-sm">
-                                    <?php echo e($index + 1); ?>
+                                
+                                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg <?php echo e($step->actif ? 'bg-blue-500 text-white' : 'bg-gray-400 text-white'); ?> font-bold text-lg">
+                                        <?php echo e($index + 1); ?>
 
-                                </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-gray-900 dark:text-gray-100 text-lg">
+                                                <?php echo e($step->label); ?>
 
-                                <!-- Step content -->
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-3">
-                                        <span class="font-semibold text-gray-900 dark:text-gray-100">
-                                            <?php echo e($step->label); ?>
-
-                                        </span>
-                                        <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium <?php echo e($this->getStepTypeColor($step->type)); ?>">
-                                            <?php echo e($this->getStepTypes[$step->type] ?? $step->type); ?>
-
-                                        </span>
-                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$step->actif): ?>
-                                            <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/30 dark:text-red-400">
-                                                Inactif
                                             </span>
+                                            <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium <?php echo e($this->getStepTypeColor($step->type)); ?>">
+                                                <?php echo e($this->getStepTypes[$step->type] ?? $step->type); ?>
+
+                                            </span>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$step->actif): ?>
+                                                <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/30 dark:text-red-400">
+                                                    Inactif
+                                                </span>
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                        </div>
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($step->code): ?>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono">
+                                                <?php echo e($step->code); ?>
+
+                                            </p>
                                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                     </div>
-                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($step->code): ?>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono">
-                                            <?php echo e($step->code); ?>
-
-                                        </p>
-                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($step->config && count($step->config) > 0): ?>
-                                        <div class="mt-2 flex flex-wrap gap-2">
-                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $step->config; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $value): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                                                    <?php echo e($key); ?>: <?php echo e(is_string($value) ? $value : json_encode($value)); ?>
-
-                                                </span>
-                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                                        </div>
-                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="flex items-center gap-2">
-                                    <button
-                                        wire:click="toggleStepActif(<?php echo e($step->id); ?>)"
-                                        class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                        title="<?php echo e($step->actif ? 'Désactiver' : 'Activer'); ?>"
-                                    >
-                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($step->actif): ?>
-                                            <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+                                    
+                                    
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            wire:click="toggleStepActif(<?php echo e($step->id); ?>)"
+                                            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                            title="<?php echo e($step->actif ? 'Désactiver' : 'Activer'); ?>"
+                                        >
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($step->actif): ?>
+                                                <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
 <?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('heroicon-o-eye'); ?>
@@ -184,8 +196,8 @@
 <?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
 <?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
 <?php endif; ?>
-                                        <?php else: ?>
-                                            <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+                                            <?php else: ?>
+                                                <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
 <?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('heroicon-o-eye-slash'); ?>
@@ -205,15 +217,15 @@
 <?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
 <?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
 <?php endif; ?>
-                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                                    </button>
-                                    <a 
-                                        href="/super-admin/workflow-steps/<?php echo e($step->id); ?>/edit"
-                                        target="_blank"
-                                        class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                        title="Modifier"
-                                    >
-                                        <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                        </button>
+                                        <a 
+                                            href="/super-admin/workflow-steps/<?php echo e($step->id); ?>/edit"
+                                            target="_blank"
+                                            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                            title="Modifier"
+                                        >
+                                            <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
 <?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('heroicon-o-pencil'); ?>
@@ -233,14 +245,64 @@
 <?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
 <?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
 <?php endif; ?>
-                                    </a>
+                                        </a>
+                                    </div>
                                 </div>
 
-                                <!-- Connector line -->
-                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($index < $workflowSteps->count() - 1): ?>
-                                    <div class="absolute left-8 -bottom-4 w-0.5 h-4 bg-gray-300 dark:bg-gray-600"></div>
+                                
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($step->config && count($step->config) > 0): ?>
+                                    <div class="space-y-3">
+                                        
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($step->config['branches'])): ?>
+                                            <div class="grid <?php echo e(count($step->config['branches']) == 2 ? 'grid-cols-2' : 'grid-cols-3'); ?> gap-3">
+                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $step->config['branches']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $branch): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                    <div class="rounded-lg p-4 border-2 <?php echo e($this->getBranchColor($branch)); ?>">
+                                                        <div class="text-xs font-bold uppercase tracking-wider mb-2 <?php echo e($this->getBranchTextColor($branch)); ?>">
+                                                            <?php echo e($this->getBranchLabel($branch)); ?>
+
+                                                        </div>
+                                                        <div class="font-medium <?php echo e($this->getBranchContentColor($branch)); ?>">
+                                                            <?php echo e($step->config['branch_content'][$branch] ?? 'Action'); ?>
+
+                                                        </div>
+                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($step->config['branch_detail'][$branch])): ?>
+                                                            <div class="text-xs mt-2 opacity-75 <?php echo e($this->getBranchContentColor($branch)); ?>">
+                                                                <?php echo e($step->config['branch_detail'][$branch]); ?>
+
+                                                            </div>
+                                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($step->config['tag'][$branch])): ?>
+                                                            <div class="inline-block mt-2 px-2 py-0.5 text-xs font-mono rounded <?php echo e($this->getTagColor($step->config['tag'][$branch])); ?>">
+                                                                <?php echo e($step->config['tag'][$branch]); ?>
+
+                                                            </div>
+                                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                    </div>
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            
+                                            <div class="flex flex-wrap gap-2">
+                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $step->config; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $value): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!is_array($value)): ?>
+                                                        <span class="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                                            <span class="font-medium"><?php echo e($key); ?>:</span>
+                                                            <span class="ml-1"><?php echo e($value); ?></span>
+                                                        </span>
+                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                            </div>
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                    </div>
                                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                             </div>
+
+                            
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($index < $workflowSteps->count() - 1): ?>
+                                <div class="flex justify-center py-2">
+                                    <div class="w-0.5 h-8 bg-gray-300 dark:bg-gray-600"></div>
+                                </div>
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                 <?php else: ?>
@@ -421,39 +483,6 @@
             </div>
         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </div>
-
-        <?php
-        $__scriptKey = '2193435640-0';
-        ob_start();
-    ?>
-    <script>
-        // Add drag and drop functionality
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('workflowEditor', () => ({
-                draggedItem: null,
-                
-                handleDragStart(id) {
-                    this.draggedItem = id;
-                },
-                
-                handleDragOver(event) {
-                    event.preventDefault();
-                },
-                
-                handleDrop(targetId) {
-                    if (this.draggedItem && this.draggedItem !== targetId) {
-                        window.Livewire.find('<?php echo e($_instance->getId()); ?>').reorderSteps([targetId, this.draggedItem]);
-                    }
-                    this.draggedItem = null;
-                }
-            }));
-        });
-    </script>
-        <?php
-        $__output = ob_get_clean();
-
-        \Livewire\store($this)->push('scripts', $__output, $__scriptKey)
-    ?>
  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal166a02a7c5ef5a9331faf66fa665c256)): ?>

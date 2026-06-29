@@ -15,6 +15,7 @@
         "laravel/vonage-notification-channel": "^3.3",
         "league/oauth2-google": "^5.0",
         "microsoft/microsoft-graph": "*",
+        "mokhosh/filament-kanban": "^2.11",
         "phpoffice/phpspreadsheet": "^5.7",
         "phpoffice/phpword": "^1.4",
         "ptplugins/filament-number-input": "^1.0",
