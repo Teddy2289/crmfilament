@@ -15,6 +15,8 @@ class WorkflowStep extends Model
         'ordre',
         'config',
         'actif',
+        'parent_step_id', // Pour les branches
+        'condition_label', // Label de la condition (ex: "Oui", "Non")
     ];
 
     protected $casts = [
@@ -34,6 +36,16 @@ class WorkflowStep extends Model
     public function workflowGroupe(): BelongsTo
     {
         return $this->belongsTo(WorkflowGroupe::class);
+    }
+
+    public function parentStep(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowStep::class, 'parent_step_id');
+    }
+
+    public function childSteps()
+    {
+        return $this->hasMany(WorkflowStep::class, 'parent_step_id');
     }
 
     public function getTypeLabelAttribute(): string

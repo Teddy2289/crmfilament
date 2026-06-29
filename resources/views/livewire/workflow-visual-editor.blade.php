@@ -156,21 +156,21 @@ function workflowEditor(nodes = [], workflowId = null) {
         renderConnections(svg) {
             svg.innerHTML = '';
             
-            for (let i = 0; i < this.nodes.length - 1; i++) {
-                const from = this.nodes[i];
-                const to = this.nodes[i + 1];
-                
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', (from.x || 50 + (i * 200)) + 90);
-                line.setAttribute('y1', (from.y || 50) + 50);
-                line.setAttribute('x2', (to.x || 50 + ((i + 1) * 200)) + 90);
-                line.setAttribute('y2', (to.y || 50) + 50);
-                line.setAttribute('stroke', '#9ca3af');
-                line.setAttribute('stroke-width', '2');
-                line.setAttribute('marker-end', 'url(#arrowhead)');
-                
-                svg.appendChild(line);
-            }
+            // Rendre les connexions basées sur parent_step_id
+            this.nodes.forEach((node) => {
+                if (node.parent_step_id) {
+                    const parentNode = this.nodes.find(n => n.id == node.parent_step_id);
+                    if (parentNode) {
+                        this.drawConnection(svg, parentNode, node, node.condition_label);
+                    }
+                } else if (node.ordre > 1) {
+                    // Pour les nœuds sans parent, chercher le nœud précédent dans l'ordre
+                    const previousNode = this.nodes.find(n => n.ordre === node.ordre - 1 && !n.parent_step_id);
+                    if (previousNode) {
+                        this.drawConnection(svg, previousNode, node, null);
+                    }
+                }
+            });
             
             // Ajouter la flèche
             const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -189,6 +189,45 @@ function workflowEditor(nodes = [], workflowId = null) {
             marker.appendChild(polygon);
             defs.appendChild(marker);
             svg.appendChild(defs);
+        },
+        
+        drawConnection(svg, from, to, label) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', (from.x || 50) + 90);
+            line.setAttribute('y1', (from.y || 50) + 50);
+            line.setAttribute('x2', (to.x || 50) + 90);
+            line.setAttribute('y2', (to.y || 50) + 50);
+            line.setAttribute('stroke', '#9ca3af');
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('marker-end', 'url(#arrowhead)');
+            
+            svg.appendChild(line);
+            
+            // Ajouter le label de condition si présent
+            if (label) {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const midX = ((from.x || 50) + (to.x || 50)) / 2 + 90;
+                const midY = ((from.y || 50) + (to.y || 50)) / 2 + 50;
+                text.setAttribute('x', midX);
+                text.setAttribute('y', midY - 5);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '10');
+                text.setAttribute('fill', '#636E72');
+                text.textContent = label;
+                
+                // Fond pour le texte
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                const bbox = { width: label.length * 6 + 8, height: 14 };
+                rect.setAttribute('x', midX - bbox.width / 2);
+                rect.setAttribute('y', midY - 12);
+                rect.setAttribute('width', bbox.width);
+                rect.setAttribute('height', bbox.height);
+                rect.setAttribute('fill', '#f9fafb');
+                rect.setAttribute('rx', '3');
+                
+                svg.appendChild(rect);
+                svg.appendChild(text);
+            }
         },
         
         addNode(type) {
