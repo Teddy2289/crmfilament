@@ -1,5 +1,8 @@
 <?php
 
+use App\Jobs\SendWeeklyReportJob;
+use App\Models\User;
+use App\Services\Crm\WeeklyReportService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -14,12 +17,16 @@ Schedule::command('ringover:sync --pages=2 --per-page=50')
     ->runInBackground();
 
 // CDC WF5 / WF6 : rapport hebdomadaire téléprospecteurs (lundi 07h30).
-Schedule::job(new \App\Jobs\SendWeeklyRecapJob('teleprospecteurs'))
+Schedule::job(new SendWeeklyReportJob([User::ROLE_TELEPROSPECTEUR]))
     ->weeklyOn(1, '07:30')
     ->withoutOverlapping();
 
 // CDC WF5 / WF6 : rapport hebdomadaire commerciaux (lundi 08h00).
-Schedule::job(new \App\Jobs\SendWeeklyRecapJob('commerciaux'))
+Schedule::job(new SendWeeklyReportJob([
+    User::ROLE_COMMERCIAL,
+    User::ROLE_SUPERVISEUR,
+    WeeklyReportService::ROLE_TEAM_LEADER,
+]))
     ->weeklyOn(1, '08:00')
     ->withoutOverlapping();
 
