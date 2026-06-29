@@ -150,6 +150,7 @@ class EntrepriseResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->query(Entreprise::query()->withCount(['partenaires', 'clients']))
             ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('raison_sociale')
                     ->label('Raison sociale')
@@ -184,12 +185,10 @@ class EntrepriseResource extends Resource
 
                 Tables\Columns\TextColumn::make('partenaires_count')
                     ->label('Partenaires')
-                    ->counts('partenaires')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('clients_count')
                     ->label('Clients')
-                    ->counts('clients')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
