@@ -14,6 +14,8 @@ use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -174,6 +176,154 @@ class OpportuniteResource extends Resource
                     Forms\Components\Textarea::make('notes')
                         ->label('Notes')
                         ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+        ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Identification')
+                ->icon('heroicon-o-building-office')
+                ->schema([
+                    Infolists\Components\TextEntry::make('nom_entite')
+                        ->label("Nom de l'entite")
+                        ->weight('bold'),
+
+                    Infolists\Components\TextEntry::make('type_pressenti')
+                        ->label('Type pressenti')
+                        ->formatStateUsing(fn ($state) => $state instanceof OrganizationType
+                            ? $state->label()
+                            : ($state ? (OrganizationType::tryFrom((string) $state)?->label() ?? $state) : '-')),
+
+                    Infolists\Components\TextEntry::make('departement')
+                        ->label('Departement')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('siret')
+                        ->label('SIRET')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('secteur_activite')
+                        ->label("Secteur d'activite")
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('nb_salaries')
+                        ->label('Nombre de salaries')
+                        ->numeric()
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('chiffre_affaires')
+                        ->label('CA')
+                        ->numeric(decimalPlaces: 2)
+                        ->suffix(' EUR')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('valeur_estimee')
+                        ->label('Valeur estimee')
+                        ->numeric(decimalPlaces: 2)
+                        ->suffix(' EUR'),
+                ])
+                ->columns(4),
+
+            Infolists\Components\Section::make('Contact')
+                ->icon('heroicon-o-phone')
+                ->schema([
+                    Infolists\Components\TextEntry::make('telephone')
+                        ->label('Telephone')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('email')
+                        ->label('Email')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('adresse')
+                        ->label('Adresse')
+                        ->default('-')
+                        ->columnSpanFull(),
+
+                    Infolists\Components\TextEntry::make('interlocuteur_complet')
+                        ->label('Interlocuteur')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('interlocuteur_telephone')
+                        ->label('Telephone interlocuteur')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('interlocuteur_email')
+                        ->label('Email interlocuteur')
+                        ->default('-'),
+                ])
+                ->columns(3),
+
+            Infolists\Components\Section::make('Pipeline')
+                ->icon('heroicon-o-chart-bar')
+                ->schema([
+                    Infolists\Components\TextEntry::make('statut')
+                        ->label('Statut')
+                        ->badge()
+                        ->formatStateUsing(fn ($state) => Opportunite::STATUTS[$state] ?? $state)
+                        ->color(fn ($state) => Opportunite::statutColor($state)),
+
+                    Infolists\Components\TextEntry::make('potentiel')
+                        ->label('Potentiel')
+                        ->badge()
+                        ->formatStateUsing(fn ($state) => Opportunite::POTENTIELS[$state] ?? $state)
+                        ->color(fn ($state) => match ($state) {
+                            'faible' => 'gray',
+                            'moyen' => 'info',
+                            'eleve' => 'warning',
+                            'tres_eleve' => 'success',
+                            default => 'gray',
+                        }),
+
+                    Infolists\Components\TextEntry::make('source_detection')
+                        ->label('Source')
+                        ->formatStateUsing(fn ($state) => Opportunite::SOURCES[$state] ?? $state ?? '-'),
+
+                    Infolists\Components\TextEntry::make('assigneA.nom')
+                        ->label('Assigne a')
+                        ->formatStateUsing(fn ($state, Opportunite $record) => $record->assigneA
+                            ? trim("{$record->assigneA->prenom} {$record->assigneA->nom}")
+                            : '-'),
+
+                    Infolists\Components\TextEntry::make('date_detection')
+                        ->label('Detectee le')
+                        ->date('d/m/Y')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('date_premier_contact')
+                        ->label('Premier contact')
+                        ->date('d/m/Y')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('age_jours')
+                        ->label('Age')
+                        ->suffix(' j'),
+
+                    Infolists\Components\TextEntry::make('convertiEnProspect.nom')
+                        ->label('Prospect converti')
+                        ->default('-'),
+
+                    Infolists\Components\TextEntry::make('details_source')
+                        ->label('Details source')
+                        ->default('-')
+                        ->columnSpanFull(),
+
+                    Infolists\Components\TextEntry::make('raison_perte')
+                        ->label('Raison de perte')
+                        ->default('-')
+                        ->columnSpanFull(),
+                ])
+                ->columns(4),
+
+            Infolists\Components\Section::make('Notes')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Infolists\Components\TextEntry::make('notes')
+                        ->label('Notes')
+                        ->default('-')
                         ->columnSpanFull(),
                 ]),
         ]);
@@ -343,6 +493,7 @@ class OpportuniteResource extends Resource
         return [
             'index' => Pages\ListOpportunites::route('/'),
             'create' => Pages\CreateOpportunite::route('/create'),
+            'view' => Pages\ViewOpportunite::route('/{record}'),
             'edit' => Pages\EditOpportunite::route('/{record}/edit'),
         ];
     }
