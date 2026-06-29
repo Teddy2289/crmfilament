@@ -6,6 +6,8 @@ use App\Filament\NsConseil\Resources\EntrepriseResource\Pages;
 use App\Models\Entreprise;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -229,6 +231,104 @@ class EntrepriseResource extends Resource
             ->defaultSort('raison_sociale');
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('Informations generales')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('raison_sociale')
+                            ->label('Raison sociale')
+                            ->weight('bold'),
+                        Infolists\Components\TextEntry::make('forme_juridique')
+                            ->label('Forme juridique')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('siret')
+                            ->label('SIRET')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('siren')
+                            ->label('SIREN')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('numero_tva')
+                            ->label('Numero TVA')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('capital')
+                            ->label('Capital')
+                            ->placeholder('Non renseigne'),
+                    ])
+                    ->columns(2),
+
+                Infolists\Components\Section::make('Adresse et contact')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('adresse')
+                            ->label('Adresse')
+                            ->placeholder('Non renseignee')
+                            ->columnSpanFull(),
+                        Infolists\Components\TextEntry::make('code_postal')
+                            ->label('Code postal')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('ville')
+                            ->label('Ville')
+                            ->placeholder('Non renseignee'),
+                        Infolists\Components\TextEntry::make('pays')
+                            ->label('Pays')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('telephone')
+                            ->label('Telephone')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('email')
+                            ->label('Email')
+                            ->placeholder('Non renseigne')
+                            ->copyable(),
+                        Infolists\Components\TextEntry::make('site_web')
+                            ->label('Site web')
+                            ->placeholder('Non renseigne')
+                            ->url(fn (?string $state): ?string => $state),
+                    ])
+                    ->columns(3),
+
+                Infolists\Components\Section::make('Activite')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('secteur_activite')
+                            ->label('Secteur')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('effectif')
+                            ->label('Effectif')
+                            ->suffix(' salaries')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('code_naf')
+                            ->label('Code NAF/APE')
+                            ->placeholder('Non renseigne'),
+                        Infolists\Components\TextEntry::make('date_creation')
+                            ->label('Date de creation')
+                            ->date('d/m/Y')
+                            ->placeholder('Non renseignee'),
+                        Infolists\Components\TextEntry::make('description')
+                            ->label('Description')
+                            ->placeholder('Non renseignee')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Infolists\Components\Section::make('Relations')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('partenaires_count')
+                            ->label('Partenaires')
+                            ->state(fn (Entreprise $record): int => $record->partenaires()->count()),
+                        Infolists\Components\TextEntry::make('clients_count')
+                            ->label('Clients')
+                            ->state(fn (Entreprise $record): int => $record->clients()->count()),
+                        Infolists\Components\TextEntry::make('created_at')
+                            ->label('Cree le')
+                            ->dateTime('d/m/Y H:i'),
+                        Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Mis a jour le')
+                            ->dateTime('d/m/Y H:i'),
+                    ])
+                    ->columns(4),
+            ]);
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -242,6 +342,7 @@ class EntrepriseResource extends Resource
             'index' => Pages\ListEntreprises::route('/'),
             'create' => Pages\CreateEntreprise::route('/create'),
             'edit' => Pages\EditEntreprise::route('/{record}/edit'),
+            'view' => Pages\ViewEntreprise::route('/{record}'),
         ];
     }
 }
