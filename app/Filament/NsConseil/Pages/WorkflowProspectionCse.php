@@ -49,7 +49,7 @@ class WorkflowProspectionCse extends Page
                 ->where('actif', true)
                 ->orderBy('ordre')
                 ->first();
-            
+
             if ($this->selectedGroupe) {
                 $this->selectedWorkflowGroupeId = $this->selectedGroupe->id;
                 $this->workflowSteps = $this->selectedGroupe->workflowSteps()->orderBy('ordre')->get();
@@ -177,5 +177,24 @@ class WorkflowProspectionCse extends Page
             'QF' => 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
             default => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
         };
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('gerer_workflows')
+                ->label('Gérer les workflows')
+                ->icon('heroicon-o-cog')
+                ->color('primary')
+                ->url('/super-admin/workflow-groupes')
+                ->openUrlInNewTab(),
+
+            \Filament\Actions\Action::make('voir_original')
+                ->label('Voir l\'original')
+                ->icon('heroicon-o-document')
+                ->color('success')
+                ->url(asset('docs/aopiacrm/Workflow_prospection_CSE_v2.html'))
+                ->openUrlInNewTab(),
+        ];
     }
 }

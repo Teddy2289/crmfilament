@@ -17,13 +17,13 @@ class RingoverDashboard extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-phone';
 
-    protected static ?string $navigationLabel = 'Dashboard Ringover';
+    protected static ?string $navigationLabel = 'Tableau de bord Ringover';
 
-    protected static ?string $navigationGroup = 'ActivitÃ©s';
+    protected static ?string $navigationGroup = 'Activités';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $title = 'Dashboard Ringover';
+    protected static ?string $title = 'Tableau de bord Ringover';
 
     protected static string $view = 'filament.ns-conseil.pages.ringover-dashboard';
 

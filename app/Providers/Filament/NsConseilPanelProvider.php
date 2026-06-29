@@ -27,7 +27,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;  // ← AJOUT
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class NsConseilPanelProvider extends PanelProvider
 {
@@ -44,7 +44,7 @@ class NsConseilPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         $theme = ThemeModel::resolveForPanel('ns-conseil');
-        
+
         return $panel
             ->id('ns-conseil')
             ->path('ns-conseil')
@@ -52,7 +52,14 @@ class NsConseilPanelProvider extends PanelProvider
             ->brandName($theme?->brand_name ?? 'NS CONSEIL — CRM Partenaires')
             ->brandLogo($theme?->brand_logo_path)
             ->favicon($theme?->favicon_path)
-            ->colors(fn (): array => app(NsConseilTheme::class)->getColors())
+            ->colors([
+                'primary' => Color::hex('#2891e7'),
+                'gray'    => Color::Slate,
+                'success' => Color::Emerald,
+                'warning' => Color::Amber,
+                'danger'  => Color::Rose,
+                'info'    => Color::Sky,
+            ])
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
                 NavigationGroup::make('Pipeline')
@@ -67,7 +74,6 @@ class NsConseilPanelProvider extends PanelProvider
                     ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ])
-            // ── AJOUT : plugin FullCalendar ──────────────────────────
             ->plugins([
                 FilamentFullCalendarPlugin::make()
                     ->selectable(true)
@@ -75,7 +81,6 @@ class NsConseilPanelProvider extends PanelProvider
                     ->timezone(config('app.timezone', 'Europe/Paris'))
                     ->locale('fr'),
             ])
-            // ────────────────────────────────────────────────────────
             ->discoverResources(
                 in: app_path('Filament/NsConseil/Resources'),
                 for: 'App\\Filament\\NsConseil\\Resources'
@@ -119,32 +124,36 @@ class NsConseilPanelProvider extends PanelProvider
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()
+
+            // ── Thème EspoCRM si activé en base ──────────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => ThemeModel::resolveForPanel('ns-conseil', auth()->user())?->usesEspoChrome()
                     ? view('filament.shared.espo-theme')
                     : '',
             )
+
+            // ── Thème minimaliste NS Conseil ─────────────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => view('filament.ns-conseil.auth.login-styles'),
-                scopes: [NsConseilLogin::class],
+                fn () => view('filament.ns-conseil.theme'),
             )
-            ->renderHook(
-                PanelsRenderHook::BODY_START,
-                fn () => view('filament.ns-conseil.auth.login-sidebar'),
-                scopes: [NsConseilLogin::class],
-            )
+
+            // ── Loading overlay ──────────────────────────────────────
             ->renderHook(
                 PanelsRenderHook::BODY_START,
                 fn () => view('filament.loading-overlay'),
             )
+
+            // ── Bouton Super Admin dans la topbar ────────────────────
             ->renderHook(
                 PanelsRenderHook::TOPBAR_END,
                 fn () => auth()->user()?->isSuperAdmin()
                     ? view('filament.shared.admin-button')
                     : '',
             )
+
+            // ── CSS custom depuis la base de données ─────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => ($requestTheme = ThemeModel::resolveForPanel('ns-conseil', auth()->user()))?->custom_css

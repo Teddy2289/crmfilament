@@ -80,11 +80,56 @@ class StatutPhoningResource extends Resource
                         ->native(false)
                         ->default('gray'),
 
-                    Forms\Components\TextInput::make('icone')
+                    Forms\Components\Select::make('icone')
                         ->label('Icône (emoji)')
-                        ->maxLength(10)
+                        ->options([
+                            // Téléphonie
+                            '📞' => '📞 Téléphone',
+                            '📱' => '📱 Mobile',
+                            '☎️' => '☎️ Combiné',
+                            '📲' => '📲 Appel entrant',
+                            '🔔' => '🔔 Sonnerie',
+                            '🔕' => '🔕 Muet',
+                            '📵' => '📵 Interdit',
+                            // Résultats positifs
+                            '✅' => '✅ Validé',
+                            '🎯' => '🎯 RDV pris',
+                            '🤝' => '🤝 Accord',
+                            '⭐' => '⭐ Prioritaire',
+                            '🟢' => '🟢 Vert',
+                            '🔵' => '🔵 Bleu',
+                            // Résultats négatifs
+                            '❌' => '❌ KO',
+                            '🚫' => '🚫 Bloqué',
+                            '⛔' => '⛔ Stop',
+                            '🔴' => '🔴 Rouge',
+                            '⚠️' => '⚠️ Attention',
+                            // Attente / rappel
+                            '🔁' => '🔁 Rappel',
+                            '⏰' => '⏰ Rappel planifié',
+                            '🕐' => '🕐 En attente',
+                            '📅' => '📅 RDV calendrier',
+                            '⏳' => '⏳ Délai',
+                            // Contacts
+                            '👤' => '👤 Contact',
+                            '👥' => '👥 Groupe',
+                            '🏢' => '🏢 Entreprise',
+                            '📧' => '📧 Email',
+                            '📩' => '📩 Message',
+                            // Divers
+                            '💬' => '💬 Discussion',
+                            '📝' => '📝 Note',
+                            '🟡' => '🟡 Jaune',
+                            '🟠' => '🟠 Orange',
+                            '⚪' => '⚪ Neutre',
+                            '🔘' => '🔘 Inactif',
+                            '❓' => '❓ Inconnu',
+                            '🔒' => '🔒 Verrouillé',
+                        ])
+                        ->native(false)
+                        ->searchable()
                         ->default('📞')
-                        ->helperText('Un emoji représentant le statut.'),
+                        ->allowHtml(),
 
                     Forms\Components\TextInput::make('ordre')
                         ->label('Ordre d\'affichage')
@@ -98,13 +143,13 @@ class StatutPhoningResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('groupe')
                         ->label('Groupe / Cas')
-                        ->options(fn () => WorkflowGroupe::forModelType('prospect')->pluck('label', 'code'))
+                        ->options(fn() => WorkflowGroupe::forModelType('prospect')->pluck('label', 'code'))
                         ->searchable()
                         ->native(false),
 
                     Forms\Components\Select::make('pipeline_statut')
                         ->label('Statut pipeline cible')
-                        ->options(fn () => PipelineStatut::optionsFor('prospect'))
+                        ->options(fn() => PipelineStatut::optionsFor('prospect'))
                         ->searchable()
                         ->native(false)
                         ->helperText('Statut prospect appliqué après cet appel'),
@@ -147,7 +192,7 @@ class StatutPhoningResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('model_type')
                     ->label('Modèle')
-                    ->formatStateUsing(fn ($state) => StatutPhoning::MODEL_TYPES[$state] ?? $state)
+                    ->formatStateUsing(fn($state) => StatutPhoning::MODEL_TYPES[$state] ?? $state)
                     ->badge()
                     ->color('primary')
                     ->sortable()
@@ -180,7 +225,7 @@ class StatutPhoningResource extends Resource
                 Tables\Columns\TextColumn::make('couleur')
                     ->label('Couleur')
                     ->badge()
-                    ->color(fn ($state) => match ($state) {
+                    ->color(fn($state) => match ($state) {
                         'blue' => 'info',
                         'orange' => 'warning',
                         'green' => 'success',
@@ -190,7 +235,7 @@ class StatutPhoningResource extends Resource
                         'purple' => 'primary',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn ($state) => StatutPhoning::COULEURS[$state] ?? $state),
+                    ->formatStateUsing(fn($state) => StatutPhoning::COULEURS[$state] ?? $state),
 
                 Tables\Columns\TextColumn::make('groupe')->label('Cas')->badge()->toggleable(),
                 Tables\Columns\TextColumn::make('pipeline_statut')->label('Pipeline')->fontFamily('mono')->toggleable(),
