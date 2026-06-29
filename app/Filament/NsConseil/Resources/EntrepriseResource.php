@@ -1,0 +1,247 @@
+<?php
+
+namespace App\Filament\NsConseil\Resources;
+
+use App\Filament\NsConseil\Resources\EntrepriseResource\Pages;
+use App\Models\Entreprise;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class EntrepriseResource extends Resource
+{
+    protected static ?string $model = Entreprise::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-building-office';
+
+    protected static ?string $navigationLabel = 'Entreprises';
+
+    protected static ?string $navigationGroup = 'Pipeline';
+
+    protected static ?int $navigationSort = 4;
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Section::make('Informations générales')
+                    ->schema([
+                        Forms\Components\TextInput::make('raison_sociale')
+                            ->label('Raison sociale')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('siret')
+                                    ->label('SIRET')
+                                    ->maxLength(14)
+                                    ->length(14),
+
+                                Forms\Components\TextInput::make('siren')
+                                    ->label('SIREN')
+                                    ->maxLength(9)
+                                    ->length(9),
+
+                                Forms\Components\TextInput::make('numero_tva')
+                                    ->label('Numéro TVA')
+                                    ->maxLength(255),
+                            ]),
+
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('forme_juridique')
+                                    ->label('Forme juridique')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('capital')
+                                    ->label('Capital')
+                                    ->maxLength(255)
+                                    ->suffix('€'),
+                            ]),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Adresse et contact')
+                    ->schema([
+                        Forms\Components\Textarea::make('adresse')
+                            ->label('Adresse')
+                            ->rows(2)
+                            ->maxLength(255),
+
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('code_postal')
+                                    ->label('Code postal')
+                                    ->maxLength(10),
+
+                                Forms\Components\TextInput::make('ville')
+                                    ->label('Ville')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('pays')
+                                    ->label('Pays')
+                                    ->maxLength(255)
+                                    ->default('France'),
+                            ]),
+
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('telephone')
+                                    ->label('Téléphone')
+                                    ->tel()
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('email')
+                                    ->label('Email')
+                                    ->email()
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('site_web')
+                                    ->label('Site web')
+                                    ->url()
+                                    ->maxLength(255),
+                            ]),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Activité')
+                    ->schema([
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('secteur_activite')
+                                    ->label('Secteur d\'activité')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('effectif')
+                                    ->label('Effectif')
+                                    ->numeric()
+                                    ->suffix('salariés'),
+
+                                Forms\Components\TextInput::make('code_naf')
+                                    ->label('Code NAF/APE')
+                                    ->maxLength(10),
+                            ]),
+
+                        Forms\Components\DatePicker::make('date_creation')
+                            ->label('Date de création'),
+
+                        Forms\Components\Textarea::make('description')
+                            ->label('Description')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('raison_sociale')
+                    ->label('Raison sociale')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('siret')
+                    ->label('SIRET')
+                    ->searchable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('ville')
+                    ->label('Ville')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('secteur_activite')
+                    ->label('Secteur')
+                    ->searchable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('telephone')
+                    ->label('Téléphone')
+                    ->searchable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('partenaires_count')
+                    ->label('Partenaires')
+                    ->counts('partenaires')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('clients_count')
+                    ->label('Clients')
+                    ->counts('clients')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Créé le')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\Filter::make('secteur')
+                    ->form([
+                        Forms\Components\TextInput::make('secteur')
+                            ->label('Secteur d\'activité'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['secteur'],
+                            fn (Builder $query, string $secteur): Builder => $query->where('secteur_activite', 'like', "%{$secteur}%")
+                        );
+                    }),
+
+                Tables\Filters\Filter::make('ville')
+                    ->form([
+                        Forms\Components\TextInput::make('ville')
+                            ->label('Ville'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['ville'],
+                            fn (Builder $query, string $ville): Builder => $query->where('ville', 'like', "%{$ville}%")
+                        );
+                    }),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('raison_sociale');
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListEntreprises::route('/'),
+            'create' => Pages\CreateEntreprise::route('/create'),
+            'edit' => Pages\EditEntreprise::route('/{record}/edit'),
+        ];
+    }
+}

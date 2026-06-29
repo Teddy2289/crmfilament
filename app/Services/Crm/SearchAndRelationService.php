@@ -125,7 +125,7 @@ class SearchAndRelationService
             'secteur' => $entreprise->secteur_activite,
             'nb_partenaires' => $entreprise->partenaires->count(),
             'nb_clients' => $entreprise->clients->count(),
-            'url' => '#',
+            'url' => \App\Filament\NsConseil\Resources\EntrepriseResource::getUrl('view', ['record' => $entreprise->id]),
         ])
         ->toArray();
     }
