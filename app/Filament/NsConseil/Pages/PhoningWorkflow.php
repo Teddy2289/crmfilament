@@ -22,6 +22,7 @@ use App\Services\Crm\CrmProfileService;
 use App\Services\Crm\CrmSettingsService;
 use App\Support\CsePhoningWorkflow;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -32,7 +33,7 @@ use Illuminate\Support\Facades\Cache;
 class PhoningWorkflow extends Page
 {
     // protected static ?string $navigationIcon    = 'heroicon-o-phone-arrow-up-right';
-    protected static ?string $navigationLabel = 'Campagne d\'appels';
+    protected static ?string $navigationLabel = 'Flux de travail téléphonique';
 
     protected static ?string $navigationGroup = 'Activités';
 
@@ -141,7 +142,7 @@ class PhoningWorkflow extends Page
         $roles = app(CrmSettingsService::class)->get('roles.teleprospecteur_roles', ['teleprospecteur']);
 
         return User::where(function ($q) use ($roles) {
-            $q->whereHas('roles', fn ($r) => $r->whereIn('name', $roles));
+            $q->whereHas('roles', fn($r) => $r->whereIn('name', $roles));
             foreach ($roles as $role) {
                 $q->orWhere('role_cache', $role);
             }
@@ -209,7 +210,7 @@ class PhoningWorkflow extends Page
                     ->exists(),
                 'client' => Client::where('id', $item['id'])
                     ->whereNull('deleted_at')
-                    ->where(fn ($q) => $q->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false))
+                    ->where(fn($q) => $q->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false))
                     ->exists(),
                 default => true,
             };
@@ -232,7 +233,7 @@ class PhoningWorkflow extends Page
 
         foreach ($campagnes as $campagne) {
             foreach ($campagne->getContactsQueue() as $contact) {
-                $key = $contact['type'].'_'.$contact['id'];
+                $key = $contact['type'] . '_' . $contact['id'];
                 if (! isset($seen[$key])) {
                     $seen[$key] = true;
                     $queue[] = $contact;
@@ -382,7 +383,7 @@ class PhoningWorkflow extends Page
                 'secteur_activite' => $model->secteur_activite,
                 'nb_salaries' => $model->nb_salaries,
                 'chiffre_affaires' => $model->chiffre_affaires
-                    ? number_format($model->chiffre_affaires, 0, ',', ' ').' €'
+                    ? number_format($model->chiffre_affaires, 0, ',', ' ') . ' €'
                     : null,
                 'telephone' => $model->telephone,
                 'telephone_alt' => $model->telephone_alt,
@@ -435,6 +436,9 @@ class PhoningWorkflow extends Page
                 'type' => 'artisan',
                 'adresse_complete' => null,
                 'interlocuteur' => null,
+                'nb_salaries'     => null,
+                'chiffre_affaires' => null,
+                'siret'           => null,
             ],
             'partenaire' => [
                 'nom' => $model->nom,
@@ -450,6 +454,14 @@ class PhoningWorkflow extends Page
                 'type' => 'partenaire',
                 'interlocuteur' => $model->fonction,
                 'adresse_complete' => null,
+                'nb_salaries'     => null,
+                'chiffre_affaires' => null,
+                'siret'           => null,
+                'ville'           => null,
+                'departement'     => null,
+                'code_postal'     => null,
+                'type_pressenti'  => null,
+                'secteur_activite' => null,
             ],
             'particulier' => [
                 'nom' => $model->nom,
@@ -538,7 +550,7 @@ class PhoningWorkflow extends Page
         }
 
         $this->validate([
-            'statut_resultat' => 'required|in:'.$codesValides,
+            'statut_resultat' => 'required|in:' . $codesValides,
             'commentaires' => $this->commentaireRequis() ? 'required|string|min:5|max:2000' : 'nullable|string|max:2000',
             'interlocuteur_email' => 'nullable|email',
             'email_general_standard' => 'nullable|email',
@@ -584,7 +596,7 @@ class PhoningWorkflow extends Page
 
         Notification::make()
             ->title('Contact enregistré')
-            ->body('Statut : '.$this->getResultLabel())
+            ->body('Statut : ' . $this->getResultLabel())
             ->success()
             ->send();
 
@@ -631,13 +643,13 @@ class PhoningWorkflow extends Page
         $artisan->changerStatut($nouveauStatut, $this->commentaires);
         $artisan->marquerContact();
         if ($this->statut_resultat === 'rp' && $this->rappel_date) {
-            $artisan->ajouterNote("Rappel programmé le {$this->rappel_date}".($this->rappel_heure ? " {$this->rappel_heure}" : ''));
+            $artisan->ajouterNote("Rappel programmé le {$this->rappel_date}" . ($this->rappel_heure ? " {$this->rappel_heure}" : ''));
         }
     }
 
     protected function updatePartenaire(): void
     {
-        $note = '[Appel du '.now()->format('d/m/Y H:i').'] '.$this->getResultLabel();
+        $note = '[Appel du ' . now()->format('d/m/Y H:i') . '] ' . $this->getResultLabel();
         if ($this->commentaires) {
             $note .= "\n{$this->commentaires}";
         }
@@ -646,18 +658,18 @@ class PhoningWorkflow extends Page
 
     protected function updateParticulier(): void
     {
-        $note = '[Appel du '.now()->format('d/m/Y H:i').'] '.$this->getResultLabel();
+        $note = '[Appel du ' . now()->format('d/m/Y H:i') . '] ' . $this->getResultLabel();
         if ($this->commentaires) {
             $note .= " - {$this->commentaires}";
         }
         $this->currentContact->update([
-            'notes' => ($this->currentContact->notes ? $this->currentContact->notes."\n" : '').$note,
+            'notes' => ($this->currentContact->notes ? $this->currentContact->notes . "\n" : '') . $note,
         ]);
     }
 
     protected function updateClient(): void
     {
-        $note = '[Appel du '.now()->format('d/m/Y H:i').'] '.$this->getResultLabel();
+        $note = '[Appel du ' . now()->format('d/m/Y H:i') . '] ' . $this->getResultLabel();
         if ($this->commentaires) {
             $note .= " — {$this->commentaires}";
         }
@@ -742,8 +754,8 @@ class PhoningWorkflow extends Page
     protected function appliquerRappelProspect(Prospect $prospect): void
     {
         try {
-            $fmt = 'Y-m-d'.($this->rappel_heure ? ' H:i' : '');
-            $val = $this->rappel_date.($this->rappel_heure ? ' '.$this->rappel_heure : '');
+            $fmt = 'Y-m-d' . ($this->rappel_heure ? ' H:i' : '');
+            $val = $this->rappel_date . ($this->rappel_heure ? ' ' . $this->rappel_heure : '');
             $dt = \DateTime::createFromFormat($fmt, $val);
             if ($dt) {
                 $prospect->programmerRappel($dt);
@@ -772,7 +784,7 @@ class PhoningWorkflow extends Page
             ->first();
 
         if ($statut?->message_note_obligatoire) {
-            return 'Note obligatoire : '.$statut->message_note_obligatoire;
+            return 'Note obligatoire : ' . $statut->message_note_obligatoire;
         }
 
         return 'Un commentaire est obligatoire pour ce statut.';
@@ -918,7 +930,7 @@ class PhoningWorkflow extends Page
             ->orderBy('date_heure', 'desc')
             ->limit(15)
             ->get()
-            ->map(fn ($a) => [
+            ->map(fn($a) => [
                 'date' => $a->date_heure->format('d/m/Y H:i'),
                 'agent' => $a->user ? trim("{$a->user->prenom} {$a->user->nom}") : 'Système',
                 'statut' => $a->phoning_status ?? $a->resultat?->value,
@@ -959,7 +971,7 @@ class PhoningWorkflow extends Page
     {
         return $this->queryTeleprospecteurs()
             ->get()
-            ->map(fn ($u) => [
+            ->map(fn($u) => [
                 'id' => $u->id,
                 'nom_complet' => trim("{$u->prenom} {$u->nom}"),
                 'initiales' => $u->initiales,
@@ -981,7 +993,7 @@ class PhoningWorkflow extends Page
         $type = $this->contactType ?: 'prospect';
 
         return StatutPhoning::forModelType($type)
-            ->map(fn ($s) => [
+            ->map(fn($s) => [
                 'value' => $s->code,
                 'label' => $s->label,
                 'sub' => $s->description,
@@ -1016,7 +1028,7 @@ class PhoningWorkflow extends Page
     {
         return $this->compterTentativesNonAbouties();
     }
-public function selectCampagne(int $campagneId): void
+    public function selectCampagne(int $campagneId): void
     {
         $this->currentCampagneId = $campagneId;
         $this->completed = 0;
@@ -1026,7 +1038,7 @@ public function selectCampagne(int $campagneId): void
         $campagne = CampagnePhoning::find($campagneId);
         Notification::make()
             ->title('Campagne sélectionnée')
-            ->body($campagne?->nom ?? 'Campagne #'.$campagneId)
+            ->body($campagne?->nom ?? 'Campagne #' . $campagneId)
             ->success()
             ->send();
     }
@@ -1078,7 +1090,7 @@ public function selectCampagne(int $campagneId): void
         return CampagnePhoning::active()
             ->forUser($userId)
             ->get()
-            ->map(fn ($c) => [
+            ->map(fn($c) => [
                 'id' => $c->id,
                 'nom' => $c->nom,
                 'type_entite' => $c->type_entite_label,
@@ -1091,10 +1103,11 @@ public function selectCampagne(int $campagneId): void
     protected function getHeaderActions(): array
     {
         return [
-             Action::make('choisir_campagne')
+            // Actions principales visibles
+            Action::make('choisir_campagne')
                 ->label('Choisir une campagne')
                 ->icon('heroicon-o-megaphone')
-                ->color('info')
+                ->color('primary')
                 ->form([
                     \Filament\Forms\Components\Select::make('campagne_id')
                         ->label('Campagne')
@@ -1104,53 +1117,63 @@ public function selectCampagne(int $campagneId): void
                             return CampagnePhoning::active()
                                 ->forUser($userId)
                                 ->get()
-                                ->mapWithKeys(fn ($c) => [$c->id => "{$c->nom} ({$c->countContacts()} contacts)"]);
+                                ->mapWithKeys(fn($c) => [$c->id => "{$c->nom} ({$c->countContacts()} contacts)"]);
                         })
                         ->required()
                         ->searchable(),
                 ])
-                ->action(fn (array $data) => $this->selectCampagne((int) $data['campagne_id'])),
+                ->action(fn(array $data) => $this->selectCampagne((int) $data['campagne_id'])),
 
             Action::make('toutes_campagnes')
                 ->label('Toutes les campagnes')
                 ->icon('heroicon-o-squares-2x2')
                 ->color('gray')
-                ->visible(fn () => $this->currentCampagneId !== null)
-                ->action(fn () => $this->clearCampagne()),
-
-            Action::make('voir_campagne')
-                ->label('Stats campagne')
-                ->icon('heroicon-o-chart-bar')
-                ->color('success')
-                ->visible(fn () => $this->currentCampagneId !== null)
-                ->url(fn () => CampagnePhoningResource::getUrl('view', ['record' => $this->currentCampagneId]))
-                ->openUrlInNewTab(),
-
-            Action::make('workflow_cse')
-                ->label('Workflow CSE v2')
-                ->icon('heroicon-o-map')
-                ->url(fn () => WorkflowProspectionCse::getUrl())
-                ->openUrlInNewTab(),
-
-            Action::make('statuts_cse')
-                ->label('Statuts CSE v2')
-                ->icon('heroicon-o-tag')
-                ->url(fn () => StatutsAppelsCse::getUrl())
-                ->openUrlInNewTab(),
+                ->visible(fn() => $this->currentCampagneId !== null)
+                ->action(fn() => $this->clearCampagne()),
 
             Action::make('refresh')
                 ->label('Rafraîchir')
                 ->icon('heroicon-o-arrow-path')
+                ->color('gray')
                 ->action(function () {
                     $this->loadQueue();
                     $this->loadNextContact();
                 }),
 
-            Action::make('back_office')
-                ->label('Prioriser la file')
-                ->icon('heroicon-o-queue-list')
-                ->color('warning')
-                ->url(fn () => route('filament.ns-conseil.pages.phoning-back-office')),
+            // Groupe d'actions dans un dropdown
+            ActionGroup::make([
+                Action::make('voir_campagne')
+                    ->label('Stats campagne')
+                    ->icon('heroicon-o-chart-bar')
+                    ->color('success')
+                    ->visible(fn() => $this->currentCampagneId !== null)
+                    ->url(fn() => CampagnePhoningResource::getUrl('view', ['record' => $this->currentCampagneId]))
+                    ->openUrlInNewTab(),
+
+                Action::make('workflow_cse')
+                    ->label('Workflow CSE v2')
+                    ->icon('heroicon-o-map')
+                    ->color('info')
+                    ->url(fn() => WorkflowProspectionCse::getUrl())
+                    ->openUrlInNewTab(),
+
+                Action::make('statuts_cse')
+                    ->label('Statuts CSE v2')
+                    ->icon('heroicon-o-tag')
+                    ->color('info')
+                    ->url(fn() => StatutsAppelsCse::getUrl())
+                    ->openUrlInNewTab(),
+
+                Action::make('back_office')
+                    ->label('Prioriser la file')
+                    ->icon('heroicon-o-queue-list')
+                    ->color('warning')
+                    ->url(fn() => route('filament.ns-conseil.pages.phoning-back-office')),
+            ])
+                ->label('Outils')
+                ->icon('heroicon-o-cog-6-tooth')
+                ->color('gray')
+                ->dropdownPlacement('bottom-end'),
         ];
     }
 }

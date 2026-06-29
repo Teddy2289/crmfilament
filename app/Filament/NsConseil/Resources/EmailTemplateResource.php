@@ -64,7 +64,7 @@ class EmailTemplateResource extends Resource
                         ->helperText('Variables disponibles entre doubles accolades : {{prenom}}, {{nom}}, {{date}}, etc.'),
 
                     Forms\Components\Section::make('Variables disponibles')
-                        ->description('Cliquez sur une variable pour l\'insérer dans le corps du mail')
+                        ->description('Cliquez sur l\'icône de copie pour copier la variable')
                         ->schema([
                             Forms\Components\Grid::make(4)
                                 ->schema([
@@ -72,53 +72,94 @@ class EmailTemplateResource extends Resource
                                         ->label('Prénom')
                                         ->default('{{prenom}}')
                                         ->readOnly()
-                                        ->copyable()
-                                        ->size('sm'),
+                                        ->suffixAction(
+                                            Forms\Components\Actions\Action::make('copy_prenom')
+                                                ->icon('heroicon-o-clipboard')
+                                                ->tooltip('Copier')
+                                                ->action(fn () => null)
+                                                ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{{prenom}}')"])
+                                        ),
                                     Forms\Components\TextInput::make('var_nom')
                                         ->label('Nom')
                                         ->default('{{nom}}')
                                         ->readOnly()
-                                        ->copyable()
-                                        ->size('sm'),
+                                        ->suffixAction(
+                                            Forms\Components\Actions\Action::make('copy_nom')
+                                                ->icon('heroicon-o-clipboard')
+                                                ->tooltip('Copier')
+                                                ->action(fn () => null)
+                                                ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{{nom}}')"])
+                                        ),
                                     Forms\Components\TextInput::make('var_email')
                                         ->label('Email')
                                         ->default('{{email}}')
                                         ->readOnly()
-                                        ->copyable()
-                                        ->size('sm'),
+                                        ->suffixAction(
+                                            Forms\Components\Actions\Action::make('copy_email')
+                                                ->icon('heroicon-o-clipboard')
+                                                ->tooltip('Copier')
+                                                ->action(fn () => null)
+                                                ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{{email}}')"])
+                                        ),
                                     Forms\Components\TextInput::make('var_telephone')
                                         ->label('Téléphone')
                                         ->default('{{telephone}}')
                                         ->readOnly()
-                                        ->copyable()
-                                        ->size('sm'),
+                                        ->suffixAction(
+                                            Forms\Components\Actions\Action::make('copy_telephone')
+                                                ->icon('heroicon-o-clipboard')
+                                                ->tooltip('Copier')
+                                                ->action(fn () => null)
+                                                ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{{telephone}}')"])
+                                        ),
                                     Forms\Components\TextInput::make('var_raison_sociale')
                                         ->label('Raison sociale')
                                         ->default('{{raison_sociale}}')
                                         ->readOnly()
-                                        ->copyable()
-                                        ->size('sm'),
+                                        ->suffixAction(
+                                            Forms\Components\Actions\Action::make('copy_raison_sociale')
+                                                ->icon('heroicon-o-clipboard')
+                                                ->tooltip('Copier')
+                                                ->action(fn () => null)
+                                                ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{{raison_sociale}}')"])
+                                        ),
                                     Forms\Components\TextInput::make('var_date')
                                         ->label('Date')
                                         ->default('{{date}}')
                                         ->readOnly()
-                                        ->copyable()
-                                        ->size('sm'),
+                                        ->suffixAction(
+                                            Forms\Components\Actions\Action::make('copy_date')
+                                                ->icon('heroicon-o-clipboard')
+                                                ->tooltip('Copier')
+                                                ->action(fn () => null)
+                                                ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{{date}}')"])
+                                        ),
                                     Forms\Components\TextInput::make('var_heure')
                                         ->label('Heure')
                                         ->default('{{heure}}')
                                         ->readOnly()
-                                        ->copyable()
-                                        ->size('sm'),
+                                        ->suffixAction(
+                                            Forms\Components\Actions\Action::make('copy_heure')
+                                                ->icon('heroicon-o-clipboard')
+                                                ->tooltip('Copier')
+                                                ->action(fn () => null)
+                                                ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{{heure}}')"])
+                                        ),
                                     Forms\Components\TextInput::make('var_lieu')
                                         ->label('Lieu')
                                         ->default('{{lieu}}')
                                         ->readOnly()
-                                        ->copyable()
-                                        ->size('sm'),
+                                        ->suffixAction(
+                                            Forms\Components\Actions\Action::make('copy_lieu')
+                                                ->icon('heroicon-o-clipboard')
+                                                ->tooltip('Copier')
+                                                ->action(fn () => null)
+                                                ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{{lieu}}')"])
+                                        ),
                                 ]),
                         ])
-                        ->columnSpanFull(),
+                        ->columnSpanFull()
+                        ->collapsed(),
                 ]),
         ]);
     }
