@@ -9,6 +9,7 @@ use App\Models\CampagnePhoning;
 use App\Models\EntiteCommerciale;
 use App\Models\Partenaire;
 use App\Models\User;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -19,7 +20,11 @@ use Filament\Tables\Table;
 
 class CampagnePhoningResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = CampagnePhoning::class;
+
+    protected static string $permissionPrefix = 'campagne_phonings';
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
@@ -34,7 +39,7 @@ class CampagnePhoningResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
 
             // ── Identité ─────────────────────────────────────────────
             Forms\Components\Section::make('Campagne')
@@ -202,7 +207,7 @@ class CampagnePhoningResource extends Resource
                         ->placeholder('ex: particulier, entreprise…'),
                 ]),
 
-        ]);
+        ]));
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -211,7 +216,7 @@ class CampagnePhoningResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('nom')
                     ->label('Campagne')
                     ->searchable()
@@ -266,7 +271,7 @@ class CampagnePhoningResource extends Resource
                     ->label('Entité')
                     ->placeholder('—')
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ]))
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
                     ->label('Statut')
@@ -290,7 +295,7 @@ class CampagnePhoningResource extends Resource
                     ->label('Activer')
                     ->icon('heroicon-o-play')
                     ->color('success')
-                    ->visible(fn ($record) => $record->statut === 'brouillon')
+                    ->visible(fn ($record) => static::userCanResourcePermission('update') && $record->statut === 'brouillon')
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update(['statut' => 'active']);
@@ -301,7 +306,7 @@ class CampagnePhoningResource extends Resource
                     ->label('Terminer')
                     ->icon('heroicon-o-stop')
                     ->color('danger')
-                    ->visible(fn ($record) => $record->statut === 'active')
+                    ->visible(fn ($record) => static::userCanResourcePermission('update') && $record->statut === 'active')
                     ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update(['statut' => 'terminee']);
@@ -312,7 +317,7 @@ class CampagnePhoningResource extends Resource
                     ->label('Lancer le phoning')
                     ->icon('heroicon-o-phone-arrow-up-right')
                     ->color('primary')
-                    ->visible(fn ($record) => $record->statut === 'active')
+                    ->visible(fn ($record) => static::userCanResourcePermission('view') && $record->statut === 'active')
                     ->url(fn ($record) => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
 
                 Tables\Actions\ViewAction::make(),

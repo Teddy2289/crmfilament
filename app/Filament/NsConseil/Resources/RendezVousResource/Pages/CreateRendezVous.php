@@ -23,6 +23,6 @@ class CreateRendezVous extends CreateRecord
             $data['commercial_id'] = auth()->id();
         }
 
-        return $data;
+        return RendezVousResource::filterFormDataForFieldPermissions($data, 'create');
     }
 }
