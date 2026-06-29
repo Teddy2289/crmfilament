@@ -294,12 +294,6 @@ class PartenaireResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function table(Table $table): Table
     {
-        $currentView = session()->get('view_partenaires', 'list');
-
-        if ($currentView === 'kanban') {
-            return static::kanbanTable($table);
-        }
-
         return static::listTable($table);
     }
 
