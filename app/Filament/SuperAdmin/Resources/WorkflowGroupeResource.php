@@ -31,14 +31,32 @@ class WorkflowGroupeResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('model_type')
-                ->options(['prospect' => 'Prospect', 'partenaire' => 'Partenaire'])
-                ->required()
-                ->native(false),
-            Forms\Components\TextInput::make('code')->required(),
-            Forms\Components\TextInput::make('label')->required(),
-            Forms\Components\TextInput::make('ordre')->numeric()->default(0),
-            Forms\Components\Toggle::make('actif')->default(true),
+            Forms\Components\Tabs::make('Workflow')
+                ->tabs([
+                    Forms\Components\Tabs\Tab::make('Informations')
+                        ->schema([
+                            Forms\Components\Select::make('model_type')
+                                ->options(['prospect' => 'Prospect', 'partenaire' => 'Partenaire'])
+                                ->required()
+                                ->native(false),
+                            Forms\Components\TextInput::make('code')->required(),
+                            Forms\Components\TextInput::make('label')->required(),
+                            Forms\Components\TextInput::make('ordre')->numeric()->default(0),
+                            Forms\Components\Toggle::make('actif')->default(true),
+                        ])
+                        ->columns(2),
+                    
+                    Forms\Components\Tabs\Tab::make('Éditeur Visuel')
+                        ->schema([
+                            Forms\Components\Livewire::make('workflow-visual-editor')
+                                ->key(fn ($record) => $record?->id ?? 'new')
+                                ->livewireArgs(fn ($record) => [
+                                    'workflowId' => $record?->id,
+                                ]),
+                        ]),
+                ])
+                ->persistTabInQueryString()
+                ->columnSpanFull(),
         ]);
     }
 
