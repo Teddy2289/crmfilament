@@ -27,9 +27,9 @@ class ImportPartenairesAction extends Action
             ->label('Importer Excel')
             ->icon('heroicon-o-arrow-up-tray')
             ->color('success')
-            ->modalHeading('Importer depuis Excel — feuille « MAJ »')
+            ->modalHeading('Importer depuis Excel')
             ->modalDescription(
-                'Seule la feuille "MAJ" est importée. '
+                'Sélectionnez les onglets à importer. '
                 .'Les valeurs ci-dessous sont utilisées en fallback si une colonne est absente ou vide.'
             )
             ->modalWidth('xl')
@@ -43,7 +43,44 @@ class ImportPartenairesAction extends Action
                     ->maxSize(20480)
                     ->required()
                     ->storeFiles(false)
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->live()
+                    ->afterStateUpdated(function (Forms\Components\FileUpload $component, $state) {
+                        // Charger les onglets disponibles après sélection du fichier
+                        if ($state instanceof TemporaryUploadedFile) {
+                            try {
+                                $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($state->getRealPath());
+                                $reader->setReadDataOnly(true);
+                                $spreadsheet = $reader->load($state->getRealPath());
+                                
+                                $sheets = [];
+                                foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+                                    $sheets[$sheet->getTitle()] = $sheet->getTitle();
+                                }
+                                
+                                $component->getContainer()->getComponent('target_sheets')->options($sheets);
+                            } catch (\Throwable $e) {
+                                // Ignorer les erreurs lors de la lecture
+                            }
+                        }
+                    }),
+
+                Forms\Components\Section::make('Onglets à importer')
+                    ->icon('heroicon-o-table-cells')
+                    ->schema([
+                        Forms\Components\Select::make('target_sheets')
+                            ->label('Onglets')
+                            ->options([])
+                            ->multiple()
+                            ->searchable()
+                            ->allowHtml()
+                            ->helperText('Laissez vide pour importer tous les onglets, ou sélectionnez les onglets spécifiques.')
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Components\Select $component, $state) {
+                                // Les options seront remplies dynamiquement après le chargement du fichier
+                            }),
+                    ])
+                    ->columns(1),
 
                 Forms\Components\Section::make('Valeurs par défaut (fallback)')
                     ->icon('heroicon-o-adjustments-horizontal')
@@ -154,9 +191,10 @@ class ImportPartenairesAction extends Action
                 ], fn ($v) => $v !== null);
 
                 $strategy = $data['strategy'] ?? 'merge';
+                $targetSheets = $data['target_sheets'] ?? null;
 
                 try {
-                    $result = PartenaireImportResolver::importFile($resolvedPath, $defaults, $strategy);
+                    $result = PartenaireImportResolver::importFile($resolvedPath, $defaults, $strategy, $targetSheets);
                 } catch (\Throwable $e) {
                     Notification::make()
                         ->title('Erreur lors de la lecture du fichier')
@@ -167,10 +205,16 @@ class ImportPartenairesAction extends Action
                     return;
                 }
 
+                $sheetsProcessed = implode(', ', $result['sheets_processed'] ?? []);
+                $sheetText = count($result['sheets_processed'] ?? []) > 1 
+                    ? "Onglets importés : {$sheetsProcessed}" 
+                    : "Onglet importé : {$sheetsProcessed}";
+
                 Notification::make()
-                    ->title('Import terminé — feuille MAJ')
+                    ->title('Import terminé')
                     ->body(
-                        "Créés : {$result['created']} | "
+                        "{$sheetText}\n"
+                        ."Créés : {$result['created']} | "
                         ."Mis à jour : {$result['updated']} | "
                         ."Ignorés : {$result['skipped']}"
                     )

@@ -2,12 +2,12 @@
 
 namespace App\Filament\NsConseil\Resources;
 
-use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\ScriptAppelResource\Pages\CreateScriptAppel;
 use App\Filament\NsConseil\Resources\ScriptAppelResource\Pages\EditScriptAppel;
 use App\Filament\NsConseil\Resources\ScriptAppelResource\Pages\ListScriptAppels;
 use App\Models\CampagnePhoning;
 use App\Models\ScriptAppel;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -25,9 +25,11 @@ use Filament\Tables\Table;
 
 class ScriptAppelResource extends Resource
 {
-    use HasRoleAccess;
+    use UsesResourcePermissions;
 
     protected static ?string $model = ScriptAppel::class;
+
+    protected static string $permissionPrefix = 'script_appels';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
@@ -41,15 +43,10 @@ class ScriptAppelResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Scripts d\'appel';
 
-    public static function canAccess(): bool
-    {
-        return static::userHasAnyRole(['admin', 'superviseur']);
-    }
-
     // ── Formulaire ───────────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
 
             Section::make('Identification')
                 ->columns(2)
@@ -191,14 +188,14 @@ class ScriptAppelResource extends Resource
                         ->addActionLabel('+ Documenter une variable')
                         ->defaultItems(0),
                 ]),
-        ]);
+        ]));
     }
 
     // ── Table ────────────────────────────────────────────────────────
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 TextColumn::make('titre')
                     ->label('Titre')
                     ->searchable()
@@ -247,7 +244,7 @@ class ScriptAppelResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ]))
             ->defaultSort('ordre')
             ->filters([
                 SelectFilter::make('onglet')
@@ -288,6 +285,7 @@ class ScriptAppelResource extends Resource
                     ->label('Charger scripts par défaut')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
+                    ->visible(fn () => static::userCanResourcePermission('create'))
                     ->requiresConfirmation()
                     ->action(fn () => ScriptAppel::seederDefaut())
                     ->successNotificationTitle('Scripts par défaut chargés'),

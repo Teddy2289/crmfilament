@@ -12,6 +12,7 @@ use App\Models\RendezVous;
 use App\Models\User;
 use App\Services\CreneauPropositionService;
 use App\Services\GoogleCalendarService;
+use App\Support\UsesResourcePermissions;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -24,7 +25,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RendezVousResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = RendezVous::class;
+
+    protected static string $permissionPrefix = 'rendez_vous';
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
@@ -54,7 +59,7 @@ class RendezVousResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
             Forms\Components\Section::make('Informations générales')
                 ->icon('heroicon-o-calendar')
                 ->schema([
@@ -171,7 +176,7 @@ class RendezVousResource extends Resource
                         ->rows(4)
                         ->columnSpanFull(),
                 ]),
-        ]);
+        ]));
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -181,7 +186,7 @@ class RendezVousResource extends Resource
     {
         return $table
             ->defaultSort('date_heure', 'desc')
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')
                     ->badge()
@@ -257,7 +262,7 @@ class RendezVousResource extends Resource
                     ->trueColor('success')
                     ->falseColor('gray')
                     ->tooltip(fn ($state) => $state ? 'Synchronisé Google Calendar' : 'Non synchronisé'),
-            ])
+            ]))
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
                     ->label('Type')
@@ -307,6 +312,7 @@ class RendezVousResource extends Resource
                     ->label('Statut')
                     ->icon('heroicon-o-arrow-path')
                     ->color('gray')
+                    ->visible(fn () => static::userCanResourcePermission('update'))
                     ->form([
                         Forms\Components\Select::make('statut')
                             ->label('Nouveau statut')
@@ -333,7 +339,7 @@ class RendezVousResource extends Resource
                     ->label('Sync Google')
                     ->icon('heroicon-o-arrow-path')
                     ->color('success')
-                    ->visible(fn (RendezVous $record) => ! $record->google_event_id)
+                    ->visible(fn (RendezVous $record) => static::userCanResourcePermission('update') && ! $record->google_event_id)
                     ->action(function (RendezVous $record) {
                         app(GoogleCalendarService::class)->createEvent($record);
                     }),
@@ -345,6 +351,7 @@ class RendezVousResource extends Resource
                     Tables\Actions\BulkAction::make('sync_google_bulk')
                         ->label('Sync Google Calendar')
                         ->icon('heroicon-o-arrow-path')
+                        ->visible(fn () => static::userCanResourcePermission('update'))
                         ->action(function ($records) {
                             $service = app(GoogleCalendarService::class);
                             foreach ($records as $rdv) {
@@ -365,7 +372,7 @@ class RendezVousResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
+        return $infolist->schema(static::applyShowFieldPermissions([
             Infolists\Components\Section::make('Informations générales')->schema([
                 Infolists\Components\TextEntry::make('type')
                     ->label('Type')
@@ -447,7 +454,7 @@ class RendezVousResource extends Resource
                     ->columnSpanFull()
                     ->html(),
             ]),
-        ]);
+        ]));
     }
 
     public static function getRelations(): array

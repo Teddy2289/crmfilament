@@ -2,13 +2,13 @@
 
 namespace App\Filament\NsConseil\Resources;
 
-use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\CreateStatutPhoning;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\EditStatutPhoning;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\ListStatutPhonings;
 use App\Models\PipelineStatut;
 use App\Models\StatutPhoning;
 use App\Models\WorkflowGroupe;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -17,9 +17,11 @@ use Filament\Tables\Table;
 
 class StatutPhoningResource extends Resource
 {
-    use HasRoleAccess;
+    use UsesResourcePermissions;
 
     protected static ?string $model = StatutPhoning::class;
+
+    protected static string $permissionPrefix = 'statut_phonings';
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
@@ -33,14 +35,9 @@ class StatutPhoningResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Statuts Phoning';
 
-    public static function canAccess(): bool
-    {
-        return static::userHasAnyRole(['admin', 'superviseur']);
-    }
-
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
             Forms\Components\Section::make('Identification')
                 ->columns(2)
                 ->schema([
@@ -183,13 +180,13 @@ class StatutPhoningResource extends Resource
                 ->label('Actif')
                 ->default(true)
                 ->helperText('Un statut inactif n\'apparaît pas dans le workflow.'),
-        ]);
+        ]));
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('model_type')
                     ->label('Modèle')
                     ->formatStateUsing(fn($state) => StatutPhoning::MODEL_TYPES[$state] ?? $state)
@@ -242,7 +239,7 @@ class StatutPhoningResource extends Resource
 
                 Tables\Columns\ToggleColumn::make('actif')
                     ->label('Actif'),
-            ])
+            ]))
             ->defaultSort('model_type')
             ->defaultSort('ordre')
             ->filters([

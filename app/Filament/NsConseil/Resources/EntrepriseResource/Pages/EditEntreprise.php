@@ -10,6 +10,11 @@ class EditEntreprise extends EditRecord
 {
     protected static string $resource = EntrepriseResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return EntrepriseResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

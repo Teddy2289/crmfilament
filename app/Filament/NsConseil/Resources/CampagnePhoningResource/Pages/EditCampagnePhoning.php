@@ -10,6 +10,11 @@ class EditCampagnePhoning extends EditRecord
 {
     protected static string $resource = CampagnePhoningResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return CampagnePhoningResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [
