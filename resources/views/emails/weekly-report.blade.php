@@ -55,6 +55,8 @@ Voici votre récapitulatif pour la semaine du **{{ $debut->format('d/m/Y') }}** 
 ## Pipeline prospects
 <x-mail::table>
 | Statut | Nombre |
+|:---|:---:|
+@foreach (($rapport['prospects_par_statut'] ?? []) as $statut => $nombre)
 | {{ $statut }} | {{ $nombre }} |
 @endforeach
 </x-mail::table>
