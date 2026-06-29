@@ -525,7 +525,7 @@ class ProspectResource extends Resource
                     ->icon('heroicon-o-arrow-right-circle')
                     ->color('success')
                     ->visible(function (Prospect $record) {
-                        if ($record->statut !== ProspectStatut::QF) {
+                        if (! $record->est_convertible_en_partenaire) {
                             return false;
                         }
                         // CDC §6 — Seul le TL (superviseur) peut convertir
@@ -536,7 +536,8 @@ class ProspectResource extends Resource
                     ->action(function (Prospect $record) {
                         $record->convertirEnPartenaire();
                         Notification::make()
-                             ->title('Converti en partenaire')
+                            ->title('Converti en partenaire')
+                            ->body('Le prospect a ete archive et reste tracable depuis le partenaire.')
                             ->success()
                             ->send();
                     })

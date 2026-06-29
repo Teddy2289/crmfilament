@@ -158,6 +158,13 @@ class Prospect extends Model
         return $this->statut === ProspectStatut::QF;
     }
 
+    public function getEstConvertibleEnPartenaireAttribute(): bool
+    {
+        return $this->statut === ProspectStatut::QF
+            && $this->qf_valide
+            && ! $this->converti_partenaire_id;
+    }
+
     public function getEstAPlanifierAttribute(): bool
     {
         return in_array($this->statut, [
@@ -340,6 +347,7 @@ class Prospect extends Model
     public function validerQF(int $userId): void
     {
         $this->update([
+            'statut' => ProspectStatut::QF,
             'qf_valide' => true,
             'valide_par' => $userId,
             'qf_valide_at' => now(),
@@ -616,12 +624,11 @@ class Prospect extends Model
      */
     public function convertirEnPartenaire(): ?Partenaire
     {
-        if (! $this->estQualifie) {
-            throw new \Exception('Seuls les prospects qualifiés (QF) peuvent être convertis');
+        if (! $this->est_convertible_en_partenaire) {
+            throw new \Exception('Seuls les prospects QF validés et non déjà convertis peuvent être convertis en partenaire.');
         }
 
-        DB::beginTransaction();
-        try {
+        return DB::transaction(function (): Partenaire {
             $partenaire = Partenaire::create([
                 // Infos de base
                 'nom' => $this->nom,
@@ -638,12 +645,13 @@ class Prospect extends Model
                 'chiffre_affaires' => $this->chiffre_affaires,
                 'commercial_id' => $this->commercial_id,
                 'statut' => OrganizationStatus::AProspecter,
+                'prospect_id' => $this->id,
                 'notes' => "Converti depuis prospect #{$this->id}\n{$this->description}",
 
                 // CSE (informations générales conservées dans partenaire)
                 'cse_nb_elus' => $this->cse_nb_elus,
                 'cse_date_fin_mandat' => $this->cse_date_fin_mandat,
-                'cse_existence_juridique' => $this->cse_existence_juridique,
+                'cse_existence_juridique' => (bool) $this->cse_existence_juridique,
                 'cse_notes' => $this->cse_notes,
 
                 // Syndicat (informations générales conservées dans partenaire)
@@ -729,13 +737,10 @@ class Prospect extends Model
                 'description' => $this->description."\n[Conversion] Partenaire créé le ".now()->format('d/m/Y H:i'),
             ]);
 
-            DB::commit();
+            $this->delete();
 
             return $partenaire;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        });
     }
 
     // ── Relations ────────────────────────────────────────────────────

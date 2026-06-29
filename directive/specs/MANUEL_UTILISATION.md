@@ -72,6 +72,7 @@ Statuts principaux:
 | `QF` | Qualifie apres validation |
 
 La validation QF reste reservee aux profils autorises, generalement Team Leader ou administrateur.
+La conversion en partenaire est disponible uniquement apres QF valide. Une fois converti, le prospect quitte la liste active, reste archive, et le partenaire garde le lien vers la fiche source.
 
 ---
 

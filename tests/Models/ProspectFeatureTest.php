@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Models;
 
+use App\Enums\OrganizationStatus;
 use App\Enums\ProspectStatut;
+use App\Models\Partenaire;
 use App\Models\Prospect;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -133,9 +135,58 @@ class ProspectFeatureTest extends TestCase
         $prospect->validerQF($user->id);
 
         $fresh = $prospect->fresh();
+        $this->assertEquals(ProspectStatut::QF, $fresh->statut);
         $this->assertTrue($fresh->qf_valide);
         $this->assertEquals($user->id, $fresh->valide_par);
         $this->assertNotNull($fresh->qf_valide_at);
+    }
+
+    #[Test]
+    public function convertir_en_partenaire_requires_validated_qf(): void
+    {
+        $prospect = $this->createProspect(['statut' => ProspectStatut::QF]);
+
+        $this->expectException(\Exception::class);
+
+        $prospect->convertirEnPartenaire();
+    }
+
+    #[Test]
+    public function convertir_en_partenaire_archives_prospect_and_keeps_traceability(): void
+    {
+        $user = User::create([
+            'nom' => 'TL',
+            'prenom' => 'Test',
+            'email' => 'tl@test.com',
+            'password' => bcrypt('password'),
+            'actif' => true,
+        ]);
+
+        $prospect = $this->createProspect([
+            'nom' => 'CSE Converti',
+            'telephone' => '0611111111',
+            'email' => 'cse@test.com',
+            'departement' => '75',
+            'description' => 'Contexte QF',
+        ]);
+        $prospect->validerQF($user->id);
+
+        $partenaire = $prospect->convertirEnPartenaire();
+
+        $this->assertInstanceOf(Partenaire::class, $partenaire);
+        $this->assertEquals('CSE Converti', $partenaire->nom);
+        $this->assertEquals(OrganizationStatus::AProspecter, $partenaire->statut);
+        $this->assertEquals($prospect->id, $partenaire->prospect_id);
+        $this->assertStringContainsString("Converti depuis prospect #{$prospect->id}", $partenaire->notes);
+
+        $this->assertNull(Prospect::find($prospect->id));
+        $this->assertSoftDeleted('prospects', ['id' => $prospect->id]);
+
+        $archived = Prospect::withTrashed()->find($prospect->id);
+        $this->assertNotNull($archived);
+        $this->assertEquals($partenaire->id, $archived->converti_partenaire_id);
+        $this->assertTrue($archived->convertiEnPartenaire->is($partenaire));
+        $this->assertTrue($partenaire->fresh()->prospect->is($archived));
     }
 
     #[Test]

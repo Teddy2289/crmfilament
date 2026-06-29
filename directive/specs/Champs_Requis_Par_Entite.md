@@ -81,6 +81,8 @@ Model: `App\Models\Prospect`
 | 6 | Email invitation agenda envoye au commercial |
 | 7 | Validation Team Leader |
 
+Note flux: la conversion `Prospect -> Partenaire` exige `statut = QF` et `qf_valide = true`. Elle renseigne `converti_partenaire_id` sur le prospect, `prospect_id` sur le partenaire, puis archive le prospect par soft delete.
+
 ---
 
 ## 3. Partenaires
@@ -328,7 +330,7 @@ Champs fonctionnels importants:
 | RP / RPC -> RDV | date RDV, lieu et interlocuteur |
 | RDV -> QF | 7 elements bloquants valides |
 | Tout statut -> KO | motif KO renseigne |
-| Prospect -> Partenaire | QF valide et role autorise |
+| Prospect -> Partenaire | QF valide, role autorise, archive prospect avec lien partenaire |
 | Refus -> reprise | note de reprise recommandee |
 
 ---

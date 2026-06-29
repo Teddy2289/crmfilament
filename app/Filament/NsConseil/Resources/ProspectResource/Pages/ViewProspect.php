@@ -117,16 +117,16 @@ class ViewProspect extends ViewRecord
                 ->label('→ Convertir en Partenaire')
                 ->icon('heroicon-o-arrow-right-circle')
                 ->color('success')
-                ->visible(fn () => $this->record->statut === ProspectStatut::QF)
+                ->visible(fn () => $this->record->est_convertible_en_partenaire)
                 ->requiresConfirmation()
                 ->modalHeading('Convertir en Partenaire ?')
-                ->modalDescription('Un nouveau Partenaire sera créé à partir des données de ce prospect. Le prospect restera en statut QF.')
+                ->modalDescription('Un nouveau Partenaire sera cree a partir des donnees de ce prospect. Le prospect sera archive et restera tracable depuis le partenaire.')
                 ->action(function () {
                     try {
                         $partenaire = $this->record->convertirEnPartenaire();
                         Notification::make()
                             ->title('Converti en partenaire ✓')
-                            ->body("Partenaire #{$partenaire->id} créé.")
+                            ->body("Partenaire #{$partenaire->id} cree. Prospect archive.")
                             ->success()
                             ->send();
                     } catch (\Exception $e) {
