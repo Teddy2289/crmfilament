@@ -371,4 +371,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(Opportunite::class, 'assigne_a');
     }
+
+    public function crmProfile()
+    {
+        return $this->belongsTo(CrmProfile::class, 'role_cache', 'role_name');
+    }
 }

@@ -4,6 +4,36 @@ namespace App\Support;
 
 trait UsesResourcePermissions
 {
+    public static function canAccess(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::userCanViewResourceList();
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::userCanResourcePermission('view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::userCanResourcePermission('create');
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::userCanResourcePermission('update');
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::userCanResourcePermission('delete');
+    }
+
     protected static function userCanResourcePermission(string $action): bool
     {
         $permission = static::resourcePermissionName($action);

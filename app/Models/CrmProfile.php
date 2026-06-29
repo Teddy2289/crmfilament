@@ -12,6 +12,7 @@ class CrmProfile extends Model
         'description',
         'panels',
         'landing_path',
+        'theme_id',
         'couleur',
         'icone',
         'ordre',
@@ -41,5 +42,10 @@ class CrmProfile extends Model
     {
         return $query->where('actif', true)
             ->whereJsonContains('panels', $panel);
+    }
+
+    public function theme()
+    {
+        return $this->belongsTo(Theme::class);
     }
 }

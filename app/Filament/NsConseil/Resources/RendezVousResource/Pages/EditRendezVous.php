@@ -12,6 +12,11 @@ class EditRendezVous extends EditRecord
 {
     protected static string $resource = RendezVousResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return RendezVousResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -3,7 +3,6 @@
 namespace App\Filament\NsConseil\Resources;
 
 use App\Enums\OrganizationType;
-use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\NsConseil\Resources\OpportuniteResource\Pages;
@@ -11,6 +10,7 @@ use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers\AppelsRel
 use App\Models\Opportunite;
 use App\Models\Prospect;
 use App\Models\User;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -24,9 +24,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class OpportuniteResource extends Resource
 {
-    use HasRoleAccess;
+    use UsesResourcePermissions;
 
     protected static ?string $model = Opportunite::class;
+
+    protected static string $permissionPrefix = 'opportunites';
 
     protected static ?string $navigationIcon = 'heroicon-o-light-bulb';
 
@@ -35,11 +37,6 @@ class OpportuniteResource extends Resource
     protected static ?string $navigationLabel = 'Opportunités';
 
     protected static ?int $navigationSort = 3;
-
-    public static function canAccess(): bool
-    {
-        return static::userHasAnyRole(['admin', 'superviseur', 'commercial']);
-    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -56,7 +53,7 @@ class OpportuniteResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
             Forms\Components\Section::make('Identification')
                 ->icon('heroicon-o-building-office')
                 ->schema([
@@ -178,12 +175,12 @@ class OpportuniteResource extends Resource
                         ->rows(4)
                         ->columnSpanFull(),
                 ]),
-        ]);
+        ]));
     }
 
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
+        return $infolist->schema(static::applyShowFieldPermissions([
             Infolists\Components\Section::make('Identification')
                 ->icon('heroicon-o-building-office')
                 ->schema([
@@ -326,7 +323,7 @@ class OpportuniteResource extends Resource
                         ->default('-')
                         ->columnSpanFull(),
                 ]),
-        ]);
+        ]));
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -336,7 +333,7 @@ class OpportuniteResource extends Resource
     {
         return $table
             ->defaultSort('date_detection', 'desc')
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('nom_entite')
                     ->label('Entité')
                     ->searchable()
@@ -385,7 +382,7 @@ class OpportuniteResource extends Resource
                     ->label('Âge (j)')
                     ->alignCenter()
                     ->sortable(),
-            ])
+            ]))
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
                     ->options(Opportunite::statutsPourSelect())
@@ -419,7 +416,8 @@ class OpportuniteResource extends Resource
                     ->label('Qualifier')
                     ->icon('heroicon-o-check-badge')
                     ->color('primary')
-                    ->visible(fn (Opportunite $record) => ! in_array($record->statut, ['qualifiee', 'converti', 'perdu']))
+                    ->visible(fn (Opportunite $record) => static::userCanResourcePermission('update')
+                        && ! in_array($record->statut, ['qualifiee', 'converti', 'perdu']))
                     ->action(function (Opportunite $record) {
                         $record->marquerQualifiee();
                         Notification::make()
@@ -436,7 +434,7 @@ class OpportuniteResource extends Resource
                     ->label('→ Prospect')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->color('success')
-                    ->visible(fn (Opportunite $record) => $record->est_convertible)
+                    ->visible(fn (Opportunite $record) => static::userCanResourcePermission('update') && $record->est_convertible)
                     ->action(function (Opportunite $record) {
                         $record->convertirEnProspect();
                         Notification::make()
@@ -453,7 +451,8 @@ class OpportuniteResource extends Resource
                     ->label('Perdue')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn (Opportunite $record) => ! in_array($record->statut, ['converti', 'perdu']))
+                    ->visible(fn (Opportunite $record) => static::userCanResourcePermission('update')
+                        && ! in_array($record->statut, ['converti', 'perdu']))
                     ->form([
                         Forms\Components\Textarea::make('raison_perte')
                             ->label('Raison de la perte')

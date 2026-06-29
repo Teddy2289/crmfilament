@@ -10,6 +10,11 @@ class EditDossierFormation extends EditRecord
 {
     protected static string $resource = DossierFormationResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return DossierFormationResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

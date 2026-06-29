@@ -23,7 +23,7 @@ class ViewCampagnePhoning extends ViewRecord
                 ->label('Lancer le phoning')
                 ->icon('heroicon-o-phone-arrow-up-right')
                 ->color('primary')
-                ->visible(fn () => $record->statut === 'active')
+                ->visible(fn () => CampagnePhoningResource::canView($record) && $record->statut === 'active')
                 ->url(fn () => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
 
             Actions\EditAction::make(),
@@ -32,7 +32,7 @@ class ViewCampagnePhoning extends ViewRecord
 
     public function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
+        return $infolist->schema(CampagnePhoningResource::applyShowFieldPermissions([
             Section::make('Informations')
                 ->icon('heroicon-o-megaphone')
                 ->columns(3)
@@ -113,6 +113,6 @@ class ViewCampagnePhoning extends ViewRecord
                         })
                         ->columnSpanFull(),
                 ]),
-        ]);
+        ]));
     }
 }

@@ -10,6 +10,11 @@ class EditStatutPhoning extends EditRecord
 {
     protected static string $resource = StatutPhoningResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return StatutPhoningResource::filterFormDataForFieldPermissions($data, 'edit');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

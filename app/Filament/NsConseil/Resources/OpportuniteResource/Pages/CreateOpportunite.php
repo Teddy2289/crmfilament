@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateOpportunite extends CreateRecord
 {
     protected static string $resource = OpportuniteResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return OpportuniteResource::filterFormDataForFieldPermissions($data, 'create');
+    }
 }

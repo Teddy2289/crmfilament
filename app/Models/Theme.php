@@ -83,6 +83,19 @@ class Theme extends Model
             return null;
         }
 
+        // Priorité 1: Thème du profil de l'utilisateur
+        if ($user && $user->crmProfile && $user->crmProfile->theme_id) {
+            $profileTheme = static::where('panel', $panel)
+                ->where('id', $user->crmProfile->theme_id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($profileTheme) {
+                return $profileTheme;
+            }
+        }
+
+        // Priorité 2: Préférence utilisateur
         $preferredTheme = $user?->theme_preference;
 
         if ($preferredTheme && $preferredTheme !== 'default') {
@@ -96,6 +109,7 @@ class Theme extends Model
             }
         }
 
+        // Priorité 3: Thème par défaut du panel
         return static::getActiveForPanel($panel);
     }
 
