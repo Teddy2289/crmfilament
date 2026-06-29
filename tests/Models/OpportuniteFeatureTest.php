@@ -87,8 +87,16 @@ class OpportuniteFeatureTest extends TestCase
         $this->assertStringContainsString('Source detection: Parrainage / recommandation', $prospect->description);
         $this->assertStringContainsString('Details source: Recommande par Client Test', $prospect->description);
         $this->assertStringContainsString('Contexte initial', $prospect->description);
-        $this->assertEquals('converti', $opp->fresh()->statut);
-        $this->assertEquals($prospect->id, $opp->fresh()->converti_en_prospect_id);
+
+        $this->assertNull(Opportunite::find($opp->id));
+        $this->assertSoftDeleted('opportunites', ['id' => $opp->id]);
+
+        $archived = Opportunite::withTrashed()->find($opp->id);
+        $this->assertNotNull($archived);
+        $this->assertEquals('converti', $archived->statut);
+        $this->assertEquals($prospect->id, $archived->converti_en_prospect_id);
+        $this->assertNotNull($prospect->opportunite);
+        $this->assertTrue($prospect->opportunite->is($archived));
     }
 
     #[Test]
@@ -195,9 +203,33 @@ class OpportuniteFeatureTest extends TestCase
     public function scope_converties(): void
     {
         $this->createOpportunite(['email' => 'active@test.com', 'statut' => 'nouveau']);
-        $this->createOpportunite(['email' => 'converted@test.com', 'statut' => 'converti']);
+        $converted = $this->createOpportunite(['email' => 'converted@test.com', 'statut' => 'converti']);
+        $converted->delete();
 
         $this->assertCount(1, Opportunite::converties()->get());
+    }
+
+    #[Test]
+    public function kpis_include_archived_converted_opportunities(): void
+    {
+        $this->createOpportunite(['email' => 'active@test.com', 'statut' => 'nouveau']);
+        $converted = $this->createOpportunite(['email' => 'converted@test.com', 'statut' => 'converti']);
+        $this->createOpportunite(['email' => 'lost@test.com', 'statut' => 'perdu']);
+        $deletedDraft = $this->createOpportunite(['email' => 'deleted@test.com', 'statut' => 'nouveau']);
+
+        $converted->delete();
+        $deletedDraft->delete();
+
+        $kpis = Opportunite::getKpis();
+
+        $this->assertEquals(3, $kpis['total']);
+        $this->assertEquals(1, $kpis['converties']);
+        $this->assertEquals(1, $kpis['perdues']);
+        $this->assertEquals(33.3, $kpis['taux_conversion']);
+        $this->assertEquals(33.3, $kpis['taux_perte']);
+        $this->assertEquals(1, $kpis['par_statut']['nouveau']);
+        $this->assertEquals(1, $kpis['par_statut']['converti']);
+        $this->assertEquals(1, $kpis['par_statut']['perdu']);
     }
 
     #[Test]

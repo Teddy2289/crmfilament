@@ -13,6 +13,11 @@ class ListOpportunites extends ListRecords
 {
     protected static string $resource = OpportuniteResource::class;
 
+    public function getDefaultActiveTab(): string|int|null
+    {
+        return 'actives';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -47,8 +52,8 @@ class ListOpportunites extends ListRecords
                 ->badgeColor('primary'),
 
             'converties' => Tab::make('Converties')
-                ->modifyQueryUsing(fn (Builder $q) => $q->where('statut', 'converti'))
-                ->badge(Opportunite::where('statut', 'converti')->count())
+                ->modifyQueryUsing(fn (Builder $q) => $q->withTrashed()->where('statut', 'converti'))
+                ->badge(Opportunite::withTrashed()->where('statut', 'converti')->count())
                 ->badgeColor('success'),
 
             'perdues' => Tab::make('Perdues')

@@ -771,7 +771,7 @@ class Prospect extends Model
 
     public function opportunite()
     {
-        return $this->hasOne(Opportunite::class, 'converti_en_prospect_id');
+        return $this->hasOne(Opportunite::class, 'converti_en_prospect_id')->withTrashed();
     }
 
     public function campagne()
