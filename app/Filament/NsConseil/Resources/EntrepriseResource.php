@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\EntrepriseResource\Pages;
 use App\Models\Entreprise;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -16,7 +17,11 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class EntrepriseResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = Entreprise::class;
+
+    protected static string $permissionPrefix = 'entreprises';
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
 
@@ -29,7 +34,7 @@ class EntrepriseResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
+            ->schema(static::applyFormFieldPermissions([
                 Forms\Components\Section::make('Informations générales')
                     ->schema([
                         Forms\Components\TextInput::make('raison_sociale')
@@ -139,13 +144,13 @@ class EntrepriseResource extends Resource
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
-            ]);
+            ]));
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 Tables\Columns\TextColumn::make('raison_sociale')
                     ->label('Raison sociale')
                     ->searchable()
@@ -192,7 +197,7 @@ class EntrepriseResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ]))
             ->filters([
                 Tables\Filters\Filter::make('secteur')
                     ->form([
@@ -234,7 +239,7 @@ class EntrepriseResource extends Resource
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
-            ->schema([
+            ->schema(static::applyShowFieldPermissions([
                 Infolists\Components\Section::make('Informations generales')
                     ->schema([
                         Infolists\Components\TextEntry::make('raison_sociale')
@@ -326,7 +331,7 @@ class EntrepriseResource extends Resource
                             ->dateTime('d/m/Y H:i'),
                     ])
                     ->columns(4),
-            ]);
+            ]));
     }
 
     public static function getRelations(): array
