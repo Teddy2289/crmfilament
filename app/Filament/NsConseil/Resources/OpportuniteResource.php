@@ -402,8 +402,7 @@ class OpportuniteResource extends Resource
 
                 Tables\Filters\Filter::make('actives')
                     ->label('Actives uniquement')
-                    ->query(fn (Builder $q) => $q->whereNotIn('statut', ['converti', 'perdu']))
-                    ->default(),
+                    ->query(fn (Builder $q) => $q->whereNotIn('statut', ['converti', 'perdu'])),
 
                 Tables\Filters\TrashedFilter::make(),
             ])

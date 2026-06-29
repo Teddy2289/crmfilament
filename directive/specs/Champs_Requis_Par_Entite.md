@@ -173,6 +173,8 @@ Model: `App\Models\Opportunite`
 | `assigne_a` | show, edit, flux |
 | `raison_perte`, `converti_en_prospect_id` | show, edit |
 
+Note flux: la conversion en prospect archive l'opportunite par soft delete. Les droits `show` doivent permettre de consulter les opportunites converties archivees depuis l'onglet `Converties` et depuis le prospect cree.
+
 ---
 
 ## 6. Entreprises

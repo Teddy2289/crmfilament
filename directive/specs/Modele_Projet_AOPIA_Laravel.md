@@ -209,6 +209,7 @@ Regles alignees CDC:
 - statuts proposes: `nouveau`, `en_cours_evaluation`, `qualifiee`, `converti`, `perdu`;
 - conversion possible uniquement depuis `qualifiee`;
 - la source, les details source et les notes sont reprises dans la description du Prospect converti;
+- apres conversion, l'opportunite passe a `converti`, est archivee par soft delete et reste visible dans l'onglet `Converties`;
 - la raison de perte est obligatoire pour passer au statut `perdu`.
 
 ### 5.5 Appel

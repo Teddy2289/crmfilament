@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Opportunite extends Model
 {
@@ -213,30 +214,34 @@ class Opportunite extends Model
             throw new \LogicException('Seule une opportunite qualifiee peut etre convertie en prospect.');
         }
 
-        $prospect = Prospect::create([
-            'nom' => $this->nom_entite,
-            'type_pressenti' => $this->type_pressenti,
-            'departement' => $this->departement,
-            'telephone' => $this->telephone,
-            'email' => $this->email,
-            'adresse' => $this->adresse,
-            'siret' => $this->siret,
-            'secteur_activite' => $this->secteur_activite,
-            'nb_salaries' => $this->nb_salaries,
-            'chiffre_affaires' => $this->chiffre_affaires,
-            'interlocuteur_nom' => $this->interlocuteur_nom,
-            'interlocuteur_fonction' => $this->interlocuteur_fonction,
-            'interlocuteur_telephone' => $this->interlocuteur_telephone,
-            'interlocuteur_email' => $this->interlocuteur_email,
-            'description' => $this->descriptionProspectConverti(),
-        ]);
+        return DB::transaction(function (): Prospect {
+            $prospect = Prospect::create([
+                'nom' => $this->nom_entite,
+                'type_pressenti' => $this->type_pressenti,
+                'departement' => $this->departement,
+                'telephone' => $this->telephone,
+                'email' => $this->email,
+                'adresse' => $this->adresse,
+                'siret' => $this->siret,
+                'secteur_activite' => $this->secteur_activite,
+                'nb_salaries' => $this->nb_salaries,
+                'chiffre_affaires' => $this->chiffre_affaires,
+                'interlocuteur_nom' => $this->interlocuteur_nom,
+                'interlocuteur_fonction' => $this->interlocuteur_fonction,
+                'interlocuteur_telephone' => $this->interlocuteur_telephone,
+                'interlocuteur_email' => $this->interlocuteur_email,
+                'description' => $this->descriptionProspectConverti(),
+            ]);
 
-        $this->update([
-            'statut' => 'converti',
-            'converti_en_prospect_id' => $prospect->id,
-        ]);
+            $this->update([
+                'statut' => 'converti',
+                'converti_en_prospect_id' => $prospect->id,
+            ]);
 
-        return $prospect;
+            $this->delete();
+
+            return $prospect;
+        });
     }
 
     private function descriptionProspectConverti(): string
@@ -306,7 +311,7 @@ class Opportunite extends Model
 
     public function scopeConverties($query): Builder
     {
-        return $query->where('statut', 'converti');
+        return $query->withTrashed()->where('statut', 'converti');
     }
 
     public function scopePerdues($query): Builder
@@ -377,7 +382,7 @@ class Opportunite extends Model
     public static function getKpis(): array
     {
         return [
-            'total' => static::count(),
+            'total' => static::countTotalAvecConvertiesArchivees(),
             'actives' => static::actives()->count(),
             'converties' => static::converties()->count(),
             'perdues' => static::perdues()->count(),
@@ -392,24 +397,26 @@ class Opportunite extends Model
 
     public static function getTauxConversion(): float
     {
-        $total = static::count();
+        $total = static::countTotalAvecConvertiesArchivees();
         if ($total === 0) {
             return 0;
         }
 
-        $converties = static::where('statut', 'converti')->count();
+        $converties = static::converties()->count();
 
         return round(($converties / $total) * 100, 1);
     }
 
     public static function getTauxPerte(): float
     {
-        $total = static::count();
+        $total = static::countTotalAvecConvertiesArchivees();
         if ($total === 0) {
             return 0;
         }
 
-        $perdues = static::where('statut', 'perdu')->count();
+        $perdues = static::queryAvecConvertiesArchivees()
+            ->where('statut', 'perdu')
+            ->count();
 
         return round(($perdues / $total) * 100, 1);
     }
@@ -432,14 +439,34 @@ class Opportunite extends Model
     {
         return collect(self::statutsPourSelect())
             ->mapWithKeys(function ($label, $statut) {
-                return [$statut => static::where('statut', $statut)->count()];
+                return [
+                    $statut => static::queryAvecConvertiesArchivees()
+                        ->where('statut', $statut)
+                        ->count(),
+                ];
             })
             ->toArray();
     }
 
+    private static function countTotalAvecConvertiesArchivees(): int
+    {
+        return static::queryAvecConvertiesArchivees()->count();
+    }
+
+    private static function queryAvecConvertiesArchivees(): Builder
+    {
+        return static::withTrashed()
+            ->where(function (Builder $query) {
+                $query
+                    ->whereNull($query->getModel()->getQualifiedDeletedAtColumn())
+                    ->orWhere('statut', 'converti');
+            });
+    }
+
     public static function getRepartitionParSource(): array
     {
-        return static::selectRaw('source_detection, COUNT(*) as total')
+        return static::queryAvecConvertiesArchivees()
+            ->selectRaw('source_detection, COUNT(*) as total')
             ->whereNotNull('source_detection')
             ->groupBy('source_detection')
             ->orderByDesc('total')
@@ -452,7 +479,11 @@ class Opportunite extends Model
     {
         return collect(self::POTENTIELS)
             ->mapWithKeys(function ($label, $potentiel) {
-                return [$potentiel => static::where('potentiel', $potentiel)->count()];
+                return [
+                    $potentiel => static::queryAvecConvertiesArchivees()
+                        ->where('potentiel', $potentiel)
+                        ->count(),
+                ];
             })
             ->toArray();
     }

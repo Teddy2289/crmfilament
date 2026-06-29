@@ -173,6 +173,8 @@ Actions possibles:
 - convertir en prospect lorsque l'opportunite est qualifiee;
 - marquer perdue avec une raison.
 
+Apres conversion, l'opportunite quitte la liste active, reste archivee dans l'onglet `Converties`, et le prospect conserve le lien vers l'opportunite d'origine.
+
 ---
 
 ## 8. Appels et RDV
