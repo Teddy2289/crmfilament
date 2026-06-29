@@ -553,7 +553,6 @@ class PartenaireResource extends Resource
             ->groups([
                 'statut',
             ])
-            ->contentGrid()
             ->reorderable('statut')
             ->actions([
                 Tables\Actions\ViewAction::make(),
