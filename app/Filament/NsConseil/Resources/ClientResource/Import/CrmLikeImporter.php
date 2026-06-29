@@ -38,6 +38,8 @@ class CrmLikeImporter extends BaseClientImporter
     {
         $ref = trim((string) ($row['Réf. client'] ?? ''));
         $tiers = trim((string) ($row['Tiers'] ?? ''));
+        $partenaireLike = trim((string) ($row['Partenaire Like'] ?? ''));
+        $partenaireBoutique = trim((string) ($row['Partenaire Boutique'] ?? ''));
 
         return [
             // ── Client (personne physique) ───────────────────────────────
@@ -56,6 +58,11 @@ class CrmLikeImporter extends BaseClientImporter
                 'montant_cpf' => $this->parseFloat($row['Montant CPF'] ?? null),
                 'ne_plus_contacter' => $this->parseBool($row['Ne plus contacter'] ?? false),
                 'avis_google' => $this->parseBool($row['Avis Google'] ?? false),
+                '_partenaire_nomenclature' => $partenaireLike ?: null,
+                'extra_data' => array_filter([
+                    'partenaire_like' => $partenaireLike ?: null,
+                    'partenaire_boutique' => $partenaireBoutique ?: null,
+                ], fn ($v) => $v !== null && $v !== ''),
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── DossierFormation ─────────────────────────────────────────

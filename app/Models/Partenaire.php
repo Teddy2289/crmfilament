@@ -166,7 +166,16 @@ class Partenaire extends Model
 
     public function getNomenclatureSuggereeAttribute(): string
     {
-        return self::genererNomenclature($this->type, $this->entreprise, $this->ville);
+        return self::genererNomenclature($this->type ?: OrganizationType::CSE, $this->entreprise ?: $this->nom, $this->ville);
+    }
+
+    public function synchroniserNomenclatureInterne(): void
+    {
+        $nomenclature = $this->nomenclature_suggeree;
+
+        if (filled($nomenclature)) {
+            $this->nomenclature_interne = $nomenclature;
+        }
     }
 
     public function getAdresseCompleteAttribute(): string
@@ -284,6 +293,10 @@ class Partenaire extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (Partenaire $partenaire) {
+            $partenaire->synchroniserNomenclatureInterne();
+        });
+
         static::updating(function (Partenaire $partenaire) {
             if ($partenaire->isDirty('statut')) {
                 $partenaire->date_modification_statut = now();

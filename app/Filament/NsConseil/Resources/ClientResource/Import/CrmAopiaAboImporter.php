@@ -34,6 +34,8 @@ class CrmAopiaAboImporter extends BaseClientImporter
     {
         $ref = trim((string) ($row['Réf. client'] ?? ''));
         $tiers = trim((string) ($row['Tiers'] ?? ''));
+        $interlocuteur = trim((string) ($row['Interlocuteur'] ?? ''));
+        $suiviClient = trim((string) ($row['Suivi actuel du Client'] ?? ''));
 
         return [
             // ── Client ───────────────────────────────────────────────────
@@ -48,6 +50,11 @@ class CrmAopiaAboImporter extends BaseClientImporter
                 'date_naissance' => $this->parseDate($row['Date de naissance'] ?? null),
                 'montant_cpf' => $this->parseFloat($row['Montant cpf'] ?? null),
                 'ne_plus_contacter' => $this->parseBool($row['Ne plus contacter'] ?? false),
+                '_partenaire_nomenclature' => $interlocuteur ?: null,
+                'extra_data' => array_filter([
+                    'interlocuteur' => $interlocuteur ?: null,
+                    'suivi_client' => $suiviClient ?: null,
+                ], fn ($v) => $v !== null && $v !== ''),
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── DossierFormation ─────────────────────────────────────────
