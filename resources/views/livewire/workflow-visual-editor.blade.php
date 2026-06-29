@@ -102,9 +102,10 @@ function workflowEditor(nodes = [], workflowId = null) {
                 <div class="case-card-header">
                     <div class="case-number">${caseData.number}</div>
                     <div>
-                        <div class="case-title">${caseData.title}</div>
-                        <div class="case-subtitle">${caseData.subtitle}</div>
+                        <div class="case-title" @click="editCase('${caseData.id}')" style="cursor: pointer;" title="Cliquez pour modifier">${caseData.title}</div>
+                        <div class="case-subtitle" @click="editCase('${caseData.id}')" style="cursor: pointer;" title="Cliquez pour modifier">${caseData.subtitle}</div>
                     </div>
+                    <button @click="deleteCase('${caseData.id}')" class="delete-case-btn" title="Supprimer ce cas">×</button>
                 </div>
                 <div class="flow">
                     ${caseData.steps.map((step, index) => this.renderStep(step, index)).join('')}
@@ -151,25 +152,25 @@ function workflowEditor(nodes = [], workflowId = null) {
             
             // Ajouter branches si c'est une condition
             if (step.type === 'condition' && step.config?.branches) {
-                html += this.renderBranches(step.config.branches);
+                html += this.renderBranches(step.config.branches, step.id);
             }
             
             return html;
         },
         
-        renderBranches(branches) {
+        renderBranches(branches, stepId) {
             const branchCount = branches.length;
             const gridClass = branchCount === 3 ? 'branches-3' : 'branches';
             
             let html = `<div class="${gridClass}">`;
             
-            branches.forEach((branch) => {
+            branches.forEach((branch, branchIndex) => {
                 const branchColor = branch.type === 'yes' ? 'bb-yes' : 
                                    branch.type === 'no' ? 'bb-no' : 
                                    branch.color || 'bb-amber';
                 
                 html += `
-                    <div class="branch-box ${branchColor}">
+                    <div class="branch-box ${branchColor}" @click="editBranch('${stepId}', ${branchIndex})" style="cursor: pointer;" title="Cliquez pour modifier">
                         <div class="branch-box-label">${branch.label}</div>
                         <div class="branch-box-content">${branch.content}</div>
                         <div class="branch-box-detail">${branch.detail}</div>
@@ -180,6 +181,85 @@ function workflowEditor(nodes = [], workflowId = null) {
             
             html += '</div>';
             return html;
+        },
+        
+        editBranch(stepId, branchIndex) {
+            const node = this.nodes.find(n => n.id == stepId);
+            if (!node || !node.config?.branches) return;
+            
+            const branchData = node.config.branches[branchIndex];
+            if (!branchData) return;
+            
+            const newLabel = prompt('Label de la branche:', branchData.label);
+            if (newLabel === null) return;
+            
+            const newContent = prompt('Contenu de la branche:', branchData.content);
+            if (newContent === null) return;
+            
+            const newDetail = prompt('Détail de la branche:', branchData.detail);
+            if (newDetail === null) return;
+            
+            const newTag = prompt('Tag (laisser vide pour aucun):', branchData.tag || '');
+            if (newTag === null) return;
+            
+            const newTagColor = prompt('Couleur du tag (red, green, amber, teal, mint, coral, purple, gray):', branchData.tagColor || 'gray');
+            if (newTagColor === null) return;
+            
+            // Mettre à jour la branche
+            branchData.label = newLabel;
+            branchData.content = newContent;
+            branchData.detail = newDetail;
+            branchData.tag = newTag || null;
+            branchData.tagColor = newTagColor;
+            
+            // Sauvegarder les modifications
+            this.$wire.updateNodeConfig(stepId, {
+                branches: node.config.branches
+            }).then(() => {
+                this.$wire.loadNodes();
+            });
+        },
+        
+        editCase(caseId) {
+            const caseNode = this.nodes.find(n => n.config?.case_id === caseId);
+            if (!caseNode) return;
+            
+            const newTitle = prompt('Titre du cas:', caseNode.config.case_title);
+            if (newTitle === null) return;
+            
+            const newSubtitle = prompt('Sous-titre du cas:', caseNode.config.case_subtitle);
+            if (newSubtitle === null) return;
+            
+            const newDescription = prompt('Description du cas:', caseNode.config.description || '');
+            if (newDescription === null) return;
+            
+            // Mettre à jour la configuration du cas
+            caseNode.config.case_title = newTitle;
+            caseNode.config.case_subtitle = newSubtitle;
+            caseNode.config.description = newDescription;
+            
+            // Sauvegarder les modifications
+            this.$wire.updateNodeConfig(caseNode.id, {
+                case_title: newTitle,
+                case_subtitle: newSubtitle,
+                description: newDescription
+            }).then(() => {
+                this.$wire.loadNodes();
+            });
+        },
+        
+        deleteCase(caseId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce cas et toutes ses étapes ?')) return;
+            
+            const caseNodes = this.nodes.filter(n => n.config?.case_id === caseId);
+            caseNodes.forEach(node => {
+                this.$wire.deleteNode(node.id);
+            });
+            
+            // Recharger après suppression
+            setTimeout(() => {
+                this.$wire.loadNodes();
+            }, 100);
         },
         
         addNode(type) {
@@ -326,6 +406,27 @@ function workflowEditor(nodes = [], workflowId = null) {
 
 .case-title { font-weight: 700; font-size: 14px; color: #1a1a2e; }
 .case-subtitle { font-size: 11px; color: #636E72; margin-top: 2px; }
+
+.delete-case-btn {
+    background: #D63031;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    transition: background 0.2s;
+}
+
+.delete-case-btn:hover {
+    background: #B71C1C;
+}
 
 .flow { display: flex; flex-direction: column; gap: 0; align-items: stretch; }
 
