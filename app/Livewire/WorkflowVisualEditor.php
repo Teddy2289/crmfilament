@@ -33,8 +33,10 @@ class WorkflowVisualEditor extends Component
                         'ordre' => $step->ordre,
                         'code' => $step->code,
                         'config' => $step->config ?? [],
-                        'x' => 50 + ($step->ordre * 200),
-                        'y' => 50,
+                        'x' => $step->config['x'] ?? 50 + ($step->ordre * 200),
+                        'y' => $step->config['y'] ?? 50,
+                        'parent_step_id' => $step->parent_step_id,
+                        'condition_label' => $step->condition_label,
                     ];
                 })->toArray();
             }

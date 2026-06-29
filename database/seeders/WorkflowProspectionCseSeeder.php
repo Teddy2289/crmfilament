@@ -65,6 +65,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 3,
             'actif' => true,
+            'parent_step_id' => $step1_1->id,
+            'condition_label' => '✗ Non',
             'config' => [
                 'description' => 'Supprimer la ligne - Retrait définitif du fichier de prospection',
                 'tag' => 'SUPP',
@@ -80,6 +82,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 4,
             'actif' => true,
+            'parent_step_id' => $step1_1->id,
+            'condition_label' => '✓ Oui',
             'config' => [
                 'description' => 'Mettre à jour le fichier - Corriger le numéro dans la fiche de prospection',
                 'tag' => 'MAJ',
@@ -124,6 +128,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 7,
             'actif' => true,
+            'parent_step_id' => $step2_1->id,
+            'condition_label' => '✗ Non',
             'config' => [
                 'description' => 'Fiche jaune → commercial - Renseigner nom, prénom, téléphone, mail, fonction de l\'élu. Rappel commercial à J+7',
                 'tag' => 'CSE-NI',
@@ -139,6 +145,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 8,
             'actif' => true,
+            'parent_step_id' => $step2_1->id,
+            'condition_label' => '✓ Oui',
             'config' => [
                 'description' => 'Confirmer et envoyer - Mail de confirmation, invitation calendrier, fiche récap, équipes en copie',
                 'tag' => 'RDV',
@@ -154,6 +162,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 9,
             'actif' => true,
+            'parent_step_id' => $step2_1->id,
+            'condition_label' => '⏱ Rappel',
             'config' => [
                 'description' => 'Programmer le rappel - L\'élu donne un créneau précis. Signal positif — prioritaire',
                 'tag' => 'RAPL-ELU',
@@ -198,6 +208,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 12,
             'actif' => true,
+            'parent_step_id' => $step3_1->id,
+            'condition_label' => '⏱ Créneau',
             'config' => [
                 'description' => 'Programmer le rappel suggéré - Signal neutre. Au rappel: si élu joint → cas 2, si bloqué → BLOC',
                 'tag' => 'RAPL-STD',
@@ -213,6 +225,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 13,
             'actif' => true,
+            'parent_step_id' => $step3_1->id,
+            'condition_label' => '✗ Aucun',
             'config' => [
                 'description' => 'Collecter coords + envoyer mail de prise de contact',
                 'tag' => 'BLOC',
@@ -257,6 +271,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 16,
             'actif' => true,
+            'parent_step_id' => $step4_1->id,
+            'condition_label' => '< 50',
             'config' => [
                 'description' => 'Demander personne qui gère droits formation - Envoi mail + fiche verte au commercial',
                 'tag' => 'NCSE-50',
@@ -272,6 +288,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 17,
             'actif' => true,
+            'parent_step_id' => $step4_1->id,
+            'condition_label' => '≥ 50',
             'config' => [
                 'description' => 'Reformuler la demande - Insister pour obtenir un élu CSE',
                 'tag' => 'NCSE+50',
@@ -316,6 +334,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 20,
             'actif' => true,
+            'parent_step_id' => $step5_1->id,
+            'condition_label' => '✓ Zone',
             'config' => [
                 'description' => 'Planifier l\'appel vers ce contact → passer au cas 2',
                 'tag' => 'CSE-ZONE',
@@ -331,6 +351,8 @@ class WorkflowProspectionCseSeeder extends Seeder
             'type' => 'action',
             'ordre' => 21,
             'actif' => true,
+            'parent_step_id' => $step5_1->id,
+            'condition_label' => '✗ Hors zone',
             'config' => [
                 'description' => 'Envoi fiche → Bruno pour traitement',
                 'tag' => 'CSE-HZ',
