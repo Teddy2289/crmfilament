@@ -1201,6 +1201,7 @@ class ProspectResource extends Resource
             'create' => Pages\CreateProspect::route('/create'),
             'edit' => Pages\EditProspect::route('/{record}/edit'),
             'view' => Pages\ViewProspect::route('/{record}'),
+            'kanban' => Pages\ProspectKanban::route('/kanban'),
         ];
     }
 }

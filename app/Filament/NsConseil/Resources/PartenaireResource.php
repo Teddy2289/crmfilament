@@ -1186,6 +1186,7 @@ class PartenaireResource extends Resource
             'create' => Pages\CreatePartenaire::route('/create'),
             'edit' => Pages\EditPartenaire::route('/{record}/edit'),
             'view' => Pages\ViewPartenaire::route('/{record}'),
+            'kanban' => Pages\PartenaireKanban::route('/kanban'),
         ];
     }
 }
