@@ -156,6 +156,7 @@ Role: compte partenaire signe ou cible partenaire.
 Champs et concepts majeurs:
 
 - nom, entreprise, nom retenu;
+- `nomenclature_interne` generee au format CDC `[Type] [Entreprise ou nom] [Ville]` et utilisee pour les rapprochements exacts;
 - type via `OrganizationType`;
 - statut via `OrganizationStatus`;
 - commercial, conseiller, entite commerciale;
@@ -330,6 +331,12 @@ Feuilles reconnues:
 | `CRM LIKE` | clients LIKE |
 | `CRM AOPIA-ABO` | clients AOPIA abonnement |
 | `CRM 01FC` | clients 01FC |
+
+Regles:
+
+- deduplication client par email, telephone, puis reference quand disponible;
+- rattachement automatique au partenaire quand la valeur source correspond exactement a `nomenclature_interne`, `nom` ou `nom_retenu`;
+- si aucun partenaire ne correspond, la valeur source est conservee dans `clients.extra_data.partenaire_import` avec le statut `partenaire_non_rattache`.
 
 ---
 

@@ -97,6 +97,7 @@ Model: `App\Models\Partenaire`
 | `nom` | nom public | peut etre genere par nomenclature |
 | `entreprise` | organisation | source fichier partenaire |
 | `nom_retenu` | nom commercial | utilise pour matching |
+| `nomenclature_interne` | rapprochement exact | generee automatiquement `[Type] [Entreprise ou nom] [Ville]` |
 | `type` | type partenaire | enum `OrganizationType` |
 | `statut` | cycle partenaire | enum `OrganizationStatus` |
 | `adresse`, `code_postal`, `ville` | localisation | requis pour secteur et RDV |
@@ -110,7 +111,7 @@ Model: `App\Models\Partenaire`
 
 | Champ | Droits typiques |
 |---|---|
-| `nom`, `entreprise`, `nom_retenu` | show, create, edit |
+| `nom`, `entreprise`, `nom_retenu`, `nomenclature_interne` | show, create, edit |
 | `siret` | show, create, edit |
 | `type`, `statut` | show, edit, flux |
 | `telephone`, `email` | show, create, edit |
@@ -136,7 +137,7 @@ Model: `App\Models\Client`
 | `telephone` | contact | si present |
 | `email` | contact | si present |
 | `adresse`, `code_postal`, `ville` | localisation | import Dolibarr |
-| `partenaire_id` | rattachement | matching partenaire |
+| `partenaire_id` | rattachement | matching partenaire exact via nomenclature, nom ou nom retenu |
 | `ne_plus_contacter` | exclusion commerciale | doit etre respecte |
 
 ### Champs utiles aux droits par champ

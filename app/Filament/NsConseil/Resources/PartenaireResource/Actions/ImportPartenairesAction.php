@@ -121,19 +121,9 @@ class ImportPartenairesAction extends Action
                             ->searchable()
                             ->nullable()
                             ->helperText('Utilisé si le conseiller n\'est pas trouvé en base.'),
-
-                        Forms\Components\Select::make('nomenclature_interne')
+                        Forms\Components\Placeholder::make('nomenclature_interne_info')
                             ->label('Nomenclature interne')
-                            ->options([
-                                'CSE_PME' => 'CSE PME (< 50 salariés)',
-                                'CSE_ETI' => 'CSE ETI (50–299 salariés)',
-                                'CSE_GE' => 'CSE Grande entreprise (300+)',
-                                'SYND_BRANCHE' => 'Syndicat de branche',
-                                'SYND_INTERPRO' => 'Syndicat interprofessionnel',
-                                'ENT_DIRECTE' => 'Entreprise directe',
-                                'ASSOC' => 'Association',
-                            ])
-                            ->nullable(),
+                            ->content('Generee automatiquement par ligne au format [Type] [Entreprise] [Ville].'),
                     ])
                     ->columns(2),
 
@@ -187,7 +177,6 @@ class ImportPartenairesAction extends Action
                     'type' => $data['type'],
                     'statut' => $data['statut'],
                     'conseiller_id' => $data['conseiller_id'] ?? null,
-                    'nomenclature_interne' => $data['nomenclature_interne'] ?? null,
                 ], fn ($v) => $v !== null);
 
                 $strategy = $data['strategy'] ?? 'merge';

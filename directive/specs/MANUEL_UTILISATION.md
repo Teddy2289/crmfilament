@@ -117,6 +117,7 @@ Une fiche partenaire contient:
 - type et statut;
 - commercial et conseiller;
 - adresse et departement;
+- nomenclature interne automatique `[Type] [Entreprise ou nom] [Ville]`;
 - informations CSE;
 - informations syndicat;
 - contacts partenaires;
@@ -356,6 +357,8 @@ Les imports se font depuis les actions des resources Filament ou les commandes d
 | Prospects Top 500 | Resource Prospects |
 | Partenaires MAJ | Resource Partenaires |
 | Clients Dolibarr | Resource Clients / commande historique |
+
+Les imports clients rattachent automatiquement le client au partenaire si la valeur source correspond exactement a la nomenclature interne, au nom ou au nom retenu du partenaire. Les valeurs non reconnues restent conservees en metadata pour traitement manuel.
 
 Commande clients historique:
 

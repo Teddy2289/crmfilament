@@ -141,18 +141,24 @@ class PartenaireResource extends Resource
                         ->options(OrganizationType::class)
                         ->enum(OrganizationType::class)
                         ->reactive(),
-                    Forms\Components\Select::make('nomenclature_interne')
+                    Forms\Components\TextInput::make('nomenclature_interne')
                         ->label('Nomenclature interne')
-                        ->options([
-                            'CSE_PME' => 'CSE PME (< 50 salariés)',
-                            'CSE_ETI' => 'CSE ETI (50–299 salariés)',
-                            'CSE_GE' => 'CSE Grande entreprise (300+)',
-                            'SYND_BRANCHE' => 'Syndicat de branche',
-                            'SYND_INTERPRO' => 'Syndicat interprofessionnel',
-                            'ENT_DIRECTE' => 'Entreprise directe',
-                            'ASSOC' => 'Association',
-                        ])
-                        ->searchable()->nullable(),
+                        ->maxLength(255)
+                        ->helperText("Format CDC : [Type] [Entreprise] [Ville]. Recalcule automatiquement a l'enregistrement.")
+                        ->readOnly()
+                        ->hintAction(
+                            Forms\Components\Actions\Action::make('genererNomenclatureInterne')
+                                ->label('Generer')
+                                ->icon('heroicon-m-sparkles')
+                                ->action(fn (Get $get, Set $set) => $set(
+                                    'nomenclature_interne',
+                                    Partenaire::genererNomenclature(
+                                        $get('type'),
+                                        $get('entreprise') ?: $get('nom'),
+                                        $get('ville')
+                                    )
+                                ))
+                        ),
                     Forms\Components\TextInput::make('departement')
                         ->label('Département')->maxLength(3)->placeholder('ex: 75'),
                     Forms\Components\TextInput::make('code_postal')

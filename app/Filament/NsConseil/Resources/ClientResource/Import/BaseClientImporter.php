@@ -8,6 +8,7 @@ use App\Models\DossierFormation;
 use App\Models\EntiteCommerciale;
 use App\Models\HeuresFormation;
 use App\Models\Parrain;
+use App\Models\Partenaire;
 use App\Models\PlanningFormation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -37,6 +38,9 @@ abstract class BaseClientImporter
 
     /** @var array<string, int|null> */
     protected array $entiteCache = [];
+
+    /** @var array<string, Partenaire|null> */
+    protected array $partenaireCache = [];
 
     // ── Interface publique ──────────────────────────────────────────────────
 
@@ -142,6 +146,22 @@ abstract class BaseClientImporter
         }
 
         // Clé de match : email > téléphone > ref_client > création brute
+        $partenaireNomenclature = $this->takeClientDataValue($clientData, '_partenaire_nomenclature');
+        if ($partenaireNomenclature) {
+            $partenaire = $this->resolvePartenaireByNomenclature($partenaireNomenclature);
+
+            if ($partenaire) {
+                $clientData['partenaire_id'] = $partenaire->id;
+            }
+
+            $clientData['extra_data'] = array_replace_recursive($clientData['extra_data'] ?? [], [
+                'partenaire_import' => [
+                    'nomenclature' => $partenaireNomenclature,
+                    'statut' => $partenaire ? 'rattache' : 'partenaire_non_rattache',
+                ],
+            ]);
+        }
+
         $existingClient = null;
 
         // 1. Chercher par email
@@ -303,6 +323,34 @@ abstract class BaseClientImporter
      * Split simple : dernier mot = prénom si le nom contient plusieurs mots,
      * sinon tout va dans `nom`.
      */
+    protected function takeClientDataValue(array &$clientData, string $key): ?string
+    {
+        $value = trim((string) ($clientData[$key] ?? ''));
+        unset($clientData[$key]);
+
+        return $value !== '' ? $value : null;
+    }
+
+    protected function resolvePartenaireByNomenclature(string $nomenclature): ?Partenaire
+    {
+        $nomenclature = trim($nomenclature);
+        if ($nomenclature === '') {
+            return null;
+        }
+
+        if (array_key_exists($nomenclature, $this->partenaireCache)) {
+            return $this->partenaireCache[$nomenclature];
+        }
+
+        $this->partenaireCache[$nomenclature] = Partenaire::query()
+            ->where('nomenclature_interne', $nomenclature)
+            ->orWhere('nom', $nomenclature)
+            ->orWhere('nom_retenu', $nomenclature)
+            ->first();
+
+        return $this->partenaireCache[$nomenclature];
+    }
+
     protected function resolveConsultant(string $nomBrut): ?int
     {
         $nomBrut = trim($nomBrut);
@@ -578,6 +626,10 @@ abstract class BaseClientImporter
             if (isset($existing->$field) && $existing->$field !== null && $existing->$field !== '') {
                 unset($newData[$field]);
             }
+        }
+
+        if (isset($newData['extra_data'])) {
+            $newData['extra_data'] = array_replace_recursive($existing->extra_data ?? [], $newData['extra_data']);
         }
 
         return $newData;

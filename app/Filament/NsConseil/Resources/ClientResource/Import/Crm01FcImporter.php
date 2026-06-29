@@ -35,6 +35,8 @@ class Crm01FcImporter extends BaseClientImporter
     {
         $ref = trim((string) ($row['Réf. client'] ?? ''));
         $tiers = trim((string) ($row['Tiers'] ?? ''));
+        $provenance = trim((string) ($row['Provenance'] ?? ''));
+        $auteur = trim((string) ($row['Auteur'] ?? ''));
 
         return [
             // ── Client ───────────────────────────────────────────────────
@@ -48,6 +50,11 @@ class Crm01FcImporter extends BaseClientImporter
                 'entreprise' => trim((string) ($row['Entreprise'] ?? '')) ?: null,
                 'date_naissance' => $this->parseDate($row['Date de naissance'] ?? null),
                 'type_tiers' => trim((string) ($row['Type du tiers'] ?? '')) ?: null,
+                '_partenaire_nomenclature' => $provenance ?: null,
+                'extra_data' => array_filter([
+                    'provenance' => $provenance ?: null,
+                    'auteur' => $auteur ?: null,
+                ], fn ($v) => $v !== null && $v !== ''),
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── DossierFormation ─────────────────────────────────────────

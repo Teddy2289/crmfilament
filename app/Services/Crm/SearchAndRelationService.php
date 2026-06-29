@@ -82,6 +82,8 @@ class SearchAndRelationService
             $q->where('telephone', 'like', "%{$query}%")
                 ->orWhere('email', 'like', "%{$query}%")
                 ->orWhere('nom', 'like', "%{$query}%")
+                ->orWhere('nom_retenu', 'like', "%{$query}%")
+                ->orWhere('nomenclature_interne', 'like', "%{$query}%")
                 ->orWhere('ville', 'like', "%{$query}%");
         })
         ->with(['conseiller', 'entite'])
