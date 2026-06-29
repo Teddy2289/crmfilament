@@ -6,6 +6,7 @@ use App\Filament\SuperAdmin\Resources\CrmProfileResource\Pages\CreateCrmProfile;
 use App\Filament\SuperAdmin\Resources\CrmProfileResource\Pages\EditCrmProfile;
 use App\Filament\SuperAdmin\Resources\CrmProfileResource\Pages\ListCrmProfiles;
 use App\Models\CrmProfile;
+use App\Models\Theme;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -51,6 +52,33 @@ class CrmProfileResource extends Resource
                     Forms\Components\TextInput::make('landing_path')
                         ->label('Page d\'accueil après connexion')
                         ->placeholder('/ns-conseil/prospects'),
+
+                    Forms\Components\Select::make('theme_id')
+                        ->label('Thème par défaut du profil')
+                        ->relationship('theme', 'label')
+                        ->searchable()
+                        ->preload()
+                        ->nullable()
+                        ->helperText('Le thème assigné à tous les utilisateurs de ce profil (priorité sur la préférence utilisateur)')
+                        ->createOptionForm([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nom technique')
+                                ->required()
+                                ->unique(ignoreRecord: true),
+                            Forms\Components\TextInput::make('label')
+                                ->label('Libellé')
+                                ->required(),
+                            Forms\Components\Select::make('panel')
+                                ->label('Panel')
+                                ->options([
+                                    'ns-conseil' => 'NS Conseil',
+                                    'admin' => 'Admin',
+                                    'super-admin' => 'Super Admin',
+                                    'allopro' => 'Allopro',
+                                ])
+                                ->required()
+                                ->default('ns-conseil'),
+                        ]),
 
                     Forms\Components\TextInput::make('icone')
                         ->label('Icône Heroicon')
@@ -112,6 +140,7 @@ class CrmProfileResource extends Resource
                 Tables\Columns\TextColumn::make('label')->label('Profil')->searchable()->weight('bold'),
                 Tables\Columns\TextColumn::make('role_name')->label('Rôle')->badge()->color('gray'),
                 Tables\Columns\TextColumn::make('panels')->label('Panels')->badge()->limit(30),
+                Tables\Columns\TextColumn::make('theme.label')->label('Thème')->searchable()->toggleable(),
                 Tables\Columns\IconColumn::make('can_validate_qf')->label('QF')->boolean(),
                 Tables\Columns\IconColumn::make('can_import')->label('Import')->boolean(),
                 Tables\Columns\IconColumn::make('is_supervisor')->label('Superviseur')->boolean(),
