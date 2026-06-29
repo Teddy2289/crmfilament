@@ -155,7 +155,92 @@ Model: `App\Models\Client`
 
 ---
 
-## 5. Tickets AlloPro
+## 5. Opportunites
+
+Entite: `opportunites`
+Model: `App\Models\Opportunite`
+
+### Champs utiles aux droits par champ
+
+| Champ | Droits typiques |
+|---|---|
+| `nom_entite`, `type_pressenti` | show, create, edit |
+| `telephone`, `email`, `adresse` | show, create, edit |
+| `departement`, `secteur_activite`, `nb_salaries` | show, create, edit |
+| `source_detection`, `details_source` | show, create, edit |
+| `potentiel`, `statut` | show, edit, flux |
+| `interlocuteur_nom`, `interlocuteur_email` | show, create, edit |
+| `assigne_a` | show, edit, flux |
+| `raison_perte`, `converti_en_prospect_id` | show, edit |
+
+---
+
+## 6. Entreprises
+
+Entite: `entreprises`
+Model: `App\Models\Entreprise`
+
+### Champs utiles aux droits par champ
+
+| Champ | Droits typiques |
+|---|---|
+| `raison_sociale` | show, create, edit |
+| `siret`, `siren`, `numero_tva` | show, create, edit |
+| `adresse`, `code_postal`, `ville`, `pays` | show, create, edit |
+| `telephone`, `email`, `site_web` | show, create, edit |
+| `secteur_activite`, `effectif`, `code_naf` | show, create, edit, flux |
+| `description` | show, create, edit |
+
+---
+
+## 7. Campagnes phoning
+
+Entite: `campagne_phonings`
+Model: `App\Models\CampagnePhoning`
+
+### Champs utiles aux droits par champ
+
+| Champ | Droits typiques |
+|---|---|
+| `nom`, `description` | show, create, edit |
+| `statut`, `type_entite`, `criteres` | show, create, edit, flux |
+| `date_debut`, `date_fin` | show, create, edit |
+| `user_id`, `entite_id` | show, create, edit, flux |
+
+---
+
+## 8. Dossiers formation
+
+Entite: `dossier_formations`
+Model: `App\Models\DossierFormation`
+
+### Champs utiles aux droits par champ
+
+| Champ | Droits typiques |
+|---|---|
+| `ref_client`, `personne_id` | show, create |
+| `intitule_programme`, `entite_id` | show, create, edit |
+| `montant_ht`, `montant_cpf` | show, create, edit selon politique metier |
+| `date_vente`, `statut_formation`, `etat` | show, create, edit, flux |
+| `consultant_accueil_id`, `consultant_formateur_id` | show, create, edit |
+
+---
+
+## 9. Configuration phoning
+
+Entites: `script_appels`, `statut_phonings`
+Models: `App\Models\ScriptAppel`, `App\Models\StatutPhoning`
+
+### Champs utiles aux droits par champ
+
+| Entite | Champs sensibles |
+|---|---|
+| `script_appels` | `titre`, `type_contact`, `campagne_id`, `onglet`, `contenu`, `conseil`, `actif`, `ordre` |
+| `statut_phonings` | `model_type`, `groupe`, `code`, `label`, `pipeline_statut`, `fiche_type`, `actif`, `ordre` |
+
+---
+
+## 10. Tickets AlloPro
 
 Entite: `tickets`
 Model: `App\Models\Ticket`
@@ -179,7 +264,7 @@ Model: `App\Models\Ticket`
 
 ---
 
-## 6. Appels
+## 11. Appels
 
 Model: `App\Models\Appel`
 
@@ -200,8 +285,9 @@ Champs fonctionnels importants:
 
 ---
 
-## 7. Rendez-vous
+## 12. Rendez-vous
 
+Entite: `rendez_vous`
 Model: `App\Models\RendezVous`
 
 Champs fonctionnels importants:
@@ -218,9 +304,20 @@ Champs fonctionnels importants:
 | `statut` | etat RDV |
 | `google_event_id` | sync calendrier |
 
+### Champs utiles aux droits par champ
+
+| Champ | Droits typiques |
+|---|---|
+| `commercial_id`, `teleprospecteur_id` | show, create, edit, flux |
+| `type`, `statut`, `date_heure` | show, create, edit, flux |
+| `lieu`, `adresse_lieu` | show, create, edit |
+| `interlocuteur_nom`, `interlocuteur_tel`, `interlocuteur_email` | show, create, edit |
+| `pdf_recap`, `enregistrement_audio` | show, edit, flux |
+| `outlook_event_id`, `google_event_id` | show, edit |
+
 ---
 
-## 8. Regles de transition principales
+## 13. Regles de transition principales
 
 | Transition | Conditions minimales |
 |---|---|
@@ -234,7 +331,7 @@ Champs fonctionnels importants:
 
 ---
 
-## 9. Tests a maintenir
+## 14. Tests a maintenir
 
 Test automatise principal:
 

@@ -2,11 +2,11 @@
 
 namespace App\Filament\NsConseil\Resources;
 
-use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\DossierFormationResource\Pages;
 use App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers\HeuresRelationManager;
 use App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers\PlanningRelationManager;
 use App\Models\DossierFormation;
+use App\Support\UsesResourcePermissions;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -19,9 +19,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DossierFormationResource extends Resource
 {
-    use HasRoleAccess;
+    use UsesResourcePermissions;
 
     protected static ?string $model = DossierFormation::class;
+
+    protected static string $permissionPrefix = 'dossier_formations';
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
@@ -30,11 +32,6 @@ class DossierFormationResource extends Resource
     protected static ?string $navigationLabel = 'Dossiers Formation';
 
     protected static ?int $navigationSort = 3;
-
-    public static function canAccess(): bool
-    {
-        return static::userHasAnyRole(['admin', 'superviseur', 'commercial']);
-    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -46,7 +43,7 @@ class DossierFormationResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form->schema(static::applyFormFieldPermissions([
             Forms\Components\Section::make('Informations générales')
                 ->icon('heroicon-o-information-circle')
                 ->schema([
@@ -157,7 +154,7 @@ class DossierFormationResource extends Resource
                         ->nullable()
                         ->helperText('Consultant qui assure la formation'),
                 ])->columns(2),
-        ]);
+        ]));
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -167,7 +164,7 @@ class DossierFormationResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
-            ->columns([
+            ->columns(static::applyShowFieldPermissions([
                 // 🔵 Informations principales
                 Tables\Columns\TextColumn::make('personne.nom_tiers')
                     ->label('Client')
@@ -298,7 +295,7 @@ class DossierFormationResource extends Resource
                     ->toggleable()
                     ->toggledHiddenByDefault()
                     ->color('danger'),
-            ])
+            ]))
             ->filters([
                 // 📊 Filtres statut
                 Tables\Filters\SelectFilter::make('statut_formation')
@@ -396,6 +393,7 @@ class DossierFormationResource extends Resource
                 Tables\Actions\Action::make('ajouter_heures')
                     ->label('Ajouter heures')
                     ->icon('heroicon-o-clock')
+                    ->visible(fn () => static::userCanResourcePermission('update'))
                     ->modalHeading('Ajouter des heures de formation')
                     ->modalSubmitActionLabel('Enregistrer')
                     ->form([
@@ -449,6 +447,7 @@ class DossierFormationResource extends Resource
                 Tables\Actions\Action::make('ajouter_planning')
                     ->label('Ajouter planning')
                     ->icon('heroicon-o-calendar')
+                    ->visible(fn () => static::userCanResourcePermission('update'))
                     ->modalHeading('Ajouter un planning de formation')
                     ->modalSubmitActionLabel('Enregistrer')
                     ->form([
@@ -507,7 +506,7 @@ class DossierFormationResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function infolist(Infolist $infolist): Infolist
     {
-        return $infolist->schema([
+        return $infolist->schema(static::applyShowFieldPermissions([
             Infolists\Components\Section::make('Informations générales')
                 ->schema([
                     Infolists\Components\TextEntry::make('personne.nom_tiers')
@@ -619,7 +618,7 @@ class DossierFormationResource extends Resource
                         ->dateTime('d/m/Y H:i')
                         ->color('danger'),
                 ])->columns(3),
-        ]);
+        ]));
     }
 
     // ─────────────────────────────────────────────────────────────────

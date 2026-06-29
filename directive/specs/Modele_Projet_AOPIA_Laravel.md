@@ -358,9 +358,16 @@ Modules couverts:
 | prospects | Ns Conseil |
 | partenaires | Ns Conseil |
 | clients | Ns Conseil |
+| opportunites | Ns Conseil |
+| rendez_vous | Ns Conseil |
+| entreprises | Ns Conseil |
+| campagne_phonings | Ns Conseil |
+| dossier_formations | Ns Conseil |
 | activites | Ns Conseil |
 | rapports | Ns Conseil |
 | document_knowledges | Ns Conseil |
+| script_appels | Ns Conseil |
+| statut_phonings | Ns Conseil |
 | tickets | AlloPro |
 | fiche_p2 | AlloPro |
 | artisans | AlloPro |
@@ -400,6 +407,13 @@ Entites actuellement exposees aux droits champ:
 | prospects | Ns Conseil |
 | partenaires | Ns Conseil |
 | clients | Ns Conseil |
+| opportunites | Ns Conseil |
+| rendez_vous | Ns Conseil |
+| entreprises | Ns Conseil |
+| campagne_phonings | Ns Conseil |
+| dossier_formations | Ns Conseil |
+| script_appels | Ns Conseil |
+| statut_phonings | Ns Conseil |
 | tickets | AlloPro |
 
 Comportement:

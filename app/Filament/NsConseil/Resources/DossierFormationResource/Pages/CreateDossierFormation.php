@@ -9,6 +9,11 @@ class CreateDossierFormation extends CreateRecord
 {
     protected static string $resource = DossierFormationResource::class;
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return DossierFormationResource::filterFormDataForFieldPermissions($data, 'create');
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

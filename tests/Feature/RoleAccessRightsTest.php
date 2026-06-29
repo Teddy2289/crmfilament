@@ -3,11 +3,19 @@
 namespace Tests\Feature;
 
 use App\Filament\Allopro\Resources\TicketResource;
+use App\Filament\NsConseil\Resources\CampagnePhoningResource;
 use App\Filament\NsConseil\Resources\ClientResource;
 use App\Filament\NsConseil\Resources\DocumentKnowledgeResource;
+use App\Filament\NsConseil\Resources\DossierFormationResource;
+use App\Filament\NsConseil\Resources\EntrepriseResource;
+use App\Filament\NsConseil\Resources\OpportuniteResource;
 use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Filament\NsConseil\Resources\ProspectResource;
+use App\Filament\NsConseil\Resources\RendezVousResource;
+use App\Filament\NsConseil\Resources\ScriptAppelResource;
+use App\Filament\NsConseil\Resources\StatutPhoningResource;
 use App\Models\DocumentKnowledge;
+use App\Models\Opportunite;
 use App\Models\User;
 use App\Support\AccessRightsCatalog;
 use Filament\Infolists\Components\Section;
@@ -44,11 +52,19 @@ class RoleAccessRightsTest extends TestCase
         $this->assertTrue(ProspectResource::canAccess());
         $this->assertTrue(PartenaireResource::canAccess());
         $this->assertTrue(ClientResource::canAccess());
+        $this->assertTrue(OpportuniteResource::canAccess());
+        $this->assertTrue(RendezVousResource::canAccess());
+        $this->assertTrue(EntrepriseResource::canAccess());
+        $this->assertTrue(CampagnePhoningResource::canAccess());
+        $this->assertTrue(DossierFormationResource::canAccess());
+        $this->assertTrue(ScriptAppelResource::canAccess());
+        $this->assertTrue(StatutPhoningResource::canAccess());
         $this->assertTrue(DocumentKnowledgeResource::canAccess());
         $this->assertTrue(DocumentKnowledgeResource::canCreate());
         $this->assertTrue(TicketResource::canAccess());
         $this->assertTrue(TicketResource::canCreate());
         $this->assertTrue(AccessRightsCatalog::userCanField($user, 'prospects', 'nom', 'flux'));
+        $this->assertTrue(AccessRightsCatalog::userCanField($user, 'opportunites', 'nom_entite', 'edit'));
     }
 
     #[Test]
@@ -69,6 +85,49 @@ class RoleAccessRightsTest extends TestCase
         $this->assertTrue(ProspectResource::canCreate());
         $this->assertFalse(PartenaireResource::canAccess());
         $this->assertFalse(ClientResource::canAccess());
+        $this->assertFalse(OpportuniteResource::canAccess());
+        $this->assertFalse(RendezVousResource::canAccess());
+        $this->assertFalse(EntrepriseResource::canAccess());
+        $this->assertFalse(CampagnePhoningResource::canAccess());
+        $this->assertFalse(DossierFormationResource::canAccess());
+        $this->assertFalse(ScriptAppelResource::canAccess());
+        $this->assertFalse(StatutPhoningResource::canAccess());
+        $this->assertFalse(TicketResource::canAccess());
+    }
+
+    #[Test]
+    public function selective_ns_conseil_role_accesses_new_crm_modules_only_when_granted(): void
+    {
+        $role = Role::create(['name' => 'test_selective_new_crm_modules', 'guard_name' => 'web']);
+        $role->syncPermissions([
+            'opportunites.view_any',
+            'opportunites.view',
+            'opportunites.update',
+            'rendez_vous.view_any',
+            'rendez_vous.view',
+            'entreprises.view_any',
+            'campagne_phonings.view_any',
+            'script_appels.view_any',
+            'statut_phonings.view_any',
+            'dossier_formations.view_any',
+        ]);
+
+        $user = $this->userWithRole($role);
+        $this->actingAs($user);
+
+        $opportunite = Opportunite::make(['statut' => 'nouveau']);
+
+        $this->assertTrue(OpportuniteResource::canAccess());
+        $this->assertTrue(OpportuniteResource::canView($opportunite));
+        $this->assertTrue(OpportuniteResource::canEdit($opportunite));
+        $this->assertFalse(OpportuniteResource::canCreate());
+        $this->assertTrue(RendezVousResource::canAccess());
+        $this->assertTrue(EntrepriseResource::canAccess());
+        $this->assertTrue(CampagnePhoningResource::canAccess());
+        $this->assertTrue(ScriptAppelResource::canAccess());
+        $this->assertTrue(StatutPhoningResource::canAccess());
+        $this->assertTrue(DossierFormationResource::canAccess());
+        $this->assertFalse(ProspectResource::canAccess());
         $this->assertFalse(TicketResource::canAccess());
     }
 
@@ -142,15 +201,28 @@ class RoleAccessRightsTest extends TestCase
         $fieldOptions = AccessRightsCatalog::fieldPermissionOptions();
 
         $this->assertArrayHasKey('AOPIA - Prospects', $groups);
+        $this->assertArrayHasKey('AOPIA - Opportunites', $groups);
+        $this->assertArrayHasKey('AOPIA - Rendez-vous', $groups);
+        $this->assertArrayHasKey('AOPIA - Entreprises', $groups);
+        $this->assertArrayHasKey('AOPIA - Campagnes phoning', $groups);
         $this->assertArrayHasKey('AOPIA - Base de connaissances', $groups);
         $this->assertArrayHasKey('AlloPro - Tickets', $groups);
         $this->assertArrayHasKey('prospects.view_any', $groups['AOPIA - Prospects']);
+        $this->assertArrayHasKey('opportunites.view_any', $groups['AOPIA - Opportunites']);
+        $this->assertArrayHasKey('rendez_vous.view_any', $groups['AOPIA - Rendez-vous']);
+        $this->assertArrayHasKey('entreprises.view_any', $groups['AOPIA - Entreprises']);
+        $this->assertArrayHasKey('campagne_phonings.view_any', $groups['AOPIA - Campagnes phoning']);
         $this->assertArrayHasKey('document_knowledges.view_any', $groups['AOPIA - Base de connaissances']);
         $this->assertArrayHasKey('tickets.update_statut', $groups['AlloPro - Tickets']);
         $this->assertSame('AOPIA - Prospects - Lister', $flatOptions['prospects.view_any']);
+        $this->assertSame('AOPIA - Opportunites - Lister', $flatOptions['opportunites.view_any']);
+        $this->assertSame('AOPIA - Rendez-vous - Lister', $flatOptions['rendez_vous.view_any']);
         $this->assertSame('AOPIA - Base de connaissances - Voir', $flatOptions['document_knowledges.view']);
         $this->assertSame('AlloPro - Tickets - Modifier le statut', $flatOptions['tickets.update_statut']);
         $this->assertSame('AOPIA - Prospects - Nom - Voir', $fieldOptions['fields.prospects.nom.show']);
+        $this->assertSame('AOPIA - Opportunites - Nom entite - Voir', $fieldOptions['fields.opportunites.nom_entite.show']);
+        $this->assertSame('AOPIA - Rendez-vous - Date et heure - Modifier', $fieldOptions['fields.rendez_vous.date_heure.edit']);
+        $this->assertSame('AOPIA - Entreprises - Raison sociale - Tout', $fieldOptions['fields.entreprises.raison_sociale.all']);
         $this->assertSame('AOPIA - Prospects - Nom - Tout', $fieldOptions['fields.prospects.nom.all']);
         $this->assertSame('AlloPro - Tickets - Statut - Flux', $fieldOptions['fields.tickets.statut.flux']);
         $this->assertTrue(
