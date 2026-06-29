@@ -553,7 +553,6 @@ class PartenaireResource extends Resource
             ->groups([
                 'statut',
             ])
-            ->reorderable('statut')
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
