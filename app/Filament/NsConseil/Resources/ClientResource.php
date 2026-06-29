@@ -287,12 +287,6 @@ class ClientResource extends Resource
     // ─────────────────────────────────────────────────────────────────
     public static function table(Table $table): Table
     {
-        $currentView = session()->get('view_clients', 'list');
-
-        if ($currentView === 'kanban') {
-            return static::kanbanTable($table);
-        }
-
         return static::listTable($table);
     }
 
