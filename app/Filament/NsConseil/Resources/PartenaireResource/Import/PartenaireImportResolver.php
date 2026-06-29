@@ -5,65 +5,93 @@ namespace App\Filament\NsConseil\Resources\PartenaireResource\Import;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 /**
- * Charge le fichier Excel et importe UNIQUEMENT la feuille "MAJ".
+ * Charge le fichier Excel et importe une ou plusieurs feuilles.
  *
- * La feuille MAJ est la source de vérité consolidée. Les autres onglets
- * (par conseiller, archives, COMM…) sont ignorés.
+ * Par défaut, importe uniquement la feuille "MAJ" (source de vérité consolidée).
+ * Les autres onglets (par conseiller, archives, COMM…) peuvent être importés
+ * en spécifiant $targetSheets = null pour importer tous les onglets.
  */
 class PartenaireImportResolver
 {
-    public const TARGET_SHEET = 'MAJ';
+    public const DEFAULT_TARGET_SHEET = 'MAJ';
 
     /**
      * @param  string  $filePath  Chemin absolu vers le .xlsx
      * @param  array  $defaults  Valeurs par défaut (entite_id, type, statut, conseiller_id…)
      * @param  string  $strategy  Stratégie d'importation (merge, overwrite, skip)
-     * @return array{created:int, updated:int, skipped:int, errors:list<string>}
+     * @param  array<string>|null  $targetSheets  Liste des onglets à importer (null = tous les onglets)
+     * @return array{created:int, updated:int, skipped:int, errors:list<string>, sheets_processed:list<string>}
      */
-    public static function importFile(string $filePath, array $defaults = [], string $strategy = 'merge'): array
+    public static function importFile(string $filePath, array $defaults = [], string $strategy = 'merge', ?array $targetSheets = null): array
     {
         $reader = IOFactory::createReaderForFile($filePath);
         $reader->setReadDataOnly(true);
         $spreadsheet = $reader->load($filePath);
 
-        // ── Chercher la feuille cible ─────────────────────────────────
-        $worksheet = null;
-        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-            if (mb_strtoupper(trim($sheet->getTitle())) === mb_strtoupper(self::TARGET_SHEET)) {
-                $worksheet = $sheet;
-                break;
+        // ── Déterminer les onglets à importer ─────────────────────────────
+        if ($targetSheets === null) {
+            // Importer tous les onglets
+            $targetSheets = [];
+            foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+                $targetSheets[] = $sheet->getTitle();
             }
+        } elseif (empty($targetSheets)) {
+            // Utiliser l'onglet par défaut si aucun spécifié
+            $targetSheets = [self::DEFAULT_TARGET_SHEET];
         }
 
-        if ($worksheet === null) {
-            return [
-                'created' => 0,
-                'updated' => 0,
-                'skipped' => 0,
-                'errors' => ["Feuille '".self::TARGET_SHEET."' introuvable dans le fichier."],
-            ];
+        // ── Résultats globaux ─────────────────────────────────────────────
+        $totalCreated = 0;
+        $totalUpdated = 0;
+        $totalSkipped = 0;
+        $allErrors = [];
+        $sheetsProcessed = [];
+
+        // ── Traiter chaque onglet ────────────────────────────────────────
+        foreach ($targetSheets as $targetSheet) {
+            $worksheet = null;
+            foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+                if (mb_strtoupper(trim($sheet->getTitle())) === mb_strtoupper(trim($targetSheet))) {
+                    $worksheet = $sheet;
+                    break;
+                }
+            }
+
+            if ($worksheet === null) {
+                $allErrors[] = "Feuille '{$targetSheet}' introuvable dans le fichier.";
+                continue;
+            }
+
+            // ── Lire les données brutes ───────────────────────────────────
+            $rows = $worksheet->toArray(
+                nullValue: null,
+                calculateFormulas: true,
+                formatData: false,
+                returnCellRef: false
+            );
+
+            if (count($rows) < 2) {
+                $allErrors[] = "La feuille '{$targetSheet}' est vide ou ne contient que l'en-tête.";
+                continue;
+            }
+
+            // ── Déléguer à l'importer ─────────────────────────────────────
+            $importer = new PartenaireImporter;
+            $result = $importer->import($rows, $defaults, $strategy);
+
+            $totalCreated += $result['created'];
+            $totalUpdated += $result['updated'];
+            $totalSkipped += $result['skipped'];
+            $allErrors = array_merge($allErrors, $result['errors']);
+            $sheetsProcessed[] = $targetSheet;
         }
 
-        // ── Lire les données brutes ───────────────────────────────────
-        $rows = $worksheet->toArray(
-            nullValue: null,
-            calculateFormulas: true,
-            formatData: false,   // valeurs brutes : dates en serial, nombres en float
-            returnCellRef: false
-        );
-
-        if (count($rows) < 2) {
-            return [
-                'created' => 0,
-                'updated' => 0,
-                'skipped' => 0,
-                'errors' => ["La feuille '".self::TARGET_SHEET."' est vide ou ne contient que l'en-tête."],
-            ];
-        }
-
-        // ── Déléguer à l'importer ─────────────────────────────────────
-        $importer = new PartenaireImporter;
-
-        return $importer->import($rows, $defaults, $strategy);
+        return [
+            'created' => $totalCreated,
+            'updated' => $totalUpdated,
+            'skipped' => $totalSkipped,
+            'errors' => $allErrors,
+            'sheets_processed' => $sheetsProcessed,
+        ];
     }
 }
