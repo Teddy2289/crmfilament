@@ -9,6 +9,8 @@ use App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 use App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Models\Consultant;
+use App\Models\CustomField;
+use App\Models\CustomFieldValue;
 use App\Models\Partenaire;
 use App\Rules\PartenaireNomenclatureRule;
 use App\Support\UsesResourcePermissions;
@@ -286,7 +288,96 @@ class PartenaireResource extends Resource
                     Forms\Components\Textarea::make('commentaires')->label('Commentaires')->rows(3)->columnSpanFull(),
                     Forms\Components\Textarea::make('notes')->label('Notes internes')->rows(3)->columnSpanFull(),
                 ]),
+
+            Forms\Components\Section::make('Champs personnalisés')
+                ->icon('heroicon-o-adjustments-horizontal')
+                ->schema(function (callable $get, ?Partenaire $record) {
+                    $customFields = CustomField::forModel(Partenaire::class)
+                        ->active()
+                        ->ordered()
+                        ->get();
+
+                    return $customFields->map(function ($field) use ($record) {
+                        $component = match ($field->type) {
+                            'text' => Forms\Components\TextInput::make('custom_field_' . $field->id),
+                            'textarea' => Forms\Components\Textarea::make('custom_field_' . $field->id),
+                            'number' => Forms\Components\TextInput::make('custom_field_' . $field->id)->numeric(),
+                            'select' => Forms\Components\Select::make('custom_field_' . $field->id)
+                                ->options($field->options ?? []),
+                            'checkbox' => Forms\Components\Checkbox::make('custom_field_' . $field->id),
+                            'date' => Forms\Components\DatePicker::make('custom_field_' . $field->id),
+                            'email' => Forms\Components\TextInput::make('custom_field_' . $field->id)->email(),
+                            'tel' => Forms\Components\TextInput::make('custom_field_' . $field->id)->tel(),
+                            default => Forms\Components\TextInput::make('custom_field_' . $field->id),
+                        };
+
+                        $component->label($field->name);
+
+                        if ($field->required) {
+                            $component->required();
+                        }
+
+                        if ($field->placeholder) {
+                            $component->placeholder($field->placeholder);
+                        }
+
+                        if ($field->helper_text) {
+                            $component->helperText($field->helper_text);
+                        }
+
+                        // Charger la valeur existante si on est en édition
+                        if ($record) {
+                            $value = CustomFieldValue::where('custom_field_id', $field->id)
+                                ->where('model_type', Partenaire::class)
+                                ->where('model_id', $record->id)
+                                ->first();
+
+                            if ($value) {
+                                $component->default($value->value);
+                            }
+                        }
+
+                        return $component;
+                    })->toArray() ?: [
+                        Forms\Components\Placeholder::make('no_custom_fields')
+                            ->label('Aucun champ personnalisé configuré')
+                            ->content('Configurez des champs personnalisés dans la section "Champs personnalisés" du menu Configuration.'),
+                    ];
+                }),
         ]));
+    }
+
+    public static function afterCreate(Model $record): void
+    {
+        static::saveCustomFields($record);
+    }
+
+    public static function afterUpdate(Model $record): void
+    {
+        static::saveCustomFields($record);
+    }
+
+    protected static function saveCustomFields(Model $record): void
+    {
+        $customFields = CustomField::forModel(Partenaire::class)->active()->get();
+
+        foreach ($customFields as $field) {
+            $fieldName = 'custom_field_' . $field->id;
+            $value = request()->input($fieldName);
+
+            if ($value !== null) {
+                CustomFieldValue::updateOrCreate(
+                    [
+                        'custom_field_id' => $field->id,
+                        'model_type' => Partenaire::class,
+                        'model_id' => $record->id,
+                    ],
+                    [
+                        'value' => $value,
+                    ]
+                );
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────
