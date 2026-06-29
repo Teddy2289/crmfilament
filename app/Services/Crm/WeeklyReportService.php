@@ -3,7 +3,6 @@
 namespace App\Services\Crm;
 
 use App\Enums\ProspectStatut;
-
 use App\Enums\RendezVousStatut;
 use App\Models\Appel;
 use App\Models\Opportunite;
@@ -15,10 +14,12 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
- * Construit les données de reporting hebdomadaire (CDC WF5 / WF6 / §7bis).
+ * Construit les donnees de reporting hebdomadaire (CDC WF5 / WF6 / section 7bis).
  */
 class WeeklyReportService
 {
+    public const ROLE_TEAM_LEADER = 'team_leader';
+
     public function periode(): array
     {
         $debut = CarbonImmutable::now()->subWeek()->startOfWeek();
@@ -27,12 +28,10 @@ class WeeklyReportService
         return [$debut, $fin];
     }
 
-    /**
-       * Rapport enrichi pour un téléprospecteur (CDC §7bis).
-     */
     public function pourTeleprospecteur(User $user): array
     {
         [$debut, $fin] = $this->periode();
+        $maintenant = CarbonImmutable::now();
 
         $prospectsParStatut = Prospect::query()
             ->where('teleprospecteur_id', $user->id)
@@ -42,57 +41,56 @@ class WeeklyReportService
             ->toArray();
 
         $appelsSemaine = Appel::query()
-            ->where(function ($q) use ($user) {
-                $q->where('phoning_agent_id', $user->id)
+            ->where(function ($query) use ($user) {
+                $query->where('phoning_agent_id', $user->id)
                     ->orWhere('user_id', $user->id);
             })
             ->whereBetween('date_heure', [$debut, $fin])
             ->count();
 
-
-            $cseJoints = Appel::query()
-            ->where(function ($q) use ($user) {
-                $q->where('phoning_agent_id', $user->id)
+        $cseJoints = Appel::query()
+            ->where(function ($query) use ($user) {
+                $query->where('phoning_agent_id', $user->id)
                     ->orWhere('user_id', $user->id);
             })
             ->whereBetween('date_heure', [$debut, $fin])
-            ->whereIn('phoning_status', ['STD_Joint', 'CSE_NR', 'RP', 'RPC', 'QF'])
+            ->whereIn('phoning_status', [
+                ProspectStatut::STD_Joint->value,
+                ProspectStatut::CSE_NR->value,
+                ProspectStatut::RP->value,
+                ProspectStatut::RPC->value,
+                ProspectStatut::QF->value,
+            ])
             ->count();
-
-        $tauxConversion = $appelsSemaine > 0
-            ? round(($cseJoints / $appelsSemaine) * 100, 1)
-            : 0;
 
         $baseAC = Prospect::query()
             ->where('teleprospecteur_id', $user->id)
-            ->where('statut', ProspectStatut::AC)
+            ->where('statut', ProspectStatut::AC->value)
             ->count();
 
         $rappelsAujourdhui = Prospect::query()
             ->where('teleprospecteur_id', $user->id)
             ->whereNotNull('rappel_planifie_at')
-            ->whereDate('rappel_planifie_at', CarbonImmutable::now())
+            ->whereDate('rappel_planifie_at', $maintenant->toDateString())
             ->count();
 
-            $prochains_rappels = Prospect::query()
+        $prochainsRappels = Prospect::query()
             ->where('teleprospecteur_id', $user->id)
             ->whereNotNull('rappel_planifie_at')
-            ->where('rappel_planifie_at', '>=', CarbonImmutable::now())
-            ->where('rappel_planifie_at', '<=', CarbonImmutable::now()->endOfWeek())
+            ->where('rappel_planifie_at', '>=', $maintenant)
+            ->where('rappel_planifie_at', '<=', $maintenant->endOfWeek())
             ->orderBy('rappel_planifie_at')
             ->take(10)
             ->get(['nom', 'telephone', 'rappel_planifie_at']);
 
         return [
             'user' => $user,
-            'role' => 'teleprospecteur',
+            'role' => User::ROLE_TELEPROSPECTEUR,
             'periode' => [$debut, $fin],
             'appels_semaine' => $appelsSemaine,
-            'rappels_a_venir' => $rappelsAVenir,
-            'prospects_par_statut' => $this->labelliserProspects($prospectsParStatut),
-             'cse_joints' => $cseJoints,
+            'cse_joints' => $cseJoints,
             'qf' => $prospectsParStatut[ProspectStatut::QF->value] ?? 0,
-            'taux_conversion' => $tauxConversion,
+            'taux_conversion' => $appelsSemaine > 0 ? round(($cseJoints / $appelsSemaine) * 100, 1) : 0,
             'base_ac' => $baseAC,
             'rappels_aujourd_hui' => $rappelsAujourdhui,
             'rp' => $prospectsParStatut[ProspectStatut::RP->value] ?? 0,
@@ -100,47 +98,48 @@ class WeeklyReportService
             'std_nr' => $prospectsParStatut[ProspectStatut::STD_NR->value] ?? 0,
             'ko' => $prospectsParStatut[ProspectStatut::KO->value] ?? 0,
             'prospects_par_statut' => $this->labelliserProspects($prospectsParStatut),
-            'prochains_rappels' => $prochains_rappels,
-            'rappels_a_venir' => $prochains_rappels->count(),
+            'prochains_rappels' => $prochainsRappels,
+            'rappels_a_venir' => $prochainsRappels->count(),
         ];
     }
 
-    /**
-      * Rapport enrichi pour un commercial (CDC §7bis).
-     */
     public function pourCommercial(User $user): array
     {
         [$debut, $fin] = $this->periode();
-          $semaineProchaine = [CarbonImmutable::now()->startOfWeek(), CarbonImmutable::now()->endOfWeek()];
+        $semaineProchaine = [
+            CarbonImmutable::now()->startOfWeek(),
+            CarbonImmutable::now()->endOfWeek(),
+        ];
 
         $rdvSemaine = RendezVous::query()
             ->where('commercial_id', $user->id)
             ->whereBetween('date_heure', [$debut, $fin])
-             ->get();
-  $rdvRealises = $rdvSemaine->where('statut', RendezVousStatut::Realise)->count();
+            ->get();
+
+        $rdvRealises = $rdvSemaine->where('statut', RendezVousStatut::Realise)->count();
         $rdvAnnules = $rdvSemaine->where('statut', RendezVousStatut::Annule)->count();
         $rdvDecales = $rdvSemaine->where('statut', RendezVousStatut::Decale)->count();
         $totalRdv = $rdvSemaine->count();
-        $noShow = $totalRdv > 0 ? round(($rdvAnnules / $totalRdv) * 100, 1) : 0;
 
         $rdvAVenir = RendezVous::query()
             ->where('commercial_id', $user->id)
- ->whereBetween('date_heure', $semaineProchaine)
-            ->whereIn('statut', [RendezVousStatut::Planifie, RendezVousStatut::Decale])
+            ->whereBetween('date_heure', $semaineProchaine)
+            ->whereIn('statut', [RendezVousStatut::Planifie->value, RendezVousStatut::Decale->value])
             ->orderBy('date_heure')
             ->take(10)
             ->get();
+
         $partenairesActifs = Partenaire::query()
-            ->whereHas('rendezVous', fn ($q) => $q->where('commercial_id', $user->id))
+            ->whereHas('rendezVous', fn ($query) => $query->where('commercial_id', $user->id))
             ->actifs()
-             ->get(['id', 'nom', 'statut']);
+            ->get(['id', 'nom', 'statut']);
 
         $prospectsEnAttente = Prospect::query()
             ->where('commercial_id', $user->id)
-            ->whereIn('statut', [ProspectStatut::RP, ProspectStatut::RPC])
+            ->whereIn('statut', [ProspectStatut::RP->value, ProspectStatut::RPC->value])
             ->count();
 
-             $nouveauxProspects = Prospect::query()
+        $nouveauxProspects = Prospect::query()
             ->where('commercial_id', $user->id)
             ->whereBetween('created_at', [$debut, $fin])
             ->count();
@@ -152,64 +151,58 @@ class WeeklyReportService
 
         return [
             'user' => $user,
-            'role' => 'commercial',
+            'role' => User::ROLE_COMMERCIAL,
             'periode' => [$debut, $fin],
-                 'rdv_total' => $totalRdv,
+            'rdv_total' => $totalRdv,
             'rdv_realises' => $rdvRealises,
             'rdv_annules' => $rdvAnnules,
             'rdv_decales' => $rdvDecales,
-            'taux_no_show' => $noShow,
+            'taux_no_show' => $totalRdv > 0 ? round(($rdvAnnules / $totalRdv) * 100, 1) : 0,
             'rdv_a_venir' => $rdvAVenir,
             'partenaires_actifs' => $partenairesActifs,
             'partenaires_actifs_count' => $partenairesActifs->count(),
             'prospects_en_attente' => $prospectsEnAttente,
             'nouveaux_prospects' => $nouveauxProspects,
             'opportunites_actives' => $opportunitesActives,
-            // Compat anciennes clés
-            'rdv_semaine' => $totalRdv
+            'rdv_semaine' => $totalRdv,
         ];
     }
 
-    /**
-     * Rapport consolidé pour le Team Leader (CDC §7bis).
-     */
     public function pourTeamLeader(User $user): array
     {
         [$debut, $fin] = $this->periode();
 
-        $tps = $this->destinataires(User::ROLE_TELEPROSPECTEUR);
-        $commerciaux = $this->destinataires(User::ROLE_COMMERCIAL);
+        $phoningConsolide = $this->destinataires(User::ROLE_TELEPROSPECTEUR)
+            ->map(fn (User $teleprospecteur) => $this->pourTeleprospecteur($teleprospecteur));
 
-        $phoningConsolide = $tps->map(fn (User $tp) => $this->pourTeleprospecteur($tp));
+        $commercialConsolide = $this->destinataires(User::ROLE_COMMERCIAL)
+            ->map(fn (User $commercial) => $this->pourCommercial($commercial));
 
-        $commercialConsolide = $commerciaux->map(fn (User $c) => $this->pourCommercial($c));
-
-        // Alertes
         $tpSansAppel2j = User::query()
             ->where('actif', true)
             ->where('role_cache', User::ROLE_TELEPROSPECTEUR)
-            ->whereDoesntHave('appels', fn ($q) => $q->where('date_heure', '>=', CarbonImmutable::now()->subDays(2)))
+            ->whereDoesntHave('appels', fn ($query) => $query->where('date_heure', '>=', CarbonImmutable::now()->subDays(2)))
             ->get(['id', 'prenom', 'nom']);
 
         $rpcSansSuite = Prospect::query()
-            ->where('statut', ProspectStatut::RPC)
+            ->where('statut', ProspectStatut::RPC->value)
             ->where('updated_at', '<', CarbonImmutable::now()->subDays(5))
             ->count();
 
         $rpNonTraites = Prospect::query()
             ->whereNotNull('rappel_planifie_at')
             ->where('rappel_planifie_at', '<', CarbonImmutable::now())
-            ->whereIn('statut', [ProspectStatut::RP])
+            ->where('statut', ProspectStatut::RP->value)
             ->count();
 
         $qfAValider = Prospect::query()
-            ->where('statut', ProspectStatut::QF)
+            ->where('statut', ProspectStatut::QF->value)
             ->where('qf_valide', false)
             ->count();
 
         return [
             'user' => $user,
-            'role' => 'team_leader',
+            'role' => self::ROLE_TEAM_LEADER,
             'periode' => [$debut, $fin],
             'phoning_consolide' => $phoningConsolide,
             'commercial_consolide' => $commercialConsolide,
@@ -234,11 +227,26 @@ class WeeklyReportService
             ->get();
     }
 
+    /**
+     * @param  array<int, string>  $roles
+     * @return Collection<int, User>
+     */
+    public function destinatairesPourRoles(array $roles): Collection
+    {
+        return User::query()
+            ->where('actif', true)
+            ->whereIn('role_cache', $roles)
+            ->whereNotNull('email')
+            ->get()
+            ->unique('id')
+            ->values();
+    }
+
     private function labelliserProspects(array $parStatut): array
     {
         return collect(ProspectStatut::cases())
-            ->mapWithKeys(fn (ProspectStatut $s) => [
-                $s->label() => $parStatut[$s->value] ?? 0,
+            ->mapWithKeys(fn (ProspectStatut $statut) => [
+                $statut->label() => $parStatut[$statut->value] ?? 0,
             ])
             ->toArray();
     }
