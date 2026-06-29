@@ -500,7 +500,6 @@ class ClientResource extends Resource
             ->groups([
                 'etat',
             ])
-            ->contentGrid()
             ->reorderable('etat')
             ->actions([
                 Tables\Actions\ViewAction::make(),
