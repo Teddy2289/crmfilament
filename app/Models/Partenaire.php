@@ -345,7 +345,7 @@ class Partenaire extends Model
 
     public function prospect()
     {
-        return $this->belongsTo(Prospect::class);
+        return $this->belongsTo(Prospect::class)->withTrashed();
     }
 
     public function sentEmails(): \Illuminate\Database\Eloquent\Relations\MorphMany

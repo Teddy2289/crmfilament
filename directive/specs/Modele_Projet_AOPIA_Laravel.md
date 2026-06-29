@@ -134,6 +134,12 @@ Statuts principaux:
 | `KO` | Hors cible ou refus |
 | `QF` | Qualifie apres validation |
 
+Conversion partenaire:
+
+- possible uniquement si le prospect est `QF` et `qf_valide`;
+- le partenaire cree conserve `prospect_id` vers la fiche source;
+- apres conversion, le prospect est archive par soft delete et reste consultable depuis le partenaire.
+
 Services et supports:
 
 - `app/Services/Aopia/AopiaProspectWorkflowService.php`
