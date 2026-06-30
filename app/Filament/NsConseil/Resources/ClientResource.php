@@ -342,6 +342,22 @@ class ClientResource extends Resource
                     ->toggleable()
                     ->toggledHiddenByDefault(),
 
+                Tables\Columns\TextColumn::make('statut_rattachement_partenaire')
+                    ->label('Rattachement')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'rattache' => 'RattachÃ©',
+                        'partenaire_non_rattache' => 'Partenaire non rattachÃ©',
+                        default => 'â€”',
+                    })
+                    ->color(fn ($state) => match ($state) {
+                        'rattache' => 'success',
+                        'partenaire_non_rattache' => 'warning',
+                        default => 'gray',
+                    })
+                    ->description(fn (Client $record) => $record->nomenclature_partenaire_import)
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('parrain.nom_prenom')
                     ->label('Parrain')
                     ->searchable()
@@ -417,6 +433,11 @@ class ClientResource extends Resource
                     ->searchable()
                     ->preload()
                     ->placeholder('Tous les partenaires'),
+
+                Tables\Filters\Filter::make('partenaire_non_rattache')
+                    ->label('Partenaire non rattachÃ©')
+                    ->query(fn (Builder $q) => $q->partenaireNonRattaches())
+                    ->toggle(),
 
                 Tables\Filters\SelectFilter::make('parrain_id')
                     ->label('Parrain')

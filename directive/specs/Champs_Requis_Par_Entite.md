@@ -138,6 +138,7 @@ Model: `App\Models\Client`
 | `email` | contact | si present |
 | `adresse`, `code_postal`, `ville` | localisation | import Dolibarr |
 | `partenaire_id` | rattachement | matching partenaire exact via nomenclature, nom ou nom retenu |
+| `extra_data.partenaire_import` | suivi import | conserve la nomenclature source et le statut `partenaire_non_rattache` si besoin |
 | `ne_plus_contacter` | exclusion commerciale | doit etre respecte |
 
 ### Champs utiles aux droits par champ
@@ -154,6 +155,7 @@ Model: `App\Models\Client`
 | `montant_cpf` | show seulement ou masque selon politique metier |
 | `ne_plus_contacter` | show, edit, flux |
 | `partenaire_id` | show, edit |
+| `extra_data.partenaire_import` | show, flux |
 | `notes_commerciales` | show, create, edit |
 
 ---
