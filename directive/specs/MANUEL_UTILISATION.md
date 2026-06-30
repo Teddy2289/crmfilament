@@ -153,6 +153,8 @@ La fiche client contient:
 - propositions et formations;
 - parrainage.
 
+Le filtre `Partenaire non rattache` affiche les clients importes dont la nomenclature partenaire source n'a pas ete reconnue automatiquement. Ces fiches doivent etre rapprochees manuellement avec le bon partenaire.
+
 Les droits peuvent empecher la creation ou la modification de certains champs sensibles.
 
 ---

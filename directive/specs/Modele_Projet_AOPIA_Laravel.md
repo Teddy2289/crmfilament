@@ -337,6 +337,7 @@ Regles:
 - deduplication client par email, telephone, puis reference quand disponible;
 - rattachement automatique au partenaire quand la valeur source correspond exactement a `nomenclature_interne`, `nom` ou `nom_retenu`;
 - si aucun partenaire ne correspond, la valeur source est conservee dans `clients.extra_data.partenaire_import` avec le statut `partenaire_non_rattache`.
+- le filtre `Partenaire non rattache` de la liste clients isole ces dossiers pour traitement manuel.
 
 ---
 

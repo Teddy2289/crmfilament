@@ -90,6 +90,16 @@ class Client extends Model
             ->implode('');
     }
 
+    public function getStatutRattachementPartenaireAttribute(): ?string
+    {
+        return $this->extra_data['partenaire_import']['statut'] ?? ($this->partenaire_id ? 'rattache' : null);
+    }
+
+    public function getNomenclaturePartenaireImportAttribute(): ?string
+    {
+        return $this->extra_data['partenaire_import']['nomenclature'] ?? null;
+    }
+
     // ── Méthodes métier ─────────────────────────────────────────────
 
     public function marquerNePlusContacter(?string $motif = null): void
@@ -295,6 +305,13 @@ class Client extends Model
     public function scopeAvecCPF(Builder $query): Builder
     {
         return $query->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0);
+    }
+
+    public function scopePartenaireNonRattaches(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('partenaire_id')
+            ->where('extra_data->partenaire_import->statut', 'partenaire_non_rattache');
     }
 
     public function scopeParRegion(Builder $query, string $region): Builder
