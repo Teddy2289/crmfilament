@@ -13,9 +13,9 @@ namespace App\Filament\NsConseil\Resources\ClientResource\Import;
  *               Code postal.1 / Ville.1 / Commentaires / Super parrain /
  *               Programme Super Parrain / Date de création du parrain
  *
- * Partenaire : "Partenaire Like" (accord-cadre) + "Partenaire Boutique"
- *              → stockés en extra_data du dossier ; la liaison Partenaire
- *              est à faire par le back-office une fois les Partenaires créés.
+ * Partenaire : "Partenaire Like" (accord-cadre) + "Partenaire Boutique".
+ * Les valeurs source sont conservees dans Client.extra_data et le rattachement
+ * partenaire est tente par nomenclature exacte.
  */
 class CrmLikeImporter extends BaseClientImporter
 {
@@ -40,6 +40,7 @@ class CrmLikeImporter extends BaseClientImporter
         $tiers = trim((string) ($row['Tiers'] ?? ''));
         $partenaireLike = trim((string) ($row['Partenaire Like'] ?? ''));
         $partenaireBoutique = trim((string) ($row['Partenaire Boutique'] ?? ''));
+        $operation = trim((string) ($row['Opération'] ?? $row['OpÃ©ration'] ?? ''));
 
         return [
             // ── Client (personne physique) ───────────────────────────────
@@ -62,6 +63,7 @@ class CrmLikeImporter extends BaseClientImporter
                 'extra_data' => array_filter([
                     'partenaire_like' => $partenaireLike ?: null,
                     'partenaire_boutique' => $partenaireBoutique ?: null,
+                    'operation' => $operation ?: null,
                 ], fn ($v) => $v !== null && $v !== ''),
             ], fn ($v) => $v !== null && $v !== ''),
 
@@ -79,10 +81,6 @@ class CrmLikeImporter extends BaseClientImporter
                 '_consultant_accueil_nom' => trim((string) ($row['Consultant 1er accueil'] ?? '')) ?: null,
                 '_consultant_formateur_nom' => trim((string) ($row['Consultant Formateur'] ?? '')) ?: null,
                 '_entite_code' => $this->entiteCode,
-                // Infos partenaire conservées en extra pour liaison manuelle ultérieure
-                'extra_partenaire_like' => trim((string) ($row['Partenaire Like'] ?? '')) ?: null,
-                'extra_partenaire_boutique' => trim((string) ($row['Partenaire Boutique'] ?? '')) ?: null,
-                'extra_operation' => trim((string) ($row['Opération'] ?? '')) ?: null,
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── HeuresFormation ──────────────────────────────────────────
