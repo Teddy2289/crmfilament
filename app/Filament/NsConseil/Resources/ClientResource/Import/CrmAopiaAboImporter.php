@@ -71,9 +71,6 @@ class CrmAopiaAboImporter extends BaseClientImporter
                 '_consultant_formateur_nom' => trim((string) ($row['Consultant Formateur'] ?? '')) ?: null,
                 '_entite_code' => $this->entiteCode,
                 // Pas de Consultant 1er accueil dans cet onglet
-                // Interlocuteur (partenaire apporteur) conservé pour liaison manuelle
-                'extra_interlocuteur' => trim((string) ($row['Interlocuteur'] ?? '')) ?: null,
-                'extra_suivi_client' => trim((string) ($row['Suivi actuel du Client'] ?? '')) ?: null,
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── HeuresFormation ──────────────────────────────────────────

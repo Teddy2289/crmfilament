@@ -12,7 +12,7 @@ namespace App\Filament\NsConseil\Resources\ClientResource\Import;
  *
  * Partenaire : colonne "Provenance" (nom brut).
  * Deux consultants distincts : "Consultant 1er Accueil" + "Consultant Formateur".
- * Colonne "Auteur" (back-office) : conservée en extra.
+ * Colonne "Auteur" (back-office) : conservée dans Client.extra_data.
  * Pas de bloc Parrain dans cet onglet.
  */
 class Crm01FcImporter extends BaseClientImporter
@@ -66,7 +66,7 @@ class Crm01FcImporter extends BaseClientImporter
                 'etat' => $this->mapEtat($row['État'] ?? ''),
                 'statut_formation' => $this->mapStatutFormation($row['Statut formation'] ?? ''),
                 'montant_ht' => $this->parseFloat($row['Montant HT'] ?? null),
-                // Typo source conservée intentionnellement ("Dare de vente" dans le fichier)
+                // Typo source conservee intentionnellement ("Dare de vente" dans le fichier)
                 'date_vente' => $this->parseDate(
                     $row['Dare de vente'] ?? $row['Date de vente'] ?? null
                 ),
@@ -74,9 +74,6 @@ class Crm01FcImporter extends BaseClientImporter
                 '_consultant_accueil_nom' => trim((string) ($row['Consultant 1er Accueil'] ?? '')) ?: null,
                 '_consultant_formateur_nom' => trim((string) ($row['Consultant Formateur'] ?? '')) ?: null,
                 '_entite_code' => $this->entiteCode,
-                // Provenance (partenaire apporteur) et auteur conservés pour liaison manuelle
-                'extra_provenance' => trim((string) ($row['Provenance'] ?? '')) ?: null,
-                'extra_auteur' => trim((string) ($row['Auteur'] ?? '')) ?: null,
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── HeuresFormation ──────────────────────────────────────────
