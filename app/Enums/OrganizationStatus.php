@@ -80,4 +80,13 @@ enum OrganizationStatus: string
             ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
             ->toArray();
     }
+
+    public static function statuses(): \Illuminate\Support\Collection
+{
+    return collect(self::cases())->map(fn (self $case) => [
+        'id' => $case->value,
+        'title' => $case->label(),
+        'color' => $case->color(),
+    ]);
+}
 }

@@ -128,7 +128,8 @@ class ImportPartenairesAction extends Action
                     ->columns(2),
 
                 Forms\Components\Section::make('Stratégie pour partenaires existants')
-                    ->icon('heroicon-o-arrows-merge')
+                        ->icon('heroicon-o-arrow-path-rounded-square')
+
                     ->description('Comportement si un partenaire existe déjà (même nom + ville).')
                     ->schema([
                         Forms\Components\Select::make('strategy')

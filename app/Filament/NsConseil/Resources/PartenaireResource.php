@@ -125,7 +125,7 @@ class PartenaireResource extends Resource
                             Forms\Components\Actions\Action::make('genererNomenclature')
                                 ->label('Générer')
                                 ->icon('heroicon-m-sparkles')
-                                ->action(fn (Get $get, Set $set) => $set(
+                                ->action(fn(Get $get, Set $set) => $set(
                                     'nom_retenu',
                                     Partenaire::genererNomenclature($get('type'), $get('entreprise'), $get('ville'))
                                 ))
@@ -150,7 +150,7 @@ class PartenaireResource extends Resource
                             Forms\Components\Actions\Action::make('genererNomenclatureInterne')
                                 ->label('Generer')
                                 ->icon('heroicon-m-sparkles')
-                                ->action(fn (Get $get, Set $set) => $set(
+                                ->action(fn(Get $get, Set $set) => $set(
                                     'nomenclature_interne',
                                     Partenaire::genererNomenclature(
                                         $get('type'),
@@ -189,9 +189,9 @@ class PartenaireResource extends Resource
                     Forms\Components\Select::make('conseiller_id')
                         ->label('Conseiller assigné')
                         ->options(
-                            fn () => Consultant::orderBy('nom')
+                            fn() => Consultant::orderBy('nom')
                                 ->get()
-                                ->mapWithKeys(fn (Consultant $c) => [
+                                ->mapWithKeys(fn(Consultant $c) => [
                                     $c->id => trim("{$c->prenom} {$c->nom}"),
                                 ])
                                 ->toArray()
@@ -257,7 +257,7 @@ class PartenaireResource extends Resource
                     Forms\Components\Textarea::make('cse_notes')->label('Notes CSE')->rows(2)->columnSpanFull(),
                 ])
                 ->columns(2)->collapsible()->collapsed()
-                ->visible(fn (Get $get) => $get('type') === OrganizationType::CSE->value),
+                ->visible(fn(Get $get) => $get('type') === OrganizationType::CSE->value),
 
             Forms\Components\Section::make('Informations syndicales')
                 ->icon('heroicon-o-users')
@@ -276,7 +276,7 @@ class PartenaireResource extends Resource
                     Forms\Components\Textarea::make('syndicat_notes')->label('Notes syndicat')->rows(2),
                 ])
                 ->columns(3)->collapsible()->collapsed()
-                ->visible(fn (Get $get) => $get('type') === OrganizationType::Syndicat->value),
+                ->visible(fn(Get $get) => $get('type') === OrganizationType::Syndicat->value),
 
             Forms\Components\Section::make('Dirigeant')
                 ->icon('heroicon-o-user')
@@ -406,11 +406,11 @@ class PartenaireResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')->badge()
                     ->formatStateUsing(
-                        fn ($state) => $state instanceof OrganizationType
+                        fn($state) => $state instanceof OrganizationType
                             ? $state->value
                             : OrganizationType::tryFrom((string) $state)?->value ?? $state
                     )
-                    ->color(fn ($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
+                    ->color(fn($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
                         OrganizationType::CSE => 'primary',
                         OrganizationType::Syndicat => 'warning',
                         OrganizationType::EntrepriseDirecte => 'info',
@@ -424,11 +424,11 @@ class PartenaireResource extends Resource
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')->badge()
                     ->formatStateUsing(
-                        fn ($state) => $state instanceof OrganizationStatus
+                        fn($state) => $state instanceof OrganizationStatus
                             ? $state->label()
                             : OrganizationStatus::tryFrom((string) $state)?->label() ?? $state
                     )
-                    ->color(fn ($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
+                    ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
                         OrganizationStatus::AProspecter => 'gray',
                         OrganizationStatus::EnCoursProspection => 'blue',
                         OrganizationStatus::RdvEnCours => 'warning',
@@ -437,7 +437,7 @@ class PartenaireResource extends Resource
                         OrganizationStatus::Refus => 'danger',
                         default => 'gray',
                     })
-                    ->icon(fn ($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
+                    ->icon(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
                         OrganizationStatus::AProspecter => 'heroicon-o-queue-list',
                         OrganizationStatus::EnCoursProspection => 'heroicon-o-phone',
                         OrganizationStatus::RdvEnCours => 'heroicon-o-calendar',
@@ -450,7 +450,7 @@ class PartenaireResource extends Resource
                 // CORRECTIF : conseiller (Consultant) au lieu de commercial (User)
                 Tables\Columns\TextColumn::make('conseiller.nom')
                     ->label('Conseiller')->sortable()
-                    ->getStateUsing(fn ($record) => $record->conseiller
+                    ->getStateUsing(fn($record) => $record->conseiller
                         ? trim("{$record->conseiller->prenom} {$record->conseiller->nom}") : '—'),
 
                 Tables\Columns\TextColumn::make('date_signature')
@@ -458,7 +458,7 @@ class PartenaireResource extends Resource
 
                 Tables\Columns\TextColumn::make('date_modification_statut')
                     ->label('Modifié le')->dateTime('d/m/Y')->sortable()
-                    ->description(fn ($record) => $record->statut === OrganizationStatus::RdvEnCours
+                    ->description(fn($record) => $record->statut === OrganizationStatus::RdvEnCours
                         && $record->date_modification_statut?->lt(now()->subDays(80))
                         ? '⚠️ Approche 90j' : null),
             ], [
@@ -474,9 +474,9 @@ class PartenaireResource extends Resource
                 Tables\Filters\SelectFilter::make('conseiller_id')
                     ->label('Conseiller')
                     ->options(
-                        fn () => Consultant::orderBy('nom')
+                        fn() => Consultant::orderBy('nom')
                             ->get()
-                            ->mapWithKeys(fn (Consultant $c) => [
+                            ->mapWithKeys(fn(Consultant $c) => [
                                 $c->id => trim("{$c->prenom} {$c->nom}"),
                             ])
                             ->toArray()
@@ -484,13 +484,16 @@ class PartenaireResource extends Resource
                     ->searchable(),
 
                 Tables\Filters\SelectFilter::make('departement')
-                    ->options(fn () => Partenaire::distinct()->pluck('departement', 'departement')->filter()->sort())
+                    ->options(fn() => Partenaire::distinct()->pluck('departement', 'departement')->filter()->sort())
                     ->label('Département')->searchable(),
+
+                Tables\Filters\TrashedFilter::make(),
+
 
                 Tables\Filters\Filter::make('rdv_90_jours')
                     ->label('⚠️ RDV > 90 jours')
                     ->query(
-                        fn (Builder $query): Builder => $query
+                        fn(Builder $query): Builder => $query
                             ->where('statut', OrganizationStatus::RdvEnCours->value)
                             ->where('date_modification_statut', '<', now()->subDays(90))
                     )
@@ -499,14 +502,13 @@ class PartenaireResource extends Resource
                 Tables\Filters\Filter::make('convention_active')
                     ->label('Conventions signées')
                     ->query(
-                        fn (Builder $query): Builder => $query->whereIn('statut', [
+                        fn(Builder $query): Builder => $query->whereIn('statut', [
                             OrganizationStatus::SigneAccordCadre->value,
                             OrganizationStatus::ConventionEngagement->value,
                         ])
                     )
                     ->toggle(),
 
-                Tables\Filters\TrashedFilter::make(),
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
@@ -522,13 +524,13 @@ class PartenaireResource extends Resource
                         Forms\Components\Textarea::make('commentaire')
                             ->label('Commentaire (optionnel)')->rows(2),
                     ])
-                    ->action(fn (Partenaire $record, array $data) => $record->changerStatut(
+                    ->action(fn(Partenaire $record, array $data) => $record->changerStatut(
                         OrganizationStatus::from($data['statut'])
                     ))
                     ->modalHeading('Changer le statut du partenaire')
                     ->modalWidth('md'),
 
-                \App\Filament\Shared\Actions\SendEmailAction::make(fn (Partenaire $r) => $r->email ?? ''),
+                \App\Filament\Shared\Actions\SendEmailAction::make(fn(Partenaire $r) => $r->email ?? ''),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -539,16 +541,16 @@ class PartenaireResource extends Resource
                             Forms\Components\Select::make('conseiller_id')
                                 ->label('Conseiller')
                                 ->options(
-                                    fn () => Consultant::orderBy('nom')
+                                    fn() => Consultant::orderBy('nom')
                                         ->get()
-                                        ->mapWithKeys(fn (Consultant $c) => [
+                                        ->mapWithKeys(fn(Consultant $c) => [
                                             $c->id => trim("{$c->prenom} {$c->nom}"),
                                         ])
                                         ->toArray()
                                 )
                                 ->required(),
                         ])
-                        ->action(fn ($records, array $data) => $records->each->update($data))
+                        ->action(fn($records, array $data) => $records->each->update($data))
                         ->deselectRecordsAfterCompletion(),
                     Tables\Actions\BulkAction::make('changer_statut_bulk')
                         ->label('Changer le statut')->icon('heroicon-o-arrow-path')
@@ -556,47 +558,44 @@ class PartenaireResource extends Resource
                             Forms\Components\Select::make('statut')
                                 ->options(OrganizationStatus::class)->required(),
                         ])
-                        ->action(fn ($records, array $data) => $records->each->update(['statut' => $data['statut']]))
+                        ->action(fn($records, array $data) => $records->each->update(['statut' => $data['statut']]))
                         ->deselectRecordsAfterCompletion(),
                     Tables\Actions\RestoreBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
                 ]),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('switch_view')
-                    ->label(session()->get('view_partenaires', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
-                    ->icon(session()->get('view_partenaires', 'list') === 'kanban' ? 'heroicon-o-list-bullets' : 'heroicon-o-squares-2x2')
-                    ->color('gray')
-                    ->action(function () {
-                        $currentView = session()->get('view_partenaires', 'list');
-                        session()->put('view_partenaires', $currentView === 'kanban' ? 'list' : 'kanban');
-                        return redirect()->back();
-                    }),
-                \App\Filament\NsConseil\Actions\DownloadImportTemplateAction::make(),
-                \App\Filament\NsConseil\Actions\ImportPartenairesAction::make(),
-                Tables\Actions\Action::make('lancer_appels')
-                    ->label('Lancer les appels')
-                    ->icon('heroicon-o-phone-arrow-up-right')
-                    ->color('primary')
-                    ->visible(function () {
-                        $userId = auth()->id();
-                        return \App\Models\CampagnePhoning::active()
-                            ->forUser($userId)
-                            ->where('type_entite', 'partenaires')
-                            ->exists();
-                    })
-                    ->url(function () {
-                        $userId = auth()->id();
-                        $campagne = \App\Models\CampagnePhoning::active()
-                            ->forUser($userId)
-                            ->where('type_entite', 'partenaires')
-                            ->first();
-                        
-                        return $campagne 
-                            ? \App\Filament\NsConseil\Pages\PhoningWorkflow::getUrl(['campagne_id' => $campagne->id])
-                            : '#';
-                    }),
-            ])
+    Tables\Actions\Action::make('switch_view')
+        ->label('Vue Kanban')
+        ->icon('heroicon-o-squares-2x2')
+        ->color('gray')
+        ->url(\App\Filament\NsConseil\Resources\PartenaireResource\Pages\PartenaireKanban::getUrl()),
+
+    \App\Filament\NsConseil\Actions\DownloadImportTemplateAction::make(),
+    \App\Filament\NsConseil\Actions\ImportPartenairesAction::make(),
+    Tables\Actions\Action::make('lancer_appels')
+        ->label('Lancer les appels')
+        ->icon('heroicon-o-phone-arrow-up-right')
+        ->color('primary')
+        ->visible(function () {
+            $userId = auth()->id();
+            return \App\Models\CampagnePhoning::active()
+                ->forUser($userId)
+                ->where('type_entite', 'partenaires')
+                ->exists();
+        })
+        ->url(function () {
+            $userId = auth()->id();
+            $campagne = \App\Models\CampagnePhoning::active()
+                ->forUser($userId)
+                ->where('type_entite', 'partenaires')
+                ->first();
+
+            return $campagne
+                ? \App\Filament\NsConseil\Pages\PhoningWorkflow::getUrl(['campagne_id' => $campagne->id])
+                : '#';
+        }),
+])
             ->emptyStateHeading('Aucun partenaire')
             ->emptyStateDescription('Créez votre premier partenaire ou importez un fichier Excel.');
     }
@@ -615,12 +614,12 @@ class PartenaireResource extends Resource
                     ->label('Statut')
                     ->badge()
                     ->formatStateUsing(
-                        fn ($state) => $state instanceof OrganizationStatus
+                        fn($state) => $state instanceof OrganizationStatus
                             ? $state->label()
                             : OrganizationStatus::tryFrom($state)?->label() ?? $state
                     )
                     ->color(
-                        fn ($state) => $state instanceof OrganizationStatus
+                        fn($state) => $state instanceof OrganizationStatus
                             ? $state->color()
                             : OrganizationStatus::tryFrom($state)?->color() ?? 'gray'
                     ),
@@ -629,7 +628,7 @@ class PartenaireResource extends Resource
                     ->label('Type')
                     ->badge()
                     ->formatStateUsing(
-                        fn ($state) => $state instanceof OrganizationType
+                        fn($state) => $state instanceof OrganizationType
                             ? $state->label()
                             : OrganizationType::tryFrom($state)?->label() ?? $state
                     ),
@@ -700,11 +699,11 @@ class PartenaireResource extends Resource
                             ->label('Type')
                             ->badge()
                             ->formatStateUsing(
-                                fn ($state) => $state instanceof OrganizationType
+                                fn($state) => $state instanceof OrganizationType
                                     ? $state->value
                                     : OrganizationType::tryFrom((string) $state)?->value ?? $state
                             )
-                            ->color(fn ($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
+                            ->color(fn($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
                                 OrganizationType::CSE => 'primary',
                                 OrganizationType::Syndicat => 'warning',
                                 OrganizationType::EntrepriseDirecte => 'info',
@@ -716,11 +715,11 @@ class PartenaireResource extends Resource
                             ->label('Statut')
                             ->badge()
                             ->formatStateUsing(
-                                fn ($state) => $state instanceof OrganizationStatus
+                                fn($state) => $state instanceof OrganizationStatus
                                     ? $state->label()
                                     : OrganizationStatus::tryFrom((string) $state)?->label() ?? $state
                             )
-                            ->color(fn ($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
+                            ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
                                 OrganizationStatus::AProspecter => 'gray',
                                 OrganizationStatus::EnCoursProspection => 'blue',
                                 OrganizationStatus::RdvEnCours => 'warning',
@@ -733,7 +732,7 @@ class PartenaireResource extends Resource
                         Infolists\Components\TextEntry::make('nomenclature_interne')
                             ->label('Nomenclature interne')
                             ->placeholder('—')
-                            ->formatStateUsing(fn ($state) => match ($state) {
+                            ->formatStateUsing(fn($state) => match ($state) {
                                 'CSE_PME' => 'CSE PME (< 50 salariés)',
                                 'CSE_ETI' => 'CSE ETI (50–299 salariés)',
                                 'CSE_GE' => 'CSE Grande entreprise (300+)',
@@ -775,7 +774,7 @@ class PartenaireResource extends Resource
                             ->label('Entreprise mère')
                             ->placeholder('—')
                             ->url(
-                                fn ($record) => $record->entrepriseMere ?
+                                fn($record) => $record->entrepriseMere ?
                                     PartenaireResource::getUrl('view', ['record' => $record->entrepriseMere]) : null
                             )
                             ->icon('heroicon-o-arrow-up-circle'),
@@ -783,7 +782,7 @@ class PartenaireResource extends Resource
                         Infolists\Components\TextEntry::make('filiales_count')
                             ->label('Filiales')
                             ->placeholder('0')
-                            ->state(fn ($record) => $record->filiales()->count())
+                            ->state(fn($record) => $record->filiales()->count())
                             ->badge()
                             ->color('info')
                             ->icon('heroicon-o-squares-2x2'),
@@ -800,7 +799,7 @@ class PartenaireResource extends Resource
                         Infolists\Components\TextEntry::make('conseiller.nom')
                             ->label('Conseiller assigné')
                             ->getStateUsing(
-                                fn ($record) => $record->conseiller
+                                fn($record) => $record->conseiller
                                     ? trim("{$record->conseiller->prenom} {$record->conseiller->nom}")
                                     : '—'
                             )
@@ -811,7 +810,7 @@ class PartenaireResource extends Resource
                         Infolists\Components\TextEntry::make('commercial.nom')
                             ->label('Commercial')
                             ->getStateUsing(
-                                fn ($record) => $record->commercial
+                                fn($record) => $record->commercial
                                     ? trim("{$record->commercial->prenom} {$record->commercial->nom}")
                                     : '—'
                             )
@@ -828,14 +827,14 @@ class PartenaireResource extends Resource
                             ->date('d/m/Y')
                             ->placeholder('—')
                             ->icon('heroicon-o-calendar')
-                            ->color(fn ($state) => $state ? 'success' : 'gray'),
+                            ->color(fn($state) => $state ? 'success' : 'gray'),
 
                         Infolists\Components\TextEntry::make('date_convention')
                             ->label('Date de convention')
                             ->date('d/m/Y')
                             ->placeholder('—')
                             ->icon('heroicon-o-calendar-days')
-                            ->color(fn ($state) => $state ? 'success' : 'gray'),
+                            ->color(fn($state) => $state ? 'success' : 'gray'),
 
                         Infolists\Components\TextEntry::make('date_modification_statut')
                             ->label('Statut modifié le')
@@ -916,14 +915,14 @@ class PartenaireResource extends Resource
                             ->placeholder('—')
                             ->copyable()
                             ->icon('heroicon-o-phone')
-                            ->url(fn ($state) => $state ? 'tel:'.$state : null),
+                            ->url(fn($state) => $state ? 'tel:' . $state : null),
 
                         Infolists\Components\TextEntry::make('email')
                             ->label('Email')
                             ->placeholder('—')
                             ->copyable()
                             ->icon('heroicon-o-envelope')
-                            ->url(fn ($state) => $state ? 'mailto:'.$state : null),
+                            ->url(fn($state) => $state ? 'mailto:' . $state : null),
                     ]),
                 ]),
 
@@ -933,7 +932,7 @@ class PartenaireResource extends Resource
             Infolists\Components\Section::make(' Dirigeant')
                 ->icon('heroicon-o-user')
                 ->collapsible()
-                ->collapsed(fn (Partenaire $record) => ! $record->dirigeant_nom && ! $record->dirigeant_email)
+                ->collapsed(fn(Partenaire $record) => ! $record->dirigeant_nom && ! $record->dirigeant_email)
                 ->schema([
                     Infolists\Components\Grid::make(3)->schema([
                         Infolists\Components\TextEntry::make('dirigeant_nom')
@@ -956,14 +955,14 @@ class PartenaireResource extends Resource
                             ->placeholder('—')
                             ->copyable()
                             ->icon('heroicon-o-phone')
-                            ->url(fn ($state) => $state ? 'tel:'.$state : null),
+                            ->url(fn($state) => $state ? 'tel:' . $state : null),
 
                         Infolists\Components\TextEntry::make('dirigeant_email')
                             ->label('Email')
                             ->placeholder('—')
                             ->copyable()
                             ->icon('heroicon-o-envelope')
-                            ->url(fn ($state) => $state ? 'mailto:'.$state : null),
+                            ->url(fn($state) => $state ? 'mailto:' . $state : null),
                     ]),
                 ]),
 
@@ -974,7 +973,7 @@ class PartenaireResource extends Resource
                 ->icon('heroicon-o-user-group')
                 ->collapsible()
                 ->collapsed()
-                ->visible(fn (Partenaire $record) => $record->type === OrganizationType::CSE)
+                ->visible(fn(Partenaire $record) => $record->type === OrganizationType::CSE)
                 ->schema([
                     // Secrétaire
                     Infolists\Components\Grid::make(2)->schema([
@@ -1060,7 +1059,7 @@ class PartenaireResource extends Resource
                             ->date('d/m/Y')
                             ->placeholder('—')
                             ->icon('heroicon-o-calendar')
-                            ->color(fn ($state) => $state && $state->isPast() ? 'danger' : 'success'),
+                            ->color(fn($state) => $state && $state->isPast() ? 'danger' : 'success'),
 
                         Infolists\Components\IconEntry::make('cse_existence_juridique')
                             ->label('Existence juridique')
@@ -1086,7 +1085,7 @@ class PartenaireResource extends Resource
                 ->icon('heroicon-o-users')
                 ->collapsible()
                 ->collapsed()
-                ->visible(fn (Partenaire $record) => $record->type === OrganizationType::Syndicat)
+                ->visible(fn(Partenaire $record) => $record->type === OrganizationType::Syndicat)
                 ->schema([
                     Infolists\Components\Grid::make(3)->schema([
                         Infolists\Components\TextEntry::make('syndicat_appartenance')
@@ -1198,7 +1197,7 @@ class PartenaireResource extends Resource
                                 Infolists\Components\TextEntry::make('type_interaction_label')
                                     ->label('Type')
                                     ->badge()
-                                    ->color(fn ($state) => match($state) {
+                                    ->color(fn($state) => match ($state) {
                                         'Consultation' => 'info',
                                         'Modification' => 'warning',
                                         'Appel' => 'success',
@@ -1247,7 +1246,7 @@ class PartenaireResource extends Resource
                             ->placeholder('—')
                             ->icon('heroicon-o-trash')
                             ->color('danger')
-                            ->visible(fn ($record) => $record->trashed()),
+                            ->visible(fn($record) => $record->trashed()),
                     ]),
                 ]),
         ], [
@@ -1277,7 +1276,6 @@ class PartenaireResource extends Resource
             'create' => Pages\CreatePartenaire::route('/create'),
             'edit' => Pages\EditPartenaire::route('/{record}/edit'),
             'view' => Pages\ViewPartenaire::route('/{record}'),
-            'kanban' => Pages\PartenaireKanban::route('/kanban'),
         ];
     }
 }

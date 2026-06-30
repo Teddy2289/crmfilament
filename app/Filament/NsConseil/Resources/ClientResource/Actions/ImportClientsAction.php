@@ -46,7 +46,8 @@ class ImportClientsAction extends Action
                     ->helperText('Laissez vide pour laisser le système détecter le modèle automatiquement.'),
 
                 Forms\Components\Section::make('Stratégie pour clients existants')
-                    ->icon('heroicon-o-arrows-merge')
+                        ->icon('heroicon-o-arrow-path-rounded-square')
+
                     ->description('Comportement si un client existe déjà (même ref_client ou email).')
                     ->schema([
                         Forms\Components\Select::make('strategy')

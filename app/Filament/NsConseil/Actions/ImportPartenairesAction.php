@@ -5,7 +5,7 @@ namespace App\Filament\NsConseil\Actions;
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
 use App\Models\Partenaire;
-use Filament\Actions\Action;
+use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +14,10 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ImportPartenairesAction extends Action
 {
+    public static function make(?string $name = null): static
+    {
+        return parent::make($name ?? 'download_import_template');
+    }
     protected function setUp(): void
     {
         parent::setUp();
@@ -33,7 +37,7 @@ class ImportPartenairesAction extends Action
             ])
             ->action(function (array $data) {
                 $filePath = storage_path('app/' . $data['file']);
-                
+
                 if (!file_exists($filePath)) {
                     Notification::make()
                         ->danger()
@@ -47,19 +51,19 @@ class ImportPartenairesAction extends Action
                     $spreadsheet = IOFactory::load($filePath);
                     $worksheet = $spreadsheet->getActiveSheet();
                     $rows = $worksheet->toArray();
-                    
+
                     // Skip header row
                     $header = array_shift($rows);
-                    
+
                     $imported = 0;
                     $errors = 0;
-                    
+
                     foreach ($rows as $row) {
                         if (empty($row[0])) continue; // Skip empty rows
-                        
+
                         try {
                             $data = array_combine($header, $row);
-                            
+
                             Partenaire::updateOrCreate(
                                 ['siret' => $data['siret'] ?? null],
                                 [
@@ -79,22 +83,21 @@ class ImportPartenairesAction extends Action
                                     'origine_contact' => $data['origine_contact'] ?? null,
                                 ]
                             );
-                            
+
                             $imported++;
                         } catch (\Exception $e) {
                             $errors++;
                         }
                     }
-                    
+
                     // Delete uploaded file
                     Storage::disk('local')->delete($data['file']);
-                    
+
                     Notification::make()
                         ->success()
                         ->title('Import terminé')
                         ->body("{$imported} partenaires importés avec succès" . ($errors > 0 ? " ({$errors} erreurs)" : ''))
                         ->send();
-                        
                 } catch (\Exception $e) {
                     Notification::make()
                         ->danger()
@@ -104,11 +107,11 @@ class ImportPartenairesAction extends Action
                 }
             });
     }
-    
+
     protected function mapType(?string $value): ?string
     {
         if (!$value) return null;
-        
+
         $mapping = [
             'CSE' => OrganizationType::CSE->value,
             'Syndicat' => OrganizationType::Syndicat->value,
@@ -116,14 +119,14 @@ class ImportPartenairesAction extends Action
             'Association' => OrganizationType::Association->value,
             'Partenariat annulé' => OrganizationType::PartenariatAnnule->value,
         ];
-        
+
         return $mapping[$value] ?? $value;
     }
-    
+
     protected function mapStatut(?string $value): ?string
     {
         if (!$value) return OrganizationStatus::AProspecter->value;
-        
+
         $mapping = [
             'À prospecter' => OrganizationStatus::AProspecter->value,
             'En cours de prospection' => OrganizationStatus::EnCoursProspection->value,
@@ -132,7 +135,7 @@ class ImportPartenairesAction extends Action
             'Convention d\'engagement' => OrganizationStatus::ConventionEngagement->value,
             'Refus' => OrganizationStatus::Refus->value,
         ];
-        
+
         return $mapping[$value] ?? $value;
     }
 }
