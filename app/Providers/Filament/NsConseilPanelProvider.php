@@ -2,10 +2,11 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Themes\NsConseilTheme;
 use App\Filament\NsConseil\Pages\Auth\Login as NsConseilLogin;
 use App\Filament\NsConseil\Pages\Dashboard;
 use App\Filament\NsConseil\Pages\RingoverDashboard;
+use App\Filament\NsConseil\Resources\PartenaireResource\Pages\PartenaireKanban;
+use App\Filament\Themes\NsConseilTheme;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserInteractions;
 use App\Http\Responses\NsConseil\LoginResponse;
@@ -96,6 +97,7 @@ class NsConseilPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
                 RingoverDashboard::class,
+                PartenaireKanban::class
             ])
             ->widgets([
                 \App\Filament\Widgets\ThemeSelectorWidget::class,

@@ -2,13 +2,17 @@
 
 namespace App\Filament\NsConseil\Actions;
 
-use Filament\Actions\Action;
+use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Response;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DownloadImportTemplateAction extends Action
 {
+    public static function make(?string $name = null): static
+    {
+        return parent::make($name ?? 'download_import_template');
+    }
     protected function setUp(): void
     {
         parent::setUp();

@@ -28,6 +28,8 @@ class DatabaseSeeder extends Seeder
             TemplateFicheSeeder::class,
             EmailTemplateSeeder::class,
             DocumentKnowledgeSeeder::class,
+            DemoCustomFieldValuesSeeder::class,
+            
         ]);
     }
 }

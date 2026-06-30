@@ -87,7 +87,8 @@ class ImportProspectsAction extends Action
                     ->columns(2),
 
                 Forms\Components\Section::make('Stratégie pour prospects existants')
-                    ->icon('heroicon-o-arrows-merge')
+                        ->icon('heroicon-o-arrow-path-rounded-square')
+
                     ->description('Comportement si un prospect existe déjà (même téléphone).')
                     ->schema([
                         Forms\Components\Select::make('strategy')
