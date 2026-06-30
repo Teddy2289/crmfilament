@@ -572,6 +572,8 @@ class PartenaireResource extends Resource
                         session()->put('view_partenaires', $currentView === 'kanban' ? 'list' : 'kanban');
                         return redirect()->back();
                     }),
+                \App\Filament\NsConseil\Actions\DownloadImportTemplateAction::make(),
+                \App\Filament\NsConseil\Actions\ImportPartenairesAction::make(),
                 Tables\Actions\Action::make('lancer_appels')
                     ->label('Lancer les appels')
                     ->icon('heroicon-o-phone-arrow-up-right')
