@@ -80,6 +80,42 @@ class ClientFeatureTest extends TestCase
     }
 
     #[Test]
+    public function scope_partenaire_non_rattaches_returns_only_unmatched_imports(): void
+    {
+        $unmatched = $this->createClient([
+            'email' => 'unmatched@test.com',
+            'partenaire_id' => null,
+            'extra_data' => [
+                'partenaire_import' => [
+                    'nomenclature' => 'CSE Introuvable Nantes',
+                    'statut' => 'partenaire_non_rattache',
+                ],
+            ],
+        ]);
+        $this->createClient([
+            'email' => 'manual@test.com',
+            'partenaire_id' => null,
+            'extra_data' => [],
+        ]);
+        $this->createClient([
+            'email' => 'attached@test.com',
+            'extra_data' => [
+                'partenaire_import' => [
+                    'nomenclature' => 'CSE Rattache Paris',
+                    'statut' => 'rattache',
+                ],
+            ],
+        ]);
+
+        $clients = Client::partenaireNonRattaches()->get();
+
+        $this->assertCount(1, $clients);
+        $this->assertTrue($unmatched->is($clients->first()));
+        $this->assertSame('partenaire_non_rattache', $unmatched->statut_rattachement_partenaire);
+        $this->assertSame('CSE Introuvable Nantes', $unmatched->nomenclature_partenaire_import);
+    }
+
+    #[Test]
     public function scope_par_region(): void
     {
         $this->createClient(['email' => 'idf@test.com', 'region' => 'Île-de-France']);
