@@ -6,7 +6,7 @@ use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
 use App\Models\Client;
 use App\Models\Partenaire;
-use Filament\Actions\Action;
+use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +14,11 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ImportMultiSheetAction extends Action
 {
+    public static function getDefaultName(): ?string
+    {
+        return 'import_multi_sheet';
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -32,7 +37,7 @@ class ImportMultiSheetAction extends Action
                     ->maxSize(10240),
             ])
             ->action(function (array $data) {
-                $filePath = storage_path('app/' . $data['file']);
+                $filePath = Storage::disk('local')->path($data['file']);
                 
                 if (!file_exists($filePath)) {
                     Notification::make()
