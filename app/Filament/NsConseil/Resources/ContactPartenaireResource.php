@@ -154,9 +154,30 @@ class ContactPartenaireResource extends Resource
                     ->toggleable(),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('partenaire')
+                    ->relationship('partenaire', 'nom_retenu')
+                    ->label('Partenaire')
+                    ->searchable()
+                    ->preload(),
                 Tables\Filters\SelectFilter::make('role')
                     ->options(ContactPartenaire::ROLES)
                     ->label('Rôle'),
+                Tables\Filters\SelectFilter::make('niveau_influence')
+                    ->label('Niveau d\'influence')
+                    ->options([
+                        1 => 'Faible',
+                        2 => 'Moyen',
+                        3 => 'Fort',
+                        4 => 'Très fort',
+                        5 => 'Décisionnaire',
+                    ]),
+                Tables\Filters\SelectFilter::make('preference_contact')
+                    ->label('Préférence de contact')
+                    ->options([
+                        'email' => 'Email',
+                        'telephone' => 'Téléphone',
+                        'mobile' => 'Mobile',
+                    ]),
                 Tables\Filters\TernaryFilter::make('est_principal')
                     ->label('Contact principal'),
                 Tables\Filters\TernaryFilter::make('est_decisionnaire')
