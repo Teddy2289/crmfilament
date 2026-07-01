@@ -78,7 +78,7 @@ class RingoverApiKeyResource extends Resource
 
                         Forms\Components\Select::make('user_id')
                             ->label('Utilisateur associé')
-                            ->relationship('user', 'name')
+                            ->relationship('user', 'email')
                             ->searchable()
                             ->preload()
                             ->nullable()
@@ -124,7 +124,7 @@ class RingoverApiKeyResource extends Resource
                     ->toggleable()
                     ->formatStateUsing(fn ($state) => substr($state, 0, 8) . '...'),
 
-                Tables\Columns\TextColumn::make('user.name')
+                Tables\Columns\TextColumn::make('user.email')
                     ->label('Utilisateur')
                     ->searchable()
                     ->toggleable()
