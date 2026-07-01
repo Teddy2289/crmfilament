@@ -524,7 +524,7 @@ class ClientResource extends Resource
             ->headerActions([
                 Tables\Actions\Action::make('switch_view')
                     ->label(session()->get('view_clients', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
-                    ->icon(session()->get('view_clients', 'list') === 'kanban' ? 'heroicon-o-list-bullets' : 'heroicon-o-squares-2x2')
+                    ->icon(session()->get('view_clients', 'list') === 'kanban' ? 'heroicon-o-list' : 'heroicon-o-squares-2x2')
                     ->color('gray')
                     ->action(function () {
                         $currentView = session()->get('view_clients', 'list');

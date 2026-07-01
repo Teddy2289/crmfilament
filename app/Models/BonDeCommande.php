@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\HasAcompte;
 
 /**
  * BonDeCommande
@@ -36,7 +37,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class BonDeCommande extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasAcompte;
 
     protected $table = 'bon_de_commandes';
 
@@ -98,16 +99,6 @@ class BonDeCommande extends Model
     public function getEstAnnuleAttribute(): bool
     {
         return $this->statut === StatutBonDeCommande::Annule;
-    }
-
-    public function getNecessiteAcompteAttribute(): bool
-    {
-        return $this->acompte_montant && $this->acompte_montant > 0;
-    }
-
-    public function getAcompteEnAttenteAttribute(): bool
-    {
-        return $this->necessite_acompte && ! $this->acompte_encaisse;
     }
 
     public function getSoldeRestantAttribute(): float
@@ -209,28 +200,20 @@ class BonDeCommande extends Model
     }
 
     public function annuler(?string $motif = null): void
-    {
-        if ($this->statut === StatutBonDeCommande::Realise) {
-            throw new \Exception('Un BC réalisé ne peut pas être annulé.');
+        {
+            if ($this->statut === StatutBonDeCommande::Realise) {
+                throw new \Exception('Un BC réalisé ne peut pas être annulé.');
+            }
+
+            $this->update([
+                'statut' => StatutBonDeCommande::Annule,
+                'instructions_artisan' => $motif
+                    ? ($this->instructions_artisan . "\n[Annulation] {$motif}")
+                    : $this->instructions_artisan,
+            ]);
         }
 
-        $this->update([
-            'statut' => StatutBonDeCommande::Annule,
-            'instructions_artisan' => $motif
-                ? ($this->instructions_artisan."\n[Annulation] {$motif}")
-                : $this->instructions_artisan,
-        ]);
-    }
-
-    public function enregistrerAcompte(float $montant): void
-    {
-        $this->update([
-            'acompte_montant' => $montant,
-            'acompte_encaisse' => true,
-        ]);
-    }
-
-    protected function genererFacture(): Facture
+        protected function genererFacture(): Facture
     {
         return Facture::create([
             'numero' => Facture::genererNumero(),
@@ -289,13 +272,6 @@ class BonDeCommande extends Model
         ]);
     }
 
-    public function scopeAvecAcompteEnAttente($query): Builder
-    {
-        return $query->whereNotNull('acompte_montant')
-            ->where('acompte_encaisse', false)
-            ->where('statut', '!=', StatutBonDeCommande::Annule->value);
-    }
-
     public function scopeInterventionAVenir($query): Builder
     {
         return $query->whereNotNull('date_intervention_prevue')
@@ -315,6 +291,13 @@ class BonDeCommande extends Model
     {
         return $query->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year);
+    }
+
+    public function scopeAvecAcompteEnAttente(Builder $query): Builder
+    {
+        return $query->whereNotNull('acompte_montant')
+            ->where('acompte_encaisse', false)
+            ->where('statut', '!=', StatutBonDeCommande::Annule->value);
     }
 
     // ── KPIs ────────────────────────────────────────────────────────

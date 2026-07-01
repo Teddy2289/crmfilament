@@ -2,8 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Filament\NsConseil\Actions\DownloadImportTemplateAction;
+use App\Filament\NsConseil\Actions\DownloadMultiSheetTemplateAction;
+use App\Filament\NsConseil\Actions\ImportMultiSheetAction;
+use App\Filament\NsConseil\Actions\ImportPartenairesAction;
 use App\Models\Client;
 use App\Models\Partenaire;
+use Filament\Tables\Actions\Action as TableAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -13,6 +18,14 @@ use Tests\TestCase;
 class ImportMultiSheetTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_shared_import_actions_are_table_header_actions(): void
+    {
+        $this->assertInstanceOf(TableAction::class, DownloadImportTemplateAction::make());
+        $this->assertInstanceOf(TableAction::class, ImportPartenairesAction::make());
+        $this->assertInstanceOf(TableAction::class, DownloadMultiSheetTemplateAction::make());
+        $this->assertInstanceOf(TableAction::class, ImportMultiSheetAction::make());
+    }
 
     public function test_import_multi_sheet_partenaires_et_clients()
     {
@@ -65,9 +78,8 @@ class ImportMultiSheetTest extends TestCase
         // Sauvegarder le fichier
         $writer = new Xlsx($spreadsheet);
         $fileName = 'test_import_multi_onglets.xlsx';
-        $tempPath = storage_path('app/imports/' . $fileName);
-        
         Storage::disk('local')->makeDirectory('imports');
+        $tempPath = Storage::disk('local')->path('imports/' . $fileName);
         $writer->save($tempPath);
         
         // Vérifier que les données n'existent pas déjà

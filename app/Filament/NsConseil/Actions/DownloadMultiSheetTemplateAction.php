@@ -2,13 +2,18 @@
 
 namespace App\Filament\NsConseil\Actions;
 
-use Filament\Actions\Action;
+use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Response;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DownloadMultiSheetTemplateAction extends Action
 {
+    public static function getDefaultName(): ?string
+    {
+        return 'download_multi_sheet_template';
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

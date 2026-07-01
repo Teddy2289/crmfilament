@@ -16,7 +16,7 @@ class ImportPartenairesAction extends Action
 {
     public static function make(?string $name = null): static
     {
-        return parent::make($name ?? 'download_import_template');
+        return parent::make($name ?? 'import_partenaires');
     }
     protected function setUp(): void
     {
