@@ -129,58 +129,103 @@ trait UsesResourcePermissions
             && ! static::userCanEditField($field);
     }
 
-    /**
-     * @param  array<string, string>  $fieldMap
-     */
-    protected static function applyShowFieldPermissionToComponent(object $component, array $fieldMap = []): object
-    {
-        if (method_exists($component, 'getChildComponents') && method_exists($component, 'childComponents')) {
-            $component->childComponents(static::applyShowFieldPermissions($component->getChildComponents(), $fieldMap));
+protected static function applyShowFieldPermissionToComponent(object $component, array $fieldMap = []): object
+{
+    if (method_exists($component, 'getChildComponents') && method_exists($component, 'childComponents')) {
+        $raw = static::getRawChildComponents($component, 'childComponents');
+
+        if (is_array($raw)) {
+            $component->childComponents(static::applyShowFieldPermissions($raw, $fieldMap));
         }
-
-        if (method_exists($component, 'getComponents') && method_exists($component, 'components')) {
-            $component->components(static::applyShowFieldPermissions($component->getComponents(), $fieldMap));
-        }
-
-        if (! method_exists($component, 'getName') || ! method_exists($component, 'hidden')) {
-            return $component;
-        }
-
-        $field = static::fieldNameForShowPermission($component->getName(), $fieldMap);
-
-        return $component->hidden(fn (): bool => ! static::userCanShowField($field));
     }
 
-    /**
-     * @param  array<string, string>  $fieldMap
-     */
-    protected static function applyFormFieldPermissionToComponent(object $component, array $fieldMap = []): object
-    {
-        if (method_exists($component, 'getChildComponents') && method_exists($component, 'childComponents')) {
-            $component->childComponents(static::applyFormFieldPermissions($component->getChildComponents(), $fieldMap));
+    if (method_exists($component, 'getComponents') && method_exists($component, 'components')) {
+        $raw = static::getRawChildComponents($component, 'components');
+
+        if (is_array($raw)) {
+            $component->components(static::applyShowFieldPermissions($raw, $fieldMap));
         }
+    }
 
-        if (method_exists($component, 'getComponents') && method_exists($component, 'components')) {
-            $component->components(static::applyFormFieldPermissions($component->getComponents(), $fieldMap));
-        }
-
-        if (! method_exists($component, 'getName')) {
-            return $component;
-        }
-
-        $field = static::fieldNameForPermission($component->getName(), $fieldMap);
-
-        if (method_exists($component, 'hidden')) {
-            $component->hidden(fn (?string $operation = null): bool => static::shouldHideFormField($field, $operation));
-        }
-
-        if (method_exists($component, 'disabled') && ! static::componentHasCustomDisabledCondition($component)) {
-            $component->disabled(fn (?string $operation = null): bool => static::shouldDisableFormField($field, $operation));
-        }
-
+    if (! method_exists($component, 'getName') || ! method_exists($component, 'hidden')) {
         return $component;
     }
 
+    $field = static::fieldNameForShowPermission($component->getName(), $fieldMap);
+
+    return $component->hidden(fn (): bool => ! static::userCanShowField($field));
+}
+
+protected static function applyFormFieldPermissionToComponent(object $component, array $fieldMap = []): object
+{
+    if (method_exists($component, 'getChildComponents') && method_exists($component, 'childComponents')) {
+        $raw = static::getRawChildComponents($component, 'childComponents');
+
+        if (is_array($raw)) {
+            $component->childComponents(static::applyFormFieldPermissions($raw, $fieldMap));
+        }
+    }
+
+    if (method_exists($component, 'getComponents') && method_exists($component, 'components')) {
+        $raw = static::getRawChildComponents($component, 'components');
+
+        if (is_array($raw)) {
+            $component->components(static::applyFormFieldPermissions($raw, $fieldMap));
+        }
+    }
+
+    if (! method_exists($component, 'getName')) {
+        return $component;
+    }
+
+    $field = static::fieldNameForPermission($component->getName(), $fieldMap);
+
+    if (method_exists($component, 'hidden')) {
+        $component->hidden(fn (?string $operation = null): bool => static::shouldHideFormField($field, $operation));
+    }
+
+    if (method_exists($component, 'disabled') && ! static::componentHasCustomDisabledCondition($component)) {
+        $component->disabled(fn (?string $operation = null): bool => static::shouldDisableFormField($field, $operation));
+    }
+
+    return $component;
+}
+
+/**
+ * Reads the underlying schema property without triggering Filament's
+ * Closure evaluation (which requires a live container/record and will
+ * throw "must not be accessed before initialization" if the component
+ * hasn't been mounted into a Schema yet).
+ */
+protected static function getRawChildComponents(object $component, string $propertyName): array|\Closure|null
+{
+    $candidates = [$propertyName, 'childComponents', 'components'];
+
+    foreach ($candidates as $prop) {
+        if (! property_exists($component, $prop)) {
+            continue;
+        }
+
+        try {
+            $reflection = new \ReflectionProperty($component, $prop);
+            $reflection->setAccessible(true);
+
+            if (! $reflection->isInitialized($component)) {
+                continue;
+            }
+
+            $value = $reflection->getValue($component);
+
+            if (is_array($value) || $value instanceof \Closure) {
+                return $value;
+            }
+        } catch (\Throwable) {
+            continue;
+        }
+    }
+
+    return null;
+}
     /**
      * @param  array<string, string>  $fieldMap
      */
