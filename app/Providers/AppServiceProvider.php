@@ -6,6 +6,8 @@ use App\Models\CrmSetting;
 use App\Services\Aopia\AopiaIcsService;
 use App\Services\Crm\CrmSettingsService;
 use App\Services\RingoverService;
+use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Telescope\TelescopeServiceProvider;
@@ -44,7 +46,28 @@ class AppServiceProvider extends ServiceProvider
             return strlen($value) >= 30;
         }, 'La description doit contenir au minimum 30 caractères.');
 
-        CrmSetting::saved(fn () => app(CrmSettingsService::class)->forget());
-        CrmSetting::deleted(fn () => app(CrmSettingsService::class)->forget());
+        CrmSetting::saved(fn() => app(CrmSettingsService::class)->forget());
+        CrmSetting::deleted(fn() => app(CrmSettingsService::class)->forget());
+
+        if ($redirectTo = config('mail.redirect_all_to')) {
+            Event::listen(MessageSending::class, function (MessageSending $event) use ($redirectTo) {
+                $original = collect($event->message->getTo())
+                    ->keys()
+                    ->implode(', ');
+
+                // Redirige le destinataire principal
+                $event->message->to($redirectTo);
+
+                // Vide Cc et Bcc en manipulant les headers Mime directement
+                // (Email::cc()/bcc() sont variadiques : Address|string ...$addresses,
+                // donc passer un tableau littéral [] lève une TypeError)
+                $event->message->getHeaders()->remove('Cc');
+                $event->message->getHeaders()->remove('Bcc');
+
+                // Garde une trace du destinataire d'origine dans le sujet (pratique pour debug)
+                $subject = $event->message->getSubject();
+                $event->message->subject("[Test → {$original}] {$subject}");
+            });
+        }
     }
 }

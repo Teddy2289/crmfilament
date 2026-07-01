@@ -4,6 +4,7 @@ namespace App\Services\Crm;
 
 use App\Models\Appel;
 use App\Models\TemplateFiche;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Settings;
@@ -13,7 +14,16 @@ class FicheWordService
 {
     public function __construct()
     {
-        Settings::setTempDir(storage_path('app/temp'));
+        $tempDir = storage_path('app/temp');
+
+        // Le dossier temp doit exister physiquement AVANT que PhpWord
+        // n'essaie d'y écrire, sinon on obtient un "mkdir(): No such
+        // file or directory" silencieux dans le worker.
+        if (! File::isDirectory($tempDir)) {
+            File::makeDirectory($tempDir, 0755, true);
+        }
+
+        Settings::setTempDir($tempDir);
     }
 
     /**
@@ -21,7 +31,10 @@ class FicheWordService
      */
     public function generer(TemplateFiche $template, array $data): string
     {
-        $templatePath = storage_path('app/'.$template->fichier_path);
+        // Depuis Laravel 11, le disque 'local' pointe vers storage/app/private.
+        // On passe par Storage::disk() plutôt que storage_path() brut pour
+        // que le chemin résolu corresponde à l'emplacement réel des fichiers.
+        $templatePath = Storage::disk('local')->path($template->fichier_path);
 
         if (! file_exists($templatePath)) {
             throw new \Exception("Template introuvable : {$templatePath}");
@@ -31,10 +44,20 @@ class FicheWordService
         $this->remplacerVariables($phpWord, $data);
 
         $filename = "fiche-{$template->type}-".now()->format('Ymd-His').'.docx';
-        $outputPath = storage_path('app/temp/'.$filename);
+        $outputDir = storage_path('app/temp');
+
+        if (! File::isDirectory($outputDir)) {
+            File::makeDirectory($outputDir, 0755, true);
+        }
+
+        $outputPath = $outputDir.DIRECTORY_SEPARATOR.$filename;
 
         $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
         $objWriter->save($outputPath);
+
+        if (! file_exists($outputPath)) {
+            throw new \Exception("Échec de l'écriture du document généré : {$outputPath}");
+        }
 
         return $outputPath;
     }
@@ -115,7 +138,7 @@ class FicheWordService
     {
         foreach ($data as $key => $value) {
             $placeholder = '{{'.$key.'}}';
-            $text = str_replace($placeholder, $value ?? '', $text);
+            $text = str_replace($placeholder, is_scalar($value) ? (string) $value : '', $text);
         }
 
         return $text;
@@ -126,12 +149,22 @@ class FicheWordService
      */
     public function stocker(string $localPath, string $destination): string
     {
+        if (! file_exists($localPath)) {
+            throw new \Exception("Fichier local introuvable pour stockage : {$localPath}");
+        }
+
         $filename = basename($localPath);
+
+        // putFileAs() attend un objet File|UploadedFile, pas une string brute
+        // (une string est traitée comme le CONTENU du fichier, pas un chemin).
         Storage::disk('public')->putFileAs(
             'fiches/'.$destination,
-            $localPath,
+            new \Illuminate\Http\File($localPath),
             $filename
         );
+
+        // Nettoyage du fichier temporaire une fois copié vers le disque public
+        File::delete($localPath);
 
         return Storage::disk('public')->url('fiches/'.$destination.'/'.$filename);
     }

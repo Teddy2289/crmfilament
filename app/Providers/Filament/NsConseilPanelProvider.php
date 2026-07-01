@@ -56,6 +56,8 @@ class NsConseilPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::hex('#2891e7'),
                 'gray'    => Color::Slate,
+                'secondary'=>Color::hex('#0fc3f5'),
+                'custom-kanban'=>Color::hex('#ffa865'),
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
                 'danger'  => Color::Rose,
