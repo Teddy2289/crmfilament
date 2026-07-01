@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Services\Aopia\FicheGenerationService;
 use App\Services\Crm\CrmProfileService;
 use App\Services\Crm\CrmSettingsService;
+use App\Services\ProspectionMailService;
 use App\Support\CsePhoningWorkflow;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -29,6 +30,8 @@ use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+
 
 class PhoningWorkflow extends Page
 {
@@ -734,6 +737,27 @@ class PhoningWorkflow extends Page
         }
         $prospect->marquerContact();
 
+
+        // ── Envoi du mail correspondant au statut ──────────────────────
+        // ── Envoi du mail correspondant au statut ──────────────────────
+$rdv = null; // déclarée en amont : nécessaire pour TOUS les statuts, pas seulement 'rdv'
+
+if ($this->statut_resultat === 'rdv') {
+    $rdv = $this->creerRendezVous($prospect);
+    Log::info("MAIL DEBUG: creerRendezVous", [
+        'rappel_date' => $this->rappel_date,
+        'rappel_heure' => $this->rappel_heure,
+        'rdv_created' => $rdv !== null,
+        'rdv_id' => $rdv?->id,
+    ]);
+}
+
+app(ProspectionMailService::class)->envoyerPourStatut(
+    $this->statut_resultat,
+    $prospect,
+    ['rdv' => $rdv]
+);
+
         // Planifier le rappel selon paramètres back-office
         if ($this->rappel_date) {
             $this->appliquerRappelProspect($prospect);
@@ -751,6 +775,24 @@ class PhoningWorkflow extends Page
         }
     }
 
+    protected function creerRendezVous(Prospect $prospect): ?\App\Models\RendezVous
+    {
+        if (! $this->rappel_date) {
+            return null; // pas de date saisie, impossible de créer le RDV
+        }
+
+        $dateHeure = $this->rappel_date . ' ' . ($this->rappel_heure ?: '09:00');
+
+        return \App\Models\RendezVous::create([
+            'rdvable_type' => Prospect::class,
+            'rdvable_id' => $prospect->id,
+            'date_heure' => $dateHeure,
+            'lieu' => $this->lieu_rdv ?: null,
+            'statut' => \App\Enums\RendezVousStatut::Planifie,
+            'commercial_id' => $prospect->commercial_id,
+            'teleprospecteur_id' => Auth::id(),
+        ]);
+    }
     protected function appliquerRappelProspect(Prospect $prospect): void
     {
         try {

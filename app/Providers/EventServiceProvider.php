@@ -5,12 +5,16 @@ namespace App\Providers;
 use App\Events\Mail2EnvoyeEvent;
 use App\Listeners\NotifierTeamLeaderMail2Listener;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use App\Listeners\RedirectAllMailListener;
 
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
         Mail2EnvoyeEvent::class => [
             NotifierTeamLeaderMail2Listener::class,
+        ],
+        \Illuminate\Mail\Events\MessageSending::class => [
+            RedirectAllMailListener::class,
         ],
     ];
 }

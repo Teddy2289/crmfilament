@@ -19,7 +19,7 @@ class DownloadImportTemplateAction extends Action
 
         $this->label('Télécharger le modèle d\'import')
             ->icon('heroicon-o-document-arrow-down')
-            ->color('gray')
+            ->color('secondary')
             ->action(function () {
                 $spreadsheet = new Spreadsheet();
                 $sheet = $spreadsheet->getActiveSheet();

@@ -512,10 +512,10 @@ class PartenaireResource extends Resource
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()->color('secondary'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('changer_statut')
-                    ->label('Statut')->icon('heroicon-o-arrow-path')->color('gray')
+                    ->label('Statut')->icon('heroicon-o-arrow-path')->color('warning')
                     ->form([
                         Forms\Components\Select::make('statut')
                             ->label('Nouveau statut')
@@ -568,11 +568,11 @@ class PartenaireResource extends Resource
     Tables\Actions\Action::make('switch_view')
         ->label('Vue Kanban')
         ->icon('heroicon-o-squares-2x2')
-        ->color('gray')
+        ->color('custom-kanban')
         ->url(\App\Filament\NsConseil\Resources\PartenaireResource\Pages\PartenaireKanban::getUrl()),
 
     \App\Filament\NsConseil\Actions\DownloadImportTemplateAction::make(),
-    \App\Filament\NsConseil\Actions\ImportPartenairesAction::make(),
+    // \App\Filament\NsConseil\Actions\ImportPartenairesAction::make(),
     Tables\Actions\Action::make('lancer_appels')
         ->label('Lancer les appels')
         ->icon('heroicon-o-phone-arrow-up-right')
