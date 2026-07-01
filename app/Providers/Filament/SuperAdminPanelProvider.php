@@ -4,9 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\SuperAdmin\Pages\Dashboard;
 use App\Filament\SuperAdmin\Pages\DatabaseManager;
-use App\Filament\Themes\SuperAdminTheme;
 use App\Http\Middleware\EnsureSuperAdmin;
-use App\Models\Theme as ThemeModel;
 use App\Http\Middleware\SetLocale;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -16,7 +14,6 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -29,16 +26,19 @@ class SuperAdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        $theme = ThemeModel::resolveForPanel('super-admin');
-        
         return $panel
             ->id('super-admin')
             ->path('super-admin')
             ->login()
-            ->brandName($theme?->brand_name ?? '⚙️ Super Administration')
-            ->brandLogo($theme?->brand_logo_path)
-            ->favicon($theme?->favicon_path)
-            ->colors(fn (): array => app(SuperAdminTheme::class)->getColors())
+            ->brandName('⚙️ Super Administration')
+            ->colors([
+                'primary' => Color::Blue,
+                'gray' => Color::Slate,
+                'danger' => Color::Rose,
+                'success' => Color::Emerald,
+                'warning' => Color::Amber,
+                'info' => Color::Sky,
+            ])
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
                 NavigationGroup::make('Utilisateurs & Accès')
@@ -69,7 +69,7 @@ class SuperAdminPanelProvider extends PanelProvider
                 DatabaseManager::class,
             ])
             ->widgets([
-                \App\Filament\Widgets\ThemeSelectorWidget::class,
+                //
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -92,18 +92,6 @@ class SuperAdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
-            ->spa()
-            ->renderHook(
-                PanelsRenderHook::HEAD_END,
-                fn () => ThemeModel::resolveForPanel('super-admin', auth()->user())?->usesEspoChrome()
-                    ? view('filament.shared.espo-theme')
-                    : '',
-            )
-            ->renderHook(
-                PanelsRenderHook::HEAD_END,
-                fn () => ($requestTheme = ThemeModel::resolveForPanel('super-admin', auth()->user()))?->custom_css
-                    ? '<style>' . $requestTheme->custom_css . '</style>'
-                    : '',
-            );
+            ->spa();
     }
 }
