@@ -43,7 +43,8 @@ class WebhookResource extends Resource
                             ->required()
                             ->url()
                             ->maxLength(500)
-                            ->helperText('URL de destination pour les appels webhook'),
+                            ->helperText('URL de destination pour les appels webhook')
+                            ->default(fn () => config('app.url') . '/api/webhooks/receive'),
 
                         Forms\Components\Select::make('event')
                             ->label('Événement')

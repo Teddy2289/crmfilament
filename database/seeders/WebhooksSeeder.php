@@ -9,10 +9,12 @@ class WebhooksSeeder extends Seeder
 {
     public function run(): void
     {
+        $baseUrl = config('app.url');
+
         $webhooks = [
             [
                 'name' => 'Webhook Appels Ringover',
-                'url' => 'https://api.example.com/ringover/calls',
+                'url' => $baseUrl . '/api/webhooks/ringover/calls',
                 'event' => 'call.started',
                 'is_active' => true,
                 'description' => 'Webhook pour les appels démarrés via Ringover',
@@ -24,7 +26,7 @@ class WebhooksSeeder extends Seeder
             ],
             [
                 'name' => 'Webhook Appels Terminés',
-                'url' => 'https://api.example.com/ringover/calls/ended',
+                'url' => $baseUrl . '/api/webhooks/ringover/calls/ended',
                 'event' => 'call.ended',
                 'is_active' => true,
                 'description' => 'Webhook pour les appels terminés',
@@ -36,7 +38,7 @@ class WebhooksSeeder extends Seeder
             ],
             [
                 'name' => 'Webhook Appels Manqués',
-                'url' => 'https://api.example.com/ringover/calls/missed',
+                'url' => $baseUrl . '/api/webhooks/ringover/calls/missed',
                 'event' => 'call.missed',
                 'is_active' => true,
                 'description' => 'Webhook pour les appels manqués',
@@ -48,7 +50,7 @@ class WebhooksSeeder extends Seeder
             ],
             [
                 'name' => 'Webhook Création Client',
-                'url' => 'https://api.example.com/clients/created',
+                'url' => $baseUrl . '/api/webhooks/clients/created',
                 'event' => 'client.created',
                 'is_active' => true,
                 'description' => 'Webhook pour la création de nouveaux clients',
@@ -60,7 +62,7 @@ class WebhooksSeeder extends Seeder
             ],
             [
                 'name' => 'Webhook Création Prospect',
-                'url' => 'https://api.example.com/prospects/created',
+                'url' => $baseUrl . '/api/webhooks/prospects/created',
                 'event' => 'prospect.created',
                 'is_active' => true,
                 'description' => 'Webhook pour la création de nouveaux prospects',
@@ -72,7 +74,7 @@ class WebhooksSeeder extends Seeder
             ],
             [
                 'name' => 'Webhook Création RDV',
-                'url' => 'https://api.example.com/rdv/created',
+                'url' => $baseUrl . '/api/webhooks/rdv/created',
                 'event' => 'rdv.created',
                 'is_active' => true,
                 'description' => 'Webhook pour la création de rendez-vous',
