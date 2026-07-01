@@ -42,7 +42,7 @@ class ActiviteVenteResource extends Resource
 
                         Forms\Components\Select::make('consultant_id')
                             ->label('Consultant')
-                            ->relationship('consultant', 'nom_complet')
+                            ->relationship('consultant', 'nom')
                             ->searchable()
                             ->preload()
                             ->nullable()
@@ -88,7 +88,7 @@ class ActiviteVenteResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('consultant.nom_complet')
+                Tables\Columns\TextColumn::make('consultant.nom')
                     ->label('Consultant')
                     ->searchable()
                     ->sortable()
@@ -134,7 +134,7 @@ class ActiviteVenteResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('consultant')
                     ->label('Consultant')
-                    ->relationship('consultant', 'nom_complet'),
+                    ->relationship('consultant', 'nom'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
