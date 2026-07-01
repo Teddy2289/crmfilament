@@ -18,35 +18,36 @@ class WorkflowGroupeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-group';
 
-    protected static ?string $navigationLabel = 'Groupes workflow';
+    protected static ?string $navigationLabel = 'Groupes de parcours';
 
     protected static ?string $navigationGroup = 'Paramétrage CRM';
 
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $modelLabel = 'Groupe workflow';
+    protected static ?string $modelLabel = 'Groupe de parcours';
 
-    protected static ?string $pluralModelLabel = 'Groupes workflow';
+    protected static ?string $pluralModelLabel = 'Groupes de parcours';
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Tabs::make('Workflow')
+            Forms\Components\Tabs::make('Parcours')
                 ->tabs([
                     Forms\Components\Tabs\Tab::make('Informations')
                         ->schema([
                             Forms\Components\Select::make('model_type')
+                                ->label('Type de modèle')
                                 ->options(['prospect' => 'Prospect', 'partenaire' => 'Partenaire'])
                                 ->required()
                                 ->native(false),
-                            Forms\Components\TextInput::make('code')->required(),
-                            Forms\Components\TextInput::make('label')->required(),
-                            Forms\Components\TextInput::make('ordre')->numeric()->default(0),
-                            Forms\Components\Toggle::make('actif')->default(true),
+                            Forms\Components\TextInput::make('code')->label('Code')->required(),
+                            Forms\Components\TextInput::make('label')->label('Libellé')->required(),
+                            Forms\Components\TextInput::make('ordre')->label('Ordre')->numeric()->default(0),
+                            Forms\Components\Toggle::make('actif')->label('Actif')->default(true),
                         ])
                         ->columns(2),
                     
-                    Forms\Components\Tabs\Tab::make('Éditeur Visuel')
+                    Forms\Components\Tabs\Tab::make('Éditeur visuel')
                         ->schema([
                             Forms\Components\Livewire::make('workflow-visual-editor')
                                 ->key(fn ($record) => $record?->id ?? 'new')
@@ -64,11 +65,11 @@ class WorkflowGroupeResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('model_type')->badge(),
-                Tables\Columns\TextColumn::make('ordre')->sortable(),
-                Tables\Columns\TextColumn::make('code')->fontFamily('mono'),
-                Tables\Columns\TextColumn::make('label')->searchable(),
-                Tables\Columns\IconColumn::make('actif')->boolean(),
+                Tables\Columns\TextColumn::make('model_type')->label('Type')->badge(),
+                Tables\Columns\TextColumn::make('ordre')->label('Ordre')->sortable(),
+                Tables\Columns\TextColumn::make('code')->label('Code')->fontFamily('mono'),
+                Tables\Columns\TextColumn::make('label')->label('Libellé')->searchable(),
+                Tables\Columns\IconColumn::make('actif')->label('Actif')->boolean(),
             ])
             ->reorderable('ordre')
             ->actions([Tables\Actions\EditAction::make()]);

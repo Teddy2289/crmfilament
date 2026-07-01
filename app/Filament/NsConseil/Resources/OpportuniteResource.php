@@ -36,6 +36,10 @@ class OpportuniteResource extends Resource
 
     protected static ?string $navigationLabel = 'Opportunités';
 
+    protected static ?string $modelLabel = 'Opportunité';
+
+    protected static ?string $pluralModelLabel = 'Opportunités';
+
     protected static ?int $navigationSort = 3;
 
     public static function getNavigationBadge(): ?string
@@ -218,7 +222,7 @@ class OpportuniteResource extends Resource
                         ->default('-'),
 
                     Infolists\Components\TextEntry::make('valeur_estimee')
-                        ->label('Valeur estimee')
+                        ->label('Valeur estimée')
                         ->numeric(decimalPlaces: 2)
                         ->suffix(' EUR'),
                 ])
@@ -228,7 +232,7 @@ class OpportuniteResource extends Resource
                 ->icon('heroicon-o-phone')
                 ->schema([
                     Infolists\Components\TextEntry::make('telephone')
-                        ->label('Telephone')
+                        ->label('Téléphone')
                         ->default('-'),
 
                     Infolists\Components\TextEntry::make('email')
@@ -245,7 +249,7 @@ class OpportuniteResource extends Resource
                         ->default('-'),
 
                     Infolists\Components\TextEntry::make('interlocuteur_telephone')
-                        ->label('Telephone interlocuteur')
+                        ->label('Téléphone interlocuteur')
                         ->default('-'),
 
                     Infolists\Components\TextEntry::make('interlocuteur_email')

@@ -14,10 +14,10 @@ test.describe('Import Prospects', () => {
     await expect(page.locator('h1')).toContainText('Prospects');
   });
 
-  test('Accès au Workflow Phoning', async ({ page }) => {
+  test('Accès au flux de travail téléphonique', async ({ page }) => {
     await page.goto('/ns-conseil/phoning-workflow');
     
     // Vérifier que la page est chargée
-    await expect(page.locator('h1')).toContainText('Workflow');
+    await expect(page.locator('h1')).toContainText('Flux de travail');
   });
 });

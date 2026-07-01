@@ -120,7 +120,7 @@ class ViewProspect extends ViewRecord
                 ->visible(fn () => $this->record->est_convertible_en_partenaire)
                 ->requiresConfirmation()
                 ->modalHeading('Convertir en Partenaire ?')
-                ->modalDescription('Un nouveau Partenaire sera cree a partir des donnees de ce prospect. Le prospect sera archive et restera tracable depuis le partenaire.')
+                ->modalDescription('Un nouveau partenaire sera créé à partir des données de ce prospect. Le prospect sera archivé et restera traçable depuis le partenaire.')
                 ->action(function () {
                     try {
                         $partenaire = $this->record->convertirEnPartenaire();

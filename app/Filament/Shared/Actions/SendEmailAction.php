@@ -21,10 +21,10 @@ class SendEmailAction
     public static function make(callable|string|null $emailResolver = null): Action
     {
         return Action::make('envoyer_email')
-            ->label('Envoyer un email')
+            ->label('Envoyer un e-mail')
             ->icon('heroicon-o-envelope')
             ->color('gray')
-            ->modalHeading('Envoyer un email')
+            ->modalHeading('Envoyer un e-mail')
             ->modalWidth('2xl')
             ->form(function ($record) use ($emailResolver): array {
                 $emailDefault = is_callable($emailResolver)
@@ -33,7 +33,7 @@ class SendEmailAction
 
                 return [
                     Forms\Components\Select::make('template_cle')
-                        ->label('Template')
+                        ->label('Modèle')
                         ->options(
                             EmailTemplate::where('actif', true)
                                 ->orderBy('nom')
@@ -66,7 +66,7 @@ class SendEmailAction
                         ->placeholder('email1@example.com, email2@example.com')
                         ->nullable(),
 
-                    Forms\Components\Section::make('Aperçu du template')
+                Forms\Components\Section::make('Aperçu du modèle')
                         ->collapsible()
                         ->collapsed(false)
                         ->schema([
@@ -74,14 +74,14 @@ class SendEmailAction
                                 ->label('Sujet')
                                 ->disabled()
                                 ->dehydrated(false)
-                                ->placeholder('Sélectionnez un template pour voir le sujet'),
+                                ->placeholder('Sélectionnez un modèle pour voir le sujet'),
 
                             Forms\Components\Textarea::make('corps_apercu')
                                 ->label('Corps (avec variables non résolues)')
                                 ->disabled()
                                 ->dehydrated(false)
                                 ->rows(8)
-                                ->placeholder('Sélectionnez un template pour voir le contenu'),
+                                ->placeholder('Sélectionnez un modèle pour voir le contenu'),
                         ]),
                 ];
             })
@@ -90,7 +90,7 @@ class SendEmailAction
 
                 if (!$template) {
                     Notification::make()
-                        ->title('Template introuvable : ' . $data['template_cle'])
+                        ->title('Modèle introuvable : ' . $data['template_cle'])
                         ->danger()
                         ->send();
                     return;
@@ -132,7 +132,7 @@ class SendEmailAction
                 ]);
 
                 Notification::make()
-                    ->title('Email envoyé à ' . $destinataire)
+                    ->title('E-mail envoyé à ' . $destinataire)
                     ->success()
                     ->send();
             });

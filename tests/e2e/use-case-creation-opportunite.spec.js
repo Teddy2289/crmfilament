@@ -14,7 +14,7 @@ test.describe('Use Case: Création Opportunité', () => {
 
     // Étape 2: Accéder aux Opportunités
     await page.goto('/ns-conseil/opportunites');
-    await expect(page.locator('h1')).toContainText('Opportunites');
+    await expect(page.locator('h1')).toContainText('Opportunités');
 
     // Étape 3: Vérifier que la page est chargée
     await expect(page.locator('body')).toBeVisible();

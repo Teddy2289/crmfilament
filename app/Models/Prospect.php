@@ -609,12 +609,12 @@ class Prospect extends Model
      * Convertit un Prospect en Partenaire.
      *
      * Règle actuelle (implémentation):
-     * - Le prospect doit être qualifié (statut QF) et validé par un Team Leader
+     * - Le prospect doit être qualifié (statut QF) et validé par un responsable d'équipe
      * - Le partenaire créé a le statut "À prospecter" (OrganizationStatus::AProspecter)
      * - Les contacts (dirigeant, CSE, syndicat) sont automatiquement migrés vers ContactPartenaire
      *
      * Note CDC vs Implémentation:
-     * - CDC §4.4: "Conversion Prospect → Partenaire : Team Leader uniquement | Statut = QF validé"
+     * - CDC §4.4: "Conversion Prospect → Partenaire : responsable d'équipe uniquement | Statut = QF validé"
      * - CDC mentionne également "Convention signée" comme condition, mais l'implémentation actuelle
      *   utilise QF comme critère principal pour permettre la conversion et la signature ultérieure
      * - Le partenaire créé démarre en statut "À prospecter" pour permettre le workflow de signature

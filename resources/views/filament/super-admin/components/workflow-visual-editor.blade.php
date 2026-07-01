@@ -24,7 +24,7 @@
         </div>
         <div class="flex items-center gap-2">
             <button @click="autoLayout()" class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm">
-                Auto-layout
+                Réorganiser
             </button>
             <button @click="saveWorkflow()" class="px-3 py-1.5 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm">
                 Sauvegarder

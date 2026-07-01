@@ -43,11 +43,11 @@ class ThemeResource extends Resource
                             ->required()
                             ->helperText('Nom affiché dans l\'interface'),
                         Forms\Components\Select::make('panel')
-                            ->label('Panel')
+                            ->label('Panneau')
                             ->options([
                                 'ns-conseil' => 'NS Conseil',
                                 'admin' => 'Admin',
-                                'super-admin' => 'Super Admin',
+                                'super-admin' => 'Super administrateur',
                                 'allopro' => 'Allopro',
                             ])
                             ->required()
@@ -233,14 +233,14 @@ class ThemeResource extends Resource
                             ->label('Style interface')
                             ->options([
                                 Theme::CHROME_FILAMENT => 'Filament natif',
-                                Theme::CHROME_ESPO => 'EspoCRM legacy',
+                                Theme::CHROME_ESPO => 'EspoCRM historique',
                             ])
                             ->default(Theme::CHROME_FILAMENT)
                             ->required()
                             ->native(false),
                         Forms\Components\Toggle::make('metadata.apply_colors')
-                            ->label('Appliquer les couleurs du theme')
-                            ->helperText('Desactive par defaut pour conserver les couleurs natives Filament.')
+                            ->label('Appliquer les couleurs du thème')
+                            ->helperText('Désactivé par défaut pour conserver les couleurs natives Filament.')
                             ->default(false),
                         Forms\Components\Textarea::make('custom_css')
                             ->label('CSS personnalisé')
@@ -262,7 +262,7 @@ class ThemeResource extends Resource
                     ->label('Libellé')
                     ->searchable(),
                 Tables\Columns\BadgeColumn::make('panel')
-                    ->label('Panel')
+                    ->label('Panneau')
                     ->colors([
                         'blue' => 'ns-conseil',
                         'indigo' => 'admin',
@@ -297,11 +297,11 @@ class ThemeResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('panel')
-                    ->label('Panel')
+                    ->label('Panneau')
                     ->options([
                         'ns-conseil' => 'NS Conseil',
                         'admin' => 'Admin',
-                        'super-admin' => 'Super Admin',
+                        'super-admin' => 'Super administrateur',
                         'allopro' => 'Allopro',
                     ]),
                 Tables\Filters\TernaryFilter::make('is_active')

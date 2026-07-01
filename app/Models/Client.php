@@ -309,6 +309,11 @@ class Client extends Model
 
     public function scopePartenaireNonRattaches(Builder $query): Builder
     {
+        return static::constrainPartenaireNonRattaches($query);
+    }
+
+    public static function constrainPartenaireNonRattaches(Builder $query): Builder
+    {
         return $query
             ->whereNull('partenaire_id')
             ->where('extra_data->partenaire_import->statut', 'partenaire_non_rattache');

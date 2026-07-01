@@ -239,26 +239,26 @@ class EntrepriseResource extends Resource
     {
         return $infolist
             ->schema(static::applyShowFieldPermissions([
-                Infolists\Components\Section::make('Informations generales')
+                Infolists\Components\Section::make('Informations générales')
                     ->schema([
                         Infolists\Components\TextEntry::make('raison_sociale')
                             ->label('Raison sociale')
                             ->weight('bold'),
                         Infolists\Components\TextEntry::make('forme_juridique')
                             ->label('Forme juridique')
-                            ->placeholder('Non renseigne'),
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('siret')
                             ->label('SIRET')
-                            ->placeholder('Non renseigne'),
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('siren')
                             ->label('SIREN')
-                            ->placeholder('Non renseigne'),
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('numero_tva')
-                            ->label('Numero TVA')
-                            ->placeholder('Non renseigne'),
+                            ->label('Numéro TVA')
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('capital')
                             ->label('Capital')
-                            ->placeholder('Non renseigne'),
+                            ->placeholder('Non renseigné'),
                     ])
                     ->columns(2),
 
@@ -266,50 +266,50 @@ class EntrepriseResource extends Resource
                     ->schema([
                         Infolists\Components\TextEntry::make('adresse')
                             ->label('Adresse')
-                            ->placeholder('Non renseignee')
+                            ->placeholder('Non renseignée')
                             ->columnSpanFull(),
                         Infolists\Components\TextEntry::make('code_postal')
                             ->label('Code postal')
-                            ->placeholder('Non renseigne'),
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('ville')
                             ->label('Ville')
-                            ->placeholder('Non renseignee'),
+                            ->placeholder('Non renseignée'),
                         Infolists\Components\TextEntry::make('pays')
                             ->label('Pays')
-                            ->placeholder('Non renseigne'),
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('telephone')
-                            ->label('Telephone')
-                            ->placeholder('Non renseigne'),
+                            ->label('Téléphone')
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('email')
                             ->label('Email')
-                            ->placeholder('Non renseigne')
+                            ->placeholder('Non renseigné')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('site_web')
                             ->label('Site web')
-                            ->placeholder('Non renseigne')
+                            ->placeholder('Non renseigné')
                             ->url(fn (?string $state): ?string => $state),
                     ])
                     ->columns(3),
 
-                Infolists\Components\Section::make('Activite')
+                Infolists\Components\Section::make('Activité')
                     ->schema([
                         Infolists\Components\TextEntry::make('secteur_activite')
                             ->label('Secteur')
-                            ->placeholder('Non renseigne'),
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('effectif')
                             ->label('Effectif')
-                            ->suffix(' salaries')
-                            ->placeholder('Non renseigne'),
+                            ->suffix(' salariés')
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('code_naf')
                             ->label('Code NAF/APE')
-                            ->placeholder('Non renseigne'),
+                            ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('date_creation')
-                            ->label('Date de creation')
+                            ->label('Date de création')
                             ->date('d/m/Y')
-                            ->placeholder('Non renseignee'),
+                            ->placeholder('Non renseignée'),
                         Infolists\Components\TextEntry::make('description')
                             ->label('Description')
-                            ->placeholder('Non renseignee')
+                            ->placeholder('Non renseignée')
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
@@ -323,10 +323,10 @@ class EntrepriseResource extends Resource
                             ->label('Clients')
                             ->state(fn (Entreprise $record): int => $record->clients()->count()),
                         Infolists\Components\TextEntry::make('created_at')
-                            ->label('Cree le')
+                            ->label('Créé le')
                             ->dateTime('d/m/Y H:i'),
                         Infolists\Components\TextEntry::make('updated_at')
-                            ->label('Mis a jour le')
+                            ->label('Mis à jour le')
                             ->dateTime('d/m/Y H:i'),
                     ])
                     ->columns(4),

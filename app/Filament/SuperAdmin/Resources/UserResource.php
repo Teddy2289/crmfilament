@@ -70,13 +70,13 @@ class UserResource extends Resource
                         ->label('')
                         ->relationship('roles', 'name')
                         ->getOptionLabelFromRecordUsing(fn ($record) => match ($record->name) {
-                            'super_admin' => '⚡ Super Admin',
+                            'super_admin' => '⚡ Super administrateur',
                             'administrateur' => '🔑 Administrateur',
-                            'responsable_plateau' => '📋 Responsable Plateau',
-                            'back_office' => '🖥️ Back Office',
+                            'responsable_plateau' => '📋 Responsable plateau',
+                            'back_office' => '🖥️ Back-office',
                             'operateur_n1' => '📞 Opérateur N1',
                             'superviseur' => '👁️ Superviseur',
-                            'team_leader' => '🏆 Team Leader',
+                            'team_leader' => '🏆 Responsable d\'équipe',
                             'commercial' => '💼 Commercial',
                             'teleprospecteur' => '📣 Téléprospecteur',
                             default => $record->name,

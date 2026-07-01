@@ -19,6 +19,6 @@ return [
 
     ['groupe' => 'mail', 'cle' => 'from_address', 'valeur' => 'assistante-commerciale@ns-conseil.com', 'type' => 'string', 'label' => 'Email expéditeur', 'description' => 'Adresse mails automatiques AOPIA', 'ordre' => 1],
     ['groupe' => 'mail', 'cle' => 'from_name', 'valeur' => 'AOPIA Formation', 'type' => 'string', 'label' => 'Nom expéditeur', 'description' => null, 'ordre' => 2],
-    ['groupe' => 'mail', 'cle' => 'mail2_locked_cc', 'valeur' => '["bruno@ns-conseil.com","nirina@ns-conseil.com"]', 'type' => 'json', 'label' => 'CC invitation agenda', 'description' => 'Destinataires en copie Template 2', 'ordre' => 3],
+    ['groupe' => 'mail', 'cle' => 'mail2_locked_cc', 'valeur' => '["bruno@ns-conseil.com","nirina@ns-conseil.com"]', 'type' => 'json', 'label' => 'CC invitation agenda', 'description' => 'Destinataires en copie du modèle 2', 'ordre' => 3],
     ['groupe' => 'mail', 'cle' => 'send_deadline_minutes', 'valeur' => '30', 'type' => 'int', 'label' => 'Délai envoi mail (min)', 'description' => 'Délai max après prise de RDV', 'ordre' => 4],
 ];

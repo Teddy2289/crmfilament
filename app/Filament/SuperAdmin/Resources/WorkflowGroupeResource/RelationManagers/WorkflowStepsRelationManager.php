@@ -14,7 +14,7 @@ class WorkflowStepsRelationManager extends RelationManager
 {
     protected static string $relationship = 'workflowSteps';
 
-    protected static ?string $title = 'Étapes du workflow';
+    protected static ?string $title = 'Étapes du parcours';
 
     public function form(Form $form): Form
     {
@@ -46,10 +46,10 @@ class WorkflowStepsRelationManager extends RelationManager
                     ->default('task'),
 
                 Forms\Components\TextInput::make('ordre')
-                    ->label('Ordre')
-                    ->numeric()
-                    ->default(0)
-                    ->helperText('Ordre d\'exécution dans le workflow'),
+                ->label('Ordre')
+                ->numeric()
+                ->default(0)
+                ->helperText('Ordre d\'exécution dans le parcours'),
 
                 Forms\Components\KeyValue::make('config')
                     ->label('Configuration')
@@ -120,7 +120,7 @@ class WorkflowStepsRelationManager extends RelationManager
                 ]),
             ])
             ->emptyStateHeading('Aucune étape configurée')
-            ->emptyStateDescription('Créez des étapes pour construire votre workflow')
+            ->emptyStateDescription('Créez des étapes pour construire votre parcours')
             ->emptyStateIcon('heroicon-o-cube');
     }
 }

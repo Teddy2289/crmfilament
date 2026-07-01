@@ -14,7 +14,7 @@
             ['label' => 'Tableau de bord', 'active' => true],
             ['label' => 'Partenaires', 'active' => false],
             ['label' => 'Prospects', 'active' => false],
-            ['label' => 'Opportunites', 'active' => false],
+            ['label' => 'Opportunités', 'active' => false],
             ['label' => 'Clients', 'active' => false],
             ['label' => 'Rendez-vous', 'active' => false],
             ['label' => 'Rapports', 'active' => false],
@@ -27,7 +27,7 @@
     </nav>
 
     <div style="margin-top:auto;padding:12px 8px;border-top:1px solid #e7ebef;color:#6e7b87;font-size:11px;line-height:1.5;">
-        <div style="font-weight:700;color:#566471;margin-bottom:4px;">Acces securise</div>
+        <div style="font-weight:700;color:#566471;margin-bottom:4px;">Accès sécurisé</div>
         <div>Connexion locale au CRM AOPIA / LIKE Formation.</div>
     </div>
 </aside>

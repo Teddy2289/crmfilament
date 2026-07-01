@@ -38,6 +38,8 @@ class PhoningWorkflow extends Page
     // protected static ?string $navigationIcon    = 'heroicon-o-phone-arrow-up-right';
     protected static ?string $navigationLabel = 'Flux de travail téléphonique';
 
+    protected static ?string $title = 'Flux de travail téléphonique';
+
     protected static ?string $navigationGroup = 'Activités';
 
     protected static ?int $navigationSort = 3;
@@ -1185,7 +1187,7 @@ app(ProspectionMailService::class)->envoyerPourStatut(
             // Groupe d'actions dans un dropdown
             ActionGroup::make([
                 Action::make('voir_campagne')
-                    ->label('Stats campagne')
+                    ->label('Statistiques campagne')
                     ->icon('heroicon-o-chart-bar')
                     ->color('success')
                     ->visible(fn() => $this->currentCampagneId !== null)
@@ -1193,7 +1195,7 @@ app(ProspectionMailService::class)->envoyerPourStatut(
                     ->openUrlInNewTab(),
 
                 Action::make('workflow_cse')
-                    ->label('Workflow CSE v2')
+                    ->label('Parcours CSE v2')
                     ->icon('heroicon-o-map')
                     ->color('info')
                     ->url(fn() => WorkflowProspectionCse::getUrl())

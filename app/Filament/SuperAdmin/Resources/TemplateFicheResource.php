@@ -27,6 +27,14 @@ class TemplateFicheResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Modèles de fiches';
+
+    protected static ?string $navigationGroup = 'Paramétrage CRM';
+
+    protected static ?string $modelLabel = 'Modèle de fiche';
+
+    protected static ?string $pluralModelLabel = 'Modèles de fiches';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -77,12 +85,15 @@ class TemplateFicheResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('code')
+                    ->label('Code')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('nom')
+                    ->label('Nom')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('type')
+                    ->label('Type')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'bleue' => 'blue',
@@ -91,6 +102,7 @@ class TemplateFicheResource extends Resource
                         default => 'gray',
                     }),
                 TextColumn::make('description')
+                    ->label('Description')
                     ->limit(50),
                 TextColumn::make('fichier_path')
                     ->label('Fichier')
@@ -100,10 +112,12 @@ class TemplateFicheResource extends Resource
                     ->label('Actif')
                     ->sortable(),
                 TextColumn::make('created_at')
+                    ->label('Créé le')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Mis à jour le')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

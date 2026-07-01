@@ -14,7 +14,7 @@ class WorkflowProspectionCseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Supprimer le workflow s'il existe déjà
+        // Supprimer le parcours s'il existe déjà
         $existing = WorkflowGroupe::where('code', 'prospection_cse_v2')->first();
         if ($existing) {
             $existing->workflowSteps()->delete();
@@ -361,6 +361,6 @@ class WorkflowProspectionCseSeeder extends Seeder
             ],
         ]);
 
-        $this->command->info('Workflow Prospection CSE v2 créé avec succès.');
+        $this->command->info('Parcours Prospection CSE v2 créé avec succès.');
     }
 }

@@ -10,7 +10,7 @@ use Filament\Forms\Form;
 class SentEmailsRelationManager extends RelationManager
 {
     protected static string $relationship = 'sentEmails';
-    protected static ?string $title = 'Historique emails';
+    protected static ?string $title = 'Historique des e-mails';
     protected static ?string $icon = 'heroicon-o-envelope';
 
     public function form(Form $form): Form
@@ -47,7 +47,7 @@ class SentEmailsRelationManager extends RelationManager
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('template_cle')
-                    ->label('Template')
+                    ->label('Modèle')
                     ->badge()
                     ->color('gray')
                     ->fontFamily('mono')
@@ -73,7 +73,7 @@ class SentEmailsRelationManager extends RelationManager
             ])
             ->headerActions([])
             ->bulkActions([])
-            ->emptyStateHeading('Aucun email envoyé')
+            ->emptyStateHeading('Aucun e-mail envoyé')
             ->emptyStateIcon('heroicon-o-envelope');
     }
 }

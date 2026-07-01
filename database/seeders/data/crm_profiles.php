@@ -2,7 +2,7 @@
 
 /**
  * Profils CRM — source de vérité pour rôles, accès panels et capacités métier.
- * Modifiable depuis Super Admin > Profils CRM.
+ * Modifiable depuis Super administrateur > Profils CRM.
  */
 return [
     [
@@ -37,8 +37,8 @@ return [
     ],
     [
         'role_name' => 'team_leader',
-        'label' => 'Team Leader',
-        'description' => 'Supervision phoning, validation QF, imports, conversion partenaires.',
+        'label' => 'Responsable d\'équipe',
+        'description' => 'Supervision phoning, validation QF, imports et conversion partenaires.',
         'panels' => ['ns-conseil'],
         'landing_path' => '/ns-conseil/prospects',
         'couleur' => 'primary',

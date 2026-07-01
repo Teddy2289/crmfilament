@@ -20,7 +20,7 @@ trait HasEmailTemplate
         $template = EmailTemplate::findByCle($this->templateKey);
 
         if (!$template) {
-            throw new \RuntimeException("Template email introuvable : {$this->templateKey}. Créez-le dans Communication > Templates Email.");
+            throw new \RuntimeException("Modèle d'e-mail introuvable : {$this->templateKey}. Créez-le dans Communication > Modèles d'e-mail.");
         }
 
         return $this->resolvedTemplate = $template;

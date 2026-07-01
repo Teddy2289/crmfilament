@@ -16,21 +16,21 @@ class WorkflowStepResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
-    protected static ?string $navigationLabel = 'Étapes workflow';
+    protected static ?string $navigationLabel = 'Étapes de parcours';
 
     protected static ?string $navigationGroup = 'Paramétrage CRM';
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $modelLabel = 'Étape workflow';
+    protected static ?string $modelLabel = 'Étape de parcours';
 
-    protected static ?string $pluralModelLabel = 'Étapes workflow';
+    protected static ?string $pluralModelLabel = 'Étapes de parcours';
 
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\Select::make('workflow_groupe_id')
-                ->label('Groupe workflow')
+                ->label('Groupe de parcours')
                 ->relationship('workflowGroupe', 'label')
                 ->required()
                 ->native(false),
@@ -58,7 +58,7 @@ class WorkflowStepResource extends Resource
                 ->label('Ordre')
                 ->numeric()
                 ->default(0)
-                ->helperText('Ordre d\'exécution dans le workflow'),
+                ->helperText('Ordre d\'exécution dans le parcours'),
 
             Forms\Components\KeyValue::make('config')
                 ->label('Configuration')

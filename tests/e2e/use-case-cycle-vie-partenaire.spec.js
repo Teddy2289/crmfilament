@@ -18,7 +18,7 @@ test.describe('Use Case: Cycle de Vie Partenaire', () => {
 
     // Étape 3: Accéder aux Opportunités
     await page.goto('/ns-conseil/opportunites');
-    await expect(page.locator('h1')).toContainText('Opportunites');
+    await expect(page.locator('h1')).toContainText('Opportunités');
 
     // Étape 4: Retourner aux Partenaires
     await page.goto('/ns-conseil/partenaires');

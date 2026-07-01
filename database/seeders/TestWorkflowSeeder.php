@@ -11,20 +11,20 @@ class TestWorkflowSeeder extends Seeder
 {
     public function run(): void
     {
-        // Créer un workflow de test
+        // Créer un parcours de test
         $workflow = WorkflowGroupe::firstOrCreate(
             [
                 'model_type' => 'App\Models\Prospect',
                 'code' => 'prospection_cse_test',
             ],
             [
-                'label' => 'Workflow de prospection CSE - Test',
+                'label' => 'Parcours de prospection CSE - Test',
                 'ordre' => 1,
                 'actif' => true,
             ]
         );
 
-        // Supprimer les étapes existantes pour ce workflow
+        // Supprimer les étapes existantes pour ce parcours
         WorkflowStep::where('workflow_groupe_id', $workflow->id)->delete();
 
         // Cas 1: Appel non abouti
@@ -137,7 +137,7 @@ class TestWorkflowSeeder extends Seeder
             ],
         ]);
 
-        $this->command->info('Workflow de test créé avec succès.');
-        $this->command->info('ID du workflow: ' . $workflow->id);
+        $this->command->info('Parcours de test créé avec succès.');
+        $this->command->info('ID du parcours: ' . $workflow->id);
     }
 }

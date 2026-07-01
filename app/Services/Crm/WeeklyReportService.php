@@ -14,7 +14,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
- * Construit les donnees de reporting hebdomadaire (CDC WF5 / WF6 / section 7bis).
+ * Construit les données de reporting hebdomadaire (CDC WF5 / WF6 / section 7bis).
  */
 class WeeklyReportService
 {

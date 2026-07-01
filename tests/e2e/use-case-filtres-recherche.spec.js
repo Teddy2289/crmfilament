@@ -22,6 +22,6 @@ test.describe('Use Case: Filtres et Recherche', () => {
 
     // Étape 4: Accéder aux Opportunités
     await page.goto('/ns-conseil/opportunites');
-    await expect(page.locator('h1')).toContainText('Opportunites');
+    await expect(page.locator('h1')).toContainText('Opportunités');
   });
 });
