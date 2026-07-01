@@ -8,25 +8,25 @@
         ['label' => 'Artisans', 'value' => $stats['artisans'], 'sub' => 'reseau disponible', 'href' => '/allopro/artisans'],
         ['label' => 'Contacts', 'value' => $stats['contacts'], 'sub' => $stats['contacts_particuliers'].' particuliers', 'href' => '/allopro/contact-particuliers'],
         ['label' => 'Devis', 'value' => $stats['devis'], 'sub' => $stats['devis_attente'].' en attente', 'href' => '/allopro/devis'],
-        ['label' => 'Factures', 'value' => $stats['factures'], 'sub' => $stats['factures_attente'].' non payees', 'href' => '/allopro/factures'],
+        ['label' => 'Factures', 'value' => $stats['factures'], 'sub' => $stats['factures_attente'].' non payées', 'href' => '/allopro/factures'],
     ];
 
     $workQueues = [
         ['href' => '/allopro/tickets', 'icon' => 'heroicon-o-ticket', 'label' => 'Tickets actifs', 'value' => $stats['tickets_actifs'], 'meta' => 'Qualification, RDV et suivi client'],
-        ['href' => '/allopro/artisans', 'icon' => 'heroicon-o-wrench-screwdriver', 'label' => 'Artisans', 'value' => $stats['artisans'], 'meta' => 'Disponibilites et metiers'],
+        ['href' => '/allopro/artisans', 'icon' => 'heroicon-o-wrench-screwdriver', 'label' => 'Artisans', 'value' => $stats['artisans'], 'meta' => 'Disponibilités et métiers'],
         ['href' => '/allopro/affaire-interventions', 'icon' => 'heroicon-o-briefcase', 'label' => 'Interventions', 'value' => $stats['interventions'], 'meta' => 'Affaires et interventions en cours'],
         ['href' => '/allopro/contact-particuliers', 'icon' => 'heroicon-o-user', 'label' => 'Contacts particuliers', 'value' => $stats['contacts_particuliers'], 'meta' => 'Clients et demandes entrantes'],
     ];
 
     $salesQueues = [
-        ['href' => '/allopro/devis', 'icon' => 'heroicon-o-document-text', 'label' => 'Devis a suivre', 'value' => $stats['devis_attente'], 'meta' => $stats['devis_relancer'].' relances'],
+        ['href' => '/allopro/devis', 'icon' => 'heroicon-o-document-text', 'label' => 'Devis à suivre', 'value' => $stats['devis_attente'], 'meta' => $stats['devis_relancer'].' relances'],
         ['href' => '/allopro/bon-de-commandes', 'icon' => 'heroicon-o-clipboard-document-check', 'label' => 'Bons de commande', 'value' => $stats['bons_de_commande_actifs'], 'meta' => $stats['bons_de_commande'].' au total'],
         ['href' => '/allopro/factures', 'icon' => 'heroicon-o-banknotes', 'label' => 'Factures ouvertes', 'value' => $stats['factures_attente'], 'meta' => $stats['factures_retard'].' en retard'],
         ['href' => '/allopro/contact-partenaires', 'icon' => 'heroicon-o-building-office-2', 'label' => 'Contacts partenaires', 'value' => $stats['contacts_partenaires'], 'meta' => 'Prescripteurs et relais'],
     ];
 
     $qualityQueues = [
-        ['href' => '/allopro/reclamation-p8s', 'icon' => 'heroicon-o-exclamation-triangle', 'label' => 'Reclamations P8', 'value' => $stats['reclamations'], 'meta' => 'Traitement qualite'],
+        ['href' => '/allopro/reclamation-p8s', 'icon' => 'heroicon-o-exclamation-triangle', 'label' => 'Réclamations P8', 'value' => $stats['reclamations'], 'meta' => 'Traitement qualité'],
         ['href' => '/allopro/rapport-satisfaction-p6s', 'icon' => 'heroicon-o-face-smile', 'label' => 'Satisfaction P6', 'value' => $stats['satisfactions'], 'meta' => 'Retours et NPS'],
     ];
 @endphp
@@ -103,7 +103,7 @@
 
         <section class="espo-dashlet">
             <div class="espo-dashlet-header">
-                <h3 class="espo-dashlet-title">Qualite</h3>
+                <h3 class="espo-dashlet-title">Qualité</h3>
                 <span class="espo-badge-soft">{{ $stats['satisfactions'] }} retours</span>
             </div>
             <div class="espo-dashlet-body">

@@ -25,12 +25,12 @@ class ThemeSeeder extends Seeder
             ],
             [
                 'name' => 'super-admin-default',
-                'label' => 'Super Admin - Filament',
+                'label' => 'Super administrateur - Filament',
                 'panel' => 'super-admin',
                 'primary_color' => 'purple',
                 'info_color' => 'cyan',
                 'gray_color' => 'zinc',
-                'brand_name' => 'Super Administration',
+                'brand_name' => 'Super administration',
             ],
             [
                 'name' => 'allopro-default',

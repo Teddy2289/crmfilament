@@ -16,9 +16,9 @@ test.describe('Use Case: Import Top 500', () => {
     const importButton = page.locator('button').filter({ hasText: 'Importer' });
     await expect(importButton).toBeVisible();
 
-    // Étape 3: Accéder au Workflow Phoning
+    // Étape 3: Accéder au flux de travail téléphonique
     await page.goto('/ns-conseil/phoning-workflow');
-    await expect(page.locator('h1')).toContainText('Workflow');
+    await expect(page.locator('h1')).toContainText('Flux de travail');
 
     // Étape 4: Retourner aux Prospects
     await page.goto('/ns-conseil/prospects');

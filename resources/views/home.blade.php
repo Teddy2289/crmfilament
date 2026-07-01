@@ -67,7 +67,7 @@
                         </svg>
                     </a>
 
-                    <!-- Espace Super Admin -->
+                    <!-- Espace super administrateur -->
                     <a href="/super-admin" class="flex items-center p-4 rounded-xl border border-slate-200 hover:border-rose-500 hover:bg-rose-50/20 transition-all group">
                         <div class="p-2.5 rounded-lg bg-rose-50 group-hover:bg-rose-100 text-rose-600 transition-colors">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,7 +75,7 @@
                             </svg>
                         </div>
                         <div class="ml-4 flex-1">
-                            <span class="block text-sm font-semibold text-slate-900 group-hover:text-rose-600 transition-colors">Espace Super Admin</span>
+                            <span class="block text-sm font-semibold text-slate-900 group-hover:text-rose-600 transition-colors">Espace super administrateur</span>
                             <span class="block text-xs text-slate-400 mt-0.5">Administration système</span>
                         </div>
                         <svg class="h-5 w-5 text-slate-300 group-hover:text-rose-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">

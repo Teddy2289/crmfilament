@@ -16,7 +16,9 @@ class WorkflowProspectionCse extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-map';
 
-    protected static ?string $navigationLabel = 'Workflow prospection CSE';
+    protected static ?string $navigationLabel = 'Parcours prospection CSE';
+
+    protected static ?string $title = 'Parcours prospection CSE';
 
     protected static ?string $navigationGroup = 'Activités';
 
@@ -183,7 +185,7 @@ class WorkflowProspectionCse extends Page
     {
         return [
             \Filament\Actions\Action::make('gerer_workflows')
-                ->label('Gérer les workflows')
+                ->label('Gérer les parcours')
                 ->icon('heroicon-o-cog')
                 ->color('primary')
                 ->url('/super-admin/workflow-groupes')

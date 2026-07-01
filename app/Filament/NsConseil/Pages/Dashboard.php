@@ -59,7 +59,7 @@ class Dashboard extends BaseDashboard
             $widgets[] = FichesWordRecentesWidget::class;
         }
 
-        // Team Leader / Superviseur
+        // Responsable d'équipe / Superviseur
         if ($user->hasRoleCache('superviseur') || $user->hasRoleCache('admin') || $user->isSuperAdmin()) {
             $widgets[] = TeamLeaderAlertsWidget::class;
             $widgets[] = TeamLeaderPerformanceWidget::class;

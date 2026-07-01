@@ -241,16 +241,16 @@ class DocumentKnowledgeResource extends Resource
             Infolists\Components\Section::make('Suivi')
                 ->schema([
                     Infolists\Components\TextEntry::make('createdBy.name')
-                        ->label('Cree par')
+                        ->label('Créé par')
                         ->placeholder('-'),
                     Infolists\Components\TextEntry::make('updatedBy.name')
-                        ->label('Mis a jour par')
+                        ->label('Mis à jour par')
                         ->placeholder('-'),
                     Infolists\Components\TextEntry::make('created_at')
-                        ->label('Cree le')
+                        ->label('Créé le')
                         ->dateTime('d/m/Y H:i'),
                     Infolists\Components\TextEntry::make('updated_at')
-                        ->label('Mis a jour le')
+                        ->label('Mis à jour le')
                         ->dateTime('d/m/Y H:i'),
                 ])
                 ->columns(4),

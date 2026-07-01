@@ -37,7 +37,7 @@ class FicheWordService
         $templatePath = Storage::disk('local')->path($template->fichier_path);
 
         if (! file_exists($templatePath)) {
-            throw new \Exception("Template introuvable : {$templatePath}");
+            throw new \Exception("Modèle introuvable : {$templatePath}");
         }
 
         $phpWord = $this->chargerTemplate($templatePath);

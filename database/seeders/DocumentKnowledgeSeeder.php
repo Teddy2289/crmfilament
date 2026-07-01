@@ -62,7 +62,7 @@ class DocumentKnowledgeSeeder extends Seeder
                 'ordre' => 6,
             ],
             [
-                'titre' => 'Template fiche intervention',
+                'titre' => 'Modèle de fiche d\'intervention',
                 'description' => 'Modèle de fiche d\'intervention pour les artisans.',
                 'type' => 'template',
                 'categorie' => 'operationnel',

@@ -69,11 +69,11 @@ class CrmProfileResource extends Resource
                                 ->label('Libellé')
                                 ->required(),
                             Forms\Components\Select::make('panel')
-                                ->label('Panel')
+                                ->label('Panneau')
                                 ->options([
                                     'ns-conseil' => 'NS Conseil',
                                     'admin' => 'Admin',
-                                    'super-admin' => 'Super Admin',
+                                    'super-admin' => 'Super administrateur',
                                     'allopro' => 'Allopro',
                                 ])
                                 ->required()
@@ -102,9 +102,9 @@ class CrmProfileResource extends Resource
                 ->columns(2)
                 ->schema([
                     Forms\Components\CheckboxList::make('panels')
-                        ->label('Panels Filament autorisés')
+                        ->label('Panneaux Filament autorisés')
                         ->options([
-                            'super-admin' => 'Super Admin',
+                            'super-admin' => 'Super administrateur',
                             'admin' => 'Admin',
                             'ns-conseil' => 'NS Conseil',
                             'allopro' => 'AlloPro',
@@ -139,7 +139,7 @@ class CrmProfileResource extends Resource
                 Tables\Columns\TextColumn::make('ordre')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('label')->label('Profil')->searchable()->weight('bold'),
                 Tables\Columns\TextColumn::make('role_name')->label('Rôle')->badge()->color('gray'),
-                Tables\Columns\TextColumn::make('panels')->label('Panels')->badge()->limit(30),
+                Tables\Columns\TextColumn::make('panels')->label('Panneaux')->badge()->limit(30),
                 Tables\Columns\TextColumn::make('theme.label')->label('Thème')->searchable()->toggleable(),
                 Tables\Columns\IconColumn::make('can_validate_qf')->label('QF')->boolean(),
                 Tables\Columns\IconColumn::make('can_import')->label('Import')->boolean(),

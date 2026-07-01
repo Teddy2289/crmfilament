@@ -3,7 +3,7 @@
     <!-- HEADER -->
     <div class="header">
         <div>
-            <div class="header-title">Éditeur de workflow</div>
+            <div class="header-title">Éditeur de parcours</div>
             <div class="header-sub">Configuration des processus de prospection</div>
         </div>
         <div class="header-meta">
@@ -11,7 +11,7 @@
         </div>
     </div>
 
-    <!-- WORKFLOW CONTENT -->
+    <!-- CONTENU DU PARCOURS -->
     <div id="workflow-content" class="workflow-content"></div>
     
     <!-- TOOLBAR -->
@@ -36,7 +36,7 @@
     
     @if(session('workflow-saved'))
         <div class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg">
-            Workflow sauvegardé avec succès!
+            Parcours sauvegardé avec succès !
         </div>
     @endif
 </div>
@@ -53,7 +53,7 @@ function workflowEditor(nodes = [], workflowId = null) {
             this.groupNodesByCases();
             this.renderWorkflow();
             this.$wire.on('workflow-saved-successfully', () => {
-                alert('Workflow sauvegardé avec succès!');
+                alert('Parcours sauvegardé avec succès !');
             });
         },
         

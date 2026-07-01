@@ -50,20 +50,20 @@ class AlloproUsersSeeder extends Seeder
                 'description' => 'Opérateur N1 - Gestion des appels entrants',
             ],
 
-            // ── Back Office ────────────────────────────────
+            // ── Back-office ────────────────────────────────
             [
                 'nom' => 'BERNARD',
                 'prenom' => 'Claire',
                 'email' => 'c.bernard@allopro.fr',
                 'role' => 'back_office',
-                'description' => 'Back Office - Traitement des dossiers',
+                'description' => 'Back-office - Traitement des dossiers',
             ],
             [
                 'nom' => 'RICHARD',
                 'prenom' => 'Nicolas',
                 'email' => 'n.richard@allopro.fr',
                 'role' => 'back_office',
-                'description' => 'Back Office - Gestion administrative',
+                'description' => 'Back-office - Gestion administrative',
             ],
 
             // ── Superviseurs (utilise responsable_plateau au lieu de superviseur) ──

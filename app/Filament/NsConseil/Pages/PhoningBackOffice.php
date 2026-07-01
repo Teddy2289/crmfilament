@@ -21,6 +21,8 @@ class PhoningBackOffice extends Page
 
     protected static ?string $navigationLabel = 'File d\'appels — Back-office';
 
+    protected static ?string $title = 'File d\'appels — Back-office';
+
     protected static ?string $navigationGroup = 'Activités';
 
     protected static ?int $navigationSort = 3;
@@ -379,7 +381,7 @@ class PhoningBackOffice extends Page
     {
         return [
             Action::make('go_phoning')
-                ->label('→ Workflow d\'appels')
+                ->label('→ Parcours d\'appels')
                 ->icon('heroicon-o-phone-arrow-up-right')
                 ->color('success')
                 ->url(fn () => route('filament.ns-conseil.pages.phoning-workflow')),

@@ -135,7 +135,7 @@ class StatutPhoningResource extends Resource
                         ->minValue(0),
                 ]),
 
-            Forms\Components\Section::make('Workflow CSE')
+            Forms\Components\Section::make('Parcours CSE')
                 ->columns(2)
                 ->schema([
                     Forms\Components\Select::make('groupe')
@@ -169,7 +169,7 @@ class StatutPhoningResource extends Resource
                     Forms\Components\Toggle::make('note_obligatoire')->label('Note obligatoire'),
                     Forms\Components\Toggle::make('compte_comme_tentative')->label('Compte comme tentative'),
                     Forms\Components\Toggle::make('prioritaire')->label('Prioritaire dans la file'),
-                    Forms\Components\Toggle::make('retire_de_file')->label('Retire de la file'),
+                    Forms\Components\Toggle::make('retire_de_file')->label('Retiré de la file'),
 
                     Forms\Components\TextInput::make('message_note_obligatoire')
                         ->label('Message note obligatoire')

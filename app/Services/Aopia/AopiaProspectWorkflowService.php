@@ -75,12 +75,12 @@ class AopiaProspectWorkflowService
     }
 
     /**
-     * Validation QF : Team Leader uniquement + 7 conditions obligatoires.
+     * Validation QF : responsable d'équipe uniquement + 7 conditions obligatoires.
      */
     public function validerQf(Prospect $prospect, User $acteur): Prospect
     {
         if (! $this->estTeamLeader($acteur)) {
-            throw new RuntimeException('Seul un Team Leader ou administrateur peut valider le statut QF.');
+            throw new RuntimeException('Seul un responsable d\'équipe ou administrateur peut valider le statut QF.');
         }
 
         $manquants = $this->champsManquantsPourQf($prospect);

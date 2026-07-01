@@ -32,32 +32,32 @@ class ListOpportunites extends ListRecords
                 ->badge(Opportunite::count()),
 
             'actives' => Tab::make('Actives')
-                ->modifyQueryUsing(fn (Builder $q) => $q->whereNotIn('statut', ['converti', 'perdu']))
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereNotIn('statut', ['converti', 'perdu']))
                 ->badge(Opportunite::whereNotIn('statut', ['converti', 'perdu'])->count())
                 ->badgeColor('warning'),
 
             'nouveau' => Tab::make('Nouvelles')
-                ->modifyQueryUsing(fn (Builder $q) => $q->where('statut', 'nouveau'))
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('statut', 'nouveau'))
                 ->badge(Opportunite::where('statut', 'nouveau')->count())
                 ->badgeColor('info'),
 
             'en_negociation' => Tab::make('En négociation')
-                ->modifyQueryUsing(fn (Builder $q) => $q->where('statut', 'en_negociation'))
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('statut', 'en_negociation'))
                 ->badge(Opportunite::where('statut', 'en_negociation')->count())
                 ->badgeColor('purple'),
 
             'qualifiee' => Tab::make('Qualifiées')
-                ->modifyQueryUsing(fn (Builder $q) => $q->where('statut', 'qualifiee'))
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('statut', 'qualifiee'))
                 ->badge(Opportunite::where('statut', 'qualifiee')->count())
                 ->badgeColor('primary'),
 
             'converties' => Tab::make('Converties')
-                ->modifyQueryUsing(fn (Builder $q) => $q->withTrashed()->where('statut', 'converti'))
+                ->modifyQueryUsing(fn (Builder $query) => $query->withTrashed()->where('statut', 'converti'))
                 ->badge(Opportunite::withTrashed()->where('statut', 'converti')->count())
                 ->badgeColor('success'),
 
             'perdues' => Tab::make('Perdues')
-                ->modifyQueryUsing(fn (Builder $q) => $q->where('statut', 'perdu'))
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('statut', 'perdu'))
                 ->badge(Opportunite::where('statut', 'perdu')->count())
                 ->badgeColor('danger'),
         ];

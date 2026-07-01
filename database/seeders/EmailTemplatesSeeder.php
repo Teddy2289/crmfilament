@@ -80,7 +80,7 @@ AOPIA Formation - NS Conseil',
             );
         }
 
-        $this->command->info('Templates email créés avec succès.');
-        $this->command->info('Templates créés : ' . count($templates));
+        $this->command->info('Modèles d\'e-mail créés avec succès.');
+        $this->command->info('Modèles créés : ' . count($templates));
     }
 }

@@ -74,8 +74,8 @@ class RingoverDashboard extends Page
                     $this->refreshDiagnostic();
 
                     Notification::make()
-                        ->title('Mapping utilisateurs Ringover termine')
-                        ->body("Mappes: {$result['mapped']} | Mis a jour: {$result['updated']} | Non trouves: {$result['unmatched']}")
+                        ->title('Correspondance utilisateurs Ringover terminée')
+                        ->body("Mappés : {$result['mapped']} | Mis à jour : {$result['updated']} | Non trouvés : {$result['unmatched']}")
                         ->success()
                         ->send();
                 }),

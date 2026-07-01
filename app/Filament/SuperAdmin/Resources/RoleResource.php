@@ -20,9 +20,9 @@ class RoleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
-    protected static ?string $navigationLabel = 'Roles & Permissions';
+    protected static ?string $navigationLabel = 'Rôles et permissions';
 
-    protected static ?string $navigationGroup = 'Utilisateurs & Acces';
+    protected static ?string $navigationGroup = 'Utilisateurs & Accès';
 
     protected static ?int $navigationSort = 2;
 
@@ -31,49 +31,49 @@ class RoleResource extends Resource
         AccessRightsCatalog::ensurePermissionsExist();
 
         return $form->schema([
-            Forms\Components\Section::make('Informations du role')
+            Forms\Components\Section::make('Informations du rôle')
                 ->icon('heroicon-o-shield-check')
                 ->schema([
                     Forms\Components\Grid::make(2)
                         ->schema([
                             Forms\Components\TextInput::make('name')
-                                ->label('Nom du role')
+                                ->label('Nom du rôle')
                                 ->required()
                                 ->unique(ignoreRecord: true)
-                                ->helperText('snake_case recommande ex: back_office'),
+                                ->helperText('snake_case recommandé, ex. : back_office'),
 
                             Forms\Components\TextInput::make('guard_name')
-                                ->label('Guard')
+                                ->label('Garde d\'authentification')
                                 ->default('web')
                                 ->required(),
                         ]),
                 ]),
 
-            Forms\Components\Section::make('Droits d\'acces')
+            Forms\Components\Section::make('Droits d\'accès')
                 ->icon('heroicon-o-key')
-                ->description('Choisissez un acces total ou un acces selectif par entite, module et champ.')
+                ->description('Choisissez un accès total ou un accès sélectif par entité, module et champ.')
                 ->schema([
                     Forms\Components\Radio::make('access_mode')
-                        ->label('Mode d\'acces')
+                        ->label('Mode d\'accès')
                         ->options([
                             'all' => 'Tout',
-                            'selective' => 'Selectif par entite/module',
+                            'selective' => 'Sélectif par entité/module',
                         ])
                         ->descriptions([
-                            'all' => 'Le role recoit toutes les permissions du catalogue CRM.',
-                            'selective' => 'Selection fine par module, champ et action.',
+                            'all' => 'Le rôle reçoit toutes les permissions du catalogue CRM.',
+                            'selective' => 'Sélection fine par module, champ et action.',
                         ])
                         ->default(fn (?Role $record) => static::accessModeFor($record))
                         ->inline()
                         ->live()
                         ->required(),
 
-                    Forms\Components\Tabs::make('Droits selectifs')
+                    Forms\Components\Tabs::make('Droits sélectifs')
                         ->tabs([
-                            Forms\Components\Tabs\Tab::make('Entites et modules')
+                            Forms\Components\Tabs\Tab::make('Entités et modules')
                                 ->schema([
                                     Forms\Components\CheckboxList::make('module_permissions')
-                                        ->label('Droits par entite/module')
+                                        ->label('Droits par entité/module')
                                         ->options(AccessRightsCatalog::permissionOptions())
                                         ->descriptions(AccessRightsCatalog::permissionDescriptions())
                                         ->default(fn (?Role $record) => AccessRightsCatalog::roleModulePermissionNames($record))
@@ -81,7 +81,7 @@ class RoleResource extends Resource
                                         ->bulkToggleable()
                                         ->columns(2)
                                         ->gridDirection('row')
-                                        ->helperText('Cochez les actions autorisees pour ce role. Les modules non coches seront inaccessibles.'),
+                                        ->helperText('Cochez les actions autorisées pour ce rôle. Les modules non cochés seront inaccessibles.'),
                                 ]),
 
                             Forms\Components\Tabs\Tab::make('Champs')
@@ -95,15 +95,15 @@ class RoleResource extends Resource
                                         ->bulkToggleable()
                                         ->columns(2)
                                         ->gridDirection('row')
-                                        ->helperText('Actions par champ : Voir, Creer, Modifier, Flux ou Tout. Si aucun champ n\'est configure pour une entite, le comportement module reste applique.'),
+                                        ->helperText('Actions par champ : Voir, Créer, Modifier, Flux ou Tout. Si aucun champ n\'est configuré pour une entité, le comportement du module reste appliqué.'),
                                 ]),
                         ])
                         ->visible(fn (Get $get) => $get('access_mode') === 'selective')
                         ->columnSpanFull(),
 
                     Forms\Components\Placeholder::make('full_access_notice')
-                        ->label('Droits appliques')
-                        ->content('Mode tout : toutes les entites, tous les modules et tous les champs du catalogue CRM seront autorises pour ce role.')
+                        ->label('Droits appliqués')
+                        ->content('Mode tout : toutes les entités, tous les modules et tous les champs du catalogue CRM seront autorisés pour ce rôle.')
                         ->visible(fn (Get $get) => $get('access_mode') === 'all'),
                 ]),
         ]);
@@ -114,7 +114,7 @@ class RoleResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Role')
+                    ->label('Rôle')
                     ->searchable()
                     ->weight('semibold')
                     ->badge()
@@ -126,7 +126,7 @@ class RoleResource extends Resource
 
                 Tables\Columns\TextColumn::make('access_mode')
                     ->label('Mode')
-                    ->state(fn (Role $record) => static::accessModeFor($record) === 'all' ? 'Tout' : 'Selectif')
+                    ->state(fn (Role $record) => static::accessModeFor($record) === 'all' ? 'Tout' : 'Sélectif')
                     ->badge()
                     ->color(fn (Role $record) => static::accessModeFor($record) === 'all' ? 'danger' : 'gray'),
 
@@ -143,12 +143,12 @@ class RoleResource extends Resource
                     ->color('success'),
 
                 Tables\Columns\TextColumn::make('guard_name')
-                    ->label('Guard')
+                    ->label('Garde')
                     ->badge()
                     ->color('gray'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Cree le')
+                    ->label('Créé le')
                     ->date('d/m/Y')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

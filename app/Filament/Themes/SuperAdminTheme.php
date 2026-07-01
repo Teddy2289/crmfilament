@@ -29,7 +29,7 @@ class SuperAdminTheme
 
     public function getLabel(): string
     {
-        return $this->theme?->label ?? 'Super Admin';
+        return $this->theme?->label ?? 'Super administrateur';
     }
 
     public function getColors(): array

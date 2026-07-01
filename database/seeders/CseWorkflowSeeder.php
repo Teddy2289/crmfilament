@@ -16,7 +16,7 @@ class CseWorkflowSeeder extends Seeder
         WorkflowGroupe::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $this->command->info('Création du workflow CSE v2...');
+        $this->command->info('Création du parcours CSE v2...');
 
         // ── CAS 1: Appel non abouti ───────────────────────────────────────
         $cas1 = WorkflowGroupe::create([
@@ -218,7 +218,7 @@ class CseWorkflowSeeder extends Seeder
             'description' => 'Transmettre les coordonnées complètes de l\'élu à Bruno pour traitement',
         ]);
 
-        $this->command->info('Workflow CSE v2 créé avec succès.');
+        $this->command->info('Parcours CSE v2 créé avec succès.');
         $this->command->info('Groupes: 5, Étapes: 28');
     }
 

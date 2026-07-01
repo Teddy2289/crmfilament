@@ -13,7 +13,7 @@ class SendWeeklyReport extends Command
                             {--roles= : Rôles ciblés, séparés par des virgules (défaut: teleprospecteur,commercial,responsable_plateau,team_leader)}
                             {--sync : Exécuter immédiatement sans passer par la file}';
 
-    protected $description = 'Envoie le rapport hebdomadaire CRM aux téléprospecteurs, commerciaux et Team Leaders';
+    protected $description = 'Envoie le rapport hebdomadaire CRM aux téléprospecteurs, commerciaux et responsables d\'équipe';
 
     public function handle(): int
     {

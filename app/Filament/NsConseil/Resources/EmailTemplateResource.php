@@ -15,10 +15,10 @@ class EmailTemplateResource extends Resource
     protected static ?string $model = EmailTemplate::class;
     protected static ?string $navigationIcon = 'heroicon-o-envelope-open';
     protected static ?string $navigationGroup = 'Communication';
-    protected static ?string $navigationLabel = 'Templates Email';
+    protected static ?string $navigationLabel = 'Modèles d\'e-mail';
     protected static ?int $navigationSort = 1;
-    protected static ?string $modelLabel = 'Template Email';
-    protected static ?string $pluralModelLabel = 'Templates Email';
+    protected static ?string $modelLabel = 'Modèle d\'e-mail';
+    protected static ?string $pluralModelLabel = 'Modèles d\'e-mail';
 
     public static function form(Form $form): Form
     {

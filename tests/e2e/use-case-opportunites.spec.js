@@ -10,7 +10,7 @@ test.describe('Use Case: Opportunités', () => {
   test('Accès et navigation dans les Opportunités', async ({ page }) => {
     // Étape 1: Accéder à la page Opportunités
     await page.goto('/ns-conseil/opportunites');
-    await expect(page.locator('h1')).toContainText('Opportunites');
+    await expect(page.locator('h1')).toContainText('Opportunités');
 
     // Étape 2: Vérifier que la page est chargée
     await expect(page.locator('body')).toBeVisible();
@@ -21,6 +21,6 @@ test.describe('Use Case: Opportunités', () => {
 
     // Étape 4: Revenir aux Opportunités
     await page.goto('/ns-conseil/opportunites');
-    await expect(page.locator('h1')).toContainText('Opportunites');
+    await expect(page.locator('h1')).toContainText('Opportunités');
   });
 });

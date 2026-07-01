@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     <div class="space-y-6">
-        <!-- Header with workflow selector -->
+        <!-- En-tête avec sélecteur de parcours -->
         <div
             class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6">
             <div class="flex items-center justify-between mb-4">
@@ -9,7 +9,7 @@
                         Logigramme de prospection CSE
                     </h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Visualisation et gestion des workflows de prospection
+                        Visualisation et gestion des parcours de prospection
                     </p>
                 </div>
 
@@ -17,7 +17,7 @@
 
             <div class="flex items-center gap-4">
                 <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Workflow actif :
+                    Parcours actif :
                 </label>
                 <select wire:model.live="selectedWorkflowGroupeId" class="fi-input flex-1 max-w-md">
                     @foreach ($this->workflowGroupes as $groupe)
@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <!-- Workflow visualization - Logigramme style -->
+        <!-- Visualisation du parcours - style logigramme -->
         @if ($selectedGroupe)
             <div
                 class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6">
@@ -51,11 +51,11 @@
                     </div>
                 </div>
 
-                <!-- Workflow steps visualization - Logigramme style -->
+                <!-- Visualisation des étapes du parcours - style logigramme -->
                 @if ($workflowSteps->count() > 0)
                     <div class="space-y-6">
                         @foreach ($workflowSteps as $index => $step)
-                            {{-- Step card --}}
+                    {{-- Carte d'étape --}}
                             <div
                                 class="relative border-2 rounded-xl p-5 {{ $step->actif ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 opacity-60' }} transition-all hover:shadow-md">
                                 {{-- Step header --}}
@@ -107,10 +107,10 @@
                                     </div>
                                 </div>
 
-                                {{-- Step content/branches --}}
+                                {{-- Contenu et branches de l'étape --}}
                                 @if ($step->config && count($step->config) > 0)
                                     <div class="space-y-3">
-                                        {{-- If step has branches, show them --}}
+                                        {{-- Afficher les branches si elles existent --}}
                                         @if (isset($step->config['branches']))
                                             <div
                                                 class="grid {{ count($step->config['branches']) == 2 ? 'grid-cols-2' : 'grid-cols-3' }} gap-3">
@@ -141,7 +141,7 @@
                                                 @endforeach
                                             </div>
                                         @else
-                                            {{-- Simple step with config --}}
+                                            {{-- Étape simple avec configuration --}}
                                             <div class="flex flex-wrap gap-2">
                                                 @foreach ($step->config as $key => $value)
                                                     @if (!is_array($value))
@@ -158,7 +158,7 @@
                                 @endif
                             </div>
 
-                            {{-- Connector arrow --}}
+                            {{-- Flèche de liaison --}}
                             @if ($index < $workflowSteps->count() - 1)
                                 <div class="flex justify-center py-2">
                                     <div class="w-0.5 h-8 bg-gray-300 dark:bg-gray-600"></div>
@@ -170,7 +170,7 @@
                     <div class="text-center py-12">
                         <x-heroicon-o-clipboard-document-list class="w-16 h-16 mx-auto text-gray-400 mb-4" />
                         <p class="text-gray-500 dark:text-gray-400">
-                            Aucune étape configurée pour ce workflow
+                            Aucune étape configurée pour ce parcours
                         </p>
                         <a href="/super-admin/workflow-steps/create?workflow_groupe_id={{ $selectedGroupe->id }}"
                             target="_blank"
@@ -186,20 +186,20 @@
                 class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-12 text-center">
                 <x-heroicon-o-folder-open class="w-16 h-16 mx-auto text-gray-400 mb-4" />
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    Aucun workflow disponible
+                    Aucun parcours disponible
                 </h3>
                 <p class="text-gray-500 dark:text-gray-400 mb-6">
-                    Créez d'abord un groupe de workflow dans le panel administration
+                    Créez d'abord un groupe de parcours dans le panneau d'administration
                 </p>
                 <a href="/super-admin/workflow-groupes/create" target="_blank"
                     class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     <x-heroicon-o-plus class="w-4 h-4 mr-2" />
-                    Créer un workflow
+                    Créer un parcours
                 </a>
             </div>
         @endif
 
-        <!-- Quick actions -->
+        <!-- Actions rapides -->
         @if ($selectedGroupe && $workflowSteps->count() > 0)
             <div
                 class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6">
@@ -216,7 +216,7 @@
                     <a href="/super-admin/workflow-groupes/{{ $selectedGroupe->id }}/edit" target="_blank"
                         class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                         <x-heroicon-o-pencil class="w-4 h-4 mr-2" />
-                        Modifier le workflow
+                        Modifier le parcours
                     </a>
                 </div>
             </div>

@@ -9,11 +9,11 @@ use Illuminate\Console\Command;
 class SyncRingoverCalls extends Command
 {
     protected $signature = 'ringover:sync
-                            {--pages=5 : Nombre de pages a recuperer}
+                            {--pages=5 : Nombre de pages à récupérer}
                             {--per-page=50 : Appels par page}
-                            {--from= : Timestamp de debut optionnel}';
+                            {--from= : Timestamp de début optionnel}';
 
-    protected $description = 'Synchronise les appels Ringover vers la base de donnees';
+    protected $description = 'Synchronise les appels Ringover vers la base de données';
 
     public function handle(RingoverService $ringover, RingoverCallSyncService $sync): int
     {
@@ -66,7 +66,7 @@ class SyncRingoverCalls extends Command
         $bar->finish();
         $this->newLine(2);
         $this->table(
-            ['Crees', 'Mis a jour', 'Tags incomplets', 'Erreurs'],
+            ['Créés', 'Mis à jour', 'Tags incomplets', 'Erreurs'],
             [[$created, $updated, $incompleteTags, $errors]]
         );
 

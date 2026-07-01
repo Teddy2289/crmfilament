@@ -7,7 +7,7 @@ use App\Models\WorkflowGroupe;
 use App\Services\Crm\CrmSettingsService;
 
 /**
- * Workflow CSE — lecture 100 % base de données (statut_phonings + workflow_groupes).
+ * Parcours CSE — lecture 100 % base de données (statut_phonings + workflow_groupes).
  */
 class CsePhoningWorkflow
 {

@@ -35,14 +35,14 @@ class DocumentKnowledge extends Model
     public const TYPES = [
         'procedure' => 'Procédure',
         'script' => 'Script',
-        'checklist' => 'Checklist',
+        'checklist' => 'Liste de contrôle',
         'politique' => 'Politique',
-        'template' => 'Template',
+        'template' => 'Modèle',
         'guide' => 'Guide',
         'faq' => 'FAQ / Objections',
-        'modele_mail' => 'Modèle mail',
-        'modele_fiche' => 'Modèle fiche recap',
-        'cdc' => 'Cahier des Charges',
+        'modele_mail' => 'Modèle d\'e-mail',
+        'modele_fiche' => 'Modèle de fiche récapitulative',
+        'cdc' => 'Cahier des charges',
         'autre' => 'Autre',
     ];
 

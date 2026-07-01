@@ -17,7 +17,7 @@
             ['label' => 'Artisans', 'active' => false],
             ['label' => 'Interventions', 'active' => false],
             ['label' => 'Facturation', 'active' => false],
-            ['label' => 'Qualite', 'active' => false],
+            ['label' => 'Qualité', 'active' => false],
         ] as $item)
             <div style="display:flex;align-items:center;gap:9px;min-height:32px;padding:6px 8px;border-radius:4px;color:{{ $item['active'] ? '#1f5f93' : '#2f3b45' }};background:{{ $item['active'] ? '#e8edf2' : 'transparent' }};border-left:{{ $item['active'] ? '3px solid #337ab7' : '3px solid transparent' }};">
                 <span style="width:8px;height:8px;border-radius:2px;background:{{ $item['active'] ? '#337ab7' : '#c4ccd4' }};display:inline-block;"></span>
@@ -27,7 +27,7 @@
     </nav>
 
     <div style="margin-top:auto;padding:12px 8px;border-top:1px solid #e7ebef;color:#6e7b87;font-size:11px;line-height:1.5;">
-        <div style="font-weight:700;color:#566471;margin-bottom:4px;">Acces operateur</div>
-        <div>Interface locale pour tickets, artisans et suivi qualite.</div>
+        <div style="font-weight:700;color:#566471;margin-bottom:4px;">Accès opérateur</div>
+        <div>Interface locale pour tickets, artisans et suivi qualité.</div>
     </div>
 </aside>

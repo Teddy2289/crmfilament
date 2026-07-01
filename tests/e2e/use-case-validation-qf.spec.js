@@ -12,9 +12,9 @@ test.describe('Use Case: Validation QF', () => {
     await page.goto('/ns-conseil/prospects');
     await expect(page.locator('h1')).toContainText('Prospects');
 
-    // Étape 2: Accéder au Workflow Phoning
+    // Étape 2: Accéder au flux de travail téléphonique
     await page.goto('/ns-conseil/phoning-workflow');
-    await expect(page.locator('h1')).toContainText('Workflow');
+    await expect(page.locator('h1')).toContainText('Flux de travail');
 
     // Étape 3: Accéder aux Rendez-vous
     await page.goto('/ns-conseil/rendez-vous');

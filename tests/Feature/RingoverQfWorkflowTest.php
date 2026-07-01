@@ -73,7 +73,7 @@ class RingoverQfWorkflowTest extends TestCase
     {
         CrmProfile::create([
             'role_name' => 'team_leader',
-            'label' => 'Team Leader',
+            'label' => 'Responsable d\'équipe',
             'panels' => ['ns-conseil'],
             'can_validate_qf' => true,
             'actif' => true,

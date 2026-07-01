@@ -54,33 +54,33 @@ class FicheTemplateResource extends Resource
                         ->columnSpanFull(),
                 ]),
 
-            Forms\Components\Section::make('Fichier template Word')
+            Forms\Components\Section::make('Fichier modèle Word')
                 ->schema([
                     Forms\Components\FileUpload::make('template_path')
-                        ->label('Template Word (.docx)')
+                        ->label('Modèle Word (.docx)')
                         ->required()
                         ->directory('fiche-templates')
                         ->acceptedFileTypes([
                             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                         ])
                         ->maxSize(5120)
-                        ->helperText('Uploadez le fichier .docx contenant les variables ${NOM_VARIABLE} à remplacer.')
+                        ->helperText('Téléversez le fichier .docx contenant les variables ${NOM_VARIABLE} à remplacer.')
                         ->columnSpanFull(),
                 ]),
 
-            Forms\Components\Section::make('Mapping des variables')
-                ->description('Associez chaque variable du template Word à un champ du prospect. Format : ${VARIABLE} → champ_prospect (utiliser | pour les fallbacks).')
+            Forms\Components\Section::make('Correspondance des variables')
+                ->description('Associez chaque variable du modèle Word à un champ du prospect. Format : ${VARIABLE} → champ_prospect (utiliser | pour les valeurs de repli).')
                 ->schema([
                     Forms\Components\KeyValue::make('placeholders')
                         ->label('Variables → Champs')
-                        ->keyLabel('Variable template (ex: ${RAISON_SOCIALE})')
+                        ->keyLabel('Variable du modèle (ex: ${RAISON_SOCIALE})')
                         ->valueLabel('Champ prospect (ex: raison_sociale|nom)')
                         ->default(FicheGenerationService::mappingParDefaut())
                         ->addActionLabel('Ajouter une variable')
                         ->columnSpanFull(),
                 ]),
 
-            Forms\Components\Section::make('Déclenchement workflow')
+            Forms\Components\Section::make('Déclenchement du parcours')
                 ->columns(2)
                 ->schema([
                     Forms\Components\Select::make('statut_phoning_codes')

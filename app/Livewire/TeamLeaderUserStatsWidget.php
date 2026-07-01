@@ -25,7 +25,7 @@ class TeamLeaderUserStatsWidget extends BaseWidget
         $userId = auth()->id();
         $user = User::find($userId);
 
-        // Si l'utilisateur est un Team Leader, obtenir les stats de son équipe
+        // Si l'utilisateur est responsable d'équipe, obtenir les stats de son équipe
         $teamUserIds = $this->getTeamUserIds($user);
         $teamUsers = User::whereIn('id', $teamUserIds)->get();
 
@@ -58,7 +58,7 @@ class TeamLeaderUserStatsWidget extends BaseWidget
 
     protected function getTeamUserIds(User $user): array
     {
-        // Si l'utilisateur est un Team Leader ou Super Admin, obtenir tous les utilisateurs
+        // Si l'utilisateur est responsable d'équipe ou super administrateur, obtenir tous les utilisateurs
         if ($user->hasRole(['team_leader', 'super_admin', 'administrateur'])) {
             return User::role(['teleprospecteur', 'commercial'])->pluck('id')->toArray();
         }
