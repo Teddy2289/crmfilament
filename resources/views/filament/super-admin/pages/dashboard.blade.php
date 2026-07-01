@@ -24,6 +24,11 @@
         ['href' => '/super-admin/database-manager', 'icon' => 'heroicon-o-circle-stack', 'label' => 'Base de données', 'meta' => 'Inspection technique'],
         ['href' => '/super-admin/import-logs', 'icon' => 'heroicon-o-arrow-up-tray', 'label' => 'Logs imports', 'meta' => 'Historique des traitements'],
     ];
+
+    $documentation = [
+        ['href' => '#', 'icon' => 'heroicon-o-book-open', 'label' => 'Guide utilisateur', 'meta' => 'Documentation complète du CRM'],
+        ['href' => '#', 'icon' => 'heroicon-o-document-text', 'label' => 'Manuel technique', 'meta' => 'Guide d\'installation et configuration'],
+    ];
 @endphp
 
 <div class="space-y-6">
@@ -177,6 +182,28 @@
                     </div>
                 </a>
             @endforeach
+        </div>
+    </section>
+
+    <section class="espo-dashlet">
+        <div class="espo-dashlet-header">
+            <h3 class="espo-dashlet-title">Documentation</h3>
+            <span class="espo-badge-soft">Guides et manuels</span>
+        </div>
+        <div class="espo-dashlet-body">
+            <div class="espo-dashlet-grid espo-dashlet-grid-2">
+                @foreach ($documentation as $doc)
+                    <a class="espo-action-row" href="{{ $doc['href'] }}">
+                        <span class="espo-action-icon">
+                            <x-dynamic-component :component="$doc['icon']" />
+                        </span>
+                        <span class="espo-list-main">
+                            <span class="espo-list-title">{{ $doc['label'] }}</span>
+                            <span class="espo-list-sub">{{ $doc['meta'] }}</span>
+                        </span>
+                    </a>
+                @endforeach
+            </div>
         </div>
     </section>
 </div>
