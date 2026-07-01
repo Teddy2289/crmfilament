@@ -32,6 +32,7 @@ class Dashboard extends Page
             'permissions' => Permission::count(),
             'imports' => class_exists(ImportLog::class) ? ImportLog::count() : 0,
             'db_size' => $this->getDatabaseSize(),
+            'avances_en_attente' => class_exists(\App\Models\BonDeCommande::class) ? \App\Models\BonDeCommande::avecAcompteEnAttente()->count() : 0,
         ];
     }
 

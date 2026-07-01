@@ -346,9 +346,9 @@ class ClientResource extends Resource
                     ->label('Rattachement')
                     ->badge()
                     ->formatStateUsing(fn ($state) => match ($state) {
-                        'rattache' => 'RattachÃ©',
-                        'partenaire_non_rattache' => 'Partenaire non rattachÃ©',
-                        default => 'â€”',
+                        'rattache' => 'Rattaché',
+                        'partenaire_non_rattache' => 'Partenaire non rattaché',
+                        default => '-',
                     })
                     ->color(fn ($state) => match ($state) {
                         'rattache' => 'success',
@@ -435,8 +435,8 @@ class ClientResource extends Resource
                     ->placeholder('Tous les partenaires'),
 
                 Tables\Filters\Filter::make('partenaire_non_rattache')
-                    ->label('Partenaire non rattachÃ©')
-                    ->query(fn (Builder $q) => $q->partenaireNonRattaches())
+                    ->label('Partenaire non rattaché')
+                    ->query(fn (Builder $query): Builder => Client::constrainPartenaireNonRattaches($query))
                     ->toggle(),
 
                 Tables\Filters\SelectFilter::make('parrain_id')
@@ -531,6 +531,8 @@ class ClientResource extends Resource
                         session()->put('view_clients', $currentView === 'kanban' ? 'list' : 'kanban');
                         return redirect()->back();
                     }),
+                \App\Filament\NsConseil\Actions\DownloadMultiSheetTemplateAction::make(),
+                \App\Filament\NsConseil\Actions\ImportMultiSheetAction::make(),
                 Tables\Actions\ExportAction::make()
                     ->exporter(ClientExporter::class)
                     ->label('Exporter les clients')
