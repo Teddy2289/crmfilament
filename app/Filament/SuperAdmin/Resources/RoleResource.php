@@ -74,6 +74,10 @@ class RoleResource extends Resource
                             }
                         }),
 
+                    Forms\Components\Placeholder::make('help_text')
+                        ->content('Utilisez la case de recherche pour trouver rapidement une permission spécifique.')
+                        ->extraAttributes(['class' => 'text-sm text-gray-500 mb-4']),
+
                     Forms\Components\Tabs::make('Droits sélectifs')
                         ->tabs([
                             Forms\Components\Tabs\Tab::make('Entités et modules')
