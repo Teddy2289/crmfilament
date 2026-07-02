@@ -178,29 +178,219 @@ class RoleResource extends Resource
                                 ->icon('heroicon-o-table-cells')
                                 ->badge(fn (?Role $record) => count(AccessRightsCatalog::roleFieldPermissionNames($record)))
                                 ->schema([
-                                    Forms\Components\Grid::make(2)
+                                    Forms\Components\Section::make('Prospects')
+                                        ->description('Permissions par champ pour les prospects')
+                                        ->icon('heroicon-o-user')
+                                        ->collapsible()
                                         ->schema([
-                                            Forms\Components\CheckboxList::make('field_permissions')
-                                                ->label('Droits par champ')
-                                                ->options(AccessRightsCatalog::fieldPermissionOptions())
-                                                ->descriptions(AccessRightsCatalog::fieldPermissionDescriptions())
-                                                ->default(fn (?Role $record) => AccessRightsCatalog::roleFieldPermissionNames($record))
+                                            Forms\Components\CheckboxList::make('field_permissions_prospects')
+                                                ->label('Champs prospects')
+                                                ->options(fn () => collect(AccessRightsCatalog::fieldPermissionOptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.prospects.'))
+                                                    ->toArray())
+                                                ->descriptions(fn () => collect(AccessRightsCatalog::fieldPermissionDescriptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.prospects.'))
+                                                    ->toArray())
+                                                ->default(fn (?Role $record) => collect(AccessRightsCatalog::roleFieldPermissionNames($record))
+                                                    ->filter(fn ($perm) => str_starts_with($perm, 'fields.prospects.'))
+                                                    ->values()
+                                                    ->toArray())
                                                 ->searchable()
                                                 ->bulkToggleable()
                                                 ->columns(1)
                                                 ->gridDirection('row')
-                                                ->helperText('Actions par champ : Voir, Créer, Modifier, Flux ou Tout. Si aucun champ n\'est configuré pour une entité, le comportement du module reste appliqué.')
+                                                ->helperText('Cochez les actions autorisées pour chaque champ des prospects.')
                                                 ->live()
-                                                ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                                    $count = is_array($state) ? count($state) : 0;
-                                                    $set('field_permissions_count', $count);
+                                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                                                    $current = $get('field_permissions') ?? [];
+                                                    $others = collect($current)->filter(fn ($p) => ! str_starts_with($p, 'fields.prospects.'))->toArray();
+                                                    $new = array_merge($others, $state ?? []);
+                                                    $set('field_permissions', $new);
+                                                    $set('field_permissions_count', count($new));
                                                 }),
-
-                                            Forms\Components\Placeholder::make('field_permissions_count')
-                                                ->label('Permissions de champ sélectionnées')
-                                                ->content(fn (Get $get) => is_array($get('field_permissions')) ? count($get('field_permissions')) : 0)
-                                                ->inlineLabel(),
                                         ]),
+
+                                    Forms\Components\Section::make('Partenaires')
+                                        ->description('Permissions par champ pour les partenaires')
+                                        ->icon('heroicon-o-building-office')
+                                        ->collapsible()
+                                        ->schema([
+                                            Forms\Components\CheckboxList::make('field_permissions_partenaires')
+                                                ->label('Champs partenaires')
+                                                ->options(fn () => collect(AccessRightsCatalog::fieldPermissionOptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.partenaires.'))
+                                                    ->toArray())
+                                                ->descriptions(fn () => collect(AccessRightsCatalog::fieldPermissionDescriptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.partenaires.'))
+                                                    ->toArray())
+                                                ->default(fn (?Role $record) => collect(AccessRightsCatalog::roleFieldPermissionNames($record))
+                                                    ->filter(fn ($perm) => str_starts_with($perm, 'fields.partenaires.'))
+                                                    ->values()
+                                                    ->toArray())
+                                                ->searchable()
+                                                ->bulkToggleable()
+                                                ->columns(1)
+                                                ->gridDirection('row')
+                                                ->helperText('Cochez les actions autorisées pour chaque champ des partenaires.')
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                                                    $current = $get('field_permissions') ?? [];
+                                                    $others = collect($current)->filter(fn ($p) => ! str_starts_with($p, 'fields.partenaires.'))->toArray();
+                                                    $new = array_merge($others, $state ?? []);
+                                                    $set('field_permissions', $new);
+                                                    $set('field_permissions_count', count($new));
+                                                }),
+                                        ]),
+
+                                    Forms\Components\Section::make('Clients')
+                                        ->description('Permissions par champ pour les clients')
+                                        ->icon('heroicon-o-users')
+                                        ->collapsible()
+                                        ->schema([
+                                            Forms\Components\CheckboxList::make('field_permissions_clients')
+                                                ->label('Champs clients')
+                                                ->options(fn () => collect(AccessRightsCatalog::fieldPermissionOptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.clients.'))
+                                                    ->toArray())
+                                                ->descriptions(fn () => collect(AccessRightsCatalog::fieldPermissionDescriptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.clients.'))
+                                                    ->toArray())
+                                                ->default(fn (?Role $record) => collect(AccessRightsCatalog::roleFieldPermissionNames($record))
+                                                    ->filter(fn ($perm) => str_starts_with($perm, 'fields.clients.'))
+                                                    ->values()
+                                                    ->toArray())
+                                                ->searchable()
+                                                ->bulkToggleable()
+                                                ->columns(1)
+                                                ->gridDirection('row')
+                                                ->helperText('Cochez les actions autorisées pour chaque champ des clients.')
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                                                    $current = $get('field_permissions') ?? [];
+                                                    $others = collect($current)->filter(fn ($p) => ! str_starts_with($p, 'fields.clients.'))->toArray();
+                                                    $new = array_merge($others, $state ?? []);
+                                                    $set('field_permissions', $new);
+                                                    $set('field_permissions_count', count($new));
+                                                }),
+                                        ]),
+
+                                    Forms\Components\Section::make('Opportunités')
+                                        ->description('Permissions par champ pour les opportunités')
+                                        ->icon('heroicon-o-sparkles')
+                                        ->collapsible()
+                                        ->schema([
+                                            Forms\Components\CheckboxList::make('field_permissions_opportunites')
+                                                ->label('Champs opportunités')
+                                                ->options(fn () => collect(AccessRightsCatalog::fieldPermissionOptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.opportunites.'))
+                                                    ->toArray())
+                                                ->descriptions(fn () => collect(AccessRightsCatalog::fieldPermissionDescriptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.opportunites.'))
+                                                    ->toArray())
+                                                ->default(fn (?Role $record) => collect(AccessRightsCatalog::roleFieldPermissionNames($record))
+                                                    ->filter(fn ($perm) => str_starts_with($perm, 'fields.opportunites.'))
+                                                    ->values()
+                                                    ->toArray())
+                                                ->searchable()
+                                                ->bulkToggleable()
+                                                ->columns(1)
+                                                ->gridDirection('row')
+                                                ->helperText('Cochez les actions autorisées pour chaque champ des opportunités.')
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                                                    $current = $get('field_permissions') ?? [];
+                                                    $others = collect($current)->filter(fn ($p) => ! str_starts_with($p, 'fields.opportunites.'))->toArray();
+                                                    $new = array_merge($others, $state ?? []);
+                                                    $set('field_permissions', $new);
+                                                    $set('field_permissions_count', count($new));
+                                                }),
+                                        ]),
+
+                                    Forms\Components\Section::make('Rendez-vous')
+                                        ->description('Permissions par champ pour les rendez-vous')
+                                        ->icon('heroicon-o-calendar')
+                                        ->collapsible()
+                                        ->schema([
+                                            Forms\Components\CheckboxList::make('field_permissions_rendez_vous')
+                                                ->label('Champs rendez-vous')
+                                                ->options(fn () => collect(AccessRightsCatalog::fieldPermissionOptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.rendez_vous.'))
+                                                    ->toArray())
+                                                ->descriptions(fn () => collect(AccessRightsCatalog::fieldPermissionDescriptions())
+                                                    ->filter(fn ($label, $key) => str_starts_with($key, 'fields.rendez_vous.'))
+                                                    ->toArray())
+                                                ->default(fn (?Role $record) => collect(AccessRightsCatalog::roleFieldPermissionNames($record))
+                                                    ->filter(fn ($perm) => str_starts_with($perm, 'fields.rendez_vous.'))
+                                                    ->values()
+                                                    ->toArray())
+                                                ->searchable()
+                                                ->bulkToggleable()
+                                                ->columns(1)
+                                                ->gridDirection('row')
+                                                ->helperText('Cochez les actions autorisées pour chaque champ des rendez-vous.')
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                                                    $current = $get('field_permissions') ?? [];
+                                                    $others = collect($current)->filter(fn ($p) => ! str_starts_with($p, 'fields.rendez_vous.'))->toArray();
+                                                    $new = array_merge($others, $state ?? []);
+                                                    $set('field_permissions', $new);
+                                                    $set('field_permissions_count', count($new));
+                                                }),
+                                        ]),
+
+                                    Forms\Components\Section::make('Autres entités')
+                                        ->description('Permissions par champ pour les autres entités')
+                                        ->icon('heroicon-o-cube')
+                                        ->collapsible()
+                                        ->collapsed()
+                                        ->schema([
+                                            Forms\Components\CheckboxList::make('field_permissions_autres')
+                                                ->label('Autres champs')
+                                                ->options(fn () => collect(AccessRightsCatalog::fieldPermissionOptions())
+                                                    ->filter(fn ($label, $key) => ! str_starts_with($key, 'fields.prospects.') 
+                                                        && ! str_starts_with($key, 'fields.partenaires.')
+                                                        && ! str_starts_with($key, 'fields.clients.')
+                                                        && ! str_starts_with($key, 'fields.opportunites.')
+                                                        && ! str_starts_with($key, 'fields.rendez_vous.'))
+                                                    ->toArray())
+                                                ->descriptions(fn () => collect(AccessRightsCatalog::fieldPermissionDescriptions())
+                                                    ->filter(fn ($label, $key) => ! str_starts_with($key, 'fields.prospects.')
+                                                        && ! str_starts_with($key, 'fields.partenaires.')
+                                                        && ! str_starts_with($key, 'fields.clients.')
+                                                        && ! str_starts_with($key, 'fields.opportunites.')
+                                                        && ! str_starts_with($key, 'fields.rendez_vous.'))
+                                                    ->toArray())
+                                                ->default(fn (?Role $record) => collect(AccessRightsCatalog::roleFieldPermissionNames($record))
+                                                    ->filter(fn ($perm) => ! str_starts_with($perm, 'fields.prospects.')
+                                                        && ! str_starts_with($perm, 'fields.partenaires.')
+                                                        && ! str_starts_with($perm, 'fields.clients.')
+                                                        && ! str_starts_with($perm, 'fields.opportunites.')
+                                                        && ! str_starts_with($perm, 'fields.rendez_vous.'))
+                                                    ->values()
+                                                    ->toArray())
+                                                ->searchable()
+                                                ->bulkToggleable()
+                                                ->columns(1)
+                                                ->gridDirection('row')
+                                                ->helperText('Cochez les actions autorisées pour chaque champ des autres entités.')
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                                                    $current = $get('field_permissions') ?? [];
+                                                    $others = collect($current)->filter(fn ($p) => str_starts_with($p, 'fields.prospects.')
+                                                        || str_starts_with($p, 'fields.partenaires.')
+                                                        || str_starts_with($p, 'fields.clients.')
+                                                        || str_starts_with($p, 'fields.opportunites.')
+                                                        || str_starts_with($p, 'fields.rendez_vous.'))->toArray();
+                                                    $new = array_merge($others, $state ?? []);
+                                                    $set('field_permissions', $new);
+                                                    $set('field_permissions_count', count($new));
+                                                }),
+                                        ]),
+
+                                    Forms\Components\Placeholder::make('field_permissions_count')
+                                        ->label('Permissions de champ sélectionnées')
+                                        ->content(fn (Get $get) => is_array($get('field_permissions')) ? count($get('field_permissions')) : 0)
+                                        ->inlineLabel(),
                                 ]),
                         ])
                         ->visible(fn (Get $get) => $get('access_mode') === 'selective')
