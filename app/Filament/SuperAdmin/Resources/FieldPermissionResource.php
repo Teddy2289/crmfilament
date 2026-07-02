@@ -152,8 +152,7 @@ class FieldPermissionResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('resource')
-            ->groupBy('resource');
+            ->defaultSort('resource');
     }
 
     public static function getRelations(): array
