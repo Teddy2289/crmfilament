@@ -89,6 +89,12 @@ class RingoverApiKeyResource extends Resource
                             ->rows(3)
                             ->nullable(),
 
+                        Forms\Components\TextInput::make('click_to_call_url')
+                            ->label('URL Click-to-Call')
+                            ->url()
+                            ->nullable()
+                            ->helperText('URL Ringover pour le click-to-call (ex: https://ringover.me/xxx?region=eu)'),
+
                         Forms\Components\Toggle::make('is_active')
                             ->label('Active')
                             ->default(true)
@@ -169,9 +175,9 @@ class RingoverApiKeyResource extends Resource
                 Tables\Actions\Action::make('click_to_call')
                     ->label('Appeler')
                     ->icon('heroicon-o-phone')
-                    ->url('https://ringover.me/alexandre.florek.gmk3rh?region=eu')
+                    ->url(fn ($record) => $record->click_to_call_url)
                     ->openUrlInNewTab()
-                    ->visible(fn ($record) => $record->type === 'admin' && $record->is_active),
+                    ->visible(fn ($record) => $record->click_to_call_url && $record->is_active),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

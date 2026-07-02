@@ -18,6 +18,7 @@ class RingoverApiKey extends Model
         'is_active',
         'user_id',
         'description',
+        'click_to_call_url',
     ];
 
     protected $casts = [
