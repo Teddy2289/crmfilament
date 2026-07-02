@@ -33,7 +33,7 @@ class ContactPartenaireResource extends Resource
                 Forms\Components\Section::make('Informations générales')
                     ->schema([
                         Forms\Components\Select::make('partenaire_id')
-                            ->relationship('partenaire', 'nom_retenu')
+                            ->relationship('partenaire', 'nom')
                             ->required()
                             ->searchable()
                             ->preload(),
@@ -121,7 +121,7 @@ class ContactPartenaireResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('partenaire.nom_retenu')
+                Tables\Columns\TextColumn::make('partenaire.nom')
                     ->label('Partenaire')
                     ->searchable()
                     ->sortable(),
@@ -155,7 +155,7 @@ class ContactPartenaireResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('partenaire')
-                    ->relationship('partenaire', 'nom_retenu')
+                    ->relationship('partenaire', 'nom')
                     ->label('Partenaire')
                     ->searchable()
                     ->preload(),
