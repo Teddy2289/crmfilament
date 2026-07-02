@@ -66,45 +66,89 @@ class RoleResource extends Resource
                         ->default(fn (?Role $record) => static::accessModeFor($record))
                         ->inline()
                         ->live()
-                        ->required(),
+                        ->required()
+                        ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            if ($state === 'all') {
+                                $set('module_permissions', []);
+                                $set('field_permissions', []);
+                            }
+                        }),
 
                     Forms\Components\Tabs::make('Droits sélectifs')
                         ->tabs([
                             Forms\Components\Tabs\Tab::make('Entités et modules')
+                                ->icon('heroicon-o-squares-plus')
+                                ->badge(fn (?Role $record) => AccessRightsCatalog::roleModulePermissionNames($record)->count())
                                 ->schema([
-                                    Forms\Components\CheckboxList::make('module_permissions')
-                                        ->label('Droits par entité/module')
-                                        ->options(AccessRightsCatalog::permissionOptions())
-                                        ->descriptions(AccessRightsCatalog::permissionDescriptions())
-                                        ->default(fn (?Role $record) => AccessRightsCatalog::roleModulePermissionNames($record))
-                                        ->searchable()
-                                        ->bulkToggleable()
-                                        ->columns(2)
-                                        ->gridDirection('row')
-                                        ->helperText('Cochez les actions autorisées pour ce rôle. Les modules non cochés seront inaccessibles.'),
+                                    Forms\Components\Grid::make(2)
+                                        ->schema([
+                                            Forms\Components\CheckboxList::make('module_permissions')
+                                                ->label('Droits par entité/module')
+                                                ->options(AccessRightsCatalog::permissionOptions())
+                                                ->descriptions(AccessRightsCatalog::permissionDescriptions())
+                                                ->default(fn (?Role $record) => AccessRightsCatalog::roleModulePermissionNames($record))
+                                                ->searchable()
+                                                ->searchablePlaceholder('Rechercher une permission...')
+                                                ->bulkToggleable()
+                                                ->selectAllOptionLabel('Tout sélectionner')
+                                                ->deselectAllOptionLabel('Tout désélectionner')
+                                                ->columns(1)
+                                                ->gridDirection('row')
+                                                ->helperText('Cochez les actions autorisées pour ce rôle. Les modules non cochés seront inaccessibles.')
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                                    $count = is_array($state) ? count($state) : 0;
+                                                    $set('module_permissions_count', $count);
+                                                }),
+
+                                            Forms\Components\Placeholder::make('module_permissions_count')
+                                                ->label('Permissions sélectionnées')
+                                                ->content(fn (Get $get) => is_array($get('module_permissions')) ? count($get('module_permissions')) : 0)
+                                                ->inlineLabel(),
+                                        ]),
                                 ]),
 
                             Forms\Components\Tabs\Tab::make('Champs')
+                                ->icon('heroicon-o-table-cells')
+                                ->badge(fn (?Role $record) => AccessRightsCatalog::roleFieldPermissionNames($record)->count())
                                 ->schema([
-                                    Forms\Components\CheckboxList::make('field_permissions')
-                                        ->label('Droits par champ')
-                                        ->options(AccessRightsCatalog::fieldPermissionOptions())
-                                        ->descriptions(AccessRightsCatalog::fieldPermissionDescriptions())
-                                        ->default(fn (?Role $record) => AccessRightsCatalog::roleFieldPermissionNames($record))
-                                        ->searchable()
-                                        ->bulkToggleable()
-                                        ->columns(2)
-                                        ->gridDirection('row')
-                                        ->helperText('Actions par champ : Voir, Créer, Modifier, Flux ou Tout. Si aucun champ n\'est configuré pour une entité, le comportement du module reste appliqué.'),
+                                    Forms\Components\Grid::make(2)
+                                        ->schema([
+                                            Forms\Components\CheckboxList::make('field_permissions')
+                                                ->label('Droits par champ')
+                                                ->options(AccessRightsCatalog::fieldPermissionOptions())
+                                                ->descriptions(AccessRightsCatalog::fieldPermissionDescriptions())
+                                                ->default(fn (?Role $record) => AccessRightsCatalog::roleFieldPermissionNames($record))
+                                                ->searchable()
+                                                ->searchablePlaceholder('Rechercher une permission de champ...')
+                                                ->bulkToggleable()
+                                                ->selectAllOptionLabel('Tout sélectionner')
+                                                ->deselectAllOptionLabel('Tout désélectionner')
+                                                ->columns(1)
+                                                ->gridDirection('row')
+                                                ->helperText('Actions par champ : Voir, Créer, Modifier, Flux ou Tout. Si aucun champ n\'est configuré pour une entité, le comportement du module reste appliqué.')
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                                    $count = is_array($state) ? count($state) : 0;
+                                                    $set('field_permissions_count', $count);
+                                                }),
+
+                                            Forms\Components\Placeholder::make('field_permissions_count')
+                                                ->label('Permissions de champ sélectionnées')
+                                                ->content(fn (Get $get) => is_array($get('field_permissions')) ? count($get('field_permissions')) : 0)
+                                                ->inlineLabel(),
+                                        ]),
                                 ]),
                         ])
                         ->visible(fn (Get $get) => $get('access_mode') === 'selective')
-                        ->columnSpanFull(),
+                        ->columnSpanFull()
+                        ->persistTabInQueryString(),
 
                     Forms\Components\Placeholder::make('full_access_notice')
                         ->label('Droits appliqués')
                         ->content('Mode tout : toutes les entités, tous les modules et tous les champs du catalogue CRM seront autorisés pour ce rôle.')
-                        ->visible(fn (Get $get) => $get('access_mode') === 'all'),
+                        ->visible(fn (Get $get) => $get('access_mode') === 'all')
+                        ->extraAttributes(['class' => 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4']),
                 ]),
         ]);
     }
