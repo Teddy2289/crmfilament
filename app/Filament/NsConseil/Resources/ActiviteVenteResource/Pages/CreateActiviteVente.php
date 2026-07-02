@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateActiviteVente extends CreateRecord
 {
     protected static string $resource = ActiviteVenteResource::class;
+
+    protected function afterCreate(): void
+    {
+        $this->record->recalculerDepuisClients();
+    }
 }

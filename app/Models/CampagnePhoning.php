@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProspectStatut;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -174,15 +175,9 @@ class CampagnePhoning extends Model
      */
     public function getContactsQueue(): array
     {
-        $type = match ($this->type_entite) {
-            'partenaires' => 'partenaire',
-            'clients' => 'client',
-            default => 'prospect',
-        };
-
-        return $this->buildQuery()
+        return $this->buildQueueQuery()
             ->pluck('id')
-            ->map(fn ($id) => ['type' => $type, 'id' => $id, 'campagne_id' => $this->id])
+            ->map(fn ($id) => ['type' => $this->queueContactType(), 'id' => $id, 'campagne_id' => $this->id])
             ->toArray();
     }
 
@@ -191,7 +186,60 @@ class CampagnePhoning extends Model
         return $this->buildQuery()->count();
     }
 
+    public function countQueueContacts(): int
+    {
+        return $this->buildQueueQuery()->count();
+    }
+
+    public function queueContactType(): string
+    {
+        return match ($this->type_entite) {
+            'partenaires' => 'partenaire',
+            'clients' => 'client',
+            default => 'prospect',
+        };
+    }
+
+    /**
+     * Requête des contacts encore appelables dans la file de la campagne.
+     */
+    public function buildQueueQuery(): Builder
+    {
+        $query = $this->buildQuery();
+
+        return match ($this->type_entite) {
+            'prospects' => $this->applyProspectQueueFilters($query)
+                ->with(['teleprospecteur', 'commercial']),
+            'partenaires' => $query->with('partenaire'),
+            'clients' => $query->with(['partenaire', 'commercial']),
+            default => $query,
+        };
+    }
+
     // ── Constructeurs de requêtes par entité ─────────────────────────
+
+    protected function applyProspectQueueFilters(Builder $query): Builder
+    {
+        $retireCodes = StatutPhoning::query()
+            ->where('model_type', 'prospect')
+            ->where('retire_de_file', true)
+            ->pluck('code')
+            ->all();
+
+        $query->whereNotIn('statut', [
+            ProspectStatut::KO->value,
+            ProspectStatut::QF->value,
+        ]);
+
+        if ($retireCodes !== []) {
+            $query->whereDoesntHave(
+                'appels',
+                fn (Builder $appelQuery) => $appelQuery->whereIn('phoning_status', $retireCodes)
+            );
+        }
+
+        return $query;
+    }
 
     protected function buildProspectsQuery(array $c): Builder
     {

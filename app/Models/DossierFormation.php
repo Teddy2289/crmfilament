@@ -32,6 +32,38 @@ class DossierFormation extends Model
         'date_vente' => 'date',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (DossierFormation $dossier) {
+            if ($dossier->wasChanged('personne_id')) {
+                static::actualiserActiviteVentePourPersonne($dossier->getOriginal('personne_id'));
+            }
+
+            static::actualiserActiviteVentePourPersonne($dossier->personne_id);
+        });
+
+        static::deleted(function (DossierFormation $dossier) {
+            static::actualiserActiviteVentePourPersonne($dossier->personne_id);
+        });
+
+        static::restored(function (DossierFormation $dossier) {
+            static::actualiserActiviteVentePourPersonne($dossier->personne_id);
+        });
+    }
+
+    private static function actualiserActiviteVentePourPersonne(?int $personneId): void
+    {
+        if (! $personneId) {
+            return;
+        }
+
+        $partenaireId = Client::withTrashed()
+            ->whereKey($personneId)
+            ->value('partenaire_id');
+
+        ActiviteVente::actualiserPourPartenaire($partenaireId);
+    }
+
     // ─── Relations ────────────────────────────────────────────────────
 
     public function entite()
