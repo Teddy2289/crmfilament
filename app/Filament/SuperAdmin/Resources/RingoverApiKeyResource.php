@@ -166,6 +166,12 @@ class RingoverApiKeyResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                Tables\Actions\Action::make('click_to_call')
+                    ->label('Appeler')
+                    ->icon('heroicon-o-phone')
+                    ->url('https://ringover.me/alexandre.florek.gmk3rh?region=eu')
+                    ->openUrlInNewTab()
+                    ->visible(fn ($record) => $record->type === 'admin' && $record->is_active),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
