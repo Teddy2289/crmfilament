@@ -387,6 +387,22 @@ class Client extends Model
                 $client->ref_client = 'CLI-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -6));
             }
         });
+
+        static::saved(function (Client $client) {
+            if ($client->wasChanged('partenaire_id')) {
+                ActiviteVente::actualiserPourPartenaire($client->getOriginal('partenaire_id'));
+            }
+
+            ActiviteVente::actualiserPourPartenaire($client->partenaire_id);
+        });
+
+        static::deleted(function (Client $client) {
+            ActiviteVente::actualiserPourPartenaire($client->partenaire_id);
+        });
+
+        static::restored(function (Client $client) {
+            ActiviteVente::actualiserPourPartenaire($client->partenaire_id);
+        });
     }
 
     // ── Relations ────────────────────────────────────────────────────
@@ -406,6 +422,11 @@ class Client extends Model
     public function partenaire()
     {
         return $this->belongsTo(Partenaire::class);
+    }
+
+    public function activiteVente()
+    {
+        return $this->hasOne(ActiviteVente::class, 'partenaire_id', 'partenaire_id');
     }
 
     public function parrain()

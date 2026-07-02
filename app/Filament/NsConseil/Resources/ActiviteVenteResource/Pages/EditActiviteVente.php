@@ -8,4 +8,9 @@ use Filament\Resources\Pages\EditRecord;
 class EditActiviteVente extends EditRecord
 {
     protected static string $resource = ActiviteVenteResource::class;
+
+    protected function afterSave(): void
+    {
+        $this->record->recalculerDepuisClients();
+    }
 }
