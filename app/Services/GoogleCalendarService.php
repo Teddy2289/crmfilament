@@ -45,23 +45,32 @@ class GoogleCalendarService
     }
 
     public function exchangeCode(string $code, User $user): GoogleToken
-    {
-        $accessToken = $this->provider->getAccessToken('authorization_code', [
-            'code' => $code,
-        ]);
+{
+    $accessToken = $this->provider->getAccessToken('authorization_code', [
+        'code' => $code,
+    ]);
 
-        return GoogleToken::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'access_token' => $accessToken->getToken(),
-                'refresh_token' => $accessToken->getRefreshToken(),
-                'token_type' => 'Bearer',
-                'expires_at' => $accessToken->getExpires()
-                    ? Carbon::createFromTimestamp($accessToken->getExpires())
-                    : null,
-            ]
-        );
-    }
+    $token = GoogleToken::updateOrCreate(
+        ['user_id' => $user->id],
+        [
+            'access_token' => $accessToken->getToken(),
+            'refresh_token' => $accessToken->getRefreshToken(),
+            'token_type' => 'Bearer',
+            'expires_at' => $accessToken->getExpires()
+                ? Carbon::createFromTimestamp($accessToken->getExpires())
+                : null,
+        ]
+    );
+
+    // ⚠️ Le calendrier peut avoir été mis en cache vide AVANT la connexion
+    // (getValidToken() échoue silencieusement → fetchSequential(null,...) retourne []
+    // → ce [] est caché 30 min par Cache::remember dans getEvents()).
+    // On invalide systématiquement après une (re)connexion réussie.
+    $this->clearEventsCache($user);
+    Cache::forget("gcal_calendars_{$user->id}");
+
+    return $token;
+}
 
     public function revokeToken(User $user): void
     {

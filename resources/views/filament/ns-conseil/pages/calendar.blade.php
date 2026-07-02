@@ -43,4 +43,6 @@
     </div>
 
     {{-- Widget calendrier — rendu par Filament via getFooterWidgets() --}}
+        @livewire('google-event-modal')
+
 </x-filament-panels::page>

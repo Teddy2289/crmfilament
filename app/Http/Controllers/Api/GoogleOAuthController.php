@@ -42,6 +42,11 @@ class GoogleOAuthController extends Controller
             session()->flash('google_connected', true);
 
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('GoogleOAuth::exchangeCode failed', [
+        'user_id' => $user->id,
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString(),
+    ]);
             session()->flash('google_error', $e->getMessage());
         }
 
