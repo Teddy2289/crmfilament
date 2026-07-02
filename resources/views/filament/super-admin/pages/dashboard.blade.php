@@ -185,25 +185,30 @@
         </div>
     </section>
 
-    <section class="espo-dashlet">
-        <div class="espo-dashlet-header">
-            <h3 class="espo-dashlet-title">Documentation</h3>
-            <span class="espo-badge-soft">Guides et manuels</span>
+    <!-- Documentation -->
+    <section class="rounded-xl bg-white shadow-sm ring-1 ring-gray-200/50 dark:bg-gray-800/50 dark:ring-gray-700/50">
+        <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700/50">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Documentation
+            </h3>
         </div>
-        <div class="espo-dashlet-body">
-            <div class="espo-dashlet-grid espo-dashlet-grid-2">
-                @foreach ($documentation as $doc)
-                    <a class="espo-action-row" href="{{ $doc['href'] }}">
-                        <span class="espo-action-icon">
-                            <x-dynamic-component :component="$doc['icon']" />
-                        </span>
-                        <span class="espo-list-main">
-                            <span class="espo-list-title">{{ $doc['label'] }}</span>
-                            <span class="espo-list-sub">{{ $doc['meta'] }}</span>
-                        </span>
-                    </a>
-                @endforeach
-            </div>
+        <div class="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
+            @foreach ($documentation as $doc)
+                <a href="{{ $doc['href'] }}" 
+                   class="group flex items-center gap-3 rounded-lg p-3 transition hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400">
+                        <x-dynamic-component :component="$doc['icon']" class="h-4 w-4" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                            {{ $doc['label'] }}
+                        </div>
+                        <div class="truncate text-xs text-gray-400 dark:text-gray-500">
+                            {{ $doc['meta'] }}
+                        </div>
+                    </div>
+                </a>
+            @endforeach
         </div>
     </section>
 </div>
