@@ -78,7 +78,7 @@ class RoleResource extends Resource
                         ->tabs([
                             Forms\Components\Tabs\Tab::make('Entités et modules')
                                 ->icon('heroicon-o-squares-plus')
-                                ->badge(fn (?Role $record) => AccessRightsCatalog::roleModulePermissionNames($record)->count())
+                                ->badge(fn (?Role $record) => count(AccessRightsCatalog::roleModulePermissionNames($record)))
                                 ->schema([
                                     Forms\Components\Grid::make(2)
                                         ->schema([
@@ -107,7 +107,7 @@ class RoleResource extends Resource
 
                             Forms\Components\Tabs\Tab::make('Champs')
                                 ->icon('heroicon-o-table-cells')
-                                ->badge(fn (?Role $record) => AccessRightsCatalog::roleFieldPermissionNames($record)->count())
+                                ->badge(fn (?Role $record) => count(AccessRightsCatalog::roleFieldPermissionNames($record)))
                                 ->schema([
                                     Forms\Components\Grid::make(2)
                                         ->schema([
