@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
+
 class CalendarWidget extends FullCalendarWidget
 {
     protected static bool $isDiscovered = false;
@@ -21,32 +22,32 @@ class CalendarWidget extends FullCalendarWidget
 
     public Model|string|null $model = null;
 
+ 
     public function config(): array
-    {
-        return [
-            'firstDay' => 1,
-            'locale' => 'fr',
-            'height' => 'auto',
-            'navLinks' => true,
-            'businessHours' => [
-                'daysOfWeek' => [1, 2, 3, 4, 5],
-                'startTime' => '08:00',
-                'endTime' => '19:00',
-            ],
-            'slotMinTime' => '07:00',
-            'slotMaxTime' => '21:00',
-            'initialView' => 'timeGridWeek',
-            'headerToolbar' => [
-                'left' => 'prev,next today',
-                'center' => 'title',
-                'right' => 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-            ],
-            'eventDisplay' => 'block',
-            'nowIndicator' => true,
-            'scrollTime' => '08:00',
-            'eventClick' => true,
-        ];
-    }
+{
+    return [
+        'firstDay' => 1,
+        'locale' => 'fr',
+        'height' => 'auto',
+        'navLinks' => true,
+        'businessHours' => [
+            'daysOfWeek' => [1, 2, 3, 4, 5],
+            'startTime' => '08:00',
+            'endTime' => '19:00',
+        ],
+        'slotMinTime' => '07:00',
+        'slotMaxTime' => '21:00',
+        'initialView' => 'timeGridWeek',
+        'headerToolbar' => [
+            'left' => 'prev,next today',
+            'center' => 'title',
+            'right' => 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+        ],
+        'eventDisplay' => 'block',
+        'nowIndicator' => true,
+        'scrollTime' => '08:00',
+    ];
+}
 
     public function fetchEvents(array $fetchInfo): array
     {
@@ -249,39 +250,33 @@ class CalendarWidget extends FullCalendarWidget
         };
     }
 
-    public function onEventClick(array $event): void
-    {
-        // filament-fullcalendar v3 aplatit parfois extendedProps au niveau racine
-        $props = $event['extendedProps'] ?? [];
-        $source = $props['source'] ?? $event['source'] ?? '';
+public function onEventClick(array $event): void
+{
+    $props = $event['extendedProps'] ?? [];
+    $source = $props['source'] ?? $event['source'] ?? '';
 
-        if ($source === 'crm') {
-            $rdvId = $props['rdv_id'] ?? $event['rdv_id'] ?? null;
-            if ($rdvId) {
-                $this->redirect('/ns-conseil/rendez-vous/'.$rdvId);
-            }
-
-            return;
+    if ($source === 'crm') {
+        $rdvId = $props['rdv_id'] ?? $event['rdv_id'] ?? null;
+        if ($rdvId) {
+            $this->redirect('/ns-conseil/rendez-vous/'.$rdvId);
         }
-
-        if ($source === 'google') {
-            $this->selectedEvent = [
-                'title' => $event['title'] ?? 'Sans titre',
-                'start' => $event['start'] ?? null,
-                'end' => $event['end'] ?? null,
-                'allDay' => $event['allDay'] ?? false,
-                'calendar_name' => $props['calendar_name'] ?? $event['calendar_name'] ?? null,
-                'calendar_color' => $props['calendar_color'] ?? $event['calendar_color'] ?? '#6b7280',
-                'description' => $props['description'] ?? $event['description'] ?? null,
-                'location' => $props['location'] ?? $event['location'] ?? null,
-                'google_id' => $props['google_id'] ?? $event['google_id'] ?? null,
-            ];
-            $this->showEventModal = true;
-
-            return;
-        }
+        return;
     }
 
+    if ($source === 'google') {
+        $this->dispatch('show-google-event', eventData: [
+            'title' => $event['title'] ?? 'Sans titre',
+            'start' => $event['start'] ?? null,
+            'end' => $event['end'] ?? null,
+            'allDay' => $event['allDay'] ?? false,
+            'calendar_name' => $props['calendar_name'] ?? $event['calendar_name'] ?? null,
+            'calendar_color' => $props['calendar_color'] ?? $event['calendar_color'] ?? '#6b7280',
+            'description' => $props['description'] ?? $event['description'] ?? null,
+            'location' => $props['location'] ?? $event['location'] ?? null,
+            'google_id' => $props['google_id'] ?? $event['google_id'] ?? null,
+        ]);
+    }
+}
     public function closeEventModal(): void
     {
         $this->showEventModal = false;
