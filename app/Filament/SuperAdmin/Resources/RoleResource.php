@@ -80,29 +80,98 @@ class RoleResource extends Resource
                                 ->icon('heroicon-o-squares-plus')
                                 ->badge(fn (?Role $record) => count(AccessRightsCatalog::roleModulePermissionNames($record)))
                                 ->schema([
-                                    Forms\Components\Grid::make(2)
+                                    Forms\Components\Section::make('AOPIA - Modules')
+                                        ->description('Permissions pour le panel NsConseil')
+                                        ->icon('heroicon-o-building-office-2')
+                                        ->collapsible()
                                         ->schema([
-                                            Forms\Components\CheckboxList::make('module_permissions')
-                                                ->label('Droits par entité/module')
-                                                ->options(AccessRightsCatalog::permissionOptions())
-                                                ->descriptions(AccessRightsCatalog::permissionDescriptions())
-                                                ->default(fn (?Role $record) => AccessRightsCatalog::roleModulePermissionNames($record))
+                                            Forms\Components\CheckboxList::make('module_permissions_aopia')
+                                                ->label('Modules AOPIA')
+                                                ->options(fn () => collect(AccessRightsCatalog::permissionOptions())
+                                                    ->filter(fn ($label, $key) => in_array(
+                                                        explode('.', $key)[0] ?? '',
+                                                        ['prospects', 'partenaires', 'clients', 'opportunites', 'rendez_vous', 'entreprises', 'campagne_phonings', 'dossier_formations', 'activites', 'rapports', 'document_knowledges', 'script_appels', 'statut_phonings']
+                                                    ))
+                                                    ->toArray())
+                                                ->descriptions(fn () => collect(AccessRightsCatalog::permissionDescriptions())
+                                                    ->filter(fn ($label, $key) => in_array(
+                                                        explode('.', $key)[0] ?? '',
+                                                        ['prospects', 'partenaires', 'clients', 'opportunites', 'rendez_vous', 'entreprises', 'campagne_phonings', 'dossier_formations', 'activites', 'rapports', 'document_knowledges', 'script_appels', 'statut_phonings']
+                                                    ))
+                                                    ->toArray())
+                                                ->default(fn (?Role $record) => collect(AccessRightsCatalog::roleModulePermissionNames($record))
+                                                    ->filter(fn ($perm) => in_array(
+                                                        explode('.', $perm)[0] ?? '',
+                                                        ['prospects', 'partenaires', 'clients', 'opportunites', 'rendez_vous', 'entreprises', 'campagne_phonings', 'dossier_formations', 'activites', 'rapports', 'document_knowledges', 'script_appels', 'statut_phonings']
+                                                    ))
+                                                    ->values()
+                                                    ->toArray())
                                                 ->searchable()
                                                 ->bulkToggleable()
                                                 ->columns(1)
                                                 ->gridDirection('row')
-                                                ->helperText('Cochez les actions autorisées pour ce rôle. Les modules non cochés seront inaccessibles.')
+                                                ->helperText('Cochez les modules AOPIA autorisés pour ce rôle.')
                                                 ->live()
-                                                ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                                    $count = is_array($state) ? count($state) : 0;
-                                                    $set('module_permissions_count', $count);
+                                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                                                    $current = $get('module_permissions') ?? [];
+                                                    $others = collect($current)->filter(fn ($p) => ! in_array(
+                                                        explode('.', $p)[0] ?? '',
+                                                        ['prospects', 'partenaires', 'clients', 'opportunites', 'rendez_vous', 'entreprises', 'campagne_phonings', 'dossier_formations', 'activites', 'rapports', 'document_knowledges', 'script_appels', 'statut_phonings']
+                                                    ))->toArray();
+                                                    $new = array_merge($others, $state ?? []);
+                                                    $set('module_permissions', $new);
+                                                    $set('module_permissions_count', count($new));
                                                 }),
-
-                                            Forms\Components\Placeholder::make('module_permissions_count')
-                                                ->label('Permissions sélectionnées')
-                                                ->content(fn (Get $get) => is_array($get('module_permissions')) ? count($get('module_permissions')) : 0)
-                                                ->inlineLabel(),
                                         ]),
+
+                                    Forms\Components\Section::make('AlloPro - Modules')
+                                        ->description('Permissions pour le panel AlloPro')
+                                        ->icon('heroicon-o-phone')
+                                        ->collapsible()
+                                        ->schema([
+                                            Forms\Components\CheckboxList::make('module_permissions_allopro')
+                                                ->label('Modules AlloPro')
+                                                ->options(fn () => collect(AccessRightsCatalog::permissionOptions())
+                                                    ->filter(fn ($label, $key) => in_array(
+                                                        explode('.', $key)[0] ?? '',
+                                                        ['tickets', 'fiche_p2', 'artisans', 'reclamations', 'rapports_satisfaction', 'prospection_artisans', 'dashboard']
+                                                    ))
+                                                    ->toArray())
+                                                ->descriptions(fn () => collect(AccessRightsCatalog::permissionDescriptions())
+                                                    ->filter(fn ($label, $key) => in_array(
+                                                        explode('.', $key)[0] ?? '',
+                                                        ['tickets', 'fiche_p2', 'artisans', 'reclamations', 'rapports_satisfaction', 'prospection_artisans', 'dashboard']
+                                                    ))
+                                                    ->toArray())
+                                                ->default(fn (?Role $record) => collect(AccessRightsCatalog::roleModulePermissionNames($record))
+                                                    ->filter(fn ($perm) => in_array(
+                                                        explode('.', $perm)[0] ?? '',
+                                                        ['tickets', 'fiche_p2', 'artisans', 'reclamations', 'rapports_satisfaction', 'prospection_artisans', 'dashboard']
+                                                    ))
+                                                    ->values()
+                                                    ->toArray())
+                                                ->searchable()
+                                                ->bulkToggleable()
+                                                ->columns(1)
+                                                ->gridDirection('row')
+                                                ->helperText('Cochez les modules AlloPro autorisés pour ce rôle.')
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                                                    $current = $get('module_permissions') ?? [];
+                                                    $others = collect($current)->filter(fn ($p) => ! in_array(
+                                                        explode('.', $p)[0] ?? '',
+                                                        ['tickets', 'fiche_p2', 'artisans', 'reclamations', 'rapports_satisfaction', 'prospection_artisans', 'dashboard']
+                                                    ))->toArray();
+                                                    $new = array_merge($others, $state ?? []);
+                                                    $set('module_permissions', $new);
+                                                    $set('module_permissions_count', count($new));
+                                                }),
+                                        ]),
+
+                                    Forms\Components\Placeholder::make('module_permissions_count')
+                                        ->label('Permissions sélectionnées')
+                                        ->content(fn (Get $get) => is_array($get('module_permissions')) ? count($get('module_permissions')) : 0)
+                                        ->inlineLabel(),
                                 ]),
 
                             Forms\Components\Tabs\Tab::make('Champs')
