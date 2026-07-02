@@ -42,7 +42,7 @@ enum OrganizationStatus: string
             self::EnCoursProspection => 'heroicon-o-magnifying-glass',
             self::RdvEnCours => 'heroicon-o-calendar',
             self::SigneAccordCadre => 'heroicon-o-document-check',
-            self::ConventionEngagement => 'heroicon-o-handshake',
+            self::ConventionEngagement => 'heroicon-o-clipboard-document-check',
             self::Refus => 'heroicon-o-x-circle',
         };
     }
