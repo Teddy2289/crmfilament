@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Exceptions\RingoverApiException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -19,10 +21,22 @@ class RingoverService
 
     public function __construct()
     {
-        $this->baseUrl = config('ringover.base_url');
+        $this->baseUrl = $this->resolveBaseUrl();
         $this->apiToken = config('ringover.api_token');
         $this->authScheme = config('ringover.auth_scheme', 'Bearer');
         $this->timeout = config('ringover.timeout');
+    }
+
+    private function resolveBaseUrl(): string
+    {
+        if (config('ringover.base_url')) {
+            return config('ringover.base_url');
+        }
+
+        $region = config('ringover.region', 'europe');
+        $urls = config('ringover.base_urls', []);
+
+        return $urls[$region] ?? $urls['europe'] ?? 'https://public-api.ringover.com/v2';
     }
 
     private function client(): PendingRequest
@@ -40,6 +54,30 @@ class RingoverService
         return $client;
     }
 
+    private function handleResponse(Response $response): array
+    {
+        $status = $response->status();
+
+        return match ($status) {
+            401 => throw RingoverApiException::unauthorized([
+                'url' => $response->effectiveUri(),
+                'monitoring_enabled' => config('ringover.monitoring_enabled', false),
+            ]),
+            429 => throw RingoverApiException::rateLimitExceeded(
+                (int) $response->header('Retry-After', 60),
+                ['url' => $response->effectiveUri()]
+            ),
+            402 => throw RingoverApiException::paymentRequired([
+                'url' => $response->effectiveUri(),
+            ]),
+            406 => throw RingoverApiException::notAcceptable(
+                $response->body() ?: 'Invalid data',
+                ['url' => $response->effectiveUri()]
+            ),
+            default => $response->json(),
+        };
+    }
+
     public function getCalls(array $filters = []): array
     {
         return Cache::remember(
@@ -47,6 +85,51 @@ class RingoverService
             now()->addMinutes(2),
             fn () => $this->client()->get('/calls', $filters)->json('calls', [])
         );
+    }
+
+    public function getCallsWithCursor(int $limit = 50, ?string $lastId = null, array $filters = []): array
+    {
+        $params = array_merge($filters, [
+            'per_page' => min($limit, 9000),
+        ]);
+
+        if ($lastId) {
+            $params['last_id_returned'] = $lastId;
+        }
+
+        $response = $this->client()->get('/calls', $params);
+        $calls = $response->json('calls', []);
+
+        return [
+            'calls' => $calls,
+            'last_id' => ! empty($calls) ? end($calls)['id'] ?? null : null,
+            'has_more' => count($calls) >= $limit,
+        ];
+    }
+
+    public function getAllCallsCursor(int $limit = 50, array $filters = []): array
+    {
+        $allCalls = [];
+        $lastId = null;
+        $maxIterations = 200; // Protection contre boucle infinie
+        $iterations = 0;
+
+        do {
+            $result = $this->getCallsWithCursor($limit, $lastId, $filters);
+            $allCalls = array_merge($allCalls, $result['calls']);
+            $lastId = $result['last_id'];
+            $iterations++;
+
+            if ($iterations >= $maxIterations) {
+                Log::warning('Ringover cursor pagination max iterations reached', [
+                    'iterations' => $iterations,
+                    'total_calls' => count($allCalls),
+                ]);
+                break;
+            }
+        } while ($result['has_more'] && $lastId);
+
+        return $allCalls;
     }
 
     public function getAllCalls(int $perPage = 50, int $page = 1): array

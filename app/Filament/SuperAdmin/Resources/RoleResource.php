@@ -129,6 +129,7 @@ class RoleResource extends Resource
                                             if ($state === 'all') {
                                                 $set('module_permissions', []);
                                                 $set('field_permissions', []);
+                                                static::clearPermissionDisplayState($set);
                                             }
                                         }),
 
@@ -256,19 +257,19 @@ class RoleResource extends Resource
             ->collapsible()
             ->collapsed(fn (Get $get): bool => ! static::hasSelectedPermissions($get, 'module_permissions', $candidatePermissions))
             ->schema([
-                Forms\Components\Grid::make(1)
-                    ->schema(static::modulePermissionAccordions($key, $moduleKeys)),
+                static::permissionTableHeader("modules_{$key}", 'Module', 'Actions autorisées'),
+                ...static::modulePermissionTableRows($key, $moduleKeys),
             ]);
     }
 
     /**
      * @param  array<int, string>  $moduleKeys
-     * @return array<int, Forms\Components\Section>
+     * @return array<int, Forms\Components\Grid>
      */
-    private static function modulePermissionAccordions(string $groupKey, array $moduleKeys): array
+    private static function modulePermissionTableRows(string $groupKey, array $moduleKeys): array
     {
         $modules = AccessRightsCatalog::modules();
-        $sections = [];
+        $rows = [];
 
         foreach ($moduleKeys as $moduleKey) {
             if (! isset($modules[$moduleKey])) {
@@ -278,13 +279,20 @@ class RoleResource extends Resource
             $module = $modules[$moduleKey];
             $candidatePermissions = array_keys($module['permissions']);
 
-            $sections[] = Forms\Components\Section::make($module['label'])
-                ->description(fn (Get $get): string => static::permissionCountSummary($get, 'module_permissions', $candidatePermissions))
-                ->collapsible()
-                ->collapsed(fn (Get $get): bool => ! static::hasSelectedPermissions($get, 'module_permissions', $candidatePermissions))
+            $rows[] = Forms\Components\Grid::make(12)
+                ->extraAttributes(['class' => 'rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900'])
                 ->schema([
+                    Forms\Components\Placeholder::make(static::permissionStateName('module_permissions_table_label', $groupKey, $moduleKey))
+                        ->hiddenLabel()
+                        ->content(fn (Get $get): HtmlString => static::permissionTableLabel(
+                            title: $module['label'],
+                            summary: static::permissionCountSummary($get, 'module_permissions', $candidatePermissions),
+                        ))
+                        ->columnSpan(4),
+
                     Forms\Components\CheckboxList::make(static::permissionStateName('module_permissions', $groupKey, $moduleKey))
-                        ->label('Droits du module')
+                        ->label('Droits')
+                        ->hiddenLabel()
                         ->options(fn (): array => $module['permissions'])
                         ->default(fn (?Role $record): array => collect(AccessRightsCatalog::roleModulePermissionNames($record))
                             ->intersect($candidatePermissions)
@@ -302,11 +310,78 @@ class RoleResource extends Resource
                             targetState: 'module_permissions',
                             candidates: $candidatePermissions,
                             selected: $state ?? [],
-                        )),
+                        ))
+                        ->columnSpan(8),
                 ]);
         }
 
-        return $sections;
+        return $rows;
+    }
+
+    /**
+     * @param  array<int, string>  $entities
+     * @return array<int, Forms\Components\Grid>
+     */
+    private static function fieldPermissionTableRows(string $groupKey, array $entities): array
+    {
+        $modules = AccessRightsCatalog::fieldModules();
+        $actions = AccessRightsCatalog::fieldActions();
+        $rows = [];
+        $showEntityLabel = count($entities) > 1;
+
+        foreach ($entities as $entity) {
+            if (! isset($modules[$entity])) {
+                continue;
+            }
+
+            $module = $modules[$entity];
+
+            foreach ($module['fields'] as $field => $fieldLabel) {
+                $candidatePermissions = static::fieldCandidatePermissionsFor($entity, $field);
+                $title = $showEntityLabel ? "{$module['label']} - {$fieldLabel}" : $fieldLabel;
+
+                $rows[] = Forms\Components\Grid::make(12)
+                    ->extraAttributes(['class' => 'rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900'])
+                    ->schema([
+                        Forms\Components\Placeholder::make(static::permissionStateName('field_permissions_table_label', $groupKey, $entity, $field))
+                            ->hiddenLabel()
+                            ->content(fn (Get $get): HtmlString => static::permissionTableLabel(
+                                title: $title,
+                                summary: static::permissionCountSummary($get, 'field_permissions', $candidatePermissions),
+                            ))
+                            ->columnSpan(4),
+
+                        Forms\Components\CheckboxList::make(static::permissionStateName('field_permissions', $groupKey, $entity, $field))
+                            ->label('Droits')
+                            ->hiddenLabel()
+                            ->options(fn (): array => collect($actions)
+                                ->mapWithKeys(fn (string $label, string $action): array => [
+                                    AccessRightsCatalog::fieldPermissionName($entity, $field, $action) => $label,
+                                ])
+                                ->all())
+                            ->default(fn (?Role $record): array => collect(AccessRightsCatalog::roleFieldPermissionNames($record))
+                                ->intersect($candidatePermissions)
+                                ->values()
+                                ->all())
+                            ->bulkToggleable()
+                            ->columns(5)
+                            ->gridDirection('row')
+                            ->live()
+                            ->dehydrated(false)
+                            ->disabled(fn (Get $get): bool => $get('access_mode') === 'all')
+                            ->afterStateUpdated(fn ($state, Set $set, Get $get) => static::replacePermissionSlice(
+                                get: $get,
+                                set: $set,
+                                targetState: 'field_permissions',
+                                candidates: $candidatePermissions,
+                                selected: $state ?? [],
+                            ))
+                            ->columnSpan(8),
+                    ]);
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -333,67 +408,9 @@ class RoleResource extends Resource
                 ->collapsible()
                 ->collapsed(fn (Get $get): bool => ! static::hasSelectedPermissions($get, 'field_permissions', $candidatePermissions))
                 ->schema([
-                    Forms\Components\Grid::make(1)
-                        ->schema(static::fieldPermissionAccordions($entity, $entities)),
+                    static::permissionTableHeader("fields_{$entity}", 'Champ', 'Actions autorisées'),
+                    ...static::fieldPermissionTableRows($entity, $entities),
                 ]);
-        }
-
-        return $sections;
-    }
-
-    /**
-     * @param  array<int, string>  $entities
-     * @return array<int, Forms\Components\Section>
-     */
-    private static function fieldPermissionAccordions(string $groupKey, array $entities): array
-    {
-        $modules = AccessRightsCatalog::fieldModules();
-        $actions = AccessRightsCatalog::fieldActions();
-        $sections = [];
-        $showEntityLabel = count($entities) > 1;
-
-        foreach ($entities as $entity) {
-            if (! isset($modules[$entity])) {
-                continue;
-            }
-
-            $module = $modules[$entity];
-
-            foreach ($module['fields'] as $field => $fieldLabel) {
-                $candidatePermissions = static::fieldCandidatePermissionsFor($entity, $field);
-                $title = $showEntityLabel ? "{$module['label']} - {$fieldLabel}" : $fieldLabel;
-
-                $sections[] = Forms\Components\Section::make($title)
-                    ->description(fn (Get $get): string => static::permissionCountSummary($get, 'field_permissions', $candidatePermissions))
-                    ->collapsible()
-                    ->collapsed(fn (Get $get): bool => ! static::hasSelectedPermissions($get, 'field_permissions', $candidatePermissions))
-                    ->schema([
-                        Forms\Components\CheckboxList::make(static::permissionStateName('field_permissions', $groupKey, $entity, $field))
-                            ->label('Droits du champ')
-                            ->options(fn (): array => collect($actions)
-                                ->mapWithKeys(fn (string $label, string $action): array => [
-                                    AccessRightsCatalog::fieldPermissionName($entity, $field, $action) => $label,
-                                ])
-                                ->all())
-                            ->default(fn (?Role $record): array => collect(AccessRightsCatalog::roleFieldPermissionNames($record))
-                                ->intersect($candidatePermissions)
-                                ->values()
-                                ->all())
-                            ->bulkToggleable()
-                            ->columns(5)
-                            ->gridDirection('row')
-                            ->live()
-                            ->dehydrated(false)
-                            ->disabled(fn (Get $get): bool => $get('access_mode') === 'all')
-                            ->afterStateUpdated(fn ($state, Set $set, Get $get) => static::replacePermissionSlice(
-                                get: $get,
-                                set: $set,
-                                targetState: 'field_permissions',
-                                candidates: $candidatePermissions,
-                                selected: $state ?? [],
-                            )),
-                    ]);
-            }
         }
 
         return $sections;
@@ -479,6 +496,36 @@ class RoleResource extends Resource
         $set($targetState, $next);
     }
 
+    private static function clearPermissionDisplayState(Set $set): void
+    {
+        foreach ([
+            'aopia' => self::AOPIA_MODULES,
+            'allopro' => self::ALLOPRO_MODULES,
+        ] as $groupKey => $moduleKeys) {
+            foreach ($moduleKeys as $moduleKey) {
+                $set(static::permissionStateName('module_permissions', $groupKey, $moduleKey), []);
+            }
+        }
+
+        $modules = AccessRightsCatalog::fieldModules();
+
+        foreach (self::FIELD_GROUPS as $groupKey => $config) {
+            $entities = $groupKey === 'autres'
+                ? static::otherFieldEntities()
+                : [$groupKey];
+
+            foreach ($entities as $entity) {
+                if (! isset($modules[$entity])) {
+                    continue;
+                }
+
+                foreach (array_keys($modules[$entity]['fields']) as $field) {
+                    $set(static::permissionStateName('field_permissions', $groupKey, $entity, $field), []);
+                }
+            }
+        }
+    }
+
     /**
      * @param  array<int, string>  $candidates
      */
@@ -496,6 +543,33 @@ class RoleResource extends Resource
         }
 
         return "{$selectedCount}/{$totalCount} droits sélectionnés.";
+    }
+
+    private static function permissionTableHeader(string $key, string $leftLabel, string $rightLabel): Forms\Components\Grid
+    {
+        return Forms\Components\Grid::make(12)
+            ->extraAttributes(['class' => 'rounded-lg bg-gray-50 px-3 py-2 text-xs font-semibold uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400'])
+            ->schema([
+                Forms\Components\Placeholder::make(static::permissionStateName('permission_table_header', $key, 'left'))
+                    ->hiddenLabel()
+                    ->content($leftLabel)
+                    ->columnSpan(4),
+
+                Forms\Components\Placeholder::make(static::permissionStateName('permission_table_header', $key, 'right'))
+                    ->hiddenLabel()
+                    ->content($rightLabel)
+                    ->columnSpan(8),
+            ]);
+    }
+
+    private static function permissionTableLabel(string $title, string $summary): HtmlString
+    {
+        return new HtmlString(
+            '<div class="space-y-1">'
+            .'<div class="text-sm font-medium text-gray-950 dark:text-white">'.e($title).'</div>'
+            .'<div class="text-xs text-gray-500 dark:text-gray-400">'.e($summary).'</div>'
+            .'</div>'
+        );
     }
 
     /**

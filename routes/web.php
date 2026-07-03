@@ -41,7 +41,7 @@ Route::get('/ns-conseil/ringover/recording/{callId}', function (string $callId) 
 })->middleware(['auth', 'web']);
 
 Route::post('/api/ringover/webhook', RingoverWebhookController::class)
-    ->middleware('throttle:60,1');
+    ->middleware(['ringover.rate_limit', 'throttle:60,1']);
 
 Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/google/redirect', [GoogleOAuthController::class, 'redirect'])->name('google.redirect');

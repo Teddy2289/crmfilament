@@ -45,8 +45,9 @@ class SuperAdminInteractiveFormsTest extends TestCase
             ->assertSee('Champs')
             ->assertSee('NS Conseil / AOPIA')
             ->assertSee('AOPIA - Prospects')
-            ->assertSee('Droits du module')
-            ->assertSee('Droits du champ')
+            ->assertSee('Module')
+            ->assertSee('Actions autorisées')
+            ->assertSee('Champ')
             ->assertSee('Droits par champ');
     }
 
