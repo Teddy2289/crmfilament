@@ -50,6 +50,9 @@ class WebhookResource extends Resource
                             ->label('Événement')
                             ->required()
                             ->options([
+                                'ringover.call.ringing' => 'Ringover - Appel sonne',
+                                'ringover.call.answered' => 'Ringover - Appel décroché',
+                                'ringover.call.hangup' => 'Ringover - Appel terminé',
                                 'call.started' => 'Appel démarré',
                                 'call.ended' => 'Appel terminé',
                                 'call.missed' => 'Appel manqué',
@@ -62,7 +65,7 @@ class WebhookResource extends Resource
                                 'rdv.created' => 'Rendez-vous créé',
                                 'rdv.updated' => 'Rendez-vous mis à jour',
                             ])
-                            ->default('call.started')
+                            ->default('ringover.call.ringing')
                             ->helperText('Type d\'événement qui déclenche le webhook'),
 
                         Forms\Components\Toggle::make('is_active')
@@ -123,6 +126,7 @@ class WebhookResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
+                        'ringover.call.ringing', 'ringover.call.answered', 'ringover.call.hangup' => 'warning',
                         'call.started', 'call.ended', 'call.missed' => 'info',
                         'contact.created', 'contact.updated' => 'success',
                         'client.created', 'client.updated' => 'primary',
@@ -167,6 +171,9 @@ class WebhookResource extends Resource
                 Tables\Filters\SelectFilter::make('event')
                     ->label('Événement')
                     ->options([
+                        'ringover.call.ringing' => 'Ringover - Appel sonne',
+                        'ringover.call.answered' => 'Ringover - Appel décroché',
+                        'ringover.call.hangup' => 'Ringover - Appel terminé',
                         'call.started' => 'Appel démarré',
                         'call.ended' => 'Appel terminé',
                         'call.missed' => 'Appel manqué',
