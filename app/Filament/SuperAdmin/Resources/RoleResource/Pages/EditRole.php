@@ -18,6 +18,15 @@ class EditRole extends EditRecord
      */
     protected array $selectedPermissions = [];
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['access_mode'] = RoleResource::accessModeFor($this->record);
+        $data['module_permissions'] = AccessRightsCatalog::roleModulePermissionNames($this->record);
+        $data['field_permissions'] = AccessRightsCatalog::roleFieldPermissionNames($this->record);
+
+        return $data;
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $this->accessMode = $data['access_mode'] ?? 'selective';
