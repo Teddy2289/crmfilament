@@ -159,6 +159,12 @@ class RoleResource extends Resource
                                         icon: 'heroicon-o-phone',
                                         moduleKeys: self::ALLOPRO_MODULES,
                                     ),
+                                    static::modulePermissionSection(
+                                        key: 'tables',
+                                        title: 'Autres tables',
+                                        icon: 'heroicon-o-table-cells',
+                                        moduleKeys: static::otherModuleKeys(),
+                                    ),
                                 ]),
                         ]),
 
@@ -402,6 +408,28 @@ class RoleResource extends Resource
 
             $candidatePermissions = static::fieldCandidatePermissions($entities);
 
+            if ($entity === 'autres') {
+                $sections[] = Forms\Components\Section::make($config['label'])
+                    ->icon($config['icon'])
+                    ->description(fn (Get $get): string => static::permissionCountSummary($get, 'field_permissions', $candidatePermissions))
+                    ->collapsible()
+                    ->collapsed(fn (Get $get): bool => ! static::hasSelectedPermissions($get, 'field_permissions', $candidatePermissions))
+                    ->schema([
+                        Forms\Components\Select::make('field_permissions_other_entity')
+                            ->label('Table')
+                            ->options(fn (): array => static::fieldEntityOptions($entities))
+                            ->default($entities[0] ?? null)
+                            ->searchable()
+                            ->live()
+                            ->dehydrated(false),
+
+                        Forms\Components\Group::make()
+                            ->schema(fn (Get $get): array => static::selectedOtherFieldTableSchema($get, $entities)),
+                    ]);
+
+                continue;
+            }
+
             $sections[] = Forms\Components\Section::make($config['label'])
                 ->icon($config['icon'])
                 ->description(fn (Get $get): string => static::permissionCountSummary($get, 'field_permissions', $candidatePermissions))
@@ -479,6 +507,50 @@ class RoleResource extends Resource
     }
 
     /**
+     * @return array<int, string>
+     */
+    private static function otherModuleKeys(): array
+    {
+        return collect(array_keys(AccessRightsCatalog::modules()))
+            ->diff([
+                ...self::AOPIA_MODULES,
+                ...self::ALLOPRO_MODULES,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $entities
+     * @return array<string, string>
+     */
+    private static function fieldEntityOptions(array $entities): array
+    {
+        return collect(AccessRightsCatalog::fieldModules())
+            ->only($entities)
+            ->mapWithKeys(fn (array $module, string $entity): array => [$entity => $module['label']])
+            ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $entities
+     * @return array<int, Forms\Components\Component>
+     */
+    private static function selectedOtherFieldTableSchema(Get $get, array $entities): array
+    {
+        $selectedEntity = $get('field_permissions_other_entity') ?: ($entities[0] ?? null);
+
+        if (! is_string($selectedEntity) || ! in_array($selectedEntity, $entities, true)) {
+            return [];
+        }
+
+        return [
+            static::permissionTableHeader("fields_autres_{$selectedEntity}", 'Champ', 'Actions autorisées'),
+            ...static::fieldPermissionTableRows('autres', [$selectedEntity]),
+        ];
+    }
+
+    /**
      * @param  array<int, string>  $candidates
      * @param  array<int, string>  $selected
      */
@@ -501,6 +573,7 @@ class RoleResource extends Resource
         foreach ([
             'aopia' => self::AOPIA_MODULES,
             'allopro' => self::ALLOPRO_MODULES,
+            'tables' => static::otherModuleKeys(),
         ] as $groupKey => $moduleKeys) {
             foreach ($moduleKeys as $moduleKey) {
                 $set(static::permissionStateName('module_permissions', $groupKey, $moduleKey), []);

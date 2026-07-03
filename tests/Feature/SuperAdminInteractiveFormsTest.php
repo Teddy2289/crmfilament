@@ -45,10 +45,23 @@ class SuperAdminInteractiveFormsTest extends TestCase
             ->assertSee('Champs')
             ->assertSee('NS Conseil / AOPIA')
             ->assertSee('AOPIA - Prospects')
+            ->assertSee('Autres tables')
             ->assertSee('Module')
             ->assertSee('Actions autorisées')
             ->assertSee('Champ')
             ->assertSee('Droits par champ');
+    }
+
+    #[Test]
+    public function access_rights_catalog_adds_dynamic_model_tables(): void
+    {
+        $modules = AccessRightsCatalog::modules();
+        $fieldModules = AccessRightsCatalog::fieldModules();
+
+        $this->assertArrayHasKey('activite_ventes', $modules);
+        $this->assertArrayHasKey('activite_ventes.view_any', $modules['activite_ventes']['permissions']);
+        $this->assertArrayHasKey('activite_ventes', $fieldModules);
+        $this->assertArrayHasKey('nombre_ventes_total', $fieldModules['activite_ventes']['fields']);
     }
 
     #[Test]
