@@ -15,7 +15,11 @@ use App\Models\StatutPhoning;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use ReflectionClass;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -35,7 +39,7 @@ class AccessRightsCatalog
      */
     public static function modules(): array
     {
-        return [
+        $modules = [
             'prospects' => [
                 'label' => 'AOPIA - Prospects',
                 'panel' => 'ns-conseil',
@@ -230,6 +234,8 @@ class AccessRightsCatalog
                 ],
             ],
         ];
+
+        return $modules + static::dynamicTableModules($modules);
     }
 
     /**
@@ -253,7 +259,7 @@ class AccessRightsCatalog
      */
     public static function fieldModules(): array
     {
-        return [
+        $modules = [
             'prospects' => [
                 'label' => 'AOPIA - Prospects',
                 'panel' => 'ns-conseil',
@@ -487,6 +493,8 @@ class AccessRightsCatalog
                 ]),
             ],
         ];
+
+        return $modules + static::dynamicFieldModules($modules);
     }
 
     /**
@@ -848,6 +856,190 @@ class AccessRightsCatalog
         }
 
         return static::$userPermissionCache[$cacheKey];
+    }
+
+    /**
+     * @param  array<string, array{label: string, panel: string, permissions: array<string, string>}>  $existingModules
+     * @return array<string, array{label: string, panel: string, permissions: array<string, string>}>
+     */
+    private static function dynamicTableModules(array $existingModules): array
+    {
+        $modules = [];
+
+        foreach (static::modelClasses() as $modelClass) {
+            $model = new $modelClass();
+            $table = $model->getTable();
+            $key = Str::snake($table);
+
+            if (isset($existingModules[$key]) || $key === '') {
+                continue;
+            }
+
+            $modules[$key] = [
+                'label' => static::dynamicTableLabel($modelClass, $table),
+                'panel' => static::dynamicPanelForTable($table),
+                'permissions' => static::defaultTablePermissions($key),
+            ];
+        }
+
+        ksort($modules);
+
+        return $modules;
+    }
+
+    /**
+     * @param  array<string, array{label: string, panel: string, fields: array<string, string>}>  $existingModules
+     * @return array<string, array{label: string, panel: string, fields: array<string, string>}>
+     */
+    private static function dynamicFieldModules(array $existingModules): array
+    {
+        $modules = [];
+
+        foreach (static::modelClasses() as $modelClass) {
+            $model = new $modelClass();
+            $table = $model->getTable();
+            $key = Str::snake($table);
+
+            if (isset($existingModules[$key]) || $key === '') {
+                continue;
+            }
+
+            $fields = static::fieldLabelsForDynamicModel($modelClass);
+
+            if ($fields === []) {
+                continue;
+            }
+
+            $modules[$key] = [
+                'label' => static::dynamicTableLabel($modelClass, $table),
+                'panel' => static::dynamicPanelForTable($table),
+                'fields' => $fields,
+            ];
+        }
+
+        ksort($modules);
+
+        return $modules;
+    }
+
+    /**
+     * @return array<int, class-string<Model>>
+     */
+    private static function modelClasses(): array
+    {
+        return collect(File::files(app_path('Models')))
+            ->map(fn ($file): string => 'App\\Models\\'.$file->getFilenameWithoutExtension())
+            ->filter(fn (string $class): bool => class_exists($class))
+            ->filter(function (string $class): bool {
+                try {
+                    $reflection = new ReflectionClass($class);
+
+                    return $reflection->isInstantiable()
+                        && $reflection->isSubclassOf(Model::class);
+                } catch (Throwable) {
+                    return false;
+                }
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function defaultTablePermissions(string $key): array
+    {
+        return [
+            "{$key}.view_any" => 'Lister',
+            "{$key}.view" => 'Voir',
+            "{$key}.create" => 'Créer',
+            "{$key}.update" => 'Modifier',
+            "{$key}.delete" => 'Supprimer',
+        ];
+    }
+
+    /**
+     * @param  class-string<Model>  $modelClass
+     */
+    private static function dynamicTableLabel(string $modelClass, string $table): string
+    {
+        return 'Table - '.Str::headline(str_replace('_', ' ', $table));
+    }
+
+    private static function dynamicPanelForTable(string $table): string
+    {
+        $table = Str::snake($table);
+
+        if (Str::contains($table, [
+            'artisan',
+            'contact_particulier',
+            'fiche_p2',
+            'reclamation',
+            'rapport_satisfaction',
+            'ticket',
+        ])) {
+            return 'allopro';
+        }
+
+        if (Str::contains($table, [
+            'api_key',
+            'crm_',
+            'env_',
+            'field_',
+            'profile',
+            'setting',
+            'theme',
+            'user',
+            'view',
+            'webhook',
+            'workflow',
+        ])) {
+            return 'super-admin';
+        }
+
+        return 'ns-conseil';
+    }
+
+    /**
+     * @param  class-string<Model>  $modelClass
+     * @return array<string, string>
+     */
+    private static function fieldLabelsForDynamicModel(string $modelClass): array
+    {
+        $model = new $modelClass();
+        $fields = $model->getFillable();
+
+        if ($fields === []) {
+            try {
+                if (Schema::hasTable($model->getTable())) {
+                    $fields = Schema::getColumnListing($model->getTable());
+                }
+            } catch (Throwable) {
+                $fields = [];
+            }
+        }
+
+        return collect($fields)
+            ->reject(fn (string $field): bool => in_array($field, static::ignoredDynamicFields(), true))
+            ->mapWithKeys(fn (string $field): array => [$field => static::defaultFieldLabel($field)])
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function ignoredDynamicFields(): array
+    {
+        return [
+            'id',
+            'created_at',
+            'updated_at',
+            'deleted_at',
+            'remember_token',
+            'password',
+            'two_factor_recovery_codes',
+            'two_factor_secret',
+        ];
     }
 
     /**
