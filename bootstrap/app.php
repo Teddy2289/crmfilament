@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureSuperAdmin;
+use App\Http\Middleware\RingoverRateLimit;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
@@ -73,6 +74,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'ensure.super.admin' => EnsureSuperAdmin::class,
+
+            // Ringover Rate Limiting
+            'ringover.rate_limit' => RingoverRateLimit::class,
         ]);
 
         // ── Redirection après auth ──────────────────────────────────
