@@ -117,7 +117,7 @@ class RendezVous extends Model
             'join' => true,
         ]);
 
-        return 'Dans '.$diff;
+        return 'Dans ' . $diff;
     }
 
     public function getEstPasseAttribute(): bool
@@ -169,7 +169,7 @@ class RendezVous extends Model
             return 'Non spécifié';
         }
 
-        return trim($this->lieu.($this->adresse_lieu ? ' - '.$this->adresse_lieu : ''));
+        return trim($this->lieu . ($this->adresse_lieu ? ' - ' . $this->adresse_lieu : ''));
     }
 
     public function getEstSynchroOutlookAttribute(): bool
@@ -194,7 +194,7 @@ class RendezVous extends Model
 
         if ($notes) {
             $data['notes'] = $this->notes
-                ? $this->notes."\n[Réalisé] {$notes}"
+                ? $this->notes . "\n[Réalisé] {$notes}"
                 : "[Réalisé] {$notes}";
         }
 
@@ -206,7 +206,7 @@ class RendezVous extends Model
         $this->update([
             'statut' => RendezVousStatut::Annule,
             'notes' => $this->notes
-                ? $this->notes."\n[Annulé] {$motif}"
+                ? $this->notes . "\n[Annulé] {$motif}"
                 : "[Annulé] {$motif}",
         ]);
     }
@@ -220,7 +220,7 @@ class RendezVous extends Model
 
         if ($motif) {
             $data['notes'] = $this->notes
-                ? $this->notes."\n[Décalé au {$nouvelleDate->format('d/m/Y H:i')}] {$motif}"
+                ? $this->notes . "\n[Décalé au {$nouvelleDate->format('d/m/Y H:i')}] {$motif}"
                 : "[Décalé au {$nouvelleDate->format('d/m/Y H:i')}] {$motif}";
         }
 
@@ -273,8 +273,8 @@ class RendezVous extends Model
     {
         $this->update([
             'notes' => $this->notes
-                ? $this->notes."\n[".now()->format('d/m/Y H:i')."] {$note}"
-                : '['.now()->format('d/m/Y H:i')."] {$note}",
+                ? $this->notes . "\n[" . now()->format('d/m/Y H:i') . "] {$note}"
+                : '[' . now()->format('d/m/Y H:i') . "] {$note}",
         ]);
     }
 
@@ -563,7 +563,7 @@ class RendezVous extends Model
             ->map(function ($rdv) {
                 return [
                     'id' => $rdv->id,
-                    'title' => $rdv->type->label().' - '.($rdv->interlocuteur_nom ?? 'Sans interlocuteur'),
+                    'title' => $rdv->type->label() . ' - ' . ($rdv->interlocuteur_nom ?? 'Sans interlocuteur'),
                     'start' => $rdv->date_heure->toIso8601String(),
                     'end' => $rdv->date_heure->addHour()->toIso8601String(),
                     'color' => $rdv->type->color(),
@@ -598,6 +598,8 @@ class RendezVous extends Model
                 $rdv->google_event_id = null;
             }
         });
+
+        static::observe(\App\Observers\RendezVousObserver::class);
     }
 
     // ── Relations ────────────────────────────────────────────────────

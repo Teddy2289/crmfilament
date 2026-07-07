@@ -27,6 +27,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
@@ -56,8 +57,8 @@ class NsConseilPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::hex('#2891e7'),
                 'gray'    => Color::Slate,
-                'secondary'=>Color::hex('#0fc3f5'),
-                'custom-kanban'=>Color::hex('#ffa865'),
+                'secondary' => Color::hex('#0fc3f5'),
+                'custom-kanban' => Color::hex('#ffa865'),
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
                 'danger'  => Color::Rose,
@@ -132,7 +133,7 @@ class NsConseilPanelProvider extends PanelProvider
             // ── Thème EspoCRM si activé en base ──────────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => ThemeModel::resolveForPanel('ns-conseil', auth()->user())?->usesEspoChrome()
+                fn() => ThemeModel::resolveForPanel('ns-conseil', auth()->user())?->usesEspoChrome()
                     ? view('filament.shared.espo-theme')
                     : '',
             )
@@ -140,27 +141,103 @@ class NsConseilPanelProvider extends PanelProvider
             // ── Thème minimaliste NS Conseil ─────────────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => view('filament.ns-conseil.theme'),
+                fn() => view('filament.ns-conseil.theme'),
             )
 
             // ── Loading overlay ──────────────────────────────────────
             ->renderHook(
                 PanelsRenderHook::BODY_START,
-                fn () => view('filament.loading-overlay'),
+                fn() => view('filament.loading-overlay'),
             )
 
             // ── Bouton Super Admin dans la topbar ────────────────────
+            // Un seul renderHook, ex BODY_END, avec ce script consolidé :
             ->renderHook(
-                PanelsRenderHook::TOPBAR_END,
-                fn () => auth()->user()?->isSuperAdmin()
-                    ? view('filament.shared.admin-button')
-                    : '',
+                PanelsRenderHook::BODY_END,
+                fn() => Blade::render('
+        @auth
+            <script src="https://webcdn.ringover.com/resources/SDK/1.1.3/ringover-sdk.js"></script>
+            <script>
+                function toE164Fr(raw) {
+                    let cleaned = (raw || "").replace(/[^0-9+]/g, "");
+                    if (cleaned.startsWith("+")) return cleaned;
+                    if (cleaned.startsWith("0")) return "+33" + cleaned.slice(1);
+                    return "+33" + cleaned;
+                }
+
+                function initRingover() {
+                    if (typeof window.RingoverSDK === "undefined") return;
+
+                    const container = document.getElementById("ringover-embed-phoning");
+                    const mountTarget = container || document.body;
+
+                    // Déjà monté au bon endroit : rien à refaire
+                    if (window.ringoverPhone && window.ringoverPhone.__mountedIn === mountTarget) {
+                        return;
+                    }
+
+                    // Widget existant mais mal placé (ex: on a navigué vers/depuis la page phoning)
+                    if (window.ringoverPhone) {
+                        try { window.ringoverPhone.destroy(); } catch (e) {}
+                        window.ringoverPhone = null;
+                    }
+
+                    window.ringoverPhone = new window.RingoverSDK(container ? {
+                        type: "relative",
+                        size: "auto",
+                        container: "ringover-embed-phoning",
+                        border: false,
+                        trayicon: false,
+                        animation: false,
+                    } : {
+                        type: "fixed",
+                        size: "small",
+                        position: { bottom: "90px", right: "20px" },
+                        trayicon: true,
+                        trayposition: { bottom: "20px", right: "20px" },
+                        animation: true,
+                    });
+
+                    window.ringoverPhone.__mountedIn = mountTarget;
+                    window.ringoverPhone.__ready = false;
+                    window.ringoverPhone.generate();
+
+                    window.ringoverPhone.on("dialerReady", () => {
+                        window.ringoverPhone.__ready = true;
+
+                        // Hors phoning workflow : on replie en badge flottant,
+                        // il ne s\'ouvre qu\'au clic sur l\'icône ou via appelerAvecRingover()
+                        if (!container) {
+                            window.ringoverPhone.hide();
+                        }
+                    });
+
+                    window.appelerAvecRingover = function (numero) {
+                        if (!numero) return;
+                        const e164 = toE164Fr(numero);
+                        const lancerAppel = () => {
+                            window.ringoverPhone.show();
+                            window.ringoverPhone.dial(e164);
+                        };
+                        if (window.ringoverPhone.__ready) {
+                            lancerAppel();
+                        } else {
+                            window.ringoverPhone.on("dialerReady", lancerAppel);
+                        }
+                    };
+                }
+
+                document.addEventListener("DOMContentLoaded", initRingover);
+                document.addEventListener("livewire:navigated", initRingover);
+            </script>
+        @endauth
+    ')
             )
 
             // ── CSS custom depuis la base de données ─────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => ($requestTheme = ThemeModel::resolveForPanel('ns-conseil', auth()->user()))?->custom_css
+                fn() => ($requestTheme = ThemeModel::resolveForPanel('ns-conseil', auth()->user()))?->custom_css
                     ? '<style>' . $requestTheme->custom_css . '</style>'
                     : '',
             );

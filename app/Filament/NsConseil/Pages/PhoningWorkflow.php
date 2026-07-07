@@ -13,6 +13,7 @@ use App\Models\CampagnePhoning;
 use App\Models\Client;
 use App\Models\ContactPartenaire;
 use App\Models\ContactParticulier;
+use App\Models\Partenaire;
 use App\Models\Prospect;
 use App\Models\ScriptAppel;
 use App\Models\StatutPhoning;
@@ -43,6 +44,16 @@ class PhoningWorkflow extends Page
     protected static ?string $navigationGroup = 'Activités';
 
     protected static ?int $navigationSort = 3;
+
+    public string $searchQuery = '';
+
+    public array $searchResults = [];
+
+    public bool $showSearchResults = false;
+
+    public ?int $selectedContactId = null;
+
+    public string $selectedContactType = '';
 
     // protected static ?int    $navigationSort    = 2;
     protected static string  $view              = 'filament.ns-conseil.pages.phoning-workflow';
@@ -139,7 +150,10 @@ class PhoningWorkflow extends Page
         $this->loadQueue();
         $this->loadNextContact();
     }
-
+    public function updatedSearchQuery(): void
+    {
+        $this->searchContacts();
+    }
     // ── Requête centrale téléprospecteurs ────────────────────────────
     // Double critère : rôle Spatie OU role_cache pour couvrir les deux cas
     protected function queryTeleprospecteurs()
@@ -155,6 +169,197 @@ class PhoningWorkflow extends Page
             ->where('actif', true)
             ->orderBy('nom')
             ->orderBy('prenom');
+    }
+
+    /**
+     * Recherche des contacts par nom, téléphone, SIRET, etc.
+     */
+    /**
+     * Recherche des contacts par nom, téléphone, SIRET, etc.
+     */
+    public function searchContacts(): void
+    {
+        if (strlen($this->searchQuery) < 2) {
+            $this->searchResults = [];
+            $this->showSearchResults = false;
+            return;
+        }
+
+        $query = $this->searchQuery;
+        $results = [];
+
+        // Recherche dans les prospects
+        $prospects = Prospect::where(function ($q) use ($query) {
+            $q->where('nom', 'LIKE', "%{$query}%")
+                ->orWhere('telephone', 'LIKE', "%{$query}%")
+                ->orWhere('siret', 'LIKE', "%{$query}%")
+                ->orWhere('ville', 'LIKE', "%{$query}%")
+                ->orWhere('email', 'LIKE', "%{$query}%");
+        })
+            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
+            ->whereNull('deleted_at')
+            ->limit(20)
+            ->get();
+
+        foreach ($prospects as $prospect) {
+            $results[] = [
+                'id' => $prospect->id,
+                'type' => 'prospect',
+                'nom' => $prospect->nom,
+                'telephone' => $prospect->telephone,
+                'ville' => $prospect->ville,
+                'statut' => $prospect->statut_label,
+                'type_entite' => 'Prospect',
+                'label' => $prospect->nom . ' - ' . ($prospect->ville ?? 'Sans ville'),
+            ];
+        }
+
+        // Recherche dans les clients
+        $clients = Client::where(function ($q) use ($query) {
+            $q->where('nom_tiers', 'LIKE', "%{$query}%")
+                ->orWhere('telephone', 'LIKE', "%{$query}%")
+                ->orWhere('email', 'LIKE', "%{$query}%");
+        })
+            ->whereNull('deleted_at')
+            ->where(function ($q) {
+                $q->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false);
+            })
+            ->limit(10)
+            ->get();
+
+        foreach ($clients as $client) {
+            $results[] = [
+                'id' => $client->id,
+                'type' => 'client',
+                'nom' => $client->nom_tiers,
+                'telephone' => $client->telephone,
+                'ville' => null,
+                'statut' => $client->etat ?? 'Client',
+                'type_entite' => 'Client',
+                'label' => $client->nom_tiers . ' - ' . ($client->entreprise ?? ''),
+            ];
+        }
+
+        // Recherche dans les partenaires
+        $partenaires = Partenaire::where(function ($q) use ($query) {
+            $q->where('nom', 'LIKE', "%{$query}%")
+                ->orWhere('entreprise', 'LIKE', "%{$query}%")
+                ->orWhere('telephone', 'LIKE', "%{$query}%")
+                ->orWhere('email', 'LIKE', "%{$query}%")
+                ->orWhere('siret', 'LIKE', "%{$query}%")
+                ->orWhere('ville', 'LIKE', "%{$query}%");
+        })
+            ->whereNull('deleted_at')
+            ->limit(10)
+            ->get();
+
+        foreach ($partenaires as $partenaire) {
+            $results[] = [
+                'id' => $partenaire->id,
+                'type' => 'partenaire',
+                'nom' => $partenaire->nom,
+                'telephone' => $partenaire->telephone,
+                'ville' => $partenaire->ville,
+                'statut' => $partenaire->statut_label,
+                'type_entite' => 'Partenaire',
+                'label' => $partenaire->nom . ' - ' . ($partenaire->entreprise ?? ''),
+            ];
+        }
+
+        // Recherche dans les contacts partenaires (personnes)
+        $contactsPartenaire = ContactPartenaire::where(function ($q) use ($query) {
+            $q->where('nom', 'LIKE', "%{$query}%")
+                ->orWhere('prenom', 'LIKE', "%{$query}%")
+                ->orWhere('email', 'LIKE', "%{$query}%")
+                ->orWhere('telephone_direct', 'LIKE', "%{$query}%")
+                ->orWhere('telephone_perso', 'LIKE', "%{$query}%")
+                ->orWhere('telephone_mobile', 'LIKE', "%{$query}%");
+        })
+            ->whereNull('deleted_at')
+            ->with('partenaire')
+            ->limit(10)
+            ->get();
+
+        foreach ($contactsPartenaire as $contact) {
+            $results[] = [
+                'id' => $contact->partenaire_id,
+                'type' => 'partenaire',
+                'nom' => trim($contact->prenom . ' ' . $contact->nom) . ' (' . ($contact->partenaire->nom ?? '') . ')',
+                'telephone' => $contact->telephone_direct ?? $contact->telephone_mobile ?? $contact->telephone_perso,
+                'ville' => $contact->partenaire->ville ?? null,
+                'statut' => $contact->partenaire->statut_label ?? 'Contact',
+                'type_entite' => 'Contact Partenaire',
+                'label' => trim($contact->prenom . ' ' . $contact->nom) . ' - ' . ($contact->fonction ?? ''),
+            ];
+        }
+
+        $this->searchResults = $results;
+        $this->showSearchResults = true;
+    }
+
+    /**
+     * Sélectionne un contact trouvé par la recherche
+     */
+    public function selectSearchResult(int $id, string $type): void
+    {
+        $this->selectedContactId = $id;
+        $this->selectedContactType = $type;
+        $this->showSearchResults = false;
+        $this->searchQuery = '';
+
+        // Charger le contact sélectionné
+        $model = $this->resolveModel($type, $id);
+        if (!$model) {
+            Notification::make()
+                ->title('Contact introuvable')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        // Ajouter le contact en tête de file
+        $contactItem = [
+            'id' => $id,
+            'type' => $type,
+            'campagne_id' => $this->currentCampagneId,
+        ];
+
+        // Vérifier si le contact est déjà dans la file
+        $exists = collect($this->contactQueue)->contains(function ($item) use ($id, $type) {
+            return $item['id'] === $id && $item['type'] === $type;
+        });
+
+        if ($exists) {
+            // Déplacer en tête de file
+            $this->contactQueue = collect($this->contactQueue)
+                ->reject(fn($item) => $item['id'] === $id && $item['type'] === $type)
+                ->prepend($contactItem)
+                ->values()
+                ->toArray();
+        } else {
+            // Ajouter en tête de file
+            array_unshift($this->contactQueue, $contactItem);
+        }
+
+        Notification::make()
+            ->title('Contact sélectionné')
+            ->body("{$model->nom} ajouté en tête de file")
+            ->success()
+            ->send();
+
+        $this->loadNextContact();
+    }
+
+    /**
+     * Réinitialise la recherche
+     */
+    public function clearSearch(): void
+    {
+        $this->searchQuery = '';
+        $this->searchResults = [];
+        $this->showSearchResults = false;
+        $this->selectedContactId = null;
+        $this->selectedContactType = '';
     }
 
     // ── Supervision ───────────────────────────────────────────────────
@@ -524,6 +729,7 @@ class PhoningWorkflow extends Page
     }
 
     // ── Appel ─────────────────────────────────────────────────────────
+    // ── Appel ─────────────────────────────────────────────────────────
     public function callNow(): void
     {
         $phoneNumber = $this->currentContactData['telephone'] ?? null;
@@ -533,8 +739,11 @@ class PhoningWorkflow extends Page
             return;
         }
         $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
-        $template = config('ringover.dial_url_template', 'tel:{phone}');
-        $this->redirect(str_replace('{phone}', rawurlencode($phoneNumber), $template));
+
+        // On ne redirige plus toute la page : on envoie le numéro au badge
+        // Ringover flottant (déjà persistant sur tout le site) via un événement
+        // browser, écouté dans phoning-workflow.blade.php.
+        $this->dispatch('ringover-call', phone: $phoneNumber);
     }
 
     // ── Enregistrement ────────────────────────────────────────────────
@@ -742,23 +951,23 @@ class PhoningWorkflow extends Page
 
         // ── Envoi du mail correspondant au statut ──────────────────────
         // ── Envoi du mail correspondant au statut ──────────────────────
-$rdv = null; // déclarée en amont : nécessaire pour TOUS les statuts, pas seulement 'rdv'
+        $rdv = null; // déclarée en amont : nécessaire pour TOUS les statuts, pas seulement 'rdv'
 
-if ($this->statut_resultat === 'rdv') {
-    $rdv = $this->creerRendezVous($prospect);
-    Log::info("MAIL DEBUG: creerRendezVous", [
-        'rappel_date' => $this->rappel_date,
-        'rappel_heure' => $this->rappel_heure,
-        'rdv_created' => $rdv !== null,
-        'rdv_id' => $rdv?->id,
-    ]);
-}
+        if ($this->statut_resultat === 'rdv') {
+            $rdv = $this->creerRendezVous($prospect);
+            Log::info("MAIL DEBUG: creerRendezVous", [
+                'rappel_date' => $this->rappel_date,
+                'rappel_heure' => $this->rappel_heure,
+                'rdv_created' => $rdv !== null,
+                'rdv_id' => $rdv?->id,
+            ]);
+        }
 
-app(ProspectionMailService::class)->envoyerPourStatut(
-    $this->statut_resultat,
-    $prospect,
-    ['rdv' => $rdv]
-);
+        app(ProspectionMailService::class)->envoyerPourStatut(
+            $this->statut_resultat,
+            $prospect,
+            ['rdv' => $rdv]
+        );
 
         // Planifier le rappel selon paramètres back-office
         if ($this->rappel_date) {

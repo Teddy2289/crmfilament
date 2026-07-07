@@ -47,6 +47,7 @@ class RingoverService
 
         if (filled($this->apiToken)) {
             $client = $client->withHeaders([
+                // Pas de préfixe "Bearer" : Ringover attend la clé brute (confirmé empiriquement)
                 'Authorization' => trim($this->authScheme.' '.$this->apiToken),
             ]);
         }
@@ -83,14 +84,14 @@ class RingoverService
         return Cache::remember(
             'ringover_calls_'.md5(serialize($filters)),
             now()->addMinutes(2),
-            fn () => $this->client()->get('/calls', $filters)->json('calls', [])
+            fn () => $this->client()->get('/calls', $filters)->json('call_list', [])
         );
     }
 
     public function getCallsWithCursor(int $limit = 50, ?string $lastId = null, array $filters = []): array
     {
         $params = array_merge($filters, [
-            'per_page' => min($limit, 9000),
+            'limit_count' => min($limit, 9000),
         ]);
 
         if ($lastId) {
@@ -98,11 +99,12 @@ class RingoverService
         }
 
         $response = $this->client()->get('/calls', $params);
-        $calls = $response->json('calls', []);
+        $calls = $response->json('call_list', []);
 
         return [
             'calls' => $calls,
-            'last_id' => ! empty($calls) ? end($calls)['id'] ?? null : null,
+            // La pagination Ringover s'appuie sur cdr_id, pas sur un champ "id"
+            'last_id' => ! empty($calls) ? (end($calls)['cdr_id'] ?? null) : null,
             'has_more' => count($calls) >= $limit,
         ];
     }
@@ -138,10 +140,9 @@ class RingoverService
             "ringover_all_calls_{$page}",
             now()->addMinutes(2),
             fn () => $this->client()->get('/calls', [
-                'per_page' => $perPage,
-                'page' => $page,
-                'order' => 'desc',
-            ])->json('calls', [])
+                'limit_count' => $perPage,
+                'limit_offset' => ($page - 1) * $perPage,
+            ])->json('call_list', [])
         );
     }
 
@@ -174,38 +175,43 @@ class RingoverService
     public function getStats(?int $from = null, ?int $to = null): array
     {
         $allCalls = [];
-        $page = 1;
+        $lastId = null;
+        $iterations = 0;
 
         do {
-            $filters = ['per_page' => 50, 'page' => $page, 'order' => 'desc'];
+            $filters = ['limit_count' => 50];
             if ($from) {
                 $filters['from'] = $from;
             }
             if ($to) {
                 $filters['to'] = $to;
             }
+            if ($lastId) {
+                $filters['last_id_returned'] = $lastId;
+            }
 
             $calls = Cache::remember(
-                'ringover_stats_p'.$page.'_'.md5(serialize($filters)),
+                'ringover_stats_p'.$iterations.'_'.md5(serialize($filters)),
                 now()->addMinutes(10),
-                fn () => $this->client()->get('/calls', $filters)->json('calls', [])
+                fn () => $this->client()->get('/calls', $filters)->json('call_list', [])
             );
 
             $allCalls = array_merge($allCalls, $calls);
-            $page++;
-        } while (count($calls) === 50 && $page <= 20);
+            $lastId = ! empty($calls) ? (end($calls)['cdr_id'] ?? null) : null;
+            $iterations++;
+        } while (count($calls) === 50 && $lastId && $iterations <= 20);
 
         $collection = collect($allCalls);
 
         $total = $collection->count();
-        $entrants = $collection->where('direction', 'inbound')->count();
-        $sortants = $collection->where('direction', 'outbound')->count();
-        $repondus = $collection->whereIn('status', ['answered', 'done'])->count();
-        $manques = $collection->whereIn('status', ['missed_customer', 'missed'])->count();
-        $manquesEntrants = $collection->where('direction', 'inbound')
-            ->whereIn('status', ['missed_customer', 'missed'])
+        $entrants = $collection->where('direction', 'in')->count();
+        $sortants = $collection->where('direction', 'out')->count();
+        $repondus = $collection->where('is_answered', true)->count();
+        $manques = $collection->where('is_answered', false)->count();
+        $manquesEntrants = $collection->where('direction', 'in')
+            ->where('is_answered', false)
             ->count();
-        $dureeTotale = $collection->sum('duration');
+        $dureeTotale = $collection->sum('total_duration');
 
         return [
             'total' => $total,
@@ -223,7 +229,9 @@ class RingoverService
     public function testConnection(): bool
     {
         try {
-            return $this->client()->get('/ping')->successful();
+            // /ping n'existe pas sur l'API Ringover (404 confirmé) :
+            // on teste plutôt un vrai endpoint avec une charge minimale.
+            return $this->client()->get('/calls', ['limit_count' => 1])->successful();
         } catch (\Exception) {
             return false;
         }

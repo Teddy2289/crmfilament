@@ -32,7 +32,10 @@ class RingoverAppelsRecents extends Widget
 
     public function loadCalls(): void
     {
-        $filters = ['per_page' => $this->perPage, 'page' => $this->page, 'order' => 'desc'];
+        $filters = [
+            'limit_count' => $this->perPage,
+            'limit_offset' => ($this->page - 1) * $this->perPage,
+        ];
         if ($this->filterDirection) {
             $filters['direction'] = $this->filterDirection;
         }
