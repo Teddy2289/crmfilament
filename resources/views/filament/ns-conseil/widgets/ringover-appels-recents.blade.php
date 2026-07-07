@@ -6,12 +6,12 @@
                 class="px-3 py-1 text-sm rounded-md {{ $filterDirection === '' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
                 Tous
             </button>
-            <button wire:click="setDirection('inbound')"
-                class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'inbound' ? 'bg-success-600 text-white' : 'bg-gray-100 text-gray-700' }}">
+            <button wire:click="setDirection('in')"
+                class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'in' ? 'bg-success-600 text-white' : 'bg-gray-100 text-gray-700' }}">
                 Entrants
             </button>
-            <button wire:click="setDirection('outbound')"
-                class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'outbound' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
+            <button wire:click="setDirection('out')"
+                class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'out' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
                 Sortants
             </button>
         </div>
@@ -33,40 +33,29 @@
                     @forelse ($calls as $call)
                         @php
                             $direction = $call['direction'] ?? '';
-                            $statut = $call['status'] ?? '';
-                            $duree = $call['duration'] ?? 0;
+                            $isAnswered = $call['is_answered'] ?? false;
+                            $duree = $call['total_duration'] ?? $call['incall_duration'] ?? 0;
                             $min = floor($duree / 60);
                             $sec = $duree % 60;
                             $dureeLabel = $min > 0 ? "{$min}min {$sec}s" : "{$sec}s";
-                            $agent = $call['user']['name'] ?? '-';
-                            $numero = $call['raw_digits'] ?? '-';
-                            $date = \Carbon\Carbon::createFromTimestamp($call['started_at'])->format('d/m/Y H:i');
+                            $agent = $call['user']['concat_name'] ?? '-';
+                            $numero = $call['contact_number'] ?? $call['from_number'] ?? $call['to_number'] ?? '-';
+                            $date = ! empty($call['start_time'])
+                                ? \Carbon\Carbon::parse($call['start_time'])->format('d/m/Y H:i')
+                                : '-';
+                            $color = $isAnswered ? 'success' : 'danger';
+                            $label = $isAnswered ? 'Realise' : 'Manque';
                         @endphp
                         <tr class="border-b hover:bg-gray-50 dark:hover:bg-white/5">
                             <td class="py-2 pr-4 text-gray-700 dark:text-gray-300">{{ $date }}</td>
                             <td class="py-2 pr-4">
-                                @if ($direction === 'inbound')
+                                @if ($direction === 'in')
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success-100 text-success-700">Entrant</span>
                                 @else
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-700">Sortant</span>
                                 @endif
                             </td>
                             <td class="py-2 pr-4">
-                                @php
-                                    $color = match ($statut) {
-                                        'answered', 'done' => 'success',
-                                        'missed_customer', 'missed' => 'danger',
-                                        'voicemail' => 'warning',
-                                        default => 'gray',
-                                    };
-                                    $label = match ($statut) {
-                                        'answered', 'done' => 'Realise',
-                                        'missed_customer', 'missed' => 'Manque',
-                                        'voicemail' => 'Messagerie',
-                                        'abandoned' => 'Abandonne',
-                                        default => $statut,
-                                    };
-                                @endphp
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-{{ $color }}-100 text-{{ $color }}-700">
                                     {{ $label }}
                                 </span>
@@ -75,7 +64,7 @@
                             <td class="py-2 pr-4 text-gray-700 dark:text-gray-300">{{ $agent }}</td>
                             <td class="py-2 pr-4 text-gray-600 dark:text-gray-400 font-mono text-xs">{{ $numero }}</td>
                             <td class="py-2">
-                                @if (! empty($call['recording']))
+                                @if (! empty($call['record']))
                                     <div x-data="{ open: false }" class="flex flex-col gap-1">
                                         <button
                                             x-on:click="
@@ -84,7 +73,7 @@
                                                 $nextTick(() => {
                                                     const audio = $el.parentElement.querySelector('audio');
                                                     if (audio) {
-                                                        audio.src = '{{ $call['recording'] }}';
+                                                        audio.src = '{{ $call['record'] }}';
                                                         audio.load();
                                                         audio.play();
                                                     }

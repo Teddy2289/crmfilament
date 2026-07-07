@@ -61,12 +61,12 @@ class RingoverCallSyncService
             'numero_appelant' => $this->extractPhoneNumber($call),
             'enregistrement_audio' => $this->stringValue(
                 data_get($call, 'recording')
-                ?? data_get($call, 'recording_url')
-                ?? data_get($call, 'record.url')
+                    ?? data_get($call, 'recording_url')
+                    ?? data_get($call, 'record.url')
             ),
             'commentaire' => $this->extractComment($call),
             'ringover_tags' => $tagValidation['tags'],
-            'ringover_department_tag' => $tagValidation['department_tag'],
+            'ringover_department_tag' => $tagValidation['department_tag'], 
             'ringover_status_tag' => $tagValidation['status_tag'],
             'ringover_tag_validation' => $tagValidation,
             'ringover_tag_is_complete' => $tagValidation['complete'],
@@ -76,10 +76,14 @@ class RingoverCallSyncService
             'ringover_sync_source' => $source,
         ]);
 
-        if ($tagValidation['status_code']) {
+        if ($tagValidation['status_code'] && ! $appel->phoning_completed_at) {
+            // On ne pose le statut phoning que si aucun statut n'a déjà été
+            // finalisé (par un agent via PhoningWorkflow ou par un webhook
+            // Ringover précédent). Une fois phoning_completed_at posé, plus
+            // aucun webhook ultérieur ne doit pouvoir l'écraser.
             $appel->phoning_status = $tagValidation['status_code'];
             $appel->phoning_result = $tagValidation['status_label'] ?? $tagValidation['status_code'];
-            $appel->phoning_completed_at = $appel->phoning_completed_at ?? now();
+            $appel->phoning_completed_at = now();
             $appel->phoning_agent_id = $localUser?->id ?? $appel->phoning_agent_id;
             $appel->phoning_notes = $appel->phoning_notes ?? $appel->commentaire;
         }
@@ -226,18 +230,29 @@ class RingoverCallSyncService
 
     private function extractPhoneNumber(array $call): ?string
     {
-        foreach ([
-            'raw_digits',
-            'phone_number',
-            'contact_number',
-            'from_number',
-            'to_number',
-            'from',
-            'to',
-            'contact.phone',
-            'callee.number',
-            'caller.number',
-        ] as $path) {
+        $direction = data_get($call, 'direction') ?? data_get($call, 'type');
+
+        // Le numéro du contact dépend du sens de l'appel :
+        // outbound → le contact est le destinataire (to_number)
+        // inbound  → le contact est l'appelant (from_number)
+        $directionalPaths = $direction === 'inbound'
+            ? ['from_number', 'from', 'caller.number']
+            : ['to_number', 'to', 'callee.number'];
+
+        $fallbackPaths = $direction === 'inbound'
+            ? ['to_number', 'to', 'callee.number']
+            : ['from_number', 'from', 'caller.number'];
+
+        foreach (
+            [
+                'raw_digits',
+                'phone_number',
+                'contact_number',
+                ...$directionalPaths,
+                'contact.phone',
+                ...$fallbackPaths,
+            ] as $path
+        ) {
             $value = data_get($call, $path);
 
             if (filled($value)) {
@@ -322,7 +337,7 @@ class RingoverCallSyncService
         $digits = preg_replace('/\D+/', '', $phone) ?: '';
 
         if (str_starts_with($digits, '33') && strlen($digits) === 11) {
-            $digits = '0'.substr($digits, 2);
+            $digits = '0' . substr($digits, 2);
         }
 
         return $digits !== '' ? $digits : null;
