@@ -18,7 +18,7 @@
         <div class="kanban-column flex-shrink-0 w-80 bg-gray-100 rounded-lg p-4" data-column="{{ $column['id'] }}">
             <div class="flex items-center gap-2 mb-4">
                 <div class="w-8 h-8 rounded-full bg-{{ $column['color'] }}-100 flex items-center justify-center">
-                    <x-heroicon-{{ $column['icon'] }} class="w-5 h-5 text-{{ $column['color'] }}-600" />
+                    <x-{{ $column['icon'] }} class="w-5 h-5 text-{{ $column['color'] }}-600" />
                 </div>
                 <div>
                     <h3 class="font-semibold text-gray-900">{{ $column['label'] }}</h3>
@@ -44,27 +44,27 @@
                             </div>
                             <a href="{{ route('filament.nsConseil.resources.partenaires.edit', ['record' => $card['id']]) }}" 
                                class="text-indigo-600 hover:text-indigo-800">
-                                <x-heroicon-pencil class="w-4 h-4" />
+                                <x-heroicon-o-pencil class="w-4 h-4" />
                             </a>
                         </div>
                         <div class="space-y-1 text-sm text-gray-600">
                             <div class="flex items-center gap-2">
-                                <x-heroicon-phone class="w-4 h-4" />
+                                <x-heroicon-o-phone class="w-4 h-4" />
                                 <span>{{ $card['telephone'] }}</span>
                             </div>
                             @if($card['email'] && $card['email'] !== 'N/A')
                             <div class="flex items-center gap-2">
-                                <x-heroicon-envelope class="w-4 h-4" />
+                                <x-heroicon-o-envelope class="w-4 h-4" />
                                 <span class="truncate">{{ $card['email'] }}</span>
                             </div>
                             @endif
                             <div class="flex items-center gap-2">
-                                <x-heroicon-building-office class="w-4 h-4" />
+                                <x-heroicon-o-building-office class="w-4 h-4" />
                                 <span>{{ $card['entite'] }}</span>
                             </div>
                             @if($card['secteur'] && $card['secteur'] !== 'N/A')
                             <div class="flex items-center gap-2">
-                                <x-heroicon-briefcase class="w-4 h-4" />
+                                <x-heroicon-o-briefcase class="w-4 h-4" />
                                 <span>{{ $card['secteur'] }}</span>
                             </div>
                             @endif
