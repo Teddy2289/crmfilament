@@ -1830,6 +1830,98 @@ $tentativesActuelles = $this->getTentativesAppel();
     @endif
     </div>
 
+    @push('scripts')
+    <script>
+        (function() {
+            function loadRingoverSdk(callback) {
+                if (window.RingoverSDK) {
+                    callback();
+                    return;
+                }
+                let script = document.getElementById('ringover-sdk-script');
+                if (script) {
+                    script.addEventListener('load', callback);
+                    return;
+                }
+                script = document.createElement('script');
+                script.id = 'ringover-sdk-script';
+                script.src = 'https://webcdn.ringover.com/resources/SDK/1.1.3/ringover-sdk.js';
+                script.onload = callback;
+                document.head.appendChild(script);
+            }
+
+            function toE164Fr(raw) {
+                let cleaned = (raw || '').replace(/[^0-9+]/g, '');
+                if (cleaned.startsWith('+')) return cleaned;
+                if (cleaned.startsWith('0')) return '+33' + cleaned.slice(1);
+                return '+33' + cleaned;
+            }
+
+            function destroyRingoverWidget() {
+                if (window.ringoverPhone) {
+                    try {
+                        window.ringoverPhone.destroy();
+                    } catch (e) {}
+                    window.ringoverPhone = null;
+                }
+            }
+
+            function initRingoverWidget() {
+                const container = document.getElementById('ringover-embed-phoning');
+                // sécurité : on ne fait rien si on n'est pas sur cette page
+                if (!container) return; 
+
+                if (window.ringoverPhone && window.ringoverPhone.__mountedIn === container) {
+                    // déjà monté ici, rien à refaire
+                    return; 
+                }
+
+                loadRingoverSdk(() => {
+                     // au cas où une instance orpheline traînait
+                    destroyRingoverWidget();
+
+                    window.ringoverPhone = new window.RingoverSDK({
+                        type: 'relative',
+                        size: 'auto',
+                        container: 'ringover-embed-phoning',
+                        border: false,
+                        trayicon: false,
+                        animation: false,
+                    });
+                    window.ringoverPhone.__mountedIn = container;
+                    window.ringoverPhone.__ready = false;
+                    window.ringoverPhone.generate();
+                    window.ringoverPhone.on('dialerReady', () => {
+                        window.ringoverPhone.__ready = true;
+                    });
+                });
+            }
+
+            window.appelerAvecRingover = function(numero) {
+                if (!numero) return;
+                const e164 = toE164Fr(numero);
+                const lancerAppel = () => {
+                    if (!window.ringoverPhone) return;
+                    window.ringoverPhone.show();
+                    window.ringoverPhone.dial(e164);
+                };
+                if (window.ringoverPhone && window.ringoverPhone.__ready) {
+                    lancerAppel();
+                } else if (window.ringoverPhone) {
+                    window.ringoverPhone.on('dialerReady', lancerAppel);
+                }
+            };
+
+            // Montage à l'arrivée sur cette page (chargement direct ou navigation SPA)
+            document.addEventListener('DOMContentLoaded', initRingoverWidget);
+            document.addEventListener('livewire:navigated', initRingoverWidget);
+
+            // Démontage dès qu'on quitte n'importe quelle page (no-op si rien n'est monté)
+            document.addEventListener('livewire:navigating', destroyRingoverWidget);
+        })();
+    </script>
+    @endpush
+
 
 
 
