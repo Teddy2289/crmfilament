@@ -3,9 +3,20 @@
 
 <style>
 /* ════════════════════════════════════════════════════════
-   NS CONSEIL — Thème minimaliste professionnel
-   Filament v3 — Juin 2026
+   NS CONSEIL — Thème "Marine & Doré"
+   Filament v3 — Juillet 2026
+   Palette extraite du visuel NS CONSEIL :
+   #2C4A5E (bleu marine) · #3F8FA3 (teal titre) · #E8B873 (doré/tan)
+   #D9A455 (doré accent) · #FFFFFF
 ════════════════════════════════════════════════════════ */
+
+:root {
+    --ns-primary: #2C4A5E;
+    --ns-primary-dark: #1E3444;
+    --ns-teal: #3F8FA3;
+    --ns-gold: #E8B873;
+    --ns-gold-accent: #D9A455;
+}
 
 /* ── Base typographie ─────────────────────────────────── */
 .fi-body {
@@ -13,69 +24,94 @@
     font-size: 13.5px !important;
     letter-spacing: -0.01em !important;
     color: #1e293b !important;
+    background: #f4f7fb !important;
 }
 
-/* ── Sidebar ──────────────────────────────────────────── */
+/* ── Sidebar — dégradé bleu marine ────────────────────── */
 .fi-sidebar {
-    background: #f8fafc !important;
-    border-right: 1px solid #e2e8f0 !important;
-    box-shadow: none !important;
+    background: linear-gradient(180deg, var(--ns-primary) 0%, var(--ns-primary-dark) 100%) !important;
+    border-right: none !important;
+    box-shadow: 2px 0 12px rgba(44, 74, 94, 0.15) !important;
 }
 
 .fi-sidebar-header {
-    background: #f8fafc !important;
-    border-bottom: 1px solid #e2e8f0 !important;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(232, 184, 115, 0.18) !important;
+    padding-block: 14px !important;
 }
 
 .fi-sidebar-nav {
-    padding: 18px 20px 16px !important;
+    padding: 18px 16px 16px !important;
 }
 
 .fi-sidebar-group-label {
     font-size: 10px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.06em !important;
-    color: #94a3b8 !important;
+    letter-spacing: 0.08em !important;
+    color: rgba(232, 184, 115, 0.6) !important;
     text-transform: uppercase !important;
 }
 
 .fi-sidebar-item a,
 .fi-sidebar-item button {
-    border-radius: 5px !important;
-    min-height: 34px !important;
+    border-radius: 7px !important;
+    min-height: 36px !important;
+    transition: background 0.15s ease, transform 0.1s ease !important;
+}
+
+.fi-sidebar-item a:hover,
+.fi-sidebar-item button:hover {
+    background: rgba(232, 184, 115, 0.1) !important;
 }
 
 .fi-sidebar-item-label,
 .fi-sidebar-item-icon {
     font-size: 13px !important;
-    color: #475569 !important;
+    color: rgba(255, 255, 255, 0.82) !important;
 }
 
+/* Item actif — accent doré qui ressort sur le marine */
 .fi-sidebar-item-active > a,
 .fi-sidebar-item-active > button {
-    background: #eff6ff !important;
-    box-shadow: none !important;
+    background: var(--ns-gold) !important;
+    box-shadow: 0 2px 8px rgba(232, 184, 115, 0.45) !important;
 }
 
 .fi-sidebar-item-active .fi-sidebar-item-label,
 .fi-sidebar-item-active .fi-sidebar-item-icon {
-    color: #1d4ed8 !important;
-    font-weight: 600 !important;
+    color: var(--ns-primary-dark) !important;
+    font-weight: 700 !important;
+}
+
+/* Badges de compteur dans le sidebar */
+.fi-sidebar-item .fi-badge {
+    background: var(--ns-gold-accent) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* Groupes collapsibles */
+.fi-sidebar-group-button svg {
+    color: rgba(232, 184, 115, 0.6) !important;
 }
 
 /* ── Topbar ───────────────────────────────────────────── */
 .fi-topbar {
     background: #ffffff !important;
     border-bottom: 1px solid #e2e8f0 !important;
-    box-shadow: none !important;
+    box-shadow: 0 1px 3px rgba(30, 52, 68, 0.04) !important;
+}
+
+.fi-topbar nav {
+    background: #ffffff !important;
 }
 
 /* ── En-têtes de page ─────────────────────────────────── */
 .fi-header-heading,
 .fi-simple-header-heading {
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    color: #0f172a !important;
+    font-size: 19px !important;
+    font-weight: 700 !important;
+    color: var(--ns-teal) !important;
     letter-spacing: -0.02em !important;
 }
 
@@ -89,20 +125,27 @@
 .fi-section,
 .fi-wi-widget {
     border: 1px solid #e2e8f0 !important;
-    box-shadow: none !important;
-    border-radius: 7px !important;
+    box-shadow: 0 1px 3px rgba(30, 52, 68, 0.04) !important;
+    border-radius: 10px !important;
+    transition: box-shadow 0.2s ease !important;
+}
+
+.fi-section:hover,
+.fi-wi-widget:hover {
+    box-shadow: 0 4px 12px rgba(30, 52, 68, 0.08) !important;
 }
 
 .fi-section-header {
     background: #f8fafc !important;
     border-bottom: 1px solid #e2e8f0 !important;
-    padding-block: 10px !important;
+    padding-block: 11px !important;
+    border-radius: 10px 10px 0 0 !important;
 }
 
 .fi-section-header-heading {
     font-size: 13.5px !important;
-    font-weight: 600 !important;
-    color: #0f172a !important;
+    font-weight: 700 !important;
+    color: var(--ns-primary) !important;
 }
 
 .fi-section-content {
@@ -112,21 +155,21 @@
 /* ── Tables ───────────────────────────────────────────── */
 .fi-ta {
     border: 1px solid #e2e8f0 !important;
-    box-shadow: none !important;
-    border-radius: 7px !important;
+    box-shadow: 0 1px 3px rgba(30, 52, 68, 0.04) !important;
+    border-radius: 10px !important;
     overflow: hidden !important;
 }
 
 .fi-ta-table thead tr {
-    background: #f8fafc !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
 }
 
 .fi-ta-header-cell-label {
     font-size: 11.5px !important;
-    font-weight: 600 !important;
-    color: #64748b !important;
+    font-weight: 700 !important;
+    color: var(--ns-primary) !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.04em !important;
+    letter-spacing: 0.05em !important;
 }
 
 .fi-ta-cell {
@@ -136,15 +179,19 @@
     padding-block: 9px !important;
 }
 
+.fi-ta-row {
+    transition: background 0.12s ease !important;
+}
+
 .fi-ta-row:hover > * {
-    background: #f8fafc !important;
+    background: #f2ede1 !important;
 }
 
 .fi-ta-header-toolbar,
 .fi-ta-toolbar {
     background: #ffffff !important;
     border-color: #e2e8f0 !important;
-    padding: 8px 12px !important;
+    padding: 10px 14px !important;
     gap: 8px !important;
 }
 
@@ -155,8 +202,8 @@
 
 .fi-ta-empty-state-heading {
     font-size: 14px !important;
-    font-weight: 600 !important;
-    color: #0f172a !important;
+    font-weight: 700 !important;
+    color: var(--ns-primary) !important;
 }
 
 .fi-ta-empty-state-description {
@@ -180,8 +227,11 @@
 .fi-select-input,
 .fi-textarea {
     border-color: #cbd5e1 !important;
-    border-radius: 5px !important;
+    border-width: 1.5px !important;
+    border-radius: 6px !important;
     box-shadow: none !important;
+    background: #ffffff !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .fi-input,
@@ -191,29 +241,64 @@
     color: #1e293b !important;
 }
 
-.fi-input-wrp:focus-within {
-    border-color: #2563eb !important;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12) !important;
+.fi-input-wrp:focus-within,
+.fi-select-input:focus,
+.fi-textarea:focus {
+    border-color: var(--ns-primary) !important;
+    box-shadow: 0 0 0 3px rgba(44, 74, 94, 0.12) !important;
+}
+
+.fi-input::placeholder,
+.fi-textarea::placeholder {
+    color: #a0aec0 !important;
+    font-style: italic !important;
+    font-size: 12.5px !important;
+}
+
+.fi-input:disabled,
+.fi-select-input:disabled,
+.fi-textarea:disabled {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed !important;
 }
 
 /* ── Boutons ──────────────────────────────────────────── */
 .fi-btn {
-    border-radius: 5px !important;
+    border-radius: 6px !important;
     box-shadow: none !important;
     font-size: 13px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     min-height: 34px !important;
+    transition: transform 0.1s ease, box-shadow 0.15s ease !important;
+}
+
+.fi-btn:active {
+    transform: scale(0.97) !important;
+}
+
+/* Bouton primaire — dégradé bleu marine */
+.fi-btn[type="submit"],
+.fi-ac-btn-action.fi-color-primary {
+    background: linear-gradient(135deg, var(--ns-primary) 0%, var(--ns-primary-dark) 100%) !important;
+    box-shadow: 0 2px 6px rgba(44, 74, 94, 0.28) !important;
+}
+
+.fi-btn[type="submit"]:hover,
+.fi-ac-btn-action.fi-color-primary:hover {
+    box-shadow: 0 4px 10px rgba(44, 74, 94, 0.38) !important;
 }
 
 .fi-icon-btn {
-    border-radius: 5px !important;
+    border-radius: 6px !important;
 }
 
 /* ── Badges ───────────────────────────────────────────── */
 .fi-badge {
-    border-radius: 4px !important;
+    border-radius: 5px !important;
     font-size: 11px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     padding-inline: 7px !important;
 }
 
@@ -222,19 +307,25 @@
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
     box-shadow: none !important;
-    border-radius: 6px !important;
+    border-radius: 8px !important;
 }
 
 .fi-tabs-item {
     font-size: 13px !important;
     font-weight: 500 !important;
+    transition: color 0.15s ease !important;
+}
+
+.fi-tabs-item-active {
+    color: var(--ns-teal) !important;
+    font-weight: 700 !important;
 }
 
 /* ── Modals ───────────────────────────────────────────── */
 .fi-modal-window {
-    border-radius: 8px !important;
+    border-radius: 10px !important;
     border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.10) !important;
+    box-shadow: 0 12px 36px rgba(30, 52, 68, 0.18) !important;
 }
 
 .fi-modal-header {
@@ -244,44 +335,73 @@
 
 .fi-modal-heading {
     font-size: 15px !important;
-    font-weight: 600 !important;
-    color: #0f172a !important;
+    font-weight: 700 !important;
+    color: var(--ns-primary) !important;
 }
 
 /* ── Notifications ────────────────────────────────────── */
 .fi-notification {
-    border-radius: 7px !important;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.10) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 6px 20px rgba(30, 52, 68, 0.14) !important;
     border: 1px solid #e2e8f0 !important;
+    border-left: 4px solid var(--ns-primary) !important;
 }
 
-/* ── Stats / Widgets ──────────────────────────────────── */
+.fi-notification.fi-color-success {
+    border-left-color: var(--ns-gold-accent) !important;
+}
+
+.fi-notification.fi-color-warning {
+    border-left-color: var(--ns-gold) !important;
+}
+
+/* ── Stats / Widgets — accent doré en haut ────────────── */
 .fi-wi-stats-overview-stat {
     border: 1px solid #e2e8f0 !important;
-    border-radius: 7px !important;
-    box-shadow: none !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 3px rgba(30, 52, 68, 0.04) !important;
+    position: relative !important;
+    overflow: hidden !important;
+    transition: box-shadow 0.2s ease, transform 0.15s ease !important;
+}
+
+.fi-wi-stats-overview-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ns-primary), var(--ns-gold));
+}
+
+.fi-wi-stats-overview-stat:hover {
+    box-shadow: 0 6px 16px rgba(30, 52, 68, 0.08) !important;
+    transform: translateY(-1px) !important;
 }
 
 .fi-wi-stats-overview-stat-label {
     font-size: 12px !important;
     color: #64748b !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
 }
 
 .fi-wi-stats-overview-stat-value {
-    font-size: 24px !important;
-    font-weight: 600 !important;
-    color: #0f172a !important;
+    font-size: 25px !important;
+    font-weight: 700 !important;
+    color: var(--ns-primary) !important;
     letter-spacing: -0.03em !important;
+}
+
+.fi-wi-stats-overview-stat-description {
+    font-weight: 600 !important;
 }
 
 /* ── Infolist ─────────────────────────────────────────── */
 .fi-in-entry-wrp-label {
     font-size: 11.5px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     color: #64748b !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.04em !important;
+    letter-spacing: 0.05em !important;
 }
 
 .fi-in-text,
@@ -293,18 +413,22 @@
 /* ── Dropdown ─────────────────────────────────────────── */
 .fi-dropdown-panel {
     border: 1px solid #e2e8f0 !important;
-    border-radius: 7px !important;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(30, 52, 68, 0.1) !important;
 }
 
 /* ── Page login ───────────────────────────────────────── */
-.fi-simple-main {
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+.fi-simple-page {
+    background: linear-gradient(135deg, var(--ns-primary) 0%, var(--ns-primary-dark) 60%, #12222d 100%) !important;
 }
 
-/* ── Scrollbar minimaliste ────────────────────────────── */
+.fi-simple-main {
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 50px rgba(30, 52, 68, 0.3) !important;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────── */
 * {
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
@@ -328,52 +452,12 @@
     background: #94a3b8;
 }
 
-/* Sidebar scrollbar encore plus discrète */
 .fi-sidebar *::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
+    background: rgba(232, 184, 115, 0.3);
 }
 
 .fi-sidebar *::-webkit-scrollbar-thumb:hover {
-    background: #cbd5e1;
-}
-
-/* ── Inputs — bordure visible mais épurée ─────────────── */
-.fi-input-wrp,
-.fi-select-input,
-.fi-textarea {
-    border-color: #b8c4d0 !important;
-    border-width: 1.5px !important;
-    border-radius: 5px !important;
-    box-shadow: none !important;
-    background: #ffffff !important;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
-}
-
-.fi-input-wrp:focus-within,
-.fi-select-input:focus,
-.fi-textarea:focus {
-    border-color: #2563eb !important;
-    border-width: 1.5px !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10) !important;
-}
-
-/* Placeholder plus visible */
-.fi-input::placeholder,
-.fi-textarea::placeholder {
-    color: #a0aec0 !important;
-    font-style: italic !important;
-    font-size: 12.5px !important;
-}
-
-/* Input disabled — indication claire */
-.fi-input:disabled,
-.fi-select-input:disabled,
-.fi-textarea:disabled {
-    background: #f8fafc !important;
-    border-color: #e2e8f0 !important;
-    border-width: 1.5px !important;
-    color: #94a3b8 !important;
-    cursor: not-allowed !important;
+    background: rgba(232, 184, 115, 0.45);
 }
 
 /* ── Responsive ───────────────────────────────────────── */
@@ -382,4 +466,14 @@
         font-size: 16px !important;
     }
 }
+
+.fi-logo{
+    text-align: center;
+}
+
+.fi-section-header{
+    background-color: #f2ede1 !important;
+}
+
+
 </style>

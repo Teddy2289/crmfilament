@@ -52,17 +52,21 @@ class NsConseilPanelProvider extends PanelProvider
             ->path('ns-conseil')
             ->login(NsConseilLogin::class)
             ->brandName($theme?->brand_name ?? 'NS CONSEIL — CRM Partenaires')
-            ->brandLogo($theme?->brand_logo_path)
+            ->brandLogo(fn() => view('filament.ns-conseil.brand-logo', [
+                'logoPath' => $theme?->brand_logo_path,
+            ]))
+            ->brandLogoHeight('3.5rem')
             ->favicon($theme?->favicon_path)
             ->colors([
-                'primary' => Color::hex('#2891e7'),
-                'gray'    => Color::Slate,
-                'secondary' => Color::hex('#0fc3f5'),
-                'custom-kanban' => Color::hex('#ffa865'),
-                'success' => Color::Emerald,
-                'warning' => Color::Amber,
-                'danger'  => Color::Rose,
-                'info'    => Color::Sky,
+                'primary'       => Color::hex('#2C4A5E'), 
+                'gray'          => Color::Slate,
+                'secondary'     => Color::hex('#3F8FA3'),
+                'info'          => Color::hex('#3F8FA3'),
+                'custom-kanban' => Color::hex('#F3DCB0'), 
+                'success'       => Color::hex('#D9A455'),
+                'warning'       => Color::hex('#E8B873'), 
+                'danger'        => Color::Rose,
+            
             ])
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
@@ -138,7 +142,7 @@ class NsConseilPanelProvider extends PanelProvider
                     : '',
             )
 
-            // ── Thème minimaliste NS Conseil ─────────────────────────
+            // ── Thème NS Conseil (Marine & Doré) ─────────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn() => view('filament.ns-conseil.theme'),

@@ -1380,7 +1380,7 @@ class PhoningWorkflow extends Page
             Action::make('toutes_campagnes')
                 ->label('Toutes les campagnes')
                 ->icon('heroicon-o-squares-2x2')
-                ->color('gray')
+                ->color('secondary')
                 ->visible(fn() => $this->currentCampagneId !== null)
                 ->action(fn() => $this->clearCampagne()),
 
