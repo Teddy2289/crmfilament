@@ -420,6 +420,8 @@
 /* ── Page login ───────────────────────────────────────── */
 .fi-simple-page {
     background: linear-gradient(135deg, var(--ns-primary) 0%, var(--ns-primary-dark) 60%, #12222d 100%) !important;
+    padding: 20px !important;
+    border-radius: 10px !important;
 }
 
 .fi-simple-main {
