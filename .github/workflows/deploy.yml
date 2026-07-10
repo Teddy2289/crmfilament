@@ -6,10 +6,9 @@ on:
       - main
 
 jobs:
-  deploy:
-    name: Deploy to Hestia VPS
+  deploy-mbl-service:
+    name: Deploy to crm-v2.mbl-service.com
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,6 +23,60 @@ jobs:
           script: |
             set -e
             cd /home/contact/web/crm-v2.mbl-service.com
+
+            echo "==> Discarding any local server-side changes..."
+            git reset --hard HEAD
+
+            echo "==> Pulling latest code..."
+            git pull origin main
+
+            echo "==> Installing PHP dependencies..."
+            composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+            echo "==> Installing Node dependencies & building assets..."
+            npm ci
+            npm run build
+
+            echo "==> Putting app in maintenance mode..."
+            php artisan down --retry=60
+
+            echo "==> Running database migrations..."
+            php artisan migrate --force
+
+            echo "==> Clearing & rebuilding caches..."
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan icons:cache
+            php artisan filament:cache-components
+
+            echo "==> Fixing permissions..."
+            sudo chown -R contact:contact storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+
+            echo "==> Bringing app back online..."
+            php artisan up
+
+            echo "==> Deployment complete!"
+
+  deploy-ns-conseil:
+    name: Deploy to manage.ns-conseil.com
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            set -e
+            cd /home/contact/web/manage.ns-conseil.com
 
             echo "==> Discarding any local server-side changes..."
             git reset --hard HEAD
