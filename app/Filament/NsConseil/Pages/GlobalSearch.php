@@ -30,6 +30,11 @@ class GlobalSearch extends Page
         $this->searchService = new SearchAndRelationService();
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public function form(Form $form): Form
     {
         return $form
@@ -39,7 +44,7 @@ class GlobalSearch extends Page
                     ->placeholder('Ex: 0612345678, jean.dupont@email.com, CLI-2024-001')
                     ->live()
                     ->debounce(500)
-                    ->afterStateUpdated(fn () => $this->search()),
+                    ->afterStateUpdated(fn() => $this->search()),
             ])
             ->statePath('data');
     }

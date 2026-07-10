@@ -33,6 +33,11 @@ class ActiviteVenteResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -72,7 +77,7 @@ class ActiviteVenteResource extends Resource
 
                         Forms\Components\Placeholder::make('clients_lies')
                             ->label('Clients liés')
-                            ->content(fn (Get $get, ?ActiviteVente $record): HtmlString => static::apercuClientsLies(
+                            ->content(fn(Get $get, ?ActiviteVente $record): HtmlString => static::apercuClientsLies(
                                 $get('partenaire_id') ?: $record?->partenaire_id
                             ))
                             ->columnSpanFull(),
@@ -186,19 +191,19 @@ class ActiviteVenteResource extends Resource
 
                 Tables\Filters\SelectFilter::make('client_id')
                     ->label('Client lié')
-                    ->options(fn (): array => Client::query()
+                    ->options(fn(): array => Client::query()
                         ->orderBy('nom_tiers')
                         ->limit(100)
                         ->pluck('nom_tiers', 'id')
                         ->all())
                     ->searchable()
-                    ->query(fn (Builder $query, array $data): Builder => $query
-                        ->when($data['value'] ?? null, fn (Builder $q, $clientId) => $q
-                            ->whereHas('clients', fn (Builder $clientQuery) => $clientQuery->whereKey($clientId)))),
+                    ->query(fn(Builder $query, array $data): Builder => $query
+                        ->when($data['value'] ?? null, fn(Builder $q, $clientId) => $q
+                            ->whereHas('clients', fn(Builder $clientQuery) => $clientQuery->whereKey($clientId)))),
 
                 Tables\Filters\Filter::make('avec_clients')
                     ->label('Avec clients liés')
-                    ->query(fn (Builder $query): Builder => $query->whereHas('clients'))
+                    ->query(fn(Builder $query): Builder => $query->whereHas('clients'))
                     ->toggle(),
             ])
             ->actions([
@@ -206,14 +211,14 @@ class ActiviteVenteResource extends Resource
                     ->label('Recalculer')
                     ->icon('heroicon-o-arrow-path')
                     ->color('gray')
-                    ->action(fn (ActiviteVente $record) => $record->recalculerDepuisClients())
+                    ->action(fn(ActiviteVente $record) => $record->recalculerDepuisClients())
                     ->successNotificationTitle('Statistiques recalculées depuis les clients liés'),
 
                 Tables\Actions\Action::make('clients')
                     ->label('Clients')
                     ->icon('heroicon-o-users')
                     ->color('info')
-                    ->url(fn (ActiviteVente $record): string => ClientResource::getUrl('index', [
+                    ->url(fn(ActiviteVente $record): string => ClientResource::getUrl('index', [
                         'tableFilters' => [
                             'partenaire_id' => ['value' => $record->partenaire_id],
                         ],
@@ -279,18 +284,18 @@ class ActiviteVenteResource extends Resource
             : 'aucune';
 
         $listeClients = $clients
-            ->map(fn (Client $client): string => '<li>'.e(static::libelleClient($client)).'</li>')
+            ->map(fn(Client $client): string => '<li>' . e(static::libelleClient($client)) . '</li>')
             ->implode('');
 
         if ($totalClients > $clients->count()) {
-            $listeClients .= '<li>'.e(($totalClients - $clients->count()).' client(s) supplémentaire(s)').'</li>';
+            $listeClients .= '<li>' . e(($totalClients - $clients->count()) . ' client(s) supplémentaire(s)') . '</li>';
         }
 
         return new HtmlString(
             '<div class="space-y-2 text-sm">'
-            .'<div><strong>'.e((string) $totalClients).'</strong> client(s) lié(s), <strong>'.e((string) $totaux['nombre_ventes_total']).'</strong> vente(s) calculée(s), dernière vente : '.e($derniereVente).'</div>'
-            .'<ul class="list-disc pl-5">'.$listeClients.'</ul>'
-            .'</div>'
+                . '<div><strong>' . e((string) $totalClients) . '</strong> client(s) lié(s), <strong>' . e((string) $totaux['nombre_ventes_total']) . '</strong> vente(s) calculée(s), dernière vente : ' . e($derniereVente) . '</div>'
+                . '<ul class="list-disc pl-5">' . $listeClients . '</ul>'
+                . '</div>'
         );
     }
 
@@ -299,6 +304,6 @@ class ActiviteVenteResource extends Resource
         return $client->nom_tiers
             ?: $client->email
             ?: $client->ref_client
-            ?: 'Client #'.$client->id;
+            ?: 'Client #' . $client->id;
     }
 }
