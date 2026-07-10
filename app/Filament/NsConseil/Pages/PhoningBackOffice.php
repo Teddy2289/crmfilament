@@ -294,16 +294,17 @@ class PhoningBackOffice extends Page
     public function getTeleprospecteurs(): array
     {
         return $this->queryTeleprospecteurs()
+            ->withCount([
+                'prospectsTeleprospecteur as nb_actifs' => fn ($query) => $query
+                    ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
+                    ->whereNull('deleted_at'),
+            ])
             ->get()
             ->map(fn ($u) => [
                 'id' => $u->id,
                 'nom_complet' => trim("{$u->prenom} {$u->nom}"),
                 'initiales' => $u->initiales,
-                'nb_actifs' => Prospect::query()
-                    ->where('teleprospecteur_id', $u->id)
-                    ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
-                    ->whereNull('deleted_at')
-                    ->count(),
+                'nb_actifs' => $u->nb_actifs,
             ])
             ->toArray();
     }
