@@ -8,7 +8,7 @@
     <img
         src="{{ $logoUrl }}"
         alt="NS Conseil"
-        style="height: 2.5rem; width: auto;"
+        style="height: 3.5rem; width: auto;"
     />
     <span style="font-weight: 700; font-size: 1rem; line-height: 1.1; color: #ffffff; letter-spacing: -0.01em;">
         NS CONSEIL

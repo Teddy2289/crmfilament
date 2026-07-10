@@ -107,14 +107,32 @@
 }
 
 /* ── En-têtes de page ─────────────────────────────────── */
-.fi-header-heading,
+.fi-simple-header {
+    background: var(--ns-primary-dark) !important;
+    margin: 0 !important;
+    padding: 1.75rem 1.5rem 1.25rem !important;
+    border-radius: 10px 10px 0 0 !important;
+    box-shadow: 0 1px 3px rgba(30, 52,  68, 0.04) !important;
+}
 .fi-simple-header-heading {
     font-size: 19px !important;
     font-weight: 700 !important;
     color: var(--ns-teal) !important;
     letter-spacing: -0.02em !important;
 }
+/* Titre "Se connecter" en teal sur fond doré */
+.fi-simple-page .fi-simple-header-heading {
+    color: var(--ns-teal) !important;
+}
+/* Sous-titre plus lisible sur fond doré */
+.fi-simple-page .fi-simple-header-subheading {
+    color: #ef9f24 !important;
+}
 
+/* Labels des champs, plus lisibles sur fond doré */
+.fi-simple-page .fi-fo-field-wrp-label label {
+    color: #4a3b23 !important;
+}
 .fi-header-subheading,
 .fi-simple-header-subheading {
     font-size: 13px !important;
@@ -419,7 +437,6 @@
 
 /* ── Page login ───────────────────────────────────────── */
 .fi-simple-page {
-    background: linear-gradient(135deg, var(--ns-primary) 0%, var(--ns-primary-dark) 60%, #12222d 100%) !important;
     padding: 20px !important;
     border-radius: 10px !important;
 }
@@ -428,8 +445,9 @@
     border: none !important;
     border-radius: 12px !important;
     box-shadow: 0 20px 50px rgba(30, 52, 68, 0.3) !important;
+   
+    overflow: hidden !important;
 }
-
 /* ── Scrollbar ─────────────────────────────────────────── */
 * {
     scrollbar-width: thin;

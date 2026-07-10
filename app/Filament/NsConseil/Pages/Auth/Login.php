@@ -9,7 +9,7 @@ class Login extends FilamentLogin
 {
     public function getHeading(): string|Htmlable
     {
-        return 'Se connecter';
+        return '';
     }
 
     public function getSubheading(): string|Htmlable|null

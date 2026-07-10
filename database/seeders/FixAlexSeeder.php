@@ -21,16 +21,16 @@ class FixAlexSeeder extends Seeder
 
         $this->command->info('');
 
-        // ── Forcer Alex ────────────────────────────────────────────
-        $alex = User::withTrashed()
+        // ── Forcer Alexandre ────────────────────────────────────────────
+        $Alexandre = User::withTrashed()
             ->where('email', 'a.florek@ns-conseil.com')
             ->first();
 
-        if (! $alex) {
-            $this->command->warn('Alex introuvable → création...');
-            $alex = User::create([
+        if (! $Alexandre) {
+            $this->command->warn('Alexandre introuvable → création...');
+            $Alexandre = User::create([
                 'nom' => 'FLOREK',
-                'prenom' => 'Alex',
+                'prenom' => 'Alexandre',
                 'email' => 'a.florek@ns-conseil.com',
                 'password' => Hash::make('changeme123'),
                 'secteur' => 'National',
@@ -40,21 +40,21 @@ class FixAlexSeeder extends Seeder
         }
 
         // Restaurer si soft-deleted
-        if ($alex->trashed()) {
-            $alex->restore();
+        if ($Alexandre->trashed()) {
+            $Alexandre->restore();
             $this->command->warn('  → Compte restauré (était soft-deleted)');
         }
 
         // Forcer les valeurs
-        $alex->forceFill([
+        $Alexandre->forceFill([
             'password' => Hash::make('changeme123'),
             'actif' => true,
             'role_cache' => 'administrateur',
         ])->save();
 
-        $alex->syncRoles(['administrateur']);
+        $Alexandre->syncRoles(['administrateur']);
 
-        $this->command->info('✓ Alex corrigé');
+        $this->command->info('✓ Alexandre corrigé');
         $this->command->line('  email    : a.florek@ns-conseil.com');
         $this->command->line('  password : changeme123');
         $this->command->line('  actif    : true');
