@@ -1,7 +1,7 @@
 @php
     // $logoPath peut être injecté depuis le PanelProvider :
     // ->brandLogo(fn () => view('filament.ns-conseil.brand-logo', ['logoPath' => $theme?->brand_logo_path]))
-    $logoUrl = $logoPath ?? asset('images/Ns.png');
+    $logoUrl = $logoPath ?? asset('images/NS.png');
 @endphp
 
 <div style="display: flex; align-items: center; gap: 0.6rem;">
