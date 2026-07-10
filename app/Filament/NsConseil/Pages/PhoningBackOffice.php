@@ -32,6 +32,11 @@ class PhoningBackOffice extends Page
         return static::userHasAnyRole(['admin', 'superviseur']);
     }
 
+       public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static string $view = 'filament.ns-conseil.pages.phoning-back-office';
 
     public ?int $selectedUserId = null;

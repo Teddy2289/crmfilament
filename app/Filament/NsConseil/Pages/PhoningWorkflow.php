@@ -54,12 +54,13 @@ class PhoningWorkflow extends Page
     public ?int $selectedContactId = null;
 
     public string $selectedContactType = '';
+    
 
     // protected static ?int    $navigationSort    = 2;
     protected static string  $view              = 'filament.ns-conseil.pages.phoning-workflow';
     public static function shouldRegisterNavigation(): bool
     {
-        return true; // Page accessible via URL pour les boutons de lancement d'appels
+        return false; // Page accessible via URL pour les boutons de lancement d'appels
     }
 
     public ?Model $currentContact = null;
