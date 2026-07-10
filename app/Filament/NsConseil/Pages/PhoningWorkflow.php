@@ -399,30 +399,63 @@ class PhoningWorkflow extends Page
 
     protected function filterValidQueue(array $queue): array
     {
+        $itemsByType = collect($queue)
+            ->groupBy(fn (array $item): string => $item['type'] ?? '')
+            ->map(fn ($items) => $items->pluck('id')->filter()->unique()->values()->all());
+
         $retireCodes = StatutPhoning::query()
             ->where('model_type', 'prospect')
             ->where('retire_de_file', true)
             ->pluck('code')
             ->all();
 
-        return collect($queue)->filter(function ($item) use ($retireCodes) {
+        $prospectIds = $itemsByType->get('prospect', []);
+        $validProspectIds = $prospectIds === []
+            ? []
+            : Prospect::query()
+                ->whereIn('id', $prospectIds)
+                ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
+                ->whereNull('deleted_at')
+                ->pluck('id')
+                ->all();
+
+        if ($validProspectIds !== [] && $retireCodes !== []) {
+            $prospectsRetires = Appel::query()
+                ->where('appelable_type', Prospect::class)
+                ->whereIn('appelable_id', $validProspectIds)
+                ->whereIn('phoning_status', $retireCodes)
+                ->pluck('appelable_id')
+                ->all();
+
+            $validProspectIds = array_values(array_diff($validProspectIds, $prospectsRetires));
+        }
+
+        $validContactPartenaireIds = ($ids = $itemsByType->get('partenaire', [])) === []
+            ? []
+            : ContactPartenaire::query()
+                ->whereIn('id', $ids)
+                ->whereNull('deleted_at')
+                ->pluck('id')
+                ->all();
+
+        $validClientIds = ($ids = $itemsByType->get('client', [])) === []
+            ? []
+            : Client::query()
+                ->whereIn('id', $ids)
+                ->whereNull('deleted_at')
+                ->where(fn ($q) => $q->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false))
+                ->pluck('id')
+                ->all();
+
+        $validIdsByType = [
+            'prospect' => array_flip($validProspectIds),
+            'partenaire' => array_flip($validContactPartenaireIds),
+            'client' => array_flip($validClientIds),
+        ];
+
+        return collect($queue)->filter(function ($item) use ($validIdsByType) {
             return match ($item['type']) {
-                'prospect' => Prospect::where('id', $item['id'])
-                    ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
-                    ->whereNull('deleted_at')
-                    ->exists()
-                    && ! Appel::query()
-                        ->where('appelable_type', Prospect::class)
-                        ->where('appelable_id', $item['id'])
-                        ->whereIn('phoning_status', $retireCodes)
-                        ->exists(),
-                'partenaire' => ContactPartenaire::where('id', $item['id'])
-                    ->whereNull('deleted_at')
-                    ->exists(),
-                'client' => Client::where('id', $item['id'])
-                    ->whereNull('deleted_at')
-                    ->where(fn($q) => $q->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false))
-                    ->exists(),
+                'prospect', 'partenaire', 'client' => isset($validIdsByType[$item['type']][$item['id']]),
                 default => true,
             };
         })->values()->toArray();
@@ -464,6 +497,16 @@ class PhoningWorkflow extends Page
             return $queue;
         }
 
+        $prospects = Prospect::query()
+            ->whereIn('id', collect($queue)
+                ->where('type', 'prospect')
+                ->pluck('id')
+                ->unique()
+                ->values()
+                ->all())
+            ->get(['id', 'statut', 'rappel_planifie_at'])
+            ->keyBy('id');
+
         $prioritaires = [];
         $normaux = [];
 
@@ -474,7 +517,7 @@ class PhoningWorkflow extends Page
                 continue;
             }
 
-            $prospect = Prospect::find($item['id']);
+            $prospect = $prospects->get($item['id']);
             if (! $prospect) {
                 continue;
             }
@@ -1224,15 +1267,17 @@ class PhoningWorkflow extends Page
     public function getTeleprospecteurs(): array
     {
         return $this->queryTeleprospecteurs()
+            ->withCount([
+                'prospectsTeleprospecteur as nb_prospects' => fn ($query) => $query
+                    ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
+                    ->whereNull('deleted_at'),
+            ])
             ->get()
             ->map(fn($u) => [
                 'id' => $u->id,
                 'nom_complet' => trim("{$u->prenom} {$u->nom}"),
                 'initiales' => $u->initiales,
-                'nb_prospects' => Prospect::where('teleprospecteur_id', $u->id)
-                    ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
-                    ->whereNull('deleted_at')
-                    ->count(),
+                'nb_prospects' => $u->nb_prospects,
             ])
             ->toArray();
     }
