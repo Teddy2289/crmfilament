@@ -3,7 +3,6 @@
 namespace App\Filament\NsConseil\Pages;
 
 use App\Enums\ProspectStatut;
-use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Models\Prospect;
 use App\Models\User;
 use App\Services\Crm\CrmSettingsService;

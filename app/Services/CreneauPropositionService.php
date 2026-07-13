@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\RendezVous;
 use App\Models\User;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Log;
 
 class CreneauPropositionService
