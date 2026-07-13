@@ -6,7 +6,6 @@ use App\Filament\NsConseil\Pages\Auth\Login as NsConseilLogin;
 use App\Filament\NsConseil\Pages\Dashboard;
 use App\Filament\NsConseil\Pages\RingoverDashboard;
 use App\Filament\NsConseil\Resources\PartenaireResource\Pages\PartenaireKanban;
-use App\Filament\Themes\NsConseilTheme;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserInteractions;
 use App\Http\Responses\NsConseil\LoginResponse;
@@ -27,7 +26,6 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 

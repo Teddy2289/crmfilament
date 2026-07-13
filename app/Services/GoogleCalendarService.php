@@ -25,6 +25,7 @@ class GoogleCalendarService
             'clientId' => config('services.google.client_id'),
             'clientSecret' => config('services.google.client_secret'),
             'redirectUri' => config('services.google.redirect'),
+            'timeout' => 8,
         ]);
     }
 
@@ -303,7 +304,7 @@ class GoogleCalendarService
             );
 
             // 2. Requêtes événements en parallèle via Guzzle Pool
-            $client = new Client;
+            $client = new Client(['timeout' => 8, 'connect_timeout' => 5]);
             $requests = [];
 
             foreach ($calendarMeta as $calendarId => $meta) {
@@ -516,7 +517,7 @@ class GoogleCalendarService
 
     private function makeRequest(string $method, string $url, GoogleToken $token, array $options = []): array
     {
-        $client = new Client;
+        $client = new Client(['timeout' => 8, 'connect_timeout' => 5]);
         $options = array_merge($options, [
             'headers' => [
                 'Authorization' => "Bearer {$token->access_token}",
