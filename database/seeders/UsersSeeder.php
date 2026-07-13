@@ -18,7 +18,7 @@ class UsersSeeder extends Seeder
             // ── NS CONSEIL ─────────────────────────────────────────
             [
                 'nom' => 'FLOREK',
-                'prenom' => 'Alex',
+                'prenom' => 'Alexandre',
                 'email' => 'a.florek@ns-conseil.com',
                 'secteur' => 'National',
                 'role' => 'administrateur',

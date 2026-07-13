@@ -61,7 +61,7 @@
 
 .fi-sidebar-item a:hover,
 .fi-sidebar-item button:hover {
-    background: rgba(232, 184, 115, 0.1) !important;
+    background: var(--ns-gold) !important;
 }
 
 .fi-sidebar-item-label,

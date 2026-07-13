@@ -48,7 +48,11 @@ class ImportResolver
 
         foreach ($spreadsheet->getAllSheets() as $sheet) {
             $sheetName = $sheet->getTitle();
-            $data = $sheet->toArray(null, true, true, false);
+            // formatData=false : récupère les valeurs numériques brutes (ex. 5000)
+            // plutôt que les chaînes formatées selon l'affichage Excel (ex. "5 000 €"
+            // ou "5.000" selon la locale), qui faussaient le parsing des montants
+            // (division silencieuse par 1000 dans parseFloat()).
+            $data = $sheet->toArray(null, true, false, false);
 
             if (empty($data)) {
                 continue;
@@ -75,7 +79,7 @@ class ImportResolver
             $rows = [];
             for ($i = $headerRowIndex + 1; $i < count($data); $i++) {
                 $rawRow = $data[$i];
-                if (empty(array_filter($rawRow, fn ($v) => $v !== null && $v !== ''))) {
+                if (empty(array_filter($rawRow, fn($v) => $v !== null && $v !== ''))) {
                     continue;
                 }
 
