@@ -542,13 +542,8 @@ class DossierFormationResource extends Resource
 
                     Infolists\Components\TextEntry::make('total_ht_cpf')
                         ->label('Total HT + CPF')
-                        ->money('EUR')
-                        ->placeholder('0,00 €')
-                        ->formatStateUsing(function (DossierFormation $record) {
-                            $total = ($record->montant_ht ?? 0) + ($record->montant_cpf ?? 0);
-
-                            return number_format($total, 2, ',', ' ').' €';
-                        }),
+                        ->state(fn (DossierFormation $record) => ($record->montant_ht ?? 0) + ($record->montant_cpf ?? 0))
+                        ->money('EUR'),
                 ])->columns(3),
 
             Infolists\Components\Section::make('Suivi')

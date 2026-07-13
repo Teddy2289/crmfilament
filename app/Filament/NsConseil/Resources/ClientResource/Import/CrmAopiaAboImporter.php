@@ -48,7 +48,6 @@ class CrmAopiaAboImporter extends BaseClientImporter
                 'adresse' => trim((string) ($row['Adresse'] ?? '')) ?: null,
                 'entreprise' => trim((string) ($row['Entreprise'] ?? '')) ?: null,
                 'date_naissance' => $this->parseDate($row['Date de naissance'] ?? null),
-                'montant_cpf' => $this->parseFloat($row['Montant cpf'] ?? null),
                 'ne_plus_contacter' => $this->parseBool($row['Ne plus contacter'] ?? false),
                 '_partenaire_nomenclature' => $interlocuteur ?: null,
                 'extra_data' => array_filter([
@@ -66,6 +65,7 @@ class CrmAopiaAboImporter extends BaseClientImporter
                 'etat' => $this->mapEtat($row['État'] ?? ''),
                 'statut_formation' => $this->mapStatutFormation($row['Statut formation'] ?? ''),
                 'montant_ht' => $this->parseFloat($row['Montant HT'] ?? null),
+                'montant_cpf' => $this->parseFloat($row['Montant cpf'] ?? null),
                 'date_vente' => $this->parseDate($row['Date de vente'] ?? null),
                 'no_dossier_edof' => trim((string) ($row['(C) N° dossier EDOF'] ?? '')) ?: null,
                 '_consultant_formateur_nom' => trim((string) ($row['Consultant Formateur'] ?? '')) ?: null,
