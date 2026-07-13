@@ -30,15 +30,39 @@
         </div>
     </div>
 
-    {{-- Légende Calendriers Google --}}
-    <div class="mb-6">
+    {{-- Légende Calendriers Google — cliquable pour masquer/afficher les événements d'un agenda --}}
+    <div class="mb-6"
+        x-data="{
+            hidden: JSON.parse(localStorage.getItem('hiddenGoogleCalendars') || '[]'),
+            toggle(name) {
+                this.hidden = this.hidden.includes(name)
+                    ? this.hidden.filter(n => n !== name)
+                    : [...this.hidden, name];
+                localStorage.setItem('hiddenGoogleCalendars', JSON.stringify(this.hidden));
+                document.querySelectorAll('[data-calendar-name=\'' + CSS.escape(name) + '\']').forEach(el => {
+                    el.style.display = this.hidden.includes(name) ? 'none' : '';
+                });
+            },
+        }"
+    >
         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Calendriers Google</p>
         <div class="flex flex-wrap gap-3">
-            <span class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"><span class="h-3 w-3 rounded-full" style="background:#b99aff"></span> Maxence DURAT</span>
-            <span class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"><span class="h-3 w-3 rounded-full" style="background:#f83a22"></span> Ghislaine GAUVILLE</span>
-            <span class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"><span class="h-3 w-3 rounded-full" style="background:#9a9cff"></span> Francis Thibaud</span>
-            <span class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"><span class="h-3 w-3 rounded-full" style="background:#9fc6e7"></span> Séverine Boutin</span>
-            <span class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"><span class="h-3 w-3 rounded-full" style="background:#16a765"></span> Jours fériés</span>
+            @foreach([
+                ['name' => 'Maxence DURAT', 'color' => '#b99aff'],
+                ['name' => 'Ghislaine GAUVILLE', 'color' => '#f83a22'],
+                ['name' => 'Francis Thibaud', 'color' => '#9a9cff'],
+                ['name' => 'Séverine Boutin', 'color' => '#9fc6e7'],
+                ['name' => 'Jours fériés', 'color' => '#16a765'],
+            ] as $cal)
+                <button
+                    type="button"
+                    @click="toggle('{{ $cal['name'] }}')"
+                    :class="hidden.includes('{{ $cal['name'] }}') ? 'opacity-40 line-through' : 'opacity-100'"
+                    class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 cursor-pointer hover:opacity-70 transition-opacity"
+                >
+                    <span class="h-3 w-3 rounded-full shrink-0" style="background:{{ $cal['color'] }}"></span> {{ $cal['name'] }}
+                </button>
+            @endforeach
         </div>
     </div>
 

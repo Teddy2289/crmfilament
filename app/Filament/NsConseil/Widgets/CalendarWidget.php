@@ -22,32 +22,55 @@ class CalendarWidget extends FullCalendarWidget
 
     public Model|string|null $model = null;
 
- 
+
     public function config(): array
-{
-    return [
-        'firstDay' => 1,
-        'locale' => 'fr',
-        'height' => 'auto',
-        'navLinks' => true,
-        'businessHours' => [
-            'daysOfWeek' => [1, 2, 3, 4, 5],
-            'startTime' => '08:00',
-            'endTime' => '19:00',
-        ],
-        'slotMinTime' => '07:00',
-        'slotMaxTime' => '21:00',
-        'initialView' => 'timeGridWeek',
-        'headerToolbar' => [
-            'left' => 'prev,next today',
-            'center' => 'title',
-            'right' => 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-        ],
-        'eventDisplay' => 'block',
-        'nowIndicator' => true,
-        'scrollTime' => '08:00',
-    ];
-}
+    {
+        return [
+            'firstDay' => 1,
+            'locale' => 'fr',
+            'height' => 'auto',
+            'navLinks' => true,
+            'businessHours' => [
+                'daysOfWeek' => [1, 2, 3, 4, 5],
+                'startTime' => '08:00',
+                'endTime' => '19:00',
+            ],
+            'slotMinTime' => '07:00',
+            'slotMaxTime' => '21:00',
+            'initialView' => 'timeGridWeek',
+            'headerToolbar' => [
+                'left' => 'prev,next today',
+                'center' => 'title',
+                'right' => 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+            ],
+            'eventDisplay' => 'block',
+            'nowIndicator' => true,
+            'scrollTime' => '08:00',
+        ];
+    }
+
+    /**
+     * Marque chaque événement Google avec son calendrier d'origine et masque
+     * ceux dont le calendrier a été désactivé depuis la légende (voir calendar.blade.php).
+     */
+    public function eventDidMount(): string
+    {
+        return <<<'JS'
+        function({ event, el }) {
+            var calName = event.extendedProps.calendar_name;
+            if (! calName) {
+                return;
+            }
+            el.setAttribute('data-calendar-name', calName);
+            try {
+                var hidden = JSON.parse(localStorage.getItem('hiddenGoogleCalendars') || '[]');
+                if (hidden.indexOf(calName) !== -1) {
+                    el.style.display = 'none';
+                }
+            } catch (e) {}
+        }
+        JS;
+    }
 
     public function fetchEvents(array $fetchInfo): array
     {
@@ -112,8 +135,8 @@ class CalendarWidget extends FullCalendarWidget
         }
 
         return [
-            'id' => 'rdv-'.$rdv->id,
-            'title' => '['.($type?->value ?? '?').'] '.$title,
+            'id' => 'rdv-' . $rdv->id,
+            'title' => '[' . ($type?->value ?? '?') . '] ' . $title,
             'start' => $rdv->date_heure->toIso8601String(),
             'end' => $rdv->date_heure->copy()->addHour()->toIso8601String(),
             'backgroundColor' => $color,
@@ -152,7 +175,7 @@ class CalendarWidget extends FullCalendarWidget
         $title = ($gEvent['summary'] ?? 'Sans titre');
 
         return [
-            'id' => 'google-'.$gEvent['id'],
+            'id' => 'google-' . $gEvent['id'],
             'title' => $title,
             'start' => $start,
             'end' => $end,
@@ -212,7 +235,7 @@ class CalendarWidget extends FullCalendarWidget
     {
         $hex = ltrim($hex, '#');
         if (strlen($hex) === 3) {
-            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
         }
         $r = max(0, hexdec(substr($hex, 0, 2)) - $amount);
         $g = max(0, hexdec(substr($hex, 2, 2)) - $amount);
@@ -228,7 +251,7 @@ class CalendarWidget extends FullCalendarWidget
     {
         $hex = ltrim($hex, '#');
         if (strlen($hex) === 3) {
-            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
         }
         $r = hexdec(substr($hex, 0, 2));
         $g = hexdec(substr($hex, 2, 2));
@@ -250,33 +273,33 @@ class CalendarWidget extends FullCalendarWidget
         };
     }
 
-public function onEventClick(array $event): void
-{
-    $props = $event['extendedProps'] ?? [];
-    $source = $props['source'] ?? $event['source'] ?? '';
+    public function onEventClick(array $event): void
+    {
+        $props = $event['extendedProps'] ?? [];
+        $source = $props['source'] ?? $event['source'] ?? '';
 
-    if ($source === 'crm') {
-        $rdvId = $props['rdv_id'] ?? $event['rdv_id'] ?? null;
-        if ($rdvId) {
-            $this->redirect('/ns-conseil/rendez-vous/'.$rdvId);
+        if ($source === 'crm') {
+            $rdvId = $props['rdv_id'] ?? $event['rdv_id'] ?? null;
+            if ($rdvId) {
+                $this->redirect('/ns-conseil/rendez-vous/' . $rdvId);
+            }
+            return;
         }
-        return;
-    }
 
-    if ($source === 'google') {
-        $this->dispatch('show-google-event', eventData: [
-            'title' => $event['title'] ?? 'Sans titre',
-            'start' => $event['start'] ?? null,
-            'end' => $event['end'] ?? null,
-            'allDay' => $event['allDay'] ?? false,
-            'calendar_name' => $props['calendar_name'] ?? $event['calendar_name'] ?? null,
-            'calendar_color' => $props['calendar_color'] ?? $event['calendar_color'] ?? '#6b7280',
-            'description' => $props['description'] ?? $event['description'] ?? null,
-            'location' => $props['location'] ?? $event['location'] ?? null,
-            'google_id' => $props['google_id'] ?? $event['google_id'] ?? null,
-        ]);
+        if ($source === 'google') {
+            $this->dispatch('show-google-event', eventData: [
+                'title' => $event['title'] ?? 'Sans titre',
+                'start' => $event['start'] ?? null,
+                'end' => $event['end'] ?? null,
+                'allDay' => $event['allDay'] ?? false,
+                'calendar_name' => $props['calendar_name'] ?? $event['calendar_name'] ?? null,
+                'calendar_color' => $props['calendar_color'] ?? $event['calendar_color'] ?? '#6b7280',
+                'description' => $props['description'] ?? $event['description'] ?? null,
+                'location' => $props['location'] ?? $event['location'] ?? null,
+                'google_id' => $props['google_id'] ?? $event['google_id'] ?? null,
+            ]);
+        }
     }
-}
     public function closeEventModal(): void
     {
         $this->showEventModal = false;
@@ -288,6 +311,6 @@ public function onEventClick(array $event): void
      */
     public function onDateSelect(string $start, ?string $end, bool $allDay, ?array $view, ?array $resource): void
     {
-        $this->redirect('/ns-conseil/rendez-vous/create?date='.urlencode($start));
+        $this->redirect('/ns-conseil/rendez-vous/create?date=' . urlencode($start));
     }
 }
