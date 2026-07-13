@@ -8,7 +8,6 @@ use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousR
 use App\Filament\NsConseil\Resources\OpportuniteResource\Pages;
 use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers\AppelsRelationManager;
 use App\Models\Opportunite;
-use App\Models\Prospect;
 use App\Models\User;
 use App\Support\UsesResourcePermissions;
 use Filament\Forms;
