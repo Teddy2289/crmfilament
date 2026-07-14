@@ -5,6 +5,8 @@ namespace App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
 use App\Enums\OrganizationCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -38,6 +40,43 @@ class DocumentsRelationManager extends RelationManager
                 ->maxSize(10240)
                 ->columnSpanFull(),
         ])->columns(2);
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Document')
+                ->schema([
+                    Infolists\Components\Grid::make(2)->schema([
+                        Infolists\Components\TextEntry::make('nom_fichier')
+                            ->label('Nom'),
+
+                        Infolists\Components\TextEntry::make('categorie')
+                            ->label('Catégorie')
+                            ->badge()
+                            ->formatStateUsing(fn ($state) => $state instanceof OrganizationCategory
+                                ? $state->label()
+                                : ($state ?? 'N/A')
+                            )
+                            ->color(fn ($state) => match (true) {
+                                $state instanceof OrganizationCategory && $state === OrganizationCategory::Partenaires => 'primary',
+                                $state instanceof OrganizationCategory && $state === OrganizationCategory::Artisans => 'warning',
+                                $state instanceof OrganizationCategory && $state === OrganizationCategory::Contrats => 'info',
+                                default => 'gray',
+                            }),
+
+                        Infolists\Components\TextEntry::make('taille')
+                            ->label('Taille')
+                            ->formatStateUsing(fn ($state) => $state
+                                ? number_format($state / 1024, 1).' Ko'
+                                : '—'),
+
+                        Infolists\Components\TextEntry::make('created_at')
+                            ->label('Déposé le')
+                            ->dateTime('d/m/Y H:i'),
+                    ]),
+                ]),
+        ]);
     }
 
     public function table(Table $table): Table
@@ -77,6 +116,7 @@ class DocumentsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()->label('Ajouter un document'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\Action::make('telecharger')
                     ->label('Télécharger')
                     ->icon('heroicon-o-arrow-down-tray')

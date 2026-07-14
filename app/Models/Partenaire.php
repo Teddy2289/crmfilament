@@ -12,6 +12,12 @@ class Partenaire extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * @deprecated Utiliser OrganizationStatus::pourSelect() — conservé pour compat
+     * avec le code existant, mais dérivé de l'enum pour ne plus diverger de lui
+     * (ex. l'ancien statut "inactif" n'existait pas dans OrganizationStatus et
+     * faisait planter le cast enum du modèle si sélectionné).
+     */
     public const STATUTS = [
         'a_prospecter' => 'À prospecter',
         'en_cours_prospection' => 'En cours de prospection',
@@ -19,7 +25,6 @@ class Partenaire extends Model
         'signe_accord_cadre' => 'Signé accord cadre',
         'convention_engagement' => 'Convention d\'engagement',
         'refus' => 'Refus',
-        'inactif' => 'Inactif',
     ];
 
     protected $fillable = [

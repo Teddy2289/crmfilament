@@ -115,6 +115,7 @@ class RendezVousRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()->label('Planifier un RDV'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ]);
