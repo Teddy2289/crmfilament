@@ -50,6 +50,7 @@ class Crm01FcImporter extends BaseClientImporter
                 'entreprise' => trim((string) ($row['Entreprise'] ?? '')) ?: null,
                 'date_naissance' => $this->parseDate($row['Date de naissance'] ?? null),
                 'type_tiers' => trim((string) ($row['Type du tiers'] ?? '')) ?: null,
+                'etat' => $this->mapEtat($row['État'] ?? ''),
                 '_partenaire_nomenclature' => $provenance ?: null,
                 'extra_data' => array_filter([
                     'provenance' => $provenance ?: null,

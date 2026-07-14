@@ -76,28 +76,6 @@ class ImportResolver
 
             $headers = array_map('trim', array_map('strval', $data[$headerRowIndex]));
 
-            // Dédoublonner les en-têtes identiques (ex. "Ville" et "Code postal"
-            // apparaissent 2x par onglet : une fois pour le client, une fois pour
-            // le bloc Parrain). Sans ce dédoublonnage, la construction de $row par
-            // nom de colonne plus bas écrase silencieusement la 1ère occurrence par
-            // la 2ème (bloc parrain), et les clés "Ville.1" / "Code postal.1"
-            // attendues par les importers n'existent jamais.
-            // Convention alignée sur pandas : Ville, Ville.1, Ville.2, ...
-            $seen = [];
-            $headers = array_map(function ($header) use (&$seen) {
-                if ($header === '') {
-                    return $header;
-                }
-                if (! isset($seen[$header])) {
-                    $seen[$header] = 0;
-
-                    return $header;
-                }
-                $seen[$header]++;
-
-                return $header.'.'.$seen[$header];
-            }, $headers);
-
             $rows = [];
             for ($i = $headerRowIndex + 1; $i < count($data); $i++) {
                 $rawRow = $data[$i];

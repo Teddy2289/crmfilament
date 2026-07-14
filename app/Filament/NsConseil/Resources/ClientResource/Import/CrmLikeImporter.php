@@ -58,6 +58,7 @@ class CrmLikeImporter extends BaseClientImporter
                 'date_naissance' => $this->parseDate($row['Date de naissance'] ?? null),
                 'ne_plus_contacter' => $this->parseBool($row['Ne plus contacter'] ?? false),
                 'avis_google' => $this->parseBool($row['Avis Google'] ?? false),
+                'etat' => $this->mapEtat($row['État'] ?? ''),
                 '_partenaire_nomenclature' => $partenaireLike ?: null,
                 'extra_data' => array_filter([
                     'partenaire_like' => $partenaireLike ?: null,

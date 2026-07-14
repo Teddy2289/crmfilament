@@ -49,7 +49,6 @@ class CrmAopiaAboImporter extends BaseClientImporter
                 'entreprise' => trim((string) ($row['Entreprise'] ?? '')) ?: null,
                 'date_naissance' => $this->parseDate($row['Date de naissance'] ?? null),
                 'ne_plus_contacter' => $this->parseBool($row['Ne plus contacter'] ?? false),
-                'etat' => $this->mapEtat($row['État'] ?? ''),
                 '_partenaire_nomenclature' => $interlocuteur ?: null,
                 'extra_data' => array_filter([
                     'interlocuteur' => $interlocuteur ?: null,
