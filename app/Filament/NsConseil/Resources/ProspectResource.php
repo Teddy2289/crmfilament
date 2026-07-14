@@ -7,6 +7,7 @@ use App\Enums\ProspectStatut;
 use App\Events\Mail2EnvoyeEvent;
 use App\Filament\NsConseil\Resources\ProspectResource\Pages;
 use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers;
+use App\Filament\Shared\Components\DuplicateWarning;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Mail\ConfirmationRdvCseMail;
 use App\Mail\InvitationAgendaResponsableMail;
@@ -106,7 +107,8 @@ class ProspectResource extends Resource
                         ->label("Nom de l'entité")
                         ->required()
                         ->maxLength(255)
-                        ->columnSpan(2),
+                        ->columnSpan(2)
+                        ->live(onBlur: true),
 
                     Forms\Components\Select::make('type_pressenti')
                         ->label('Type pressenti')
@@ -147,15 +149,32 @@ class ProspectResource extends Resource
                     Forms\Components\TextInput::make('telephone')
                         ->label('Téléphone principal')
                         ->tel()
-                        ->required(),
+                        ->required()
+                        ->live(onBlur: true),
 
                     Forms\Components\TextInput::make('telephone_alt')
                         ->label('Téléphone alt.')
-                        ->tel(),
+                        ->tel()
+                        ->live(onBlur: true),
 
                     Forms\Components\TextInput::make('email')
                         ->label('Email')
-                        ->email(),
+                        ->email()
+                        ->live(onBlur: true),
+
+                    DuplicateWarning::make(
+                        key: 'prospect_duplicate_warning',
+                        modelClass: Prospect::class,
+                        fields: [
+                            'nom' => 'nom',
+                            'telephone' => 'telephone',
+                            'telephone_alt' => 'telephone_alt',
+                            'email' => 'email',
+                        ],
+                        labelAttribute: 'nom',
+                        resourceClass: self::class,
+                        entityLabel: 'prospect',
+                    ),
 
                     Forms\Components\TextInput::make('interlocuteur_nom')
                         ->label('Interlocuteur — Nom'),
