@@ -517,6 +517,55 @@ abstract class BaseClientImporter
 
     // ── Helpers ─────────────────────────────────────────────────────────────
 
+    /**
+     * Normalise un numéro de téléphone français au format "XX XX XX XX XX".
+     *
+     * Cas gérés :
+     * - Zéro initial perdu par Excel quand la cellule est un nombre et non
+     *   du texte : "0782216546" (10 chiffres, valide) devient "782216546"
+     *   (9 chiffres) à la lecture. On le restitue si le résultat commence
+     *   par un indicatif français plausible (1-5 fixe, 6-7 mobile, 9 VoIP).
+     * - Indicatif international +33 / 0033 ramené au format national.
+     * - Espaces, points, tirets, parenthèses de saisie libre nettoyés.
+     *
+     * Si le résultat ne fait toujours pas 10 chiffres après ces
+     * corrections, on renvoie les chiffres bruts (plutôt que de perdre
+     * l'info) afin qu'un numéro atypique (étranger, incomplet, invalide)
+     * reste visible et corrigeable manuellement au lieu de disparaître
+     * silencieusement.
+     */
+    protected function formatTelephone(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $digits = preg_replace('/\D/', '', (string) $value);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        // +33 6 12 34 56 78 / 0033612345678 → 0612345678
+        if (strlen($digits) === 13 && str_starts_with($digits, '0033')) {
+            $digits = '0'.substr($digits, 4);
+        } elseif (strlen($digits) === 11 && str_starts_with($digits, '33')) {
+            $digits = '0'.substr($digits, 2);
+        }
+
+        // Zéro initial perdu par Excel (cellule numérique) : 9 chiffres
+        // commençant par un indicatif FR plausible → on rajoute le 0.
+        if (strlen($digits) === 9 && preg_match('/^[1-79]/', $digits)) {
+            $digits = '0'.$digits;
+        }
+
+        if (strlen($digits) === 10) {
+            return implode(' ', str_split($digits, 2));
+        }
+
+        return $digits;
+    }
+
     protected function parseDate(mixed $value): ?string
     {
         if (empty($value)) {
