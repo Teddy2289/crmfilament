@@ -65,6 +65,13 @@ class ImportClientsAction extends Action
                     ->columns(1),
             ])
             ->action(function (array $data, $livewire): void {
+                // Import volumineux (plusieurs milliers de lignes, dizaines de
+                // milliers de requêtes SQL) : le max_execution_time par défaut
+                // de PHP-FPM (60s) est trop court. On l'aligne sur le
+                // fastcgi_read_timeout de Nginx (300s) pour la durée de cet
+                // import uniquement — sans toucher à la config serveur globale.
+                set_time_limit(300);
+
                 // Avec storeFiles(false), $data['file'] est un TemporaryUploadedFile (Livewire)
                 // qui wrape le fichier temp PHP. On récupère le chemin réel via getRealPath().
                 $upload = $data['file'];
