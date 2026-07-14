@@ -1,11 +1,12 @@
 <?php
-
 namespace App\Filament\NsConseil\Resources\ClientResource\Actions;
 
 use App\Filament\NsConseil\Resources\ClientResource\Import\ImportResolver;
+use App\Jobs\ImportClientsJob;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ImportClientsAction extends Action
@@ -64,24 +65,16 @@ class ImportClientsAction extends Action
                     ])
                     ->columns(1),
             ])
-            ->action(function (array $data, $livewire): void {
-                // Import volumineux (plusieurs milliers de lignes, dizaines de
-                // milliers de requêtes SQL) : le max_execution_time par défaut
-                // de PHP-FPM (60s) est trop court. On l'aligne sur le
-                // fastcgi_read_timeout de Nginx (300s) pour la durée de cet
-                // import uniquement — sans toucher à la config serveur globale.
-                set_time_limit(300);
-
+            ->action(function (array $data): void {
                 // Avec storeFiles(false), $data['file'] est un TemporaryUploadedFile (Livewire)
-                // qui wrape le fichier temp PHP. On récupère le chemin réel via getRealPath().
+                // qui wrape un fichier temp PHP, supprimé à la fin de la requête HTTP.
+                // Comme l'import tourne maintenant en job de queue (donc dans une
+                // requête/processus différent, potentiellement bien plus tard), on
+                // DOIT recopier le fichier vers un stockage persistant avant que la
+                // requête courante ne se termine.
                 $upload = $data['file'];
 
-                if ($upload instanceof TemporaryUploadedFile) {
-                    $resolvedPath = $upload->getRealPath();
-                } elseif (is_string($upload) && file_exists($upload)) {
-                    // Fallback : chemin brut passé directement
-                    $resolvedPath = $upload;
-                } else {
+                if (! $upload instanceof TemporaryUploadedFile) {
                     Notification::make()
                         ->title('Fichier invalide')
                         ->body('Le fichier uploadé est introuvable ou dans un format inattendu.')
@@ -91,84 +84,35 @@ class ImportClientsAction extends Action
                     return;
                 }
 
-                if (! $resolvedPath || ! file_exists($resolvedPath)) {
+                $extension = $upload->getClientOriginalExtension() ?: 'xlsx';
+                $storedPath = $upload->storeAs(
+                    'imports/clients',
+                    uniqid('import_', true).'.'.$extension,
+                    'local'
+                );
+
+                if (! $storedPath || ! Storage::disk('local')->exists($storedPath)) {
                     Notification::make()
                         ->title('Fichier introuvable')
-                        ->body('Chemin résolu : '.($resolvedPath ?? 'null'))
+                        ->body('Le fichier n\'a pas pu être stocké avant traitement.')
                         ->danger()
                         ->send();
 
                     return;
                 }
 
-                try {
-                    $results = ImportResolver::importFile(
-                        $resolvedPath,
-                        $data['force_model'] ?? null,
-                        $data['strategy'] ?? 'merge'
-                    );
-                } catch (\Throwable $e) {
-                    Notification::make()
-                        ->title('Erreur lors de la lecture du fichier')
-                        ->body($e->getMessage())
-                        ->danger()
-                        ->send();
-
-                    return;
-                }
-                // Pas d'unlink : c'est un fichier temp PHP, le GC s'en charge
-
-                $totalCreated = 0;
-                $totalUpdated = 0;
-                $totalSkipped = 0;
-                $allErrors = [];
-
-                foreach ($results as $sheetName => $result) {
-                    $totalCreated += $result['created'];
-                    $totalUpdated += $result['updated'];
-                    $totalSkipped += $result['skipped'];
-                    foreach ($result['errors'] as $err) {
-                        $allErrors[] = "[{$sheetName}] {$err}";
-                    }
-                }
-
-                $modelNames = implode(', ', array_unique(
-                    array_filter(array_column($results, 'model'))
-                ));
-
-                $body = "Créés : {$totalCreated} | Mis à jour : {$totalUpdated} | Ignorés : {$totalSkipped}";
-                if ($modelNames) {
-                    $body .= "\nModèle(s) : {$modelNames}";
-                }
+                ImportClientsJob::dispatch(
+                    $storedPath,
+                    $data['force_model'] ?? null,
+                    $data['strategy'] ?? 'merge',
+                    auth()->id(),
+                );
 
                 Notification::make()
-                    ->title('Import terminé')
-                    ->body($body)
+                    ->title('Import lancé')
+                    ->body('Le fichier est en cours de traitement en arrière-plan. Vous recevrez une notification (icône cloche) une fois l\'import terminé — inutile de garder cette page ouverte.')
                     ->success()
                     ->send();
-
-                if (! empty($allErrors)) {
-                    $preview = array_slice($allErrors, 0, 5);
-                    $more = count($allErrors) - 5;
-                    $errorBody = implode("\n", $preview);
-                    if ($more > 0) {
-                        $errorBody .= "\n… et {$more} autre(s) erreur(s).";
-                    }
-
-                    Notification::make()
-                        ->title(count($allErrors).' ligne(s) en erreur')
-                        ->body($errorBody)
-                        ->warning()
-                        ->persistent()
-                        ->send();
-                }
-
-                // Force le tableau à revenir en page 1 avec des données fraîches,
-                // sinon les lignes importées peuvent rester invisibles si elles ne
-                // correspondent pas à l'onglet/tri/page actuellement affiché.
-                if (method_exists($livewire, 'resetTable')) {
-                    $livewire->resetTable();
-                }
             });
     }
 }
