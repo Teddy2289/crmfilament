@@ -126,14 +126,25 @@ class ImportResolver
         return $result;
     }
 
-    /** @param class-string<BaseClientImporter>|null $importerClass */
-    public static function importFile(string $path, ?string $importerClass = null, string $strategy = 'merge'): array
+    /**
+     * @param  class-string<BaseClientImporter>|null  $importerClass
+     * @param  (callable(int $processed, int $total, string $sheet): void)|null  $onProgress
+     */
+    public static function importFile(string $path, ?string $importerClass = null, string $strategy = 'merge', ?callable $onProgress = null): array
     {
         $sheets = static::parseFile($path);
         $results = [];
 
+        $total = array_sum(array_map(fn ($sheetData) => count($sheetData['rows']), $sheets));
+        $processedBefore = 0;
+
+        if ($onProgress) {
+            $onProgress(0, $total, (string) array_key_first($sheets));
+        }
+
         foreach ($sheets as $sheetName => $sheetData) {
             $class = $importerClass ?? static::detectFromColumns($sheetData['headers']);
+            $sheetTotal = count($sheetData['rows']);
 
             if (! $class) {
                 $sample = implode(', ', array_slice(array_filter($sheetData['headers']), 0, 8));
@@ -144,13 +155,28 @@ class ImportResolver
                     'errors' => ["Modèle non reconnu pour « {$sheetName} ». Colonnes : {$sample}…"],
                 ];
 
+                $processedBefore += $sheetTotal;
+                if ($onProgress) {
+                    $onProgress($processedBefore, $total, $sheetName);
+                }
+
                 continue;
             }
 
             /** @var BaseClientImporter $importer */
             $importer = new $class;
-            $results[$sheetName] = $importer->import($sheetData['rows'], $sheetName, $strategy);
+            $results[$sheetName] = $importer->import(
+                $sheetData['rows'],
+                $sheetName,
+                $strategy,
+                $onProgress
+                    ? function (int $done) use ($onProgress, $processedBefore, $total, $sheetName) {
+                        $onProgress($processedBefore + $done, $total, $sheetName);
+                    }
+                    : null,
+            );
             $results[$sheetName]['model'] = $class::getName();
+            $processedBefore += $sheetTotal;
         }
 
         return $results;

@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources\ClientResource\Pages;
 
 use App\Filament\NsConseil\Resources\ClientResource;
 use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
+use App\Filament\NsConseil\Widgets\ImportProgressWidget;
 use App\Models\Client;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
@@ -19,6 +20,13 @@ class ListClients extends ListRecords
         return [
             ImportClientsAction::make(),
             Actions\CreateAction::make(),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            ImportProgressWidget::class,
         ];
     }
 

@@ -74,7 +74,10 @@ abstract class BaseClientImporter
 
     // ── Import principal ────────────────────────────────────────────────────
 
-    public function import(array $rows, string $sourceSheet = '', string $strategy = self::STRATEGY_MERGE): array
+    /**
+     * @param  (callable(int $processed): void)|null  $onProgress  Appelé après chaque ligne avec le nombre de lignes traitées dans ce lot.
+     */
+    public function import(array $rows, string $sourceSheet = '', string $strategy = self::STRATEGY_MERGE, ?callable $onProgress = null): array
     {
         $this->strategy = $strategy;
 
@@ -127,6 +130,10 @@ abstract class BaseClientImporter
                 }
             } catch (\Throwable $e) {
                 $this->errors[] = 'Ligne '.($index + 2).' : '.$e->getMessage();
+            } finally {
+                if ($onProgress) {
+                    $onProgress($index + 1);
+                }
             }
         }
 

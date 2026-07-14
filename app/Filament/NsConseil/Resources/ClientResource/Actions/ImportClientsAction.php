@@ -6,7 +6,9 @@ use App\Jobs\ImportClientsJob;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ImportClientsAction extends Action
@@ -101,16 +103,30 @@ class ImportClientsAction extends Action
                     return;
                 }
 
+                $importId = (string) Str::uuid();
+                $userId = auth()->id();
+
+                Cache::put('import_progress:'.$importId, [
+                    'status' => 'queued',
+                    'processed' => 0,
+                    'total' => null,
+                    'sheet' => null,
+                ], now()->addHours(2));
+                Cache::put('user_active_import:'.$userId, $importId, now()->addHours(2));
+
                 ImportClientsJob::dispatch(
                     $storedPath,
                     $data['force_model'] ?? null,
                     $data['strategy'] ?? 'merge',
-                    auth()->id(),
+                    $userId,
+                    $importId,
                 );
+
+                $this->getLivewire()->dispatch('import-started', importId: $importId);
 
                 Notification::make()
                     ->title('Import lancé')
-                    ->body('Le fichier est en cours de traitement en arrière-plan. Vous recevrez une notification (icône cloche) une fois l\'import terminé — inutile de garder cette page ouverte.')
+                    ->body('Le fichier est en cours de traitement en arrière-plan. Suivez sa progression ci-dessous — vous recevrez aussi une notification (icône cloche) une fois terminé.')
                     ->success()
                     ->send();
             });

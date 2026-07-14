@@ -132,14 +132,6 @@ class NsConseilPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()
 
-            // ── Thème EspoCRM si activé en base ──────────────────────
-            ->renderHook(
-                PanelsRenderHook::HEAD_END,
-                fn() => ThemeModel::resolveForPanel('ns-conseil', auth()->user())?->usesEspoChrome()
-                    ? view('filament.shared.espo-theme')
-                    : '',
-            )
-
             // ── Thème NS Conseil (Marine & Doré) ─────────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,

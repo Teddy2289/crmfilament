@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -31,18 +32,54 @@ class ImportClientsJob implements ShouldQueue
         protected ?string $importerClass,
         protected string $strategy,
         protected int $userId,
+        protected string $importId,
     ) {}
 
     public function handle(): void
     {
         $absolutePath = Storage::disk('local')->path($this->storedPath);
 
+        $this->pushProgress([
+            'status' => 'processing',
+            'processed' => 0,
+            'total' => null,
+            'sheet' => null,
+        ]);
+
+        $lastPush = microtime(true);
+
         try {
-            $results = ImportResolver::importFile($absolutePath, $this->importerClass, $this->strategy);
+            $results = ImportResolver::importFile(
+                $absolutePath,
+                $this->importerClass,
+                $this->strategy,
+                function (int $processed, int $total, string $sheet) use (&$lastPush) {
+                    // On limite les écritures cache à ~3/s pour ne pas ralentir
+                    // l'import sur les gros fichiers, tout en gardant la dernière
+                    // ligne d'un lot toujours publiée.
+                    $now = microtime(true);
+                    if ($processed < $total && ($now - $lastPush) < 0.33) {
+                        return;
+                    }
+                    $lastPush = $now;
+
+                    $this->pushProgress([
+                        'status' => 'processing',
+                        'processed' => $processed,
+                        'total' => $total,
+                        'sheet' => $sheet,
+                    ]);
+                },
+            );
         } catch (\Throwable $e) {
             Log::error('ImportClientsJob : échec de l\'import', [
                 'error' => $e->getMessage(),
                 'file' => $this->storedPath,
+            ]);
+
+            $this->pushProgress([
+                'status' => 'failed',
+                'message' => $e->getMessage(),
             ]);
 
             $this->notifyUser(
@@ -79,6 +116,14 @@ class ImportClientsJob implements ShouldQueue
             $body .= "\n".count($allErrors).' ligne(s) en erreur.';
         }
 
+        $this->pushProgress([
+            'status' => 'done',
+            'created' => $totalCreated,
+            'updated' => $totalUpdated,
+            'skipped' => $totalSkipped,
+            'errors_count' => count($allErrors),
+        ]);
+
         $this->notifyUser(
             title: 'Import terminé',
             body: $body,
@@ -94,6 +139,11 @@ class ImportClientsJob implements ShouldQueue
     public function failed(\Throwable $exception): void
     {
         Storage::disk('local')->delete($this->storedPath);
+
+        $this->pushProgress([
+            'status' => 'failed',
+            'message' => $exception->getMessage(),
+        ]);
 
         $this->notifyUser(
             title: 'Échec de l\'import',
@@ -117,5 +167,19 @@ class ImportClientsJob implements ShouldQueue
         $success ? $notification->success() : $notification->danger();
 
         $notification->sendToDatabase($user);
+    }
+
+    /**
+     * Publie l'état d'avancement dans le cache pour le widget de progression
+     * (App\Filament\NsConseil\Widgets\ImportProgressWidget), qui l'interroge
+     * par polling — le job tourne dans un process séparé, donc c'est le seul
+     * canal simple pour faire remonter la progression à l'UI.
+     */
+    private function pushProgress(array $partial): void
+    {
+        $key = 'import_progress:'.$this->importId;
+        $current = Cache::get($key, []);
+
+        Cache::put($key, [...$current, ...$partial], now()->addHours(2));
     }
 }
