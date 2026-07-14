@@ -10,6 +10,7 @@ use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DossierForm
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\PropositionsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\Exports\ClientExporter;
+use App\Filament\Shared\Components\DuplicateWarning;
 use App\Models\Client;
 use App\Models\CustomField;
 use App\Models\CustomFieldValue;
@@ -97,15 +98,27 @@ class ClientResource extends Resource
                     Forms\Components\TextInput::make('nom_tiers')
                         ->label('Nom')
                         ->required()
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->live(onBlur: true),
 
                     Forms\Components\TextInput::make('email')
                         ->label('Email')
-                        ->email(),
+                        ->email()
+                        ->live(onBlur: true),
 
                     Forms\Components\TextInput::make('telephone')
                         ->label('Téléphone')
-                        ->tel(),
+                        ->tel()
+                        ->live(onBlur: true),
+
+                    DuplicateWarning::make(
+                        key: 'client_duplicate_warning',
+                        modelClass: Client::class,
+                        fields: ['nom_tiers' => 'nom_tiers', 'telephone' => 'telephone', 'email' => 'email'],
+                        labelAttribute: 'nom_tiers',
+                        resourceClass: self::class,
+                        entityLabel: 'client',
+                    ),
 
                     Forms\Components\DatePicker::make('date_naissance')
                         ->label('Date de naissance')

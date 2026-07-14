@@ -7,6 +7,7 @@ use App\Enums\OrganizationType;
 use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 use App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
+use App\Filament\Shared\Components\DuplicateWarning;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Models\Consultant;
 use App\Models\CustomField;
@@ -94,7 +95,17 @@ class PartenaireResource extends Resource
                 ->icon('heroicon-o-identification')
                 ->schema([
                     Forms\Components\TextInput::make('nom')
-                        ->label('Nom légal')->required()->maxLength(255)->columnSpan(2),
+                        ->label('Nom légal')->required()->maxLength(255)->columnSpan(2)
+                        ->live(onBlur: true),
+
+                    DuplicateWarning::make(
+                        key: 'partenaire_duplicate_warning',
+                        modelClass: Partenaire::class,
+                        fields: ['nom' => 'nom', 'telephone' => 'telephone', 'email' => 'email'],
+                        labelAttribute: 'nom',
+                        resourceClass: self::class,
+                        entityLabel: 'partenaire',
+                    ),
                     Forms\Components\TextInput::make('entreprise')
                         ->label('Entreprise')->maxLength(255)
                         ->helperText('Raison sociale — utilisée pour la nomenclature')
@@ -226,8 +237,10 @@ class PartenaireResource extends Resource
             Forms\Components\Section::make('Coordonnées')
                 ->icon('heroicon-o-map-pin')
                 ->schema([
-                    Forms\Components\TextInput::make('telephone')->label('Téléphone')->tel(),
-                    Forms\Components\TextInput::make('email')->label('Email générique')->email(),
+                    Forms\Components\TextInput::make('telephone')->label('Téléphone')->tel()
+                        ->live(onBlur: true),
+                    Forms\Components\TextInput::make('email')->label('Email générique')->email()
+                        ->live(onBlur: true),
                     Forms\Components\Textarea::make('adresse')->label('Adresse')->rows(2)->columnSpan(2),
                     Forms\Components\TextInput::make('ville')->label('Ville'),
                 ])->columns(2),
