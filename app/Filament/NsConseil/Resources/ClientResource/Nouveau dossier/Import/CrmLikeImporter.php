@@ -3,30 +3,34 @@
 namespace App\Filament\NsConseil\Resources\ClientResource\Import;
 
 /**
- * Importer pour l'onglet "CRM AOPIA-ABO" (41 colonnes, ~4 300 dossiers).
+ * Importer pour l'onglet "CRM LIKE" (51 colonnes, ~7 700 dossiers).
  *
  * Structure de la ref_client :
- *   PROGRAMME NOM_TIERS AOPIA2
- *   ex: "TOSA PHOTOSHOP BODET Jean-Philippe AOPIA2"
+ *   [AOPIA2|01FC] NOM_TIERS PROGRAMME [N°]
+ *   ex: "AOPIA2 CANARD David PHOTOSHOP BAS TOSA 2"
  *
- * Partenaire : colonne "Interlocuteur" (nom brut du partenaire apporteur).
- * Bloc Parrain : identique à LIKE (NOM PRENOM / Tél / email / Adresse postale /
+ * Bloc Parrain : colonnes NOM PRENOM / Tél / email / Adresse postale /
  *               Code postal.1 / Ville.1 / Commentaires / Super parrain /
- *               Date de création du parrain).
+ *               Programme Super Parrain / Date de création du parrain
+ *
+ * Partenaire : "Partenaire Like" (accord-cadre) + "Partenaire Boutique".
+ * Les valeurs source sont conservees dans Client.extra_data et le rattachement
+ * partenaire est tente par nomenclature exacte.
  */
-class CrmAopiaAboImporter extends BaseClientImporter
+class CrmLikeImporter extends BaseClientImporter
 {
     public static function getName(): string
     {
-        return 'CRM AOPIA-ABO';
+        return 'CRM LIKE';
     }
 
     public static function getRequiredColumns(): array
     {
-        return ['Réf. client', 'Tiers', 'Interlocuteur', 'Montant cpf'];
+        return ['Civilité', 'Réf. client', 'Partenaire Like'];
     }
 
-    protected string $entiteCode = 'AOPIA-ABO';
+    // ── Entité commerciale ──────────────────────────────────────────────────
+    protected string $entiteCode = 'LIKE';
 
     // ── Mapping principal ───────────────────────────────────────────────────
 
@@ -34,12 +38,16 @@ class CrmAopiaAboImporter extends BaseClientImporter
     {
         $ref = trim((string) ($row['Réf. client'] ?? ''));
         $tiers = trim((string) ($row['Tiers'] ?? ''));
-        $interlocuteur = trim((string) ($row['Interlocuteur'] ?? ''));
-        $suiviClient = trim((string) ($row['Suivi actuel du Client'] ?? ''));
+        $partenaireLike = trim((string) ($row['Partenaire Like'] ?? ''));
+        $partenaireBoutique = trim((string) ($row['Partenaire Boutique'] ?? ''));
+        $operation = trim((string) ($row['Opération'] ?? $row['OpÃ©ration'] ?? ''));
 
         return [
-            // ── Client ───────────────────────────────────────────────────
+            // ── Client (personne physique) ───────────────────────────────
             'client' => array_filter([
+                // Clé temporaire pour upsertClient() ; sera supprimée avant Client::updateOrCreate
+                // On utilise email ou nom car ref_client encode programme+nom (pas clé client unique)
+                'civilite' => trim((string) ($row['Civilité'] ?? '')) ?: null,
                 'nom_tiers' => $tiers ?: null,
                 'telephone' => $this->formatTelephone($row['Téléphone'] ?? null),
                 'email' => $this->normalizeEmail($row['Email'] ?? null),
@@ -49,11 +57,12 @@ class CrmAopiaAboImporter extends BaseClientImporter
                 'entreprise' => trim((string) ($row['Entreprise'] ?? '')) ?: null,
                 'date_naissance' => $this->parseDate($row['Date de naissance'] ?? null),
                 'ne_plus_contacter' => $this->parseBool($row['Ne plus contacter'] ?? false),
-                'etat' => $this->mapEtat($row['État'] ?? ''),
-                '_partenaire_nomenclature' => $interlocuteur ?: null,
+                'avis_google' => $this->parseBool($row['Avis Google'] ?? false),
+                '_partenaire_nomenclature' => $partenaireLike ?: null,
                 'extra_data' => array_filter([
-                    'interlocuteur' => $interlocuteur ?: null,
-                    'suivi_client' => $suiviClient ?: null,
+                    'partenaire_like' => $partenaireLike ?: null,
+                    'partenaire_boutique' => $partenaireBoutique ?: null,
+                    'operation' => $operation ?: null,
                 ], fn ($v) => $v !== null && $v !== ''),
             ], fn ($v) => $v !== null && $v !== ''),
 
@@ -61,23 +70,24 @@ class CrmAopiaAboImporter extends BaseClientImporter
             'dossier' => array_filter([
                 'ref_client' => $ref ?: null,
                 'intitule_programme' => $ref && $tiers
-                    ? $this->extractProgrammeAopia($ref, $tiers)
+                    ? $this->extractProgrammeLike($ref, $tiers)
                     : null,
                 'etat' => $this->mapEtat($row['État'] ?? ''),
                 'statut_formation' => $this->mapStatutFormation($row['Statut formation'] ?? ''),
                 'montant_ht' => $this->parseFloat($row['Montant HT'] ?? null),
-                'montant_cpf' => $this->parseFloat($row['Montant cpf'] ?? null),
+                'montant_cpf' => $this->parseFloat($row['Montant CPF'] ?? null),
                 'date_vente' => $this->parseDate($row['Date de vente'] ?? null),
                 'no_dossier_edof' => trim((string) ($row['(C) N° dossier EDOF'] ?? '')) ?: null,
+                '_consultant_accueil_nom' => trim((string) ($row['Consultant 1er accueil'] ?? '')) ?: null,
                 '_consultant_formateur_nom' => trim((string) ($row['Consultant Formateur'] ?? '')) ?: null,
                 '_entite_code' => $this->entiteCode,
-                // Pas de Consultant 1er accueil dans cet onglet
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── HeuresFormation ──────────────────────────────────────────
             'heures' => array_filter([
                 'heures_obligatoires' => $this->parseFloat($row['Heures de formation obligatoires'] ?? null),
                 'heures_complementaires' => $this->parseFloat($row['Heures de formation complémentaires'] ?? null),
+                'heures_elearning' => $this->parseFloat($row["Heures d'E-learning"] ?? null),
                 'total_heures' => $this->parseFloat($row["Nombre d'heures de formation"] ?? null),
                 'heures_realisees' => $this->parseFloat($row['Heures réalisées'] ?? null),
                 'heures_restantes' => $this->parseFloat($row['Heures restantes'] ?? null),
@@ -85,7 +95,7 @@ class CrmAopiaAboImporter extends BaseClientImporter
 
             // ── PlanningFormation ────────────────────────────────────────
             'planning' => array_filter([
-                'date_lancement' => $this->parseDate($row['Date de lancement'] ?? null),
+                'date_lancement' => $this->parseDate($row['(F) Date de lancement'] ?? null),
                 'date_debut' => $this->parseDate($row['(C) Date début de formation'] ?? null),
                 'date_fin_theorique' => $this->parseDate($row['(C) Date de fin formation théorique'] ?? null),
                 'date_certification' => $this->parseDate($row['Date certification'] ?? null),
@@ -106,6 +116,7 @@ class CrmAopiaAboImporter extends BaseClientImporter
             return [];
         }
 
+        // Ville peut être "MASLIVES, France - Loir-et-Cher" => on garde la partie avant la virgule
         $villeRaw = trim((string) ($row['Ville.1'] ?? ''));
         $ville = $villeRaw !== '' ? explode(',', $villeRaw)[0] : null;
 
@@ -126,7 +137,7 @@ class CrmAopiaAboImporter extends BaseClientImporter
         ], fn ($v) => $v !== null && $v !== '');
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
+    // ── Helpers spécifiques ─────────────────────────────────────────────────
 
     private function formatTelephone(mixed $value): ?string
     {

@@ -3,30 +3,31 @@
 namespace App\Filament\NsConseil\Resources\ClientResource\Import;
 
 /**
- * Importer pour l'onglet "CRM AOPIA-ABO" (41 colonnes, ~4 300 dossiers).
+ * Importer pour l'onglet "CRM 01FC" (30 colonnes, ~3 800 dossiers).
  *
  * Structure de la ref_client :
- *   PROGRAMME NOM_TIERS AOPIA2
- *   ex: "TOSA PHOTOSHOP BODET Jean-Philippe AOPIA2"
+ *   PROGRAMME [NOM_TIERS]?
+ *   ex: "TOSA BUR EXCEL EXPERT"  ou  "TOEIC NEVEU Aranud"
+ *   Le programme est toujours en tête ; le nom du tiers peut apparaître en fin.
  *
- * Partenaire : colonne "Interlocuteur" (nom brut du partenaire apporteur).
- * Bloc Parrain : identique à LIKE (NOM PRENOM / Tél / email / Adresse postale /
- *               Code postal.1 / Ville.1 / Commentaires / Super parrain /
- *               Date de création du parrain).
+ * Partenaire : colonne "Provenance" (nom brut).
+ * Deux consultants distincts : "Consultant 1er Accueil" + "Consultant Formateur".
+ * Colonne "Auteur" (back-office) : conservée dans Client.extra_data.
+ * Pas de bloc Parrain dans cet onglet.
  */
-class CrmAopiaAboImporter extends BaseClientImporter
+class Crm01FcImporter extends BaseClientImporter
 {
     public static function getName(): string
     {
-        return 'CRM AOPIA-ABO';
+        return 'CRM 01FC';
     }
 
     public static function getRequiredColumns(): array
     {
-        return ['Réf. client', 'Tiers', 'Interlocuteur', 'Montant cpf'];
+        return ['Réf. client', 'Tiers', 'Département', 'Type du tiers', 'Provenance'];
     }
 
-    protected string $entiteCode = 'AOPIA-ABO';
+    protected string $entiteCode = '01FC';
 
     // ── Mapping principal ───────────────────────────────────────────────────
 
@@ -34,8 +35,8 @@ class CrmAopiaAboImporter extends BaseClientImporter
     {
         $ref = trim((string) ($row['Réf. client'] ?? ''));
         $tiers = trim((string) ($row['Tiers'] ?? ''));
-        $interlocuteur = trim((string) ($row['Interlocuteur'] ?? ''));
-        $suiviClient = trim((string) ($row['Suivi actuel du Client'] ?? ''));
+        $provenance = trim((string) ($row['Provenance'] ?? ''));
+        $auteur = trim((string) ($row['Auteur'] ?? ''));
 
         return [
             // ── Client ───────────────────────────────────────────────────
@@ -45,39 +46,39 @@ class CrmAopiaAboImporter extends BaseClientImporter
                 'email' => $this->normalizeEmail($row['Email'] ?? null),
                 'ville' => trim((string) ($row['Ville'] ?? '')) ?: null,
                 'code_postal' => $this->formatCodePostal($row['Code postal'] ?? null),
-                'adresse' => trim((string) ($row['Adresse'] ?? '')) ?: null,
+                'departement' => trim((string) ($row['Département'] ?? '')) ?: null,
                 'entreprise' => trim((string) ($row['Entreprise'] ?? '')) ?: null,
                 'date_naissance' => $this->parseDate($row['Date de naissance'] ?? null),
-                'ne_plus_contacter' => $this->parseBool($row['Ne plus contacter'] ?? false),
-                'etat' => $this->mapEtat($row['État'] ?? ''),
-                '_partenaire_nomenclature' => $interlocuteur ?: null,
+                'type_tiers' => trim((string) ($row['Type du tiers'] ?? '')) ?: null,
+                '_partenaire_nomenclature' => $provenance ?: null,
                 'extra_data' => array_filter([
-                    'interlocuteur' => $interlocuteur ?: null,
-                    'suivi_client' => $suiviClient ?: null,
+                    'provenance' => $provenance ?: null,
+                    'auteur' => $auteur ?: null,
                 ], fn ($v) => $v !== null && $v !== ''),
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── DossierFormation ─────────────────────────────────────────
             'dossier' => array_filter([
                 'ref_client' => $ref ?: null,
-                'intitule_programme' => $ref && $tiers
-                    ? $this->extractProgrammeAopia($ref, $tiers)
+                'intitule_programme' => $ref
+                    ? $this->extractProgramme01Fc($ref, $tiers)
                     : null,
                 'etat' => $this->mapEtat($row['État'] ?? ''),
                 'statut_formation' => $this->mapStatutFormation($row['Statut formation'] ?? ''),
                 'montant_ht' => $this->parseFloat($row['Montant HT'] ?? null),
-                'montant_cpf' => $this->parseFloat($row['Montant cpf'] ?? null),
-                'date_vente' => $this->parseDate($row['Date de vente'] ?? null),
+                // Typo source conservee intentionnellement ("Dare de vente" dans le fichier)
+                'date_vente' => $this->parseDate(
+                    $row['Dare de vente'] ?? $row['Date de vente'] ?? null
+                ),
                 'no_dossier_edof' => trim((string) ($row['(C) N° dossier EDOF'] ?? '')) ?: null,
+                '_consultant_accueil_nom' => trim((string) ($row['Consultant 1er Accueil'] ?? '')) ?: null,
                 '_consultant_formateur_nom' => trim((string) ($row['Consultant Formateur'] ?? '')) ?: null,
                 '_entite_code' => $this->entiteCode,
-                // Pas de Consultant 1er accueil dans cet onglet
             ], fn ($v) => $v !== null && $v !== ''),
 
             // ── HeuresFormation ──────────────────────────────────────────
             'heures' => array_filter([
-                'heures_obligatoires' => $this->parseFloat($row['Heures de formation obligatoires'] ?? null),
-                'heures_complementaires' => $this->parseFloat($row['Heures de formation complémentaires'] ?? null),
+                // 01FC n'a pas les colonnes obligatoires/complémentaires/elearning
                 'total_heures' => $this->parseFloat($row["Nombre d'heures de formation"] ?? null),
                 'heures_realisees' => $this->parseFloat($row['Heures réalisées'] ?? null),
                 'heures_restantes' => $this->parseFloat($row['Heures restantes'] ?? null),
@@ -85,7 +86,7 @@ class CrmAopiaAboImporter extends BaseClientImporter
 
             // ── PlanningFormation ────────────────────────────────────────
             'planning' => array_filter([
-                'date_lancement' => $this->parseDate($row['Date de lancement'] ?? null),
+                'date_lancement' => $this->parseDate($row['(F) Date de lancement'] ?? null),
                 'date_debut' => $this->parseDate($row['(C) Date début de formation'] ?? null),
                 'date_fin_theorique' => $this->parseDate($row['(C) Date de fin formation théorique'] ?? null),
                 'date_certification' => $this->parseDate($row['Date certification'] ?? null),
@@ -93,37 +94,9 @@ class CrmAopiaAboImporter extends BaseClientImporter
             ], fn ($v) => $v !== null),
 
             // ── Parrain ──────────────────────────────────────────────────
-            'parrain' => $this->mapParrainBlock($row),
+            // Pas de bloc parrain dans 01FC
+            'parrain' => [],
         ];
-    }
-
-    // ── Bloc Parrain ────────────────────────────────────────────────────────
-
-    private function mapParrainBlock(array $row): array
-    {
-        $nomPrenom = trim((string) ($row['NOM PRENOM'] ?? ''));
-        if ($nomPrenom === '') {
-            return [];
-        }
-
-        $villeRaw = trim((string) ($row['Ville.1'] ?? ''));
-        $ville = $villeRaw !== '' ? explode(',', $villeRaw)[0] : null;
-
-        $cpRaw = $row['Code postal.1'] ?? null;
-        $codePostal = $cpRaw !== null && $cpRaw !== ''
-            ? str_pad((string) (int) $cpRaw, 5, '0', STR_PAD_LEFT)
-            : null;
-
-        return array_filter([
-            'nom_prenom' => $nomPrenom,
-            'telephone' => $this->formatTelephone($row['Tél'] ?? null),
-            'email' => $this->normalizeEmail($row['email'] ?? null),
-            'adresse' => trim((string) ($row['Adresse postale'] ?? '')) ?: null,
-            'code_postal' => $codePostal,
-            'ville' => $ville,
-            'super_parrain' => $this->parseBool($row['Super parrain'] ?? false),
-            'date_creation' => $this->parseDate($row['Date de création du parrain'] ?? null),
-        ], fn ($v) => $v !== null && $v !== '');
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
