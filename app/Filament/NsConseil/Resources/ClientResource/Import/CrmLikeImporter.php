@@ -140,19 +140,6 @@ class CrmLikeImporter extends BaseClientImporter
 
     // ── Helpers spécifiques ─────────────────────────────────────────────────
 
-    private function formatTelephone(mixed $value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-        $digits = preg_replace('/\D/', '', (string) $value);
-        if (strlen($digits) === 10) {
-            return implode(' ', str_split($digits, 2));
-        }
-
-        return (string) $value ?: null;
-    }
-
     private function normalizeEmail(mixed $value): ?string
     {
         $email = strtolower(trim((string) ($value ?? '')));
