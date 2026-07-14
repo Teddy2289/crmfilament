@@ -610,14 +610,13 @@ class Prospect extends Model
      *
      * Règle actuelle (implémentation):
      * - Le prospect doit être qualifié (statut QF) et validé par un responsable d'équipe
-     * - Le partenaire créé a le statut "À prospecter" (OrganizationStatus::AProspecter)
+     * - Le partenaire créé a le statut "Signé accord cadre" (OrganizationStatus::SigneAccordCadre)
      * - Les contacts (dirigeant, CSE, syndicat) sont automatiquement migrés vers ContactPartenaire
      *
      * Note CDC vs Implémentation:
      * - CDC §4.4: "Conversion Prospect → Partenaire : responsable d'équipe uniquement | Statut = QF validé"
-     * - CDC mentionne également "Convention signée" comme condition, mais l'implémentation actuelle
-     *   utilise QF comme critère principal pour permettre la conversion et la signature ultérieure
-     * - Le partenaire créé démarre en statut "À prospecter" pour permettre le workflow de signature
+     * - CDC mentionne également "Convention signée" comme condition ; la conversion crée donc
+     *   directement le partenaire au statut "Signé accord cadre"
      *
      * @throws \Exception Si le prospect n'est pas qualifié (QF)
      * @return Partenaire|null Le partenaire créé ou null en cas d'échec
@@ -644,7 +643,7 @@ class Prospect extends Model
                 'nb_salaries' => $this->nb_salaries,
                 'chiffre_affaires' => $this->chiffre_affaires,
                 'commercial_id' => $this->commercial_id,
-                'statut' => OrganizationStatus::AProspecter,
+                'statut' => OrganizationStatus::SigneAccordCadre,
                 'prospect_id' => $this->id,
                 'notes' => "Converti depuis prospect #{$this->id}\n{$this->description}",
 

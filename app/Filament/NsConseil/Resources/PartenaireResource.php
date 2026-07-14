@@ -424,28 +424,14 @@ class PartenaireResource extends Resource
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')->badge()
                     ->formatStateUsing(
-                        fn($state) => $state instanceof OrganizationStatus
-                            ? $state->label()
-                            : OrganizationStatus::tryFrom((string) $state)?->label() ?? $state
+                        fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state))?->label() ?? $state
                     )
-                    ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
-                        OrganizationStatus::AProspecter => 'gray',
-                        OrganizationStatus::EnCoursProspection => 'blue',
-                        OrganizationStatus::RdvEnCours => 'warning',
-                        OrganizationStatus::SigneAccordCadre => 'success',
-                        OrganizationStatus::ConventionEngagement => 'success',
-                        OrganizationStatus::Refus => 'danger',
-                        default => 'gray',
-                    })
-                    ->icon(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
-                        OrganizationStatus::AProspecter => 'heroicon-o-queue-list',
-                        OrganizationStatus::EnCoursProspection => 'heroicon-o-phone',
-                        OrganizationStatus::RdvEnCours => 'heroicon-o-calendar',
-                        OrganizationStatus::SigneAccordCadre => 'heroicon-o-document-check',
-                        OrganizationStatus::ConventionEngagement => 'heroicon-o-check-badge',
-                        OrganizationStatus::Refus => 'heroicon-o-x-circle',
-                        default => null,
-                    }),
+                    ->color(
+                        fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state))?->color() ?? 'gray'
+                    )
+                    ->icon(
+                        fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state))?->icon()
+                    ),
 
                 // CORRECTIF : conseiller (Consultant) au lieu de commercial (User)
                 Tables\Columns\TextColumn::make('conseiller.nom')
@@ -715,19 +701,14 @@ class PartenaireResource extends Resource
                             ->label('Statut')
                             ->badge()
                             ->formatStateUsing(
-                                fn($state) => $state instanceof OrganizationStatus
-                                    ? $state->label()
-                                    : OrganizationStatus::tryFrom((string) $state)?->label() ?? $state
+                                fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state))?->label() ?? $state
                             )
-                            ->color(fn($state) => match ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state)) {
-                                OrganizationStatus::AProspecter => 'gray',
-                                OrganizationStatus::EnCoursProspection => 'blue',
-                                OrganizationStatus::RdvEnCours => 'warning',
-                                OrganizationStatus::SigneAccordCadre,
-                                OrganizationStatus::ConventionEngagement => 'success',
-                                OrganizationStatus::Refus => 'danger',
-                                default => 'gray',
-                            }),
+                            ->icon(
+                                fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state))?->icon()
+                            )
+                            ->color(
+                                fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state))?->color() ?? 'gray'
+                            ),
 
                         Infolists\Components\TextEntry::make('nomenclature_interne')
                             ->label('Nomenclature interne')

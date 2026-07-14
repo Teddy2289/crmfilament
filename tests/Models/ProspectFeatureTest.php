@@ -175,7 +175,7 @@ class ProspectFeatureTest extends TestCase
 
         $this->assertInstanceOf(Partenaire::class, $partenaire);
         $this->assertEquals('CSE Converti', $partenaire->nom);
-        $this->assertEquals(OrganizationStatus::AProspecter, $partenaire->statut);
+        $this->assertEquals(OrganizationStatus::SigneAccordCadre, $partenaire->statut);
         $this->assertEquals($prospect->id, $partenaire->prospect_id);
         $this->assertStringContainsString("Converti depuis prospect #{$prospect->id}", $partenaire->notes);
 

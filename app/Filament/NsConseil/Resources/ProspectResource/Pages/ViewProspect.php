@@ -46,6 +46,28 @@ class ViewProspect extends ViewRecord
                     $this->refreshFormData(['statut', 'qf_valide']);
                 }),
 
+            Action::make('valider_qf')
+                ->label('Valider QF')
+                ->icon('heroicon-o-shield-check')
+                ->color('success')
+                ->visible(fn () => $this->record->statut === ProspectStatut::QF
+                    && ! $this->record->qf_valide
+                    && ! $this->record->converti_partenaire_id
+                    && auth()->user()
+                    && (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->isSuperviseur()))
+                ->requiresConfirmation()
+                ->modalHeading('Valider la qualification QF ?')
+                ->modalDescription('Cette validation débloque la conversion de ce prospect en partenaire. Réservée aux responsables d\'équipe (CDC §6).')
+                ->action(function () {
+                    $this->record->validerQF(auth()->id());
+                    Notification::make()
+                        ->title('QF validé ✓')
+                        ->body('Le prospect peut maintenant être converti en partenaire.')
+                        ->success()
+                        ->send();
+                    $this->refreshFormData(['qf_valide', 'valide_par', 'qf_valide_at']);
+                }),
+
             Action::make('marquer_ko')
                 ->label('Marquer KO')
                 ->icon('heroicon-o-x-circle')

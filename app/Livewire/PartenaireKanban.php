@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\OrganizationStatus;
 use App\Models\Partenaire;
 use Livewire\Component;
 
@@ -17,16 +18,16 @@ class PartenaireKanban extends Component
 
     public function loadData()
     {
-        // Définir les colonnes basées sur les statuts
-        $this->columns = [
-            ['id' => 'a_prospecter', 'label' => 'À prospecter', 'color' => 'gray', 'icon' => 'heroicon-o-magnifying-glass'],
-            ['id' => 'en_cours_prospection', 'label' => 'En cours de prospection', 'color' => 'warning', 'icon' => 'heroicon-o-phone'],
-            ['id' => 'rdv_en_cours', 'label' => 'RDV en cours', 'color' => 'info', 'icon' => 'heroicon-o-calendar-days'],
-            ['id' => 'signe_accord_cadre', 'label' => 'Signé accord cadre', 'color' => 'success', 'icon' => 'heroicon-o-document-text'],
-            ['id' => 'convention_engagement', 'label' => 'Convention d\'engagement', 'color' => 'primary', 'icon' => 'heroicon-o-check-circle'],
-            ['id' => 'refus', 'label' => 'Refus', 'color' => 'danger', 'icon' => 'heroicon-o-x-circle'],
-            ['id' => 'inactif', 'label' => 'Inactif', 'color' => 'gray', 'icon' => 'heroicon-o-minus-circle'],
-        ];
+        // Colonnes dérivées de OrganizationStatus (source unique) pour ne
+        // jamais afficher une colonne correspondant à un statut inexistant.
+        $this->columns = collect(OrganizationStatus::cases())
+            ->map(fn (OrganizationStatus $statut) => [
+                'id' => $statut->value,
+                'label' => $statut->label(),
+                'color' => $statut->color(),
+                'icon' => $statut->icon(),
+            ])
+            ->toArray();
 
         // Charger les partenaires par statut
         $this->partenaires = Partenaire::with(['entreprise', 'entiteCommerciale'])
@@ -51,7 +52,7 @@ class PartenaireKanban extends Component
     public function updateStatus($partenaireId, $newStatus)
     {
         $partenaire = Partenaire::find($partenaireId);
-        if ($partenaire && array_key_exists($newStatus, Partenaire::STATUTS)) {
+        if ($partenaire && OrganizationStatus::tryFrom($newStatus) !== null) {
             $partenaire->update([
                 'statut' => $newStatus,
                 'date_modification_statut' => now(),
