@@ -2,7 +2,6 @@
 
 namespace App\Filament\NsConseil\Resources;
 
-use App\Filament\NsConseil\Concerns\HasRoleAccess;
 use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
 use App\Filament\NsConseil\Resources\ClientResource\Pages;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
@@ -10,10 +9,10 @@ use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DossierForm
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\PropositionsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\Exports\ClientExporter;
+use App\Filament\Shared\Actions\LancerAppelsAction;
 use App\Filament\Shared\Components\DuplicateWarning;
+use App\Filament\Shared\Concerns\HasCustomFieldsForm;
 use App\Models\Client;
-use App\Models\CustomField;
-use App\Models\CustomFieldValue;
 use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -23,11 +22,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 class ClientResource extends Resource
 {
-    use HasRoleAccess;
+    use HasCustomFieldsForm;
     use UsesResourcePermissions;
 
     protected static ?string $model = Client::class;
@@ -41,36 +39,6 @@ class ClientResource extends Resource
     protected static ?string $navigationLabel = 'Clients';
 
     protected static ?int $navigationSort = 1;
-
-    public static function canAccess(): bool
-    {
-        return static::userCanViewResourceList();
-    }
-
-    public static function canViewAny(): bool
-    {
-        return static::userCanViewResourceList();
-    }
-
-    public static function canView(Model $record): bool
-    {
-        return static::userCanResourcePermission('view');
-    }
-
-    public static function canCreate(): bool
-    {
-        return static::userCanResourcePermission('create');
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return static::userCanResourcePermission('update');
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return static::userCanResourcePermission('delete');
-    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -100,6 +68,10 @@ class ClientResource extends Resource
                         ->required()
                         ->maxLength(255)
                         ->live(onBlur: true),
+
+                    Forms\Components\TextInput::make('prenom')
+                        ->label('Prénom')
+                        ->maxLength(255),
 
                     Forms\Components\TextInput::make('email')
                         ->label('Email')
@@ -204,95 +176,8 @@ class ClientResource extends Resource
                 ->collapsible()
                 ->collapsed(),
 
-            Forms\Components\Section::make('Champs personnalisés')
-                ->icon('heroicon-o-adjustments-horizontal')
-                ->schema(function (callable $get, ?Client $record) {
-                    $customFields = CustomField::forModel(Client::class)
-                        ->active()
-                        ->ordered()
-                        ->get();
-
-                    return $customFields->map(function ($field) use ($record) {
-                        $component = match ($field->type) {
-                            'text' => Forms\Components\TextInput::make('custom_field_' . $field->id),
-                            'textarea' => Forms\Components\Textarea::make('custom_field_' . $field->id),
-                            'number' => Forms\Components\TextInput::make('custom_field_' . $field->id)->numeric(),
-                            'select' => Forms\Components\Select::make('custom_field_' . $field->id)
-                                ->options($field->options ?? []),
-                            'checkbox' => Forms\Components\Checkbox::make('custom_field_' . $field->id),
-                            'date' => Forms\Components\DatePicker::make('custom_field_' . $field->id),
-                            'email' => Forms\Components\TextInput::make('custom_field_' . $field->id)->email(),
-                            'tel' => Forms\Components\TextInput::make('custom_field_' . $field->id)->tel(),
-                            default => Forms\Components\TextInput::make('custom_field_' . $field->id),
-                        };
-
-                        $component->label($field->name);
-
-                        if ($field->required) {
-                            $component->required();
-                        }
-
-                        if ($field->placeholder) {
-                            $component->placeholder($field->placeholder);
-                        }
-
-                        if ($field->helper_text) {
-                            $component->helperText($field->helper_text);
-                        }
-
-                        // Charger la valeur existante si on est en édition
-                        if ($record) {
-                            $value = CustomFieldValue::where('custom_field_id', $field->id)
-                                ->where('model_type', Client::class)
-                                ->where('model_id', $record->id)
-                                ->first();
-
-                            if ($value) {
-                                $component->default($value->value);
-                            }
-                        }
-
-                        return $component;
-                    })->toArray() ?: [
-                        Forms\Components\Placeholder::make('no_custom_fields')
-                            ->label('Aucun champ personnalisé configuré')
-                            ->content('Configurez des champs personnalisés dans la section "Champs personnalisés" du menu Configuration.'),
-                    ];
-                }),
+            static::customFieldsFormSection(),
         ]));
-    }
-
-    public static function afterCreate(Model $record): void
-    {
-        static::saveCustomFields($record);
-    }
-
-    public static function afterUpdate(Model $record): void
-    {
-        static::saveCustomFields($record);
-    }
-
-    protected static function saveCustomFields(Model $record): void
-    {
-        $customFields = CustomField::forModel(Client::class)->active()->get();
-
-        foreach ($customFields as $field) {
-            $fieldName = 'custom_field_' . $field->id;
-            $value = request()->input($fieldName);
-
-            if ($value !== null) {
-                CustomFieldValue::updateOrCreate(
-                    [
-                        'custom_field_id' => $field->id,
-                        'model_type' => Client::class,
-                        'model_id' => $record->id,
-                    ],
-                    [
-                        'value' => $value,
-                    ]
-                );
-            }
-        }
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -311,10 +196,10 @@ class ClientResource extends Resource
                 // 🔵 Colonne principale : Nom + Civilité
                 Tables\Columns\TextColumn::make('nom_tiers')
                     ->label('Client')
-                    ->searchable(['nom_tiers', 'email', 'telephone'])
+                    ->searchable(['nom_tiers', 'prenom', 'email', 'telephone'])
                     ->sortable()
                     ->weight('bold')
-                    ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').$state)
+                    ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').($record->prenom ? $record->prenom.' ' : '').$state)
                     )
                     ->description(fn (Client $record) => static::userCanShowField('email') && filled($record->email)
                         ? $record->email
@@ -550,28 +435,7 @@ class ClientResource extends Resource
                     ->exporter(ClientExporter::class)
                     ->label('Exporter les clients')
                     ->icon('heroicon-o-arrow-down-tray'),
-                Tables\Actions\Action::make('lancer_appels')
-                    ->label('Lancer les appels')
-                    ->icon('heroicon-o-phone-arrow-up-right')
-                    ->color('primary')
-                    ->visible(function () {
-                        $userId = auth()->id();
-                        return \App\Models\CampagnePhoning::active()
-                            ->forUser($userId)
-                            ->where('type_entite', 'clients')
-                            ->exists();
-                    })
-                    ->url(function () {
-                        $userId = auth()->id();
-                        $campagne = \App\Models\CampagnePhoning::active()
-                            ->forUser($userId)
-                            ->where('type_entite', 'clients')
-                            ->first();
-                        
-                        return $campagne 
-                            ? \App\Filament\NsConseil\Pages\PhoningWorkflow::getUrl(['campagne_id' => $campagne->id])
-                            : '#';
-                    }),
+                LancerAppelsAction::make('clients'),
             ])
             ->emptyStateHeading('Aucun client')
             ->emptyStateDescription('Importez des clients depuis un fichier CSV.')
@@ -592,7 +456,7 @@ class ClientResource extends Resource
                     ->label('Client')
                     ->searchable()
                     ->weight('bold')
-                    ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').$state)),
+                    ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').($record->prenom ? $record->prenom.' ' : '').$state)),
 
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
@@ -641,10 +505,17 @@ class ClientResource extends Resource
         return $infolist->schema(static::applyShowFieldPermissions([
             Infolists\Components\Section::make('Identité')
                 ->schema([
-                    Infolists\Components\TextEntry::make('nom_tiers')
+                    Infolists\Components\TextEntry::make('nom_affiche')
                         ->label('Nom')
                         ->weight('bold')
-                        ->formatStateUsing(fn ($state, Client $record) => $record->nom_complet),
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('prenom_affiche')
+                        ->label('Prénom')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('nom_naissance')
+                        ->label('Nom de naissance')
+                        ->placeholder('—')
+                        ->visible(fn ($record) => filled($record->nom_naissance)),
                     Infolists\Components\TextEntry::make('ref_client')
                         ->label('Référence'),
                     Infolists\Components\TextEntry::make('civilite')
@@ -652,9 +523,7 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('date_naissance')
                         ->label('Né(e) le')
                         ->date('d/m/Y'),
-                    Infolists\Components\TextEntry::make('age')
-                        ->label('Âge')
-                        ->suffix(' ans'),
+                    
                     Infolists\Components\TextEntry::make('entreprise')
                         ->label('Entreprise'),
                     Infolists\Components\TextEntry::make('partenaire.nom')

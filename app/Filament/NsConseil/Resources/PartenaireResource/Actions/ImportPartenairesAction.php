@@ -122,8 +122,8 @@ class ImportPartenairesAction extends Action
                             ->nullable()
                             ->helperText('Utilisé si le conseiller n\'est pas trouvé en base.'),
                         Forms\Components\Placeholder::make('nomenclature_interne_info')
-                            ->label('Nomenclature interne')
-                            ->content('Generee automatiquement par ligne au format [Type] [Entreprise] [Ville].'),
+                            ->label('Nom retenu')
+                            ->content('Generee automatiquement par ligne au format [Entreprise] [Ville] [Département] [Type].'),
                     ])
                     ->columns(2),
 

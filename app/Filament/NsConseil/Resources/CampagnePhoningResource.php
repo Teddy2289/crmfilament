@@ -7,6 +7,7 @@ use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource\Pages;
 use App\Models\CampagnePhoning;
 use App\Models\EntiteCommerciale;
+use App\Models\GroupeTelepro;
 use App\Models\Partenaire;
 use App\Models\User;
 use App\Support\UsesResourcePermissions;
@@ -75,8 +76,16 @@ class CampagnePhoningResource extends Resource
                 ->icon('heroicon-o-user')
                 ->columns(2)
                 ->schema([
+                    Forms\Components\Select::make('groupe_telepro_id')
+                        ->label('Groupe assigné')
+                        ->options(fn () => GroupeTelepro::actifs()->orderBy('nom')->pluck('nom', 'id'))
+                        ->searchable()
+                        ->nullable()
+                        ->placeholder('Tous les groupes (ouverte à tous)')
+                        ->helperText('Tous les télépros de ce groupe voient cette campagne.'),
+
                     Forms\Components\Select::make('user_id')
-                        ->label('Assigné à')
+                        ->label('Agent spécifique (optionnel)')
                         ->options(
                             fn () => User::where('actif', true)
                                 ->orderBy('nom')
@@ -86,7 +95,8 @@ class CampagnePhoningResource extends Resource
                         ->searchable()
                         ->nullable()
                         ->default(fn () => auth()->user()?->hasRoleCache('teleprospecteur') ? auth()->id() : null)
-                        ->placeholder('Tous les agents'),
+                        ->placeholder('Personne en particulier')
+                        ->helperText('Prioritaire sur le groupe si renseigné.'),
 
                     Forms\Components\Select::make('type_entite')
                         ->label('Cible')
@@ -241,8 +251,15 @@ class CampagnePhoningResource extends Resource
                         'success' => 'clients',
                     ]),
 
+                Tables\Columns\TextColumn::make('groupeTelepro.nom')
+                    ->label('Groupe')
+                    ->placeholder('Tous')
+                    ->badge()
+                    ->color('primary')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('user.nom')
-                    ->label('Assigné à')
+                    ->label('Agent spécifique')
                     ->formatStateUsing(
                         fn ($record) => $record->user
                             ? trim("{$record->user->prenom} {$record->user->nom}")
@@ -281,8 +298,12 @@ class CampagnePhoningResource extends Resource
                     ->label('Cible')
                     ->options(CampagnePhoning::TYPES_ENTITE),
 
+                Tables\Filters\SelectFilter::make('groupe_telepro_id')
+                    ->label('Groupe')
+                    ->options(fn () => GroupeTelepro::actifs()->orderBy('nom')->pluck('nom', 'id')),
+
                 Tables\Filters\SelectFilter::make('user_id')
-                    ->label('Assigné à')
+                    ->label('Agent spécifique')
                     ->options(
                         fn () => User::where('actif', true)
                             ->orderBy('nom')

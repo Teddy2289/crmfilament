@@ -80,11 +80,11 @@ class ContactPartenaireResource extends Resource
                                                     ->email()
                                                     ->maxLength(255),
                                                 Forms\Components\TextInput::make('telephone_direct')
-                                                    ->label('Téléphone Direct')
+                                                    ->label('Téléphone Professionnel')
                                                     ->tel()
                                                     ->maxLength(255),
                                                 Forms\Components\TextInput::make('telephone_mobile')
-                                                    ->label('Téléphone Mobile')
+                                                    ->label('Téléphone personnel')
                                                     ->tel()
                                                     ->maxLength(255),
                                                 Forms\Components\TextInput::make('telephone_perso')

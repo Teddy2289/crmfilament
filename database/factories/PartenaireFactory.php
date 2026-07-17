@@ -29,7 +29,7 @@ class PartenaireFactory extends Factory
             'adresse' => fake()->streetAddress(),
             'code_postal' => fake()->postcode(),
             'ville' => fake()->city(),
-            'departement' => fake()->department(),
+            'departement' => (string) array_key_first(fake()->department()),
             'region' => fake()->region(),
             'telephone' => fake()->phoneNumber(),
             'email' => fake()->unique()->safeEmail(),

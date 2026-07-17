@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource\Pages\ViewCampagnePhoning;
 use App\Models\Appel;
 use App\Models\CampagnePhoning;
+use App\Models\GroupeTelepro;
 use App\Models\Prospect;
 use App\Models\StatutPhoning;
 use App\Models\User;
@@ -98,6 +99,48 @@ class CampagnePhoningQueueTest extends TestCase
             ->assertDontSee($ko->nom)
             ->assertDontSee($qf->nom)
             ->assertDontSee($retired->nom);
+    }
+
+    #[Test]
+    public function campaign_assigned_to_a_group_is_only_visible_to_its_members(): void
+    {
+        $groupeA = GroupeTelepro::create(['nom' => 'Groupe 44-45-75', 'actif' => true]);
+        $groupeB = GroupeTelepro::create(['nom' => 'Groupe 60-80', 'actif' => true]);
+
+        $membreGroupeA = User::factory()->create(['groupe_telepro_id' => $groupeA->id]);
+        $membreGroupeB = User::factory()->create(['groupe_telepro_id' => $groupeB->id]);
+        $sansGroupe = User::factory()->create(['groupe_telepro_id' => null]);
+
+        $campagneGroupeA = CampagnePhoning::create([
+            'nom' => 'Campagne 75',
+            'statut' => 'active',
+            'type_entite' => 'prospects',
+            'groupe_telepro_id' => $groupeA->id,
+        ]);
+
+        $campagneOuverte = CampagnePhoning::create([
+            'nom' => 'Campagne ouverte',
+            'statut' => 'active',
+            'type_entite' => 'prospects',
+        ]);
+
+        $this->assertTrue(
+            CampagnePhoning::query()->forUser($membreGroupeA->id)->whereKey($campagneGroupeA->id)->exists()
+        );
+        $this->assertFalse(
+            CampagnePhoning::query()->forUser($membreGroupeB->id)->whereKey($campagneGroupeA->id)->exists()
+        );
+        $this->assertFalse(
+            CampagnePhoning::query()->forUser($sansGroupe->id)->whereKey($campagneGroupeA->id)->exists()
+        );
+
+        // La campagne ouverte (sans user_id ni groupe) reste visible par tous.
+        $this->assertTrue(
+            CampagnePhoning::query()->forUser($membreGroupeB->id)->whereKey($campagneOuverte->id)->exists()
+        );
+        $this->assertTrue(
+            CampagnePhoning::query()->forUser($sansGroupe->id)->whereKey($campagneOuverte->id)->exists()
+        );
     }
 
     private function userWithFullAccess(): User

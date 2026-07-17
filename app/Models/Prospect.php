@@ -53,6 +53,7 @@ class Prospect extends Model
         'date_premier_contact',
         'rappel_planifie_at',
         'interlocuteur_nom',
+        'interlocuteur_prenom',
         'interlocuteur_fonction',
         'interlocuteur_telephone',
         'interlocuteur_email',
@@ -211,7 +212,8 @@ class Prospect extends Model
         }
 
         return trim(
-            $this->interlocuteur_nom.
+            ($this->interlocuteur_prenom ? $this->interlocuteur_prenom.' ' : '').
+                $this->interlocuteur_nom.
                 ($this->interlocuteur_fonction ? ' - '.$this->interlocuteur_fonction : '')
         );
     }
@@ -646,18 +648,6 @@ class Prospect extends Model
                 'statut' => OrganizationStatus::SigneAccordCadre,
                 'prospect_id' => $this->id,
                 'notes' => "Converti depuis prospect #{$this->id}\n{$this->description}",
-
-                // CSE (informations générales conservées dans partenaire)
-                'cse_nb_elus' => $this->cse_nb_elus,
-                'cse_date_fin_mandat' => $this->cse_date_fin_mandat,
-                'cse_existence_juridique' => (bool) $this->cse_existence_juridique,
-                'cse_notes' => $this->cse_notes,
-
-                // Syndicat (informations générales conservées dans partenaire)
-                'syndicat_appartenance' => $this->syndicat_appartenance,
-                'syndicat_nom_organisation' => $this->syndicat_nom_organisation,
-                'syndicat_perimetre' => $this->syndicat_perimetre,
-                'syndicat_notes' => $this->syndicat_notes,
             ]);
 
             // Migrer le dirigeant vers ContactPartenaire
@@ -668,7 +658,6 @@ class Prospect extends Model
                     'nom' => $this->dirigeant_nom,
                     'prenom' => $this->dirigeant_prenom,
                     'fonction' => $this->dirigeant_fonction,
-                    'role' => 'AUTRE',
                     'email' => $this->dirigeant_email,
                     'telephone_direct' => $this->dirigeant_telephone,
                     'est_principal' => true,
@@ -685,7 +674,7 @@ class Prospect extends Model
                     'civilite' => 'Mme',
                     'nom' => $this->cse_secretaire_nom,
                     'prenom' => $this->cse_secretaire_prenom,
-                    'role' => 'SECRETAIRE',
+                    'fonction' => 'Secrétaire CSE',
                     'email' => $this->cse_secretaire_email_pro,
                     'email_perso' => $this->cse_secretaire_email_perso,
                     'telephone_direct' => $this->cse_secretaire_tel_direct,
@@ -702,7 +691,7 @@ class Prospect extends Model
                     'civilite' => 'M.',
                     'nom' => $this->cse_tresorier_nom,
                     'prenom' => $this->cse_tresorier_prenom,
-                    'role' => 'TRESORIER',
+                    'fonction' => 'Trésorier CSE',
                     'email' => $this->cse_tresorier_email_pro,
                     'email_perso' => $this->cse_tresorier_email_perso,
                     'telephone_direct' => $this->cse_tresorier_tel_direct,
@@ -719,8 +708,7 @@ class Prospect extends Model
                     'civilite' => 'M.',
                     'nom' => $this->syndicat_responsable_nom,
                     'prenom' => $this->syndicat_responsable_prenom,
-                    'fonction' => $this->syndicat_responsable_fonction,
-                    'role' => 'SYNDICAT_DS',
+                    'fonction' => $this->syndicat_responsable_fonction ?: 'Délégué syndical',
                     'nom_syndicat' => $this->syndicat_appartenance,
                     'email' => $this->syndicat_email_pro,
                     'email_perso' => $this->syndicat_email_perso,

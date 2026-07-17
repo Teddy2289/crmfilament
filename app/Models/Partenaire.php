@@ -50,7 +50,6 @@ class Partenaire extends Model
         // ── Statut / Suivi ────────────────────────────────────────────
         'statut',
         'date_modification_statut',
-        'date_convention',
         'date_signature',       // ✅ Ajout MEA
         'annee_signature',
         // ── Fonctionnement partenariat ────────────────────────────────
@@ -71,41 +70,6 @@ class Partenaire extends Model
         'conseiller_id',
         'parrain_partenaire_id',
         'prospect_id',
-        // ── Champs CSE (inchangés) ────────────────────────────────────
-        'cse_secretaire_nom',
-        'cse_secretaire_prenom',
-        'cse_secretaire_tel_direct',
-        'cse_secretaire_tel_perso',
-        'cse_secretaire_email_pro',
-        'cse_secretaire_email_perso',
-        'cse_tresorier_nom',
-        'cse_tresorier_prenom',
-        'cse_tresorier_tel_direct',
-        'cse_tresorier_tel_perso',
-        'cse_tresorier_email_pro',
-        'cse_tresorier_email_perso',
-        'cse_nb_elus',
-        'cse_date_fin_mandat',
-        'cse_existence_juridique',
-        'cse_notes',
-        // ── Syndicat (inchangés) ──────────────────────────────────────
-        'syndicat_appartenance',
-        'syndicat_nom_organisation',
-        'syndicat_responsable_nom',
-        'syndicat_responsable_prenom',
-        'syndicat_responsable_fonction',
-        'syndicat_tel_direct',
-        'syndicat_tel_perso',
-        'syndicat_email_pro',
-        'syndicat_email_perso',
-        'syndicat_perimetre',
-        'syndicat_notes',
-        // ── Dirigeant (inchangés) ─────────────────────────────────────
-        'dirigeant_nom',
-        'dirigeant_prenom',
-        'dirigeant_fonction',
-        'dirigeant_telephone',
-        'dirigeant_email',
         // ── Misc ──────────────────────────────────────────────────────
         'nombre_ventes_liees',
         'notes',
@@ -118,17 +82,13 @@ class Partenaire extends Model
     protected $casts = [
         'type' => OrganizationType::class,
         'statut' => OrganizationStatus::class,
-        'date_convention' => 'date',
         'date_signature' => 'date',
-        'cse_date_fin_mandat' => 'date',
         'date_modification_statut' => 'datetime',
         'date_evaluation' => 'date',
-        'cse_existence_juridique' => 'boolean',
         'parrainage_entreprise' => 'boolean', // ✅ OUI/NON → bool
         'nb_salaries' => 'integer',
         'chiffre_affaires' => 'decimal:2',
         'nombre_ventes_liees' => 'integer',
-        'cse_nb_elus' => 'integer',
         'annee_signature' => 'integer',
     ];
 
@@ -155,15 +115,15 @@ class Partenaire extends Model
     }
 
     /**
-     * Nomenclature imposée par le CDC : « [Type] [Entreprise] [Ville] ».
+     * Nomenclature du « Nom retenu » : « [Entreprise] [Ville] [Département] [Type] ».
      */
-    public static function genererNomenclature($type, ?string $entreprise, ?string $ville): string
+    public static function genererNomenclature($type, ?string $entreprise, ?string $ville, ?string $departement = null): string
     {
         $typeLabel = $type instanceof OrganizationType
             ? $type->value
             : (OrganizationType::tryFrom((string) $type)?->value ?? (string) $type);
 
-        return collect([$typeLabel, $entreprise, $ville])
+        return collect([$entreprise, $ville, $departement, $typeLabel])
             ->filter(fn ($part) => filled($part))
             ->map(fn ($part) => trim((string) $part))
             ->implode(' ');
@@ -171,7 +131,7 @@ class Partenaire extends Model
 
     public function getNomenclatureSuggereeAttribute(): string
     {
-        return self::genererNomenclature($this->type ?: OrganizationType::CSE, $this->entreprise ?: $this->nom, $this->ville);
+        return self::genererNomenclature($this->type ?: OrganizationType::CSE, $this->entreprise ?: $this->nom, $this->ville, $this->departement);
     }
 
     public function synchroniserNomenclatureInterne(): void
@@ -280,7 +240,7 @@ class Partenaire extends Model
     {
         $this->update([
             'statut' => OrganizationStatus::ConventionEngagement,
-            'date_convention' => now(),
+            'date_signature' => $this->date_signature ?? now(),
             'date_modification_statut' => now(),
         ]);
     }
@@ -300,14 +260,18 @@ class Partenaire extends Model
     {
         static::saving(function (Partenaire $partenaire) {
             $partenaire->synchroniserNomenclatureInterne();
+
+            if (blank($partenaire->nom_retenu)) {
+                $partenaire->nom_retenu = $partenaire->nomenclature_suggeree;
+            }
         });
 
         static::updating(function (Partenaire $partenaire) {
             if ($partenaire->isDirty('statut')) {
                 $partenaire->date_modification_statut = now();
 
-                if ($partenaire->statut === OrganizationStatus::ConventionEngagement) {
-                    $partenaire->date_convention = now();
+                if ($partenaire->statut === OrganizationStatus::ConventionEngagement && ! $partenaire->date_signature) {
+                    $partenaire->date_signature = now();
                 }
             }
         });

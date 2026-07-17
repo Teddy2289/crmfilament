@@ -52,7 +52,64 @@ class Client extends Model
 
     public function getNomCompletAttribute(): string
     {
-        return trim(($this->civilite ? $this->civilite.' ' : '').($this->nom_tiers ?? ''));
+        return trim(($this->civilite ? $this->civilite.' ' : '').($this->prenom ? $this->prenom.' ' : '').($this->nom_tiers ?? ''));
+    }
+
+    /**
+     * Certains imports stockent nom + prénom (+ nom de naissance entre
+     * parenthèses) dans le seul champ `nom_tiers` (ex: "GALAND Colette
+     * (VASSEUR)"), laissant `prenom` vide. Ces accesseurs séparent
+     * l'affichage sans toucher aux données brutes.
+     */
+    public function getNomAfficheAttribute(): ?string
+    {
+        return $this->identiteSeparee()['nom'];
+    }
+
+    public function getPrenomAfficheAttribute(): ?string
+    {
+        return $this->identiteSeparee()['prenom'];
+    }
+
+    public function getNomNaissanceAttribute(): ?string
+    {
+        return $this->identiteSeparee()['nom_naissance'];
+    }
+
+    private function identiteSeparee(): array
+    {
+        if (filled($this->prenom)) {
+            return ['nom' => $this->nom_tiers, 'prenom' => $this->prenom, 'nom_naissance' => null];
+        }
+
+        $brut = trim((string) $this->nom_tiers);
+        if ($brut === '') {
+            return ['nom' => null, 'prenom' => null, 'nom_naissance' => null];
+        }
+
+        $nomNaissance = null;
+        if (preg_match('/^(.*)\(([^)]+)\)\s*$/u', $brut, $matches)) {
+            $brut = trim($matches[1]);
+            $nomNaissance = trim($matches[2]);
+        }
+
+        $mots = preg_split('/\s+/', $brut);
+        $nomParts = [];
+        $i = 0;
+        while ($i < count($mots) - 1 && mb_strtoupper($mots[$i]) === $mots[$i]) {
+            $nomParts[] = $mots[$i];
+            $i++;
+        }
+
+        if ($nomParts === []) {
+            return ['nom' => $brut, 'prenom' => null, 'nom_naissance' => $nomNaissance];
+        }
+
+        return [
+            'nom' => implode(' ', $nomParts),
+            'prenom' => implode(' ', array_slice($mots, $i)) ?: null,
+            'nom_naissance' => $nomNaissance,
+        ];
     }
 
     public function getAgeAttribute(): ?int

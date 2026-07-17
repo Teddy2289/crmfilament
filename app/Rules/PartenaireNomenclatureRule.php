@@ -12,29 +12,29 @@ class PartenaireNomenclatureRule implements ValidationRule
     /**
      * Run the validation rule.
      *
-     * Format attendu: [Type] [Entreprise] [Ville]
-     * Exemple: "CSE MonEntreprise Paris"
+     * Format attendu: [Entreprise] [Ville] [Département] [Type]
+     * Exemple: "MonEntreprise Paris 75 CSE"
      *
      * @param  Closure(string, ?string=): PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (!is_string($value) || empty($value)) {
-            $fail('Le nom du partenaire est requis.');
+            $fail('Le nom retenu est requis.');
             return;
         }
 
         // Séparer le nom en parties
         $parts = explode(' ', trim($value));
 
-        // Vérifier qu'il y a au moins 3 parties (Type, Entreprise, Ville)
+        // Vérifier qu'il y a au moins 3 parties (Entreprise, Ville, Type)
         if (count($parts) < 3) {
-            $fail('Le nom doit suivre le format: [Type] [Entreprise] [Ville]. Exemple: "CSE MonEntreprise Paris"');
+            $fail('Le nom retenu doit suivre le format: [Entreprise] [Ville] [Département] [Type]. Exemple: "MonEntreprise Paris 75 CSE"');
             return;
         }
 
-        // Vérifier que le premier mot correspond à un type valide
-        $type = $parts[0];
+        // Vérifier que le dernier mot correspond à un type valide
+        $type = end($parts);
         $validTypes = collect(OrganizationType::cases())
             ->map(fn ($case) => $case->value)
             ->toArray();
@@ -44,15 +44,9 @@ class PartenaireNomenclatureRule implements ValidationRule
         }
 
         // Vérifier que le nom de l'entreprise n'est pas vide
-        $entreprise = $parts[1];
+        $entreprise = $parts[0];
         if (empty($entreprise)) {
             $fail('Le nom de l\'entreprise est requis.');
-        }
-
-        // Vérifier que la ville n'est pas vide
-        $ville = implode(' ', array_slice($parts, 2));
-        if (empty($ville)) {
-            $fail('La ville est requise.');
         }
     }
 }

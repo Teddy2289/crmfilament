@@ -22,6 +22,7 @@ class CampagnePhoning extends Model
         'date_debut',
         'date_fin',
         'user_id',
+        'groupe_telepro_id',
         'entite_id',
     ];
 
@@ -50,6 +51,11 @@ class CampagnePhoning extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function groupeTelepro()
+    {
+        return $this->belongsTo(GroupeTelepro::class, 'groupe_telepro_id');
+    }
+
     public function entite()
     {
         return $this->belongsTo(EntiteCommerciale::class, 'entite_id');
@@ -58,11 +64,6 @@ class CampagnePhoning extends Model
     public function appels()
     {
         return $this->hasMany(Appel::class, 'campagne_id');
-    }
-
-    public function scripts()
-    {
-        return $this->hasMany(ScriptAppel::class, 'campagne_id');
     }
 
     // ── Statistiques campagne ─────────────────────────────────────────
@@ -123,11 +124,18 @@ class CampagnePhoning extends Model
             );
     }
 
+    /**
+     * Visible si : ouverte à tous (user_id et groupe_telepro_id null),
+     * assignée directement à l'utilisateur, ou assignée à son groupe.
+     */
     public function scopeForUser(Builder $query, int $userId): Builder
     {
-        // user_id null = campagne ouverte à tous les agents
-        return $query->where(function ($q) use ($userId) {
-            $q->where('user_id', $userId)->orWhereNull('user_id');
+        $groupeId = User::whereKey($userId)->value('groupe_telepro_id');
+
+        return $query->where(function ($q) use ($userId, $groupeId) {
+            $q->where(fn ($q2) => $q2->whereNull('user_id')->whereNull('groupe_telepro_id'))
+                ->orWhere('user_id', $userId)
+                ->when($groupeId, fn ($q2) => $q2->orWhere('groupe_telepro_id', $groupeId));
         });
     }
 
