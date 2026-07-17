@@ -3,7 +3,10 @@
 namespace App\Filament\NsConseil\Widgets;
 
 use App\Enums\OrganizationStatus;
+use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Models\Partenaire;
+use Filament\Infolists\Infolist;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -28,6 +31,7 @@ class DirectionDerniersPartenairesWidget extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
+            ->recordAction('voir')
             ->query(
                 Partenaire::query()
                     ->whereIn('statut', [
@@ -70,6 +74,17 @@ class DirectionDerniersPartenairesWidget extends BaseWidget
                     ->label('Signé le')
                     ->date('d/m/Y')
                     ->sortable(),
+            ])
+            ->actions([
+                Tables\Actions\Action::make('voir')
+                    ->label('Voir')
+                    ->icon('heroicon-o-eye')
+                    ->slideOver()
+                    ->modalWidth(MaxWidth::FourExtraLarge)
+                    ->modalHeading(fn (Partenaire $record) => $record->nom)
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(false)
+                    ->infolist(fn (Infolist $infolist): Infolist => PartenaireResource::infolist($infolist)),
             ])
             ->emptyStateHeading('Aucun partenaire signé');
     }

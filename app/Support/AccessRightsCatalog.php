@@ -6,11 +6,11 @@ use App\Models\Client;
 use App\Models\CampagnePhoning;
 use App\Models\DossierFormation;
 use App\Models\Entreprise;
+use App\Models\GroupeTelepro;
 use App\Models\Opportunite;
 use App\Models\Partenaire;
 use App\Models\Prospect;
 use App\Models\RendezVous;
-use App\Models\ScriptAppel;
 use App\Models\StatutPhoning;
 use App\Models\Ticket;
 use App\Models\User;
@@ -60,6 +60,17 @@ class AccessRightsCatalog
                     'partenaires.create' => 'Créer',
                     'partenaires.update' => 'Modifier',
                     'partenaires.delete' => 'Supprimer',
+                ],
+            ],
+            'contact_partenaires' => [
+                'label' => 'AOPIA - Contacts partenaires',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'contact_partenaires.view_any' => 'Lister',
+                    'contact_partenaires.view' => 'Voir',
+                    'contact_partenaires.create' => 'Créer',
+                    'contact_partenaires.update' => 'Modifier',
+                    'contact_partenaires.delete' => 'Supprimer',
                 ],
             ],
             'clients' => [
@@ -116,6 +127,17 @@ class AccessRightsCatalog
                     'campagne_phonings.delete' => 'Supprimer',
                 ],
             ],
+            'groupe_telepros' => [
+                'label' => 'AOPIA - Groupes de télépros',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'groupe_telepros.view_any' => 'Lister',
+                    'groupe_telepros.view' => 'Voir',
+                    'groupe_telepros.create' => 'Créer',
+                    'groupe_telepros.update' => 'Modifier',
+                    'groupe_telepros.delete' => 'Supprimer',
+                ],
+            ],
             'dossier_formations' => [
                 'label' => 'AOPIA - Dossiers formation',
                 'panel' => 'ns-conseil',
@@ -152,17 +174,6 @@ class AccessRightsCatalog
                     'document_knowledges.create' => 'Créer',
                     'document_knowledges.update' => 'Modifier',
                     'document_knowledges.delete' => 'Supprimer',
-                ],
-            ],
-            'script_appels' => [
-                'label' => 'AOPIA - Scripts appel',
-                'panel' => 'ns-conseil',
-                'permissions' => [
-                    'script_appels.view_any' => 'Lister',
-                    'script_appels.view' => 'Voir',
-                    'script_appels.create' => 'Créer',
-                    'script_appels.update' => 'Modifier',
-                    'script_appels.delete' => 'Supprimer',
                 ],
             ],
             'statut_phonings' => [
@@ -277,6 +288,7 @@ class AccessRightsCatalog
                     'teleprospecteur_id' => 'Téléprospecteur',
                     'commercial_id' => 'Commercial',
                     'interlocuteur_nom' => 'Interlocuteur',
+                    'interlocuteur_prenom' => 'Prénom interlocuteur',
                     'interlocuteur_email' => 'Email interlocuteur',
                     'description' => 'Description',
                 ]),
@@ -299,7 +311,6 @@ class AccessRightsCatalog
                     'commercial_id' => 'Commercial',
                     'conseiller_id' => 'Conseiller',
                     'date_signature' => 'Date signature',
-                    'date_convention' => 'Date convention',
                     'notes' => 'Notes internes',
                     'commentaires' => 'Commentaires',
                 ]),
@@ -311,6 +322,7 @@ class AccessRightsCatalog
                     'ref_client' => 'Référence client',
                     'civilite' => 'Civilité',
                     'nom_tiers' => 'Nom',
+                    'prenom' => 'Prénom',
                     'email' => 'Email',
                     'telephone' => 'Téléphone',
                     'adresse' => 'Adresse',
@@ -409,8 +421,17 @@ class AccessRightsCatalog
                     'criteres' => 'Critères',
                     'date_debut' => 'Date début',
                     'date_fin' => 'Date fin',
-                    'user_id' => 'Assigné à',
+                    'user_id' => 'Agent spécifique',
+                    'groupe_telepro_id' => 'Groupe assigné',
                     'entite_id' => 'Entité commerciale',
+                ]),
+            ],
+            'groupe_telepros' => [
+                'label' => 'AOPIA - Groupes de télépros',
+                'panel' => 'ns-conseil',
+                'fields' => static::fieldLabelsForModel(GroupeTelepro::class, [
+                    'nom' => 'Nom',
+                    'actif' => 'Actif',
                 ]),
             ],
             'dossier_formations' => [
@@ -429,24 +450,6 @@ class AccessRightsCatalog
                     'etat' => 'État',
                     'consultant_accueil_id' => 'Consultant accueil',
                     'consultant_formateur_id' => 'Consultant formateur',
-                ]),
-            ],
-            'script_appels' => [
-                'label' => 'AOPIA - Scripts appel',
-                'panel' => 'ns-conseil',
-                'fields' => static::fieldLabelsForModel(ScriptAppel::class, [
-                    'titre' => 'Titre',
-                    'slug' => 'Slug',
-                    'type_contact' => 'Type contact',
-                    'campagne_id' => 'Campagne',
-                    'onglet' => 'Onglet',
-                    'contenu' => 'Contenu',
-                    'conseil' => 'Conseil',
-                    'variables_disponibles' => 'Variables disponibles',
-                    'objections' => 'Objections',
-                    'kpis' => 'KPIs',
-                    'actif' => 'Actif',
-                    'ordre' => 'Ordre',
                 ]),
             ],
             'statut_phonings' => [

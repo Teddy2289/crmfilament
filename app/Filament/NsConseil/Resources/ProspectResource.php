@@ -7,12 +7,12 @@ use App\Enums\ProspectStatut;
 use App\Events\Mail2EnvoyeEvent;
 use App\Filament\NsConseil\Resources\ProspectResource\Pages;
 use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers;
+use App\Filament\Shared\Actions\LancerAppelsAction;
 use App\Filament\Shared\Components\DuplicateWarning;
+use App\Filament\Shared\Concerns\HasCustomFieldsForm;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Mail\ConfirmationRdvCseMail;
 use App\Mail\InvitationAgendaResponsableMail;
-use App\Models\CustomField;
-use App\Models\CustomFieldValue;
 use App\Models\Prospect;
 use App\Models\User;
 use App\Support\UsesResourcePermissions;
@@ -32,11 +32,11 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Mail;
 
 class ProspectResource extends Resource
 {
+    use HasCustomFieldsForm;
     use UsesResourcePermissions;
 
     protected static ?string $model = Prospect::class;
@@ -50,36 +50,6 @@ class ProspectResource extends Resource
     protected static ?string $navigationLabel = 'Prospects';
 
     protected static ?int $navigationSort = 2;
-
-    public static function canAccess(): bool
-    {
-        return static::userCanViewResourceList();
-    }
-
-    public static function canViewAny(): bool
-    {
-        return static::userCanViewResourceList();
-    }
-
-    public static function canView(Model $record): bool
-    {
-        return static::userCanResourcePermission('view');
-    }
-
-    public static function canCreate(): bool
-    {
-        return static::userCanResourcePermission('create');
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return static::userCanResourcePermission('update');
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return static::userCanResourcePermission('delete');
-    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -153,7 +123,7 @@ class ProspectResource extends Resource
                         ->live(onBlur: true),
 
                     Forms\Components\TextInput::make('telephone_alt')
-                        ->label('Téléphone alt.')
+                        ->label('Téléphone alternatif')
                         ->tel()
                         ->live(onBlur: true),
 
@@ -179,11 +149,14 @@ class ProspectResource extends Resource
                     Forms\Components\TextInput::make('interlocuteur_nom')
                         ->label('Interlocuteur — Nom'),
 
+                    Forms\Components\TextInput::make('interlocuteur_prenom')
+                        ->label('Interlocuteur — Prénom'),
+
                     Forms\Components\TextInput::make('interlocuteur_fonction')
                         ->label('Fonction'),
 
                     Forms\Components\TextInput::make('interlocuteur_telephone')
-                        ->label('Tél. interlocuteur')
+                        ->label('Téléphone interlocuteur')
                         ->tel(),
 
                     Forms\Components\TextInput::make('interlocuteur_email')
@@ -317,95 +290,8 @@ class ProspectResource extends Resource
                         ->columnSpanFull(),
                 ])->columns(3),
 
-            Forms\Components\Section::make('Champs personnalisés')
-                ->icon('heroicon-o-adjustments-horizontal')
-                ->schema(function (callable $get, ?Prospect $record) {
-                    $customFields = CustomField::forModel(Prospect::class)
-                        ->active()
-                        ->ordered()
-                        ->get();
-
-                    return $customFields->map(function ($field) use ($record) {
-                        $component = match ($field->type) {
-                            'text' => Forms\Components\TextInput::make('custom_field_' . $field->id),
-                            'textarea' => Forms\Components\Textarea::make('custom_field_' . $field->id),
-                            'number' => Forms\Components\TextInput::make('custom_field_' . $field->id)->numeric(),
-                            'select' => Forms\Components\Select::make('custom_field_' . $field->id)
-                                ->options($field->options ?? []),
-                            'checkbox' => Forms\Components\Checkbox::make('custom_field_' . $field->id),
-                            'date' => Forms\Components\DatePicker::make('custom_field_' . $field->id),
-                            'email' => Forms\Components\TextInput::make('custom_field_' . $field->id)->email(),
-                            'tel' => Forms\Components\TextInput::make('custom_field_' . $field->id)->tel(),
-                            default => Forms\Components\TextInput::make('custom_field_' . $field->id),
-                        };
-
-                        $component->label($field->name);
-
-                        if ($field->required) {
-                            $component->required();
-                        }
-
-                        if ($field->placeholder) {
-                            $component->placeholder($field->placeholder);
-                        }
-
-                        if ($field->helper_text) {
-                            $component->helperText($field->helper_text);
-                        }
-
-                        // Charger la valeur existante si on est en édition
-                        if ($record) {
-                            $value = CustomFieldValue::where('custom_field_id', $field->id)
-                                ->where('model_type', Prospect::class)
-                                ->where('model_id', $record->id)
-                                ->first();
-
-                            if ($value) {
-                                $component->default($value->value);
-                            }
-                        }
-
-                        return $component;
-                    })->toArray() ?: [
-                        Forms\Components\Placeholder::make('no_custom_fields')
-                            ->label('Aucun champ personnalisé configuré')
-                            ->content('Configurez des champs personnalisés dans la section "Champs personnalisés" du menu Configuration.'),
-                    ];
-                }),
+            static::customFieldsFormSection(),
         ]));
-    }
-
-    public static function afterCreate(Model $record): void
-    {
-        static::saveCustomFields($record);
-    }
-
-    public static function afterUpdate(Model $record): void
-    {
-        static::saveCustomFields($record);
-    }
-
-    protected static function saveCustomFields(Model $record): void
-    {
-        $customFields = CustomField::forModel(Prospect::class)->active()->get();
-
-        foreach ($customFields as $field) {
-            $fieldName = 'custom_field_' . $field->id;
-            $value = request()->input($fieldName);
-
-            if ($value !== null) {
-                CustomFieldValue::updateOrCreate(
-                    [
-                        'custom_field_id' => $field->id,
-                        'model_type' => Prospect::class,
-                        'model_id' => $record->id,
-                    ],
-                    [
-                        'value' => $value,
-                    ]
-                );
-            }
-        }
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -663,28 +549,7 @@ class ProspectResource extends Resource
                         session()->put('view_prospects', $currentView === 'kanban' ? 'list' : 'kanban');
                         return redirect()->back();
                     }),
-                Tables\Actions\Action::make('lancer_appels')
-                    ->label('Lancer les appels')
-                    ->icon('heroicon-o-phone-arrow-up-right')
-                    ->color('primary')
-                    ->visible(function () {
-                        $userId = auth()->id();
-                        return \App\Models\CampagnePhoning::active()
-                            ->forUser($userId)
-                            ->where('type_entite', 'prospects')
-                            ->exists();
-                    })
-                    ->url(function () {
-                        $userId = auth()->id();
-                        $campagne = \App\Models\CampagnePhoning::active()
-                            ->forUser($userId)
-                            ->where('type_entite', 'prospects')
-                            ->first();
-
-                        return $campagne
-                            ? \App\Filament\NsConseil\Pages\PhoningWorkflow::getUrl(['campagne_id' => $campagne->id])
-                            : '#';
-                    }),
+                LancerAppelsAction::make('prospects'),
             ])
             ->emptyStateHeading('Aucun prospect')
             ->emptyStateDescription('Créez votre premier prospect.');
@@ -894,13 +759,17 @@ class ProspectResource extends Resource
                                 ->copyable()
                                 ->copyMessage('Numéro copié !')
                                 ->placeholder('—')
-                                ->icon('heroicon-m-phone'),
+                                ->icon('heroicon-m-phone')
+                                ->badge()
+                                ->color('primary'),
 
                             TextEntry::make('telephone_alt')
-                                ->label('Téléphone alt.')
+                                ->label('Téléphone alternatif')
                                 ->copyable()
                                 ->placeholder('—')
-                                ->icon('heroicon-m-phone'),
+                                ->icon('heroicon-m-phone')
+                                ->badge()
+                                ->color('primary'),
 
                             TextEntry::make('email')
                                 ->label('Email')
@@ -918,11 +787,17 @@ class ProspectResource extends Resource
                                 ->weight(FontWeight::SemiBold)
                                 ->placeholder('—'),
 
+                            TextEntry::make('interlocuteur_prenom')
+                                ->label('Prénom interlocuteur')
+                                ->placeholder('—'),
+
                             TextEntry::make('interlocuteur_telephone')
-                                ->label('Tél. interlocuteur')
+                                ->label('Téléphone interlocuteur')
                                 ->copyable()
                                 ->placeholder('—')
-                                ->icon('heroicon-m-phone'),
+                                ->icon('heroicon-m-phone')
+                                ->badge()
+                                ->color('success'),
 
                             TextEntry::make('interlocuteur_email')
                                 ->label('Email interlocuteur')
@@ -956,16 +831,6 @@ class ProspectResource extends Resource
                 ->schema([
                     Grid::make(2)->schema([
                         Group::make([
-                            TextEntry::make('teleprospecteur.nom')
-                                ->label('Commercial')
-                                ->formatStateUsing(
-                                    fn($record) => $record->teleprospecteur
-                                        ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}"
-                                        : '—'
-                                )
-                                ->icon('heroicon-m-user')
-                                ->placeholder('—'),
-
                             TextEntry::make('commercial.nom')
                                 ->label('Commercial (validation QF)')
                                 ->formatStateUsing(

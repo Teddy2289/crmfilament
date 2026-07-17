@@ -12,7 +12,6 @@ use App\Filament\NsConseil\Resources\OpportuniteResource;
 use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Filament\NsConseil\Resources\ProspectResource;
 use App\Filament\NsConseil\Resources\RendezVousResource;
-use App\Filament\NsConseil\Resources\ScriptAppelResource;
 use App\Filament\NsConseil\Resources\StatutPhoningResource;
 use App\Models\DocumentKnowledge;
 use App\Models\Opportunite;
@@ -57,7 +56,6 @@ class RoleAccessRightsTest extends TestCase
         $this->assertTrue(EntrepriseResource::canAccess());
         $this->assertTrue(CampagnePhoningResource::canAccess());
         $this->assertTrue(DossierFormationResource::canAccess());
-        $this->assertTrue(ScriptAppelResource::canAccess());
         $this->assertTrue(StatutPhoningResource::canAccess());
         $this->assertTrue(DocumentKnowledgeResource::canAccess());
         $this->assertTrue(DocumentKnowledgeResource::canCreate());
@@ -90,7 +88,6 @@ class RoleAccessRightsTest extends TestCase
         $this->assertFalse(EntrepriseResource::canAccess());
         $this->assertFalse(CampagnePhoningResource::canAccess());
         $this->assertFalse(DossierFormationResource::canAccess());
-        $this->assertFalse(ScriptAppelResource::canAccess());
         $this->assertFalse(StatutPhoningResource::canAccess());
         $this->assertFalse(TicketResource::canAccess());
     }
@@ -107,7 +104,6 @@ class RoleAccessRightsTest extends TestCase
             'rendez_vous.view',
             'entreprises.view_any',
             'campagne_phonings.view_any',
-            'script_appels.view_any',
             'statut_phonings.view_any',
             'dossier_formations.view_any',
         ]);
@@ -124,7 +120,6 @@ class RoleAccessRightsTest extends TestCase
         $this->assertTrue(RendezVousResource::canAccess());
         $this->assertTrue(EntrepriseResource::canAccess());
         $this->assertTrue(CampagnePhoningResource::canAccess());
-        $this->assertTrue(ScriptAppelResource::canAccess());
         $this->assertTrue(StatutPhoningResource::canAccess());
         $this->assertTrue(DossierFormationResource::canAccess());
         $this->assertFalse(ProspectResource::canAccess());

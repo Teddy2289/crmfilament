@@ -37,11 +37,12 @@ class RoleResource extends Resource
         'rendez_vous',
         'entreprises',
         'campagne_phonings',
+        'groupe_telepros',
+        'contact_partenaires',
         'dossier_formations',
         'activites',
         'rapports',
         'document_knowledges',
-        'script_appels',
         'statut_phonings',
     ];
 

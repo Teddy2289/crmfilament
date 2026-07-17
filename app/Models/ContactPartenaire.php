@@ -11,25 +11,13 @@ class ContactPartenaire extends Model
 
     protected $table = 'contact_partenaires';
 
-    /**
-     * Rôles discriminants issus du MEA (onglet PARTENAIRES & PROSPECTIONS COMM).
-     * Permet de retrouver directement le Secrétaire CSE, Trésorier CSE et DS.
-     */
-    public const ROLES = [
-        'SECRETAIRE' => 'Secrétaire CSE',
-        'TRESORIER' => 'Trésorier CSE',
-        'SYNDICAT_DS' => 'Délégué syndical (DS)',
-        'AUTRE' => 'Autre',
-    ];
-
     protected $fillable = [
         'partenaire_id',
         'civilite',
         'nom',
         'prenom',
         'fonction',
-        // ✅ Ajout MEA : rôle discriminant et syndicat associé
-        'role',
+        // ✅ Ajout MEA : syndicat associé
         'nom_syndicat',
         'service',
         'email',
@@ -74,11 +62,6 @@ class ContactPartenaire extends Model
             substr($this->prenom, 0, 1).
             substr($this->nom, 0, 1)
         );
-    }
-
-    public function getRoleLabelAttribute(): string
-    {
-        return self::ROLES[$this->role] ?? 'Autre';
     }
 
     public function getFonctionCompleteAttribute(): string
@@ -182,26 +165,6 @@ class ContactPartenaire extends Model
     public function scopeDecisionnaires($query)
     {
         return $query->where('est_decisionnaire', true);
-    }
-
-    public function scopeParRole($query, string $role)
-    {
-        return $query->where('role', $role);
-    }
-
-    public function scopeSecretaires($query)
-    {
-        return $query->where('role', 'SECRETAIRE');
-    }
-
-    public function scopeTresoriers($query)
-    {
-        return $query->where('role', 'TRESORIER');
-    }
-
-    public function scopeDelegueSyndicaux($query)
-    {
-        return $query->where('role', 'SYNDICAT_DS');
     }
 
     public function scopeParFonction($query, string $fonction)

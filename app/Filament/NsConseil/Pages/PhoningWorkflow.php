@@ -8,24 +8,20 @@ use App\Enums\ProspectStatut;
 use App\Enums\StatutCampagneProspection;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource;
 use App\Models\Appel;
-use App\Models\ArtisanProspection;
 use App\Models\CampagnePhoning;
-use App\Models\Client;
-use App\Models\ContactPartenaire;
-use App\Models\ContactParticulier;
-use App\Models\Partenaire;
 use App\Models\Prospect;
-use App\Models\ScriptAppel;
 use App\Models\StatutPhoning;
 use App\Models\User;
 use App\Services\Aopia\FicheGenerationService;
 use App\Services\Crm\CrmProfileService;
 use App\Services\Crm\CrmSettingsService;
+use App\Services\Phoning\PhoningContactResolver;
+use App\Services\Phoning\PhoningContactSearchService;
+use App\Services\Phoning\PhoningQueueBuilder;
 use App\Services\ProspectionMailService;
 use App\Support\CsePhoningWorkflow;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Model;
@@ -113,15 +109,11 @@ class PhoningWorkflow extends Page
 
     public string $jour_dispo_appel = '';
 
-    public string $activeScriptTab = 'accroche';
-
     public int $progress = 0;
 
     public int $total = 0;
 
     public int $completed = 0;
-
-    public array $scripts = [];
 
     public ?int $supervisedUserId = null;
 
@@ -186,115 +178,7 @@ class PhoningWorkflow extends Page
             return;
         }
 
-        $query = $this->searchQuery;
-        $results = [];
-
-        // Recherche dans les prospects
-        $prospects = Prospect::where(function ($q) use ($query) {
-            $q->where('nom', 'LIKE', "%{$query}%")
-                ->orWhere('telephone', 'LIKE', "%{$query}%")
-                ->orWhere('siret', 'LIKE', "%{$query}%")
-                ->orWhere('ville', 'LIKE', "%{$query}%")
-                ->orWhere('email', 'LIKE', "%{$query}%");
-        })
-            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
-            ->whereNull('deleted_at')
-            ->limit(20)
-            ->get();
-
-        foreach ($prospects as $prospect) {
-            $results[] = [
-                'id' => $prospect->id,
-                'type' => 'prospect',
-                'nom' => $prospect->nom,
-                'telephone' => $prospect->telephone,
-                'ville' => $prospect->ville,
-                'statut' => $prospect->statut_label,
-                'type_entite' => 'Prospect',
-                'label' => $prospect->nom . ' - ' . ($prospect->ville ?? 'Sans ville'),
-            ];
-        }
-
-        // Recherche dans les clients
-        $clients = Client::where(function ($q) use ($query) {
-            $q->where('nom_tiers', 'LIKE', "%{$query}%")
-                ->orWhere('telephone', 'LIKE', "%{$query}%")
-                ->orWhere('email', 'LIKE', "%{$query}%");
-        })
-            ->whereNull('deleted_at')
-            ->where(function ($q) {
-                $q->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false);
-            })
-            ->limit(10)
-            ->get();
-
-        foreach ($clients as $client) {
-            $results[] = [
-                'id' => $client->id,
-                'type' => 'client',
-                'nom' => $client->nom_tiers,
-                'telephone' => $client->telephone,
-                'ville' => null,
-                'statut' => $client->etat ?? 'Client',
-                'type_entite' => 'Client',
-                'label' => $client->nom_tiers . ' - ' . ($client->entreprise ?? ''),
-            ];
-        }
-
-        // Recherche dans les partenaires
-        $partenaires = Partenaire::where(function ($q) use ($query) {
-            $q->where('nom', 'LIKE', "%{$query}%")
-                ->orWhere('entreprise', 'LIKE', "%{$query}%")
-                ->orWhere('telephone', 'LIKE', "%{$query}%")
-                ->orWhere('email', 'LIKE', "%{$query}%")
-                ->orWhere('siret', 'LIKE', "%{$query}%")
-                ->orWhere('ville', 'LIKE', "%{$query}%");
-        })
-            ->whereNull('deleted_at')
-            ->limit(10)
-            ->get();
-
-        foreach ($partenaires as $partenaire) {
-            $results[] = [
-                'id' => $partenaire->id,
-                'type' => 'partenaire',
-                'nom' => $partenaire->nom,
-                'telephone' => $partenaire->telephone,
-                'ville' => $partenaire->ville,
-                'statut' => $partenaire->statut_label,
-                'type_entite' => 'Partenaire',
-                'label' => $partenaire->nom . ' - ' . ($partenaire->entreprise ?? ''),
-            ];
-        }
-
-        // Recherche dans les contacts partenaires (personnes)
-        $contactsPartenaire = ContactPartenaire::where(function ($q) use ($query) {
-            $q->where('nom', 'LIKE', "%{$query}%")
-                ->orWhere('prenom', 'LIKE', "%{$query}%")
-                ->orWhere('email', 'LIKE', "%{$query}%")
-                ->orWhere('telephone_direct', 'LIKE', "%{$query}%")
-                ->orWhere('telephone_perso', 'LIKE', "%{$query}%")
-                ->orWhere('telephone_mobile', 'LIKE', "%{$query}%");
-        })
-            ->whereNull('deleted_at')
-            ->with('partenaire')
-            ->limit(10)
-            ->get();
-
-        foreach ($contactsPartenaire as $contact) {
-            $results[] = [
-                'id' => $contact->partenaire_id,
-                'type' => 'partenaire',
-                'nom' => trim($contact->prenom . ' ' . $contact->nom) . ' (' . ($contact->partenaire->nom ?? '') . ')',
-                'telephone' => $contact->telephone_direct ?? $contact->telephone_mobile ?? $contact->telephone_perso,
-                'ville' => $contact->partenaire->ville ?? null,
-                'statut' => $contact->partenaire->statut_label ?? 'Contact',
-                'type_entite' => 'Contact Partenaire',
-                'label' => trim($contact->prenom . ' ' . $contact->nom) . ' - ' . ($contact->fonction ?? ''),
-            ];
-        }
-
-        $this->searchResults = $results;
+        $this->searchResults = app(PhoningContactSearchService::class)->search($this->searchQuery);
         $this->showSearchResults = true;
     }
 
@@ -399,93 +283,12 @@ class PhoningWorkflow extends Page
 
     protected function filterValidQueue(array $queue): array
     {
-        $itemsByType = collect($queue)
-            ->groupBy(fn (array $item): string => $item['type'] ?? '')
-            ->map(fn ($items) => $items->pluck('id')->filter()->unique()->values()->all());
-
-        $retireCodes = StatutPhoning::query()
-            ->where('model_type', 'prospect')
-            ->where('retire_de_file', true)
-            ->pluck('code')
-            ->all();
-
-        $prospectIds = $itemsByType->get('prospect', []);
-        $validProspectIds = $prospectIds === []
-            ? []
-            : Prospect::query()
-                ->whereIn('id', $prospectIds)
-                ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
-                ->whereNull('deleted_at')
-                ->pluck('id')
-                ->all();
-
-        if ($validProspectIds !== [] && $retireCodes !== []) {
-            $prospectsRetires = Appel::query()
-                ->where('appelable_type', Prospect::class)
-                ->whereIn('appelable_id', $validProspectIds)
-                ->whereIn('phoning_status', $retireCodes)
-                ->pluck('appelable_id')
-                ->all();
-
-            $validProspectIds = array_values(array_diff($validProspectIds, $prospectsRetires));
-        }
-
-        $validContactPartenaireIds = ($ids = $itemsByType->get('partenaire', [])) === []
-            ? []
-            : ContactPartenaire::query()
-                ->whereIn('id', $ids)
-                ->whereNull('deleted_at')
-                ->pluck('id')
-                ->all();
-
-        $validClientIds = ($ids = $itemsByType->get('client', [])) === []
-            ? []
-            : Client::query()
-                ->whereIn('id', $ids)
-                ->whereNull('deleted_at')
-                ->where(fn ($q) => $q->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false))
-                ->pluck('id')
-                ->all();
-
-        $validIdsByType = [
-            'prospect' => array_flip($validProspectIds),
-            'partenaire' => array_flip($validContactPartenaireIds),
-            'client' => array_flip($validClientIds),
-        ];
-
-        return collect($queue)->filter(function ($item) use ($validIdsByType) {
-            return match ($item['type']) {
-                'prospect', 'partenaire', 'client' => isset($validIdsByType[$item['type']][$item['id']]),
-                default => true,
-            };
-        })->values()->toArray();
+        return app(PhoningQueueBuilder::class)->filterValidQueue($queue);
     }
 
     protected function buildDefaultQueue(int $userId): array
     {
-        $queue = [];
-        $seen = [];
-
-        $query = CampagnePhoning::active()->forUser($userId);
-
-        // Si une campagne spécifique est demandée, ne charger que celle-là
-        if ($this->currentCampagneId) {
-            $query->where('id', $this->currentCampagneId);
-        }
-
-        $campagnes = $query->get();
-
-        foreach ($campagnes as $campagne) {
-            foreach ($campagne->getContactsQueue() as $contact) {
-                $key = $contact['type'] . '_' . $contact['id'];
-                if (! isset($seen[$key])) {
-                    $seen[$key] = true;
-                    $queue[] = $contact;
-                }
-            }
-        }
-
-        return $queue;
+        return app(PhoningQueueBuilder::class)->buildDefaultQueue($userId, $this->currentCampagneId);
     }
 
     /**
@@ -493,46 +296,7 @@ class PhoningWorkflow extends Page
      */
     protected function prioriserFile(array $queue): array
     {
-        if (empty($queue)) {
-            return $queue;
-        }
-
-        $prospects = Prospect::query()
-            ->whereIn('id', collect($queue)
-                ->where('type', 'prospect')
-                ->pluck('id')
-                ->unique()
-                ->values()
-                ->all())
-            ->get(['id', 'statut', 'rappel_planifie_at'])
-            ->keyBy('id');
-
-        $prioritaires = [];
-        $normaux = [];
-
-        foreach ($queue as $item) {
-            if (($item['type'] ?? '') !== 'prospect') {
-                $normaux[] = $item;
-
-                continue;
-            }
-
-            $prospect = $prospects->get($item['id']);
-            if (! $prospect) {
-                continue;
-            }
-
-            $estPrioritaire = $prospect->rappel_est_en_retard
-                || ($prospect->rappel_planifie_at && $prospect->rappel_planifie_at->isToday());
-
-            if ($estPrioritaire) {
-                $prioritaires[] = $item;
-            } else {
-                $normaux[] = $item;
-            }
-        }
-
-        return array_merge($prioritaires, $normaux);
+        return app(PhoningQueueBuilder::class)->prioriserFile($queue);
     }
 
     // ── Prochain contact ──────────────────────────────────────────────
@@ -541,7 +305,6 @@ class PhoningWorkflow extends Page
         if (empty($this->contactQueue)) {
             $this->currentContact = null;
             $this->currentContactData = [];
-            $this->scripts = [];
             $this->total = 0;
             $this->progress = 0;
 
@@ -573,7 +336,6 @@ class PhoningWorkflow extends Page
         $this->contactType = $next['type'];
         $this->currentCampagneId = $next['campagne_id'] ?? null;
         $this->currentContactData = $this->buildContactData($model, $next['type']);
-        $this->loadScripts();
 
         $this->reset([
             'commentaires',
@@ -610,166 +372,16 @@ class PhoningWorkflow extends Page
             $this->interlocuteur_telephone = $model->interlocuteur_telephone ?? '';
             $this->interlocuteur_email = $model->interlocuteur_email ?? '';
         }
-
-        $this->activeScriptTab = 'accroche';
     }
 
     protected function resolveModel(string $type, int $id): ?Model
     {
-        return match ($type) {
-            'prospect' => Prospect::find($id),
-            'artisan' => ArtisanProspection::find($id),
-            'partenaire' => ContactPartenaire::find($id),
-            'particulier' => ContactParticulier::find($id),
-            'client' => Client::find($id),
-            default => null,
-        };
+        return app(PhoningContactResolver::class)->resolveModel($type, $id);
     }
 
     protected function buildContactData(Model $model, string $type): array
     {
-        return match ($type) {
-            'prospect' => [
-                'nom' => $model->nom,
-                'prenom' => null,
-                'siret' => $model->siret,
-                'type_pressenti' => $model->type_pressenti_label,
-                'secteur_activite' => $model->secteur_activite,
-                'nb_salaries' => $model->nb_salaries,
-                'chiffre_affaires' => $model->chiffre_affaires
-                    ? number_format($model->chiffre_affaires, 0, ',', ' ') . ' €'
-                    : null,
-                'telephone' => $model->telephone,
-                'telephone_alt' => $model->telephone_alt,
-                'email' => $model->email,
-                'adresse' => $model->adresse,
-                'ville' => $model->ville,
-                'code_postal' => $model->code_postal,
-                'departement' => $model->departement,
-                'adresse_complete' => $model->adresse_complete,
-                'interlocuteur_nom' => $model->interlocuteur_nom,
-                'interlocuteur_fonction' => $model->interlocuteur_fonction,
-                'interlocuteur_telephone' => $model->interlocuteur_telephone,
-                'interlocuteur_email' => $model->interlocuteur_email,
-                'interlocuteur' => $model->interlocuteur_complet,
-                'statut' => $model->statut_label,
-                'statut_color' => $model->statut_color,
-                'statut_description' => $model->statut_description,
-                'taux_engagement' => $model->taux_engagement,
-                'priorite' => $model->type_pressenti
-                    ? ucfirst(str_replace('_', ' ', $model->type_pressenti))
-                    : 'Standard',
-                'teleprospecteur' => $model->teleprospecteur
-                    ? trim("{$model->teleprospecteur->prenom} {$model->teleprospecteur->nom}")
-                    : null,
-                'commercial' => $model->commercial
-                    ? trim("{$model->commercial->prenom} {$model->commercial->nom}")
-                    : null,
-                'date_premier_contact' => $model->date_premier_contact?->format('d/m/Y'),
-                'rappel_planifie_at' => $model->rappel_planifie_at?->format('d/m/Y à H:i'),
-                'rappel_en_retard' => $model->rappel_est_en_retard,
-                'jours_depuis_contact' => $model->jours_depuis_premier_contact,
-                'notes' => $model->description,
-                'motif_ko' => $model->motif_ko,
-                'qf_valide' => $model->qf_valide,
-                'id' => $model->id,
-                'type' => 'prospect',
-            ],
-            'artisan' => [
-                'nom' => $model->nom,
-                'prenom' => null,
-                'telephone' => $model->telephone,
-                'telephone_alt' => null,
-                'email' => null,
-                'statut' => $model->statut_campagne->label(),
-                'statut_color' => 'info',
-                'priorite' => $model->priorite_segment->label(),
-                'metier' => $model->corps_de_metier?->label(),
-                'notes' => $model->notes,
-                'id' => $model->id,
-                'type' => 'artisan',
-                'adresse_complete' => null,
-                'interlocuteur' => null,
-                'nb_salaries'     => null,
-                'chiffre_affaires' => null,
-                'siret'           => null,
-            ],
-            'partenaire' => [
-                'nom' => $model->nom,
-                'prenom' => $model->prenom,
-                'telephone' => $model->telephone_direct ?? $model->telephone_mobile ?? $model->telephone_perso,
-                'telephone_alt' => null,
-                'email' => $model->email ?? $model->email_perso,
-                'statut' => $model->est_principal ? 'Principal' : 'Contact',
-                'statut_color' => 'success',
-                'priorite' => $model->niveau_influence_label ?? 'Standard',
-                'notes' => $model->notes,
-                'id' => $model->id,
-                'type' => 'partenaire',
-                'interlocuteur' => $model->fonction,
-                'adresse_complete' => null,
-                'nb_salaries'     => null,
-                'chiffre_affaires' => null,
-                'siret'           => null,
-                'ville'           => null,
-                'departement'     => null,
-                'code_postal'     => null,
-                'type_pressenti'  => null,
-                'secteur_activite' => null,
-            ],
-            'particulier' => [
-                'nom' => $model->nom,
-                'prenom' => $model->prenom,
-                'telephone' => $model->telephone,
-                'telephone_alt' => null,
-                'email' => $model->email,
-                'statut' => $model->statut_occupant?->label() ?? 'Contact',
-                'statut_color' => 'gray',
-                'priorite' => $model->type_logement?->label() ?? 'Standard',
-                'notes' => $model->adresse_complete,
-                'id' => $model->id,
-                'type' => 'particulier',
-                'adresse_complete' => $model->adresse_complete ?? null,
-                'interlocuteur' => null,
-            ],
-            'client' => [
-                'nom' => $model->nom_tiers,
-                'prenom' => $model->prenom,
-                'telephone' => $model->telephone,
-                'telephone_alt' => null,
-                'email' => $model->email,
-                'statut' => $model->etat ?? 'Client',
-                'statut_color' => 'success',
-                'priorite' => $model->type_tiers ?? 'Standard',
-                'notes' => $model->entreprise,
-                'adresse_complete' => $model->adresse_complete ?? null,
-                'interlocuteur' => null,
-                'id' => $model->id,
-                'type' => 'client',
-            ],
-            default => [],
-        };
-    }
-
-    protected function loadScripts(): void
-    {
-        $this->scripts = ScriptAppel::parOngletPourContact($this->contactType, $this->currentCampagneId);
-    }
-
-    public function getScriptCourant(): ?ScriptAppel
-    {
-        return $this->scripts[$this->activeScriptTab] ?? null;
-    }
-
-    public function getVariablesScript(): array
-    {
-        $d = $this->currentContactData;
-
-        return [
-            'contact_nom' => $d['nom'] ?? '',
-            'contact_prenom' => $d['prenom'] ?? '',
-            'commercial_nom' => Auth::user()?->name ?? '[VOTRE NOM]',
-        ];
+        return app(PhoningContactResolver::class)->buildContactData($model, $type);
     }
 
     // ── Appel ─────────────────────────────────────────────────────────

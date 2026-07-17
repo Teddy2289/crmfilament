@@ -315,13 +315,6 @@ class RingoverCallSyncService
             ],
             Partenaire::class => [
                 'telephone',
-                'cse_secretaire_tel_direct',
-                'cse_secretaire_tel_perso',
-                'cse_tresorier_tel_direct',
-                'cse_tresorier_tel_perso',
-                'syndicat_tel_direct',
-                'syndicat_tel_perso',
-                'dirigeant_telephone',
             ],
             Client::class => ['telephone'],
             Opportunite::class => ['telephone', 'interlocuteur_telephone'],

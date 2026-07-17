@@ -2,7 +2,6 @@
 
 namespace App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
 
-use App\Models\ContactPartenaire;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -26,10 +25,6 @@ class ContactsRelationManager extends RelationManager
             Forms\Components\TextInput::make('prenom')->required(),
             Forms\Components\TextInput::make('fonction')
                 ->placeholder('Secrétaire CSE, Trésorier, RH…'),
-            Forms\Components\Select::make('role')
-                ->label('Rôle')
-                ->options(ContactPartenaire::ROLES)
-                ->default('AUTRE'),
             Forms\Components\TextInput::make('nom_syndicat')
                 ->label('Syndicat')
                 ->placeholder('CGT, CFDT…'),
@@ -51,9 +46,6 @@ class ContactsRelationManager extends RelationManager
                             ->label('Nom complet'),
                         Infolists\Components\TextEntry::make('fonction')
                             ->placeholder('—'),
-                        Infolists\Components\TextEntry::make('role_label')
-                            ->label('Rôle')
-                            ->badge(),
                         Infolists\Components\TextEntry::make('nom_syndicat')
                             ->label('Syndicat')
                             ->placeholder('—')

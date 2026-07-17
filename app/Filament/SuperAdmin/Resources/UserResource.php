@@ -59,6 +59,13 @@ class UserResource extends Resource
                     Forms\Components\TextInput::make('secteur')
                         ->label('Secteur')->nullable(),
 
+                    Forms\Components\Select::make('groupe_telepro_id')
+                        ->label('Groupe de téléprospection')
+                        ->relationship('groupeTelepro', 'nom')
+                        ->searchable()
+                        ->nullable()
+                        ->placeholder('Aucun groupe'),
+
                     Forms\Components\Toggle::make('actif')
                         ->label('Compte actif')->default(true)->inline(false),
                 ]),
@@ -154,6 +161,11 @@ class UserResource extends Resource
 
                 Tables\Columns\TextColumn::make('secteur')
                     ->label('Secteur')->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('groupeTelepro.nom')
+                    ->label('Groupe télépro')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('ringover_user_id')
                     ->label('Ringover')
@@ -291,6 +303,7 @@ class UserResource extends Resource
                         ->weight('bold'),
                     TextEntry::make('email')->label('Email')->copyable()->icon('heroicon-o-envelope'),
                     TextEntry::make('secteur')->label('Secteur')->placeholder('—'),
+                    TextEntry::make('groupeTelepro.nom')->label('Groupe télépro')->placeholder('—'),
                     IconEntry::make('actif')->label('Actif')->boolean(),
                     TextEntry::make('created_at')->label('Créé le')->date('d/m/Y H:i'),
                     TextEntry::make('last_login_at')->label('Dernière connexion')->since()->placeholder('Jamais'),

@@ -287,162 +287,78 @@ $tentativesActuelles = $this->getTentativesAppel();
             border-right-color: rgb(31 41 55);
         }
 
-        .pw-tabs {
-            display: flex;
-            border-bottom: 1px solid rgb(229 231 235);
-            background: white;
+        .pw-result-panel {
             flex-shrink: 0;
-            overflow-x: auto;
+            max-height: 48%;
+            overflow-y: auto;
+            background: white;
+            padding: 0.875rem 1.25rem 1.125rem;
+            border-bottom: 2px solid rgb(229 231 235);
         }
 
-        .dark .pw-tabs {
+        .dark .pw-result-panel {
             background: rgb(17 24 39);
             border-bottom-color: rgb(31 41 55);
         }
 
-        .pw-tab {
-            padding: 0.75rem 1.125rem;
-            font-size: 0.8125rem;
-            font-weight: 500;
-            color: rgb(107 114 128);
-            border-bottom: 2px solid transparent;
-            background: none;
-            border-top: none;
-            border-left: none;
-            border-right: none;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: color 0.15s;
-        }
-
-        .pw-tab:hover {
-            color: rgb(55 65 81);
-        }
-
-        .dark .pw-tab:hover {
-            color: rgb(209 213 219);
-        }
-
-        .pw-tab.active {
-            color: rgb(37 99 235) !important;
-            border-bottom-color: rgb(37 99 235) !important;
-        }
-
-        .dark .pw-tab.active {
-            color: rgb(96 165 250) !important;
-            border-bottom-color: rgb(96 165 250) !important;
-        }
-
-        .pw-script-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.25rem;
-            background: #e5e7eb;
-        }
-
-        .dark .pw-script-area {
-            background: rgb(17 24 39 / 0.5);
-        }
-
-        .pw-script-empty {
-            border: 1px solid rgb(191 219 254);
-            border-left: 3px solid rgb(59 130 246);
-            border-radius: 0.375rem;
-            padding: 1rem 1.25rem;
-            background: rgb(239 246 255);
-            color: rgb(29 78 216);
-            font-size: 0.875rem;
-            font-style: italic;
-        }
-
-        .pw-script-text {
-            line-height: 1.8;
-            font-size: 0.9375rem;
-            color: rgb(31 41 55);
-            white-space: pre-wrap;
-        }
-
-        .dark .pw-script-text {
-            color: rgb(229 231 235);
-        }
-
-        .pw-conseil {
-            margin-top: 1rem;
-            background: rgb(255 251 235);
-            border-left: 4px solid rgb(251 191 36);
-            border-radius: 0.375rem;
-            padding: 0.75rem 1rem;
-            font-size: 0.8125rem;
-            color: rgb(146 64 14);
+        .pw-result-header {
             display: flex;
+            align-items: center;
             gap: 0.5rem;
-            align-items: flex-start;
-        }
-
-        .dark .pw-conseil {
-            background: rgb(120 53 15 / 0.15);
-            color: rgb(253 186 116);
-        }
-
-        .pw-objection {
-            border: 1px solid rgb(254 202 202);
-            border-left: 3px solid rgb(239 68 68);
-            border-radius: 0.375rem;
-            padding: 0.75rem 1rem;
-            margin-bottom: 0.75rem;
-            background: white;
-        }
-
-        .dark .pw-objection {
-            background: rgb(127 29 29 / 0.1);
-        }
-
-        .pw-objection-q {
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: rgb(185 28 28);
-            margin: 0 0 0.375rem;
-        }
-
-        .pw-objection-r {
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             color: rgb(55 65 81);
-            margin: 0;
+            margin-bottom: 0.875rem;
         }
 
-        .dark .pw-objection-r {
+        .dark .pw-result-header {
             color: rgb(209 213 219);
         }
 
-        .pw-kpis {
+        .pw-result-header-icon {
+            font-size: 1rem;
+        }
+
+        .pw-result-groups {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-            margin-top: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 0.875rem;
+            margin-bottom: 0.875rem;
         }
 
-        .pw-kpi {
-            background: white;
-            border-radius: 0.5rem;
-            padding: 0.875rem;
-            text-align: center;
+        .pw-result-group {
             border: 1px solid rgb(229 231 235);
+            border-radius: 0.625rem;
+            padding: 0.75rem;
+            background: rgb(249 250 251);
         }
 
-        .dark .pw-kpi {
-            background: rgb(31 41 55);
+        .dark .pw-result-group {
             border-color: rgb(55 65 81);
+            background: rgb(31 41 55 / 0.5);
         }
 
-        .pw-kpi-val {
-            font-size: 1.375rem;
+        .pw-result-group-label {
+            font-size: 0.65rem;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgb(100 116 139);
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.375rem;
+            border-bottom: 1px solid rgb(226 232 240);
         }
 
-        .pw-kpi-lbl {
-            font-size: 0.75rem;
-            color: rgb(107 114 128);
-            margin-top: 0.125rem;
+        .dark .pw-result-group-label {
+            border-bottom-color: rgb(55 65 81);
+        }
+
+        .pw-result-group-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
         }
 
         .pw-infos {
@@ -451,6 +367,14 @@ $tentativesActuelles = $this->getTentativesAppel();
             background: white;
             max-height: 55%;
             overflow-y: auto;
+        }
+
+        /* Le dossier prospect partage la colonne de gauche avec le bloc
+           "Résultat de l'appel" (.pw-result-panel), placé au-dessus. */
+        .pw-infos-full {
+            flex: 1;
+            min-height: 0;
+            max-height: none;
         }
 
         .dark .pw-infos {
@@ -939,9 +863,6 @@ $tentativesActuelles = $this->getTentativesAppel();
     $teleprospecteurs = $this->getTeleprospecteurs();
     $nbEnFile = count($this->contactQueue);
     $progress = $this->progress;
-    $onglets = \App\Models\ScriptAppel::ONGLETS;
-    $scriptCourant = $this->getScriptCourant();
-    $variables = $this->getVariablesScript();
     $statutsGroupes = $this->getStatutsPhoningGroupes();
     $options = $this->getStatutsPhoning();
     $callHistory = $this->getCallHistory();
@@ -1112,71 +1033,196 @@ $tentativesActuelles = $this->getTentativesAppel();
 
         <div class="pw-body">
             <div class="pw-left">
-                <div class="pw-tabs">
-                    @foreach ($onglets as $key => $label)
-                    <button wire:click="$set('activeScriptTab', '{{ $key }}')"
-                        class="pw-tab {{ $activeScriptTab === $key ? 'active' : '' }}">
-                        {{ $label }}
-                    </button>
-                    @endforeach
+                <div class="pw-result-panel">
+                <div class="pw-result-header">
+                    <span class="pw-result-header-icon">📞</span>
+                    <span>Résultat de l'appel</span>
                 </div>
 
-                <div class="pw-script-area">
-                    @if ($scriptCourant)
-                    @if ($scriptCourant->onglet === 'objections' && $scriptCourant->objections)
-                    @foreach ($scriptCourant->objections as $obj)
-                    <div class="pw-objection">
-                        <p class="pw-objection-q">"{{ $obj['question'] }}"</p>
-                        <p class="pw-objection-r">→ {{ $obj['reponse'] }}</p>
+                <div class="pw-result-groups">
+                    @foreach ($statutsGroupes as $groupeKey => $groupe)
+                    <div class="pw-result-group">
+                        <div class="pw-result-group-label">
+                            {{ $groupe['label'] }}
                     </div>
-                    @endforeach
-                    @elseif($scriptCourant->onglet === 'argumentaire' && $scriptCourant->kpis)
-                    @if ($scriptCourant->contenu)
-                    <div class="pw-script-text">{!! nl2br(e($scriptCourant->interpoler($variables))) !!}</div>
-                    @endif
-                    <div class="pw-kpis">
-                        @foreach ($scriptCourant->kpis as $kpi)
+                    <div class="pw-result-group-options">
+                        @foreach ($groupe['statuts'] as $option)
                         @php
-                        $kpiColors = [
-                        'purple' => 'color:rgb(147 51 234)',
-                        'blue' => 'color:rgb(37 99 235)',
-                        'green' => 'color:rgb(22 163 74)',
-                        'orange' => 'color:rgb(234 88 12)',
-                        ];
-                        $kpiColor = $kpiColors[$kpi['couleur'] ?? 'purple'] ?? $kpiColors['purple'];
+                        $isActive = $statut_resultat === $option['value'];
                         @endphp
-                        <div class="pw-kpi">
-                            <div class="pw-kpi-val" style="{{ $kpiColor }}">{{ $kpi['valeur'] }}</div>
-                            <div class="pw-kpi-lbl">{{ $kpi['label'] }}</div>
-                        </div>
+                        <label wire:click="$set('statut_resultat', '{{ $option['value'] }}')"
+                            onclick="toggleRappel('{{ $option['value'] }}')"
+                            style="display:flex; align-items:center; gap:0.625rem; padding:0.5rem 0.625rem; border-radius:0.5rem; cursor:pointer; transition:all .15s ease; border:1.5px solid {{ $isActive ? 'currentColor' : 'rgb(226 232 240)' }}; background:{{ $isActive ? 'rgba(0,0,0,0.03)' : 'white' }}; {{ $isActive ? $option['bar'] . '; border-color:' . \Illuminate\Support\Str::after($option['bar'], 'background:') . ';' : '' }}">
+                            <div style="font-size:1.1rem; width:1.5rem; text-align:center; flex-shrink:0;">
+                                {{ $option['icon'] ?? '•' }}
+                            </div>
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-size:0.8125rem; font-weight:600; color:{{ $isActive ? 'white' : 'rgb(30 41 59)' }};">
+                                    {{ $option['label'] }}
+                                    @if (!empty($option['prioritaire']))
+                                    <span style="font-size:0.6rem; background:#E0FAF9; color:#006b68; padding:1px 5px; border-radius:8px; margin-left:4px;">prioritaire</span>
+                                    @endif
+                                </div>
+                                <div style="font-size:0.7rem; color:{{ $isActive ? 'rgba(255,255,255,0.8)' : 'rgb(100 116 139)' }};">
+                                    {{ $option['sub'] }}
+                                </div>
+                                @if (!empty($option['action']))
+                                <div style="font-size:0.65rem; color:{{ $isActive ? 'rgba(255,255,255,0.7)' : 'rgb(148 163 184)' }}; margin-top:2px;">
+                                    → {{ $option['action'] }}
+                                </div>
+                                @endif
+                            </div>
+                            @if ($isActive)
+                            <svg style="width:1rem;height:1rem;color:white;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            @endif
+                            <input type="radio" wire:model="statut_resultat" value="{{ $option['value'] }}" style="display:none;">
+                        </label>
                         @endforeach
                     </div>
-                    @else
-                    @if ($scriptCourant->contenu)
-                    <div class="pw-script-text">{!! nl2br(e($scriptCourant->interpoler($variables))) !!}</div>
-                    @endif
-                    @endif
+                </div>
+                @endforeach
+            </div>
 
-                    @if ($scriptCourant->interpolerConseil($variables))
-                    <div class="pw-conseil">
-                        <svg style="width:1rem;height:1rem;flex-shrink:0;margin-top:0.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                        <span>{{ $scriptCourant->interpolerConseil($variables) }}</span>
-                    </div>
-                    @endif
+            <div id="pw-rappel-box"
+                class="pw-rappel-box {{ in_array($statut_resultat, $rappelCodes) ? 'visible' : '' }}">
+                <div class="pw-rappel-box-title">
+                    @if (in_array($statut_resultat, ['rapl_elu', 'rapl_std']))
+                    ⏰ Créneau de rappel
                     @else
-                    <div class="pw-script-empty">
-                        Aucun script disponible pour ce type de campagne.
-                        <a href="{{ route('filament.ns-conseil.resources.script-appels.create') }}"
-                            style="margin-left:0.5rem; text-decoration:underline; font-weight:600;">
-                            Créer un script →
-                        </a>
-                    </div>
+                    📅 Planifier le rappel / RDV
                     @endif
                 </div>
+                @if ($statut_resultat === 'rapl_elu')
+                <div style="font-size:0.7rem; background:#fffbe6; border:1px dashed #d4a800; border-radius:4px; padding:4px 8px; color:#7a5c00; margin-bottom:0.5rem;">
+                    📝 Note obligatoire dans le compte rendu : date + heure + nom de l'élu
+                </div>
+                @elseif ($statut_resultat === 'rapl_std')
+                <div style="font-size:0.7rem; background:#fffbe6; border:1px dashed #d4a800; border-radius:4px; padding:4px 8px; color:#7a5c00; margin-bottom:0.5rem;">
+                    📝 Note obligatoire dans le compte rendu : date + heure + nom du standard
+                </div>
+                @endif
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                    <div>
+                        <div class="pw-field-label">Date</div>
+                        <input type="date" wire:model="rappel_date" class="pw-field-input">
+                    </div>
+                    <div>
+                        <div class="pw-field-label">Heure</div>
+                        <input type="time" wire:model="rappel_heure" class="pw-field-input">
+                    </div>
+                </div>
+            </div>
 
-                <div class="pw-infos">
+            @if ($statut_resultat === 'rdv')
+            <div style="margin-top:0.75rem; background:rgb(239 246 255); border:2px solid rgb(59 130 246); border-radius:0.5rem; overflow:hidden;">
+                <div style="background:rgb(59 130 246); color:white; padding:0.5rem 0.875rem; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
+                    🔵 FICHE RECAP RDV PRIS
+                </div>
+                <div style="padding:0.875rem; display:flex; flex-direction:column; gap:0.625rem;">
+                    <div>
+                        <div class="pw-field-label">Lieu du RDV</div>
+                        <input type="text" wire:model="lieu_rdv" class="pw-field-input" placeholder="Adresse / Agence AOPIA / Visioconférence">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                        <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; cursor:pointer; padding:0.375rem; background:white; border-radius:0.375rem; border:1px solid rgb(209 213 219);">
+                            <input type="checkbox" wire:model="invitation_agenda_envoyee" style="width:1rem;height:1rem;">
+                            Invitation agenda envoyée
+                        </label>
+                        <div>
+                            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; cursor:pointer; padding:0.375rem; background:white; border-radius:0.375rem; border:1px solid rgb(209 213 219);">
+                                <input type="checkbox" wire:model="enregistrement_appel_joint" style="width:1rem;height:1rem;">
+                                Enregistrement joint
+                            </label>
+                            @if (!$enregistrement_appel_joint)
+                            <input type="text" wire:model="enregistrement_raison" class="pw-field-input" style="margin-top:0.25rem; font-size:0.75rem;" placeholder="Raison...">
+                            @endif
+                        </div>
+                    </div>
+                    <div>
+                        <div class="pw-field-label">Besoins exprimés par le CSE</div>
+                        <textarea wire:model="besoins_exprimes" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Résumé des besoins / attentes identifiées..."></textarea>
+                    </div>
+                    <div>
+                        <div class="pw-field-label">Objections soulevées</div>
+                        <textarea wire:model="objections_soulevees" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Objections rencontrées et façon dont elles ont été traitées..."></textarea>
+                    </div>
+                    <div>
+                        <div class="pw-field-label">Points d'attention pour le RDV</div>
+                        <textarea wire:model="points_attention_rdv" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Éléments particuliers à transmettre au Responsable de Secteur..."></textarea>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if ($statut_resultat === 'cse_ni')
+            <div style="margin-top:0.75rem; background:rgb(255 251 235); border:2px solid rgb(234 179 8); border-radius:0.5rem; overflow:hidden;">
+                <div style="background:rgb(234 179 8); color:rgb(66 32 6); padding:0.5rem 0.875rem; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
+                    🟡 FICHE RECAP RDV À PRENDRE — Rappel J+7
+                </div>
+                <div style="padding:0.875rem; font-size:0.8125rem; color:rgb(92 52 8);">
+                    <p style="margin:0 0 0.5rem; font-weight:600;">Un email sera envoyé par l'assistante commerciale.</p>
+                    <ul style="margin:0; padding-left:1.25rem; font-size:0.75rem; color:rgb(120 53 15); line-height:1.7;">
+                        <li>Coordonnées CSE → onglet <strong>Standard / CSE</strong> ci-contre</li>
+                        <li>Commentaires → champ compte rendu ci-dessous</li>
+                        <li>Date rappel J+7 → bloc rappel ci-dessus (auto : {{ now()->addDays(7)->format('d/m/Y') }})</li>
+                    </ul>
+                </div>
+            </div>
+            @endif
+
+            @if (in_array($statut_resultat, ['bloc2', 'ncse_50', 'ncse_plus50', 'cse_zone']))
+            <div style="margin-top:0.75rem; background:rgb(240 253 244); border:2px solid rgb(34 197 94); border-radius:0.5rem; overflow:hidden;">
+                <div style="background:rgb(34 197 94); color:white; padding:0.5rem 0.875rem; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
+                    🟢 FICHE RECAP RDV À CONCLURE — Commercial
+                </div>
+                <div style="padding:0.875rem; display:flex; flex-direction:column; gap:0.625rem;">
+                    <div>
+                        <div class="pw-field-label">Présence d'un CSE</div>
+                        <select wire:model="presence_cse" class="pw-field-input">
+                            <option value="">— Sélectionner —</option>
+                            <option value="oui">Oui</option>
+                            <option value="non">Non</option>
+                            <option value="a_confirmer">À confirmer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="pw-field-label">Jour disponible pour l'appel</div>
+                        <input type="text" wire:model="jour_dispo_appel" class="pw-field-input" placeholder="ex : Lundi matin, Mercredi 14h-16h">
+                    </div>
+                    <div style="font-size:0.75rem; color:rgb(22 101 52); background:rgb(220 252 231); border-radius:0.375rem; padding:0.5rem 0.75rem; line-height:1.6;">
+                        Coordonnées CSE → onglet <strong>Standard / CSE</strong> · Commentaires → champ ci-dessous
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <textarea wire:model="commentaires" rows="4"
+                placeholder="Compte rendu : interlocuteur joint, objections, décision, prochaine étape..." class="pw-textarea"></textarea>
+
+            @if ($statut_resultat && in_array($statut_resultat, ['rapl_elu', 'rapl_std']) && !$commentaires)
+            <div style="font-size:0.75rem; color:rgb(220 38 38); margin-top:0.5rem; display:flex; align-items:center; gap:0.25rem;">
+                📝 Note obligatoire : date + heure + nom {{ $statut_resultat === 'rapl_elu' ? 'de l\'élu' : 'du standard' }}.
+            </div>
+            @elseif ($statut_resultat && !$commentaires && !in_array($statut_resultat, ['nrp', 'fax', 'maj']))
+            <div style="font-size:0.75rem; color:rgb(249 115 22); margin-top:0.5rem; display:flex; align-items:center; gap:0.25rem;">
+                ⚠ Ajoutez un commentaire avant d'enregistrer.
+            </div>
+            @endif
+
+            <div class="pw-actions">
+                <button wire:click="submitResult" class="pw-btn-primary"
+                    {{ !$statut_resultat ? 'disabled style=opacity:.5;cursor:not-allowed' : '' }}>
+                    ✓ Enregistrer &amp; suivant
+                </button>
+                <button wire:click.prevent="skipCall" class="pw-btn-secondary" title="Repousser en fin de file">
+                    ↷ Passer
+                </button>
+            </div>
+                </div>
+
+                <div class="pw-infos pw-infos-full">
                     <div class="pw-infos-header">
                         <span class="pw-infos-title">🗂 Dossier Prospect</span>
                         @if (!empty($info['id']) && $info['type'] === 'prospect')
@@ -1610,199 +1656,13 @@ $tentativesActuelles = $this->getTentativesAppel();
                             <div style="flex:1; height:0.25rem; border-radius:9999px; background:{{ $i < $tentativesActuelles ? 'rgb(249 115 22)' : 'rgb(229 231 235)' }};">
                     </div>
                     @endfor
+                    </div>
                 </div>
                 <div wire:ignore id="ringover-embed-phoning"
                     style="width:100%; max-width:100%; height:560px; border-radius:0.5rem; overflow:hidden; box-sizing:border-box; border:1px solid rgb(229 231 235); margin-bottom:1rem;">
                 </div>
             </div>
-
-            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgb(100 116 139); margin-bottom:0.5rem; padding-bottom:0.375rem; border-bottom:1px solid rgb(241 245 249);">
-                Résultat de l'appel
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:0.875rem;">
-                @foreach ($statutsGroupes as $groupeKey => $groupe)
-                <div>
-                    <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:rgb(100 116 139); margin-bottom:0.375rem; padding-bottom:0.25rem; border-bottom:1px solid rgb(241 245 249);">
-                        {{ $groupe['label'] }}
-                    </div>
-                    <div style="display:grid; gap:0.375rem;">
-                        @foreach ($groupe['statuts'] as $option)
-                        @php
-                        $isActive = $statut_resultat === $option['value'];
-                        @endphp
-                        <label wire:click="$set('statut_resultat', '{{ $option['value'] }}')"
-                            onclick="toggleRappel('{{ $option['value'] }}')"
-                            style="display:flex; align-items:center; gap:0.625rem; padding:0.5rem 0.625rem; border-radius:0.5rem; cursor:pointer; transition:all .15s ease; border:1.5px solid {{ $isActive ? 'currentColor' : 'rgb(226 232 240)' }}; background:{{ $isActive ? 'rgba(0,0,0,0.03)' : 'white' }}; {{ $isActive ? $option['bar'] . '; border-color:' . \Illuminate\Support\Str::after($option['bar'], 'background:') . ';' : '' }}">
-                            <div style="font-size:1.1rem; width:1.5rem; text-align:center; flex-shrink:0;">
-                                {{ $option['icon'] ?? '•' }}
-                            </div>
-                            <div style="flex:1; min-width:0;">
-                                <div style="font-size:0.8125rem; font-weight:600; color:{{ $isActive ? 'white' : 'rgb(30 41 59)' }};">
-                                    {{ $option['label'] }}
-                                    @if (!empty($option['prioritaire']))
-                                    <span style="font-size:0.6rem; background:#E0FAF9; color:#006b68; padding:1px 5px; border-radius:8px; margin-left:4px;">prioritaire</span>
-                                    @endif
-                                </div>
-                                <div style="font-size:0.7rem; color:{{ $isActive ? 'rgba(255,255,255,0.8)' : 'rgb(100 116 139)' }};">
-                                    {{ $option['sub'] }}
-                                </div>
-                                @if (!empty($option['action']))
-                                <div style="font-size:0.65rem; color:{{ $isActive ? 'rgba(255,255,255,0.7)' : 'rgb(148 163 184)' }}; margin-top:2px;">
-                                    → {{ $option['action'] }}
-                                </div>
-                                @endif
-                            </div>
-                            @if ($isActive)
-                            <svg style="width:1rem;height:1rem;color:white;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
-                            @endif
-                            <input type="radio" wire:model="statut_resultat" value="{{ $option['value'] }}" style="display:none;">
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endforeach
-            </div>
-
-            <div id="pw-rappel-box"
-                class="pw-rappel-box {{ in_array($statut_resultat, $rappelCodes) ? 'visible' : '' }}">
-                <div class="pw-rappel-box-title">
-                    @if (in_array($statut_resultat, ['rapl_elu', 'rapl_std']))
-                    ⏰ Créneau de rappel
-                    @else
-                    📅 Planifier le rappel / RDV
-                    @endif
-                </div>
-                @if ($statut_resultat === 'rapl_elu')
-                <div style="font-size:0.7rem; background:#fffbe6; border:1px dashed #d4a800; border-radius:4px; padding:4px 8px; color:#7a5c00; margin-bottom:0.5rem;">
-                    📝 Note obligatoire dans le compte rendu : date + heure + nom de l'élu
-                </div>
-                @elseif ($statut_resultat === 'rapl_std')
-                <div style="font-size:0.7rem; background:#fffbe6; border:1px dashed #d4a800; border-radius:4px; padding:4px 8px; color:#7a5c00; margin-bottom:0.5rem;">
-                    📝 Note obligatoire dans le compte rendu : date + heure + nom du standard
-                </div>
-                @endif
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-                    <div>
-                        <div class="pw-field-label">Date</div>
-                        <input type="date" wire:model="rappel_date" class="pw-field-input">
-                    </div>
-                    <div>
-                        <div class="pw-field-label">Heure</div>
-                        <input type="time" wire:model="rappel_heure" class="pw-field-input">
-                    </div>
-                </div>
-            </div>
-
-            @if ($statut_resultat === 'rdv')
-            <div style="margin-top:0.75rem; background:rgb(239 246 255); border:2px solid rgb(59 130 246); border-radius:0.5rem; overflow:hidden;">
-                <div style="background:rgb(59 130 246); color:white; padding:0.5rem 0.875rem; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
-                    🔵 FICHE RECAP RDV PRIS
-                </div>
-                <div style="padding:0.875rem; display:flex; flex-direction:column; gap:0.625rem;">
-                    <div>
-                        <div class="pw-field-label">Lieu du RDV</div>
-                        <input type="text" wire:model="lieu_rdv" class="pw-field-input" placeholder="Adresse / Agence AOPIA / Visioconférence">
-                    </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-                        <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; cursor:pointer; padding:0.375rem; background:white; border-radius:0.375rem; border:1px solid rgb(209 213 219);">
-                            <input type="checkbox" wire:model="invitation_agenda_envoyee" style="width:1rem;height:1rem;">
-                            Invitation agenda envoyée
-                        </label>
-                        <div>
-                            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; cursor:pointer; padding:0.375rem; background:white; border-radius:0.375rem; border:1px solid rgb(209 213 219);">
-                                <input type="checkbox" wire:model="enregistrement_appel_joint" style="width:1rem;height:1rem;">
-                                Enregistrement joint
-                            </label>
-                            @if (!$enregistrement_appel_joint)
-                            <input type="text" wire:model="enregistrement_raison" class="pw-field-input" style="margin-top:0.25rem; font-size:0.75rem;" placeholder="Raison...">
-                            @endif
-                        </div>
-                    </div>
-                    <div>
-                        <div class="pw-field-label">Besoins exprimés par le CSE</div>
-                        <textarea wire:model="besoins_exprimes" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Résumé des besoins / attentes identifiées..."></textarea>
-                    </div>
-                    <div>
-                        <div class="pw-field-label">Objections soulevées</div>
-                        <textarea wire:model="objections_soulevees" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Objections rencontrées et façon dont elles ont été traitées..."></textarea>
-                    </div>
-                    <div>
-                        <div class="pw-field-label">Points d'attention pour le RDV</div>
-                        <textarea wire:model="points_attention_rdv" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Éléments particuliers à transmettre au Responsable de Secteur..."></textarea>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            @if ($statut_resultat === 'cse_ni')
-            <div style="margin-top:0.75rem; background:rgb(255 251 235); border:2px solid rgb(234 179 8); border-radius:0.5rem; overflow:hidden;">
-                <div style="background:rgb(234 179 8); color:rgb(66 32 6); padding:0.5rem 0.875rem; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
-                    🟡 FICHE RECAP RDV À PRENDRE — Rappel J+7
-                </div>
-                <div style="padding:0.875rem; font-size:0.8125rem; color:rgb(92 52 8);">
-                    <p style="margin:0 0 0.5rem; font-weight:600;">Un email sera envoyé par l'assistante commerciale.</p>
-                    <ul style="margin:0; padding-left:1.25rem; font-size:0.75rem; color:rgb(120 53 15); line-height:1.7;">
-                        <li>Coordonnées CSE → onglet <strong>Standard / CSE</strong> ci-contre</li>
-                        <li>Commentaires → champ compte rendu ci-dessous</li>
-                        <li>Date rappel J+7 → bloc rappel ci-dessus (auto : {{ now()->addDays(7)->format('d/m/Y') }})</li>
-                    </ul>
-                </div>
-            </div>
-            @endif
-
-            @if (in_array($statut_resultat, ['bloc2', 'ncse_50', 'ncse_plus50', 'cse_zone']))
-            <div style="margin-top:0.75rem; background:rgb(240 253 244); border:2px solid rgb(34 197 94); border-radius:0.5rem; overflow:hidden;">
-                <div style="background:rgb(34 197 94); color:white; padding:0.5rem 0.875rem; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
-                    🟢 FICHE RECAP RDV À CONCLURE — Commercial
-                </div>
-                <div style="padding:0.875rem; display:flex; flex-direction:column; gap:0.625rem;">
-                    <div>
-                        <div class="pw-field-label">Présence d'un CSE</div>
-                        <select wire:model="presence_cse" class="pw-field-input">
-                            <option value="">— Sélectionner —</option>
-                            <option value="oui">Oui</option>
-                            <option value="non">Non</option>
-                            <option value="a_confirmer">À confirmer</option>
-                        </select>
-                    </div>
-                    <div>
-                        <div class="pw-field-label">Jour disponible pour l'appel</div>
-                        <input type="text" wire:model="jour_dispo_appel" class="pw-field-input" placeholder="ex : Lundi matin, Mercredi 14h-16h">
-                    </div>
-                    <div style="font-size:0.75rem; color:rgb(22 101 52); background:rgb(220 252 231); border-radius:0.375rem; padding:0.5rem 0.75rem; line-height:1.6;">
-                        Coordonnées CSE → onglet <strong>Standard / CSE</strong> · Commentaires → champ ci-dessous
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            <textarea wire:model="commentaires" rows="4"
-                placeholder="Compte rendu : interlocuteur joint, objections, décision, prochaine étape..." class="pw-textarea"></textarea>
-
-            @if ($statut_resultat && in_array($statut_resultat, ['rapl_elu', 'rapl_std']) && !$commentaires)
-            <div style="font-size:0.75rem; color:rgb(220 38 38); margin-top:0.5rem; display:flex; align-items:center; gap:0.25rem;">
-                📝 Note obligatoire : date + heure + nom {{ $statut_resultat === 'rapl_elu' ? 'de l\'élu' : 'du standard' }}.
-            </div>
-            @elseif ($statut_resultat && !$commentaires && !in_array($statut_resultat, ['nrp', 'fax', 'maj']))
-            <div style="font-size:0.75rem; color:rgb(249 115 22); margin-top:0.5rem; display:flex; align-items:center; gap:0.25rem;">
-                ⚠ Ajoutez un commentaire avant d'enregistrer.
-            </div>
-            @endif
-
-            <div class="pw-actions">
-                <button wire:click="submitResult" class="pw-btn-primary"
-                    {{ !$statut_resultat ? 'disabled style=opacity:.5;cursor:not-allowed' : '' }}>
-                    ✓ Enregistrer &amp; suivant
-                </button>
-                <button wire:click.prevent="skipCall" class="pw-btn-secondary" title="Repousser en fin de file">
-                    ↷ Passer
-                </button>
-            </div>
         </div>
-    </div>
     @else
     <div style="display:flex; align-items:center; justify-content:center; min-height:60vh;">
         <div style="text-align:center;">

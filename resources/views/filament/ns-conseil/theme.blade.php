@@ -231,8 +231,6 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
     font-size: 11.5px !important;
     font-weight: 700 !important;
     color: var(--ns-primary) !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
 }
 
 .fi-ta-cell {
@@ -554,8 +552,6 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
     font-size: 11.5px !important;
     font-weight: 700 !important;
     color: var(--ns-text-muted) !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
 }
 
 .fi-in-text,

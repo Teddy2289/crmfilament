@@ -6,6 +6,7 @@ use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\ListContact
 use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\CreateContactPartenaire;
 use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\EditContactPartenaire;
 use App\Models\ContactPartenaire;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,7 +15,11 @@ use Filament\Tables\Table;
 
 class ContactPartenaireResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = ContactPartenaire::class;
+
+    protected static string $permissionPrefix = 'contact_partenaires';
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
@@ -51,10 +56,6 @@ class ContactPartenaireResource extends Resource
                         Forms\Components\TextInput::make('prenom')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\Select::make('role')
-                            ->options(ContactPartenaire::ROLES)
-                            ->required()
-                            ->label('Rôle'),
                         Forms\Components\TextInput::make('nom_syndicat')
                             ->label('Syndicat associé')
                             ->maxLength(255),
@@ -68,23 +69,21 @@ class ContactPartenaireResource extends Resource
                             ->maxLength(255),
                         Forms\Components\TextInput::make('email')
                             ->email()
+                            ->label('Email professionnel')
                             ->maxLength(255),
                         Forms\Components\TextInput::make('telephone_direct')
                             ->tel()
-                            ->label('Téléphone direct')
-                            ->maxLength(20),
-                        Forms\Components\TextInput::make('telephone_mobile')
-                            ->tel()
-                            ->label('Téléphone mobile')
-                            ->maxLength(20),
-                        Forms\Components\TextInput::make('telephone_perso')
-                            ->tel()
-                            ->label('Téléphone personnel')
+                            ->label('Téléphone professionnel')
                             ->maxLength(20),
                         Forms\Components\TextInput::make('email_perso')
                             ->email()
                             ->label('Email personnel')
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('telephone_perso')
+                            ->tel()
+                            ->label('Téléphone personnel')
+                            ->maxLength(20),
+
                     ])
                     ->columns(2),
                 Forms\Components\Section::make('Informations supplémentaires')
@@ -129,9 +128,6 @@ class ContactPartenaireResource extends Resource
                     ->label('Nom complet')
                     ->searchable(['nom', 'prenom'])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('role_label')
-                    ->label('Rôle')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('fonction')
                     ->searchable()
                     ->toggleable(),
@@ -159,9 +155,6 @@ class ContactPartenaireResource extends Resource
                     ->label('Partenaire')
                     ->searchable()
                     ->preload(),
-                Tables\Filters\SelectFilter::make('role')
-                    ->options(ContactPartenaire::ROLES)
-                    ->label('Rôle'),
                 Tables\Filters\SelectFilter::make('niveau_influence')
                     ->label('Niveau d\'influence')
                     ->options([
