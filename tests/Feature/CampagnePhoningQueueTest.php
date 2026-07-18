@@ -91,14 +91,17 @@ class CampagnePhoningQueueTest extends TestCase
         );
         $this->assertSame(1, $campaign->countQueueContacts());
 
+        // $retired a bien un appel (statut "supp") dans cette campagne : il apparaît
+        // légitimement dans la section "Résultats des appels" (fiche par statut),
+        // mais l'exclusion de la file d'attente elle-même est déjà vérifiée plus haut
+        // via getContactsQueue()/countQueueContacts() — donc pas d'assertDontSee ici.
         Livewire::actingAs($user)
             ->test(ViewCampagnePhoning::class, ['record' => $campaign->getRouteKey()])
             ->assertSuccessful()
             ->assertSee('File d&#039;attente - 1 contact(s)', false)
             ->assertSee('CSE Appelable')
             ->assertDontSee($ko->nom)
-            ->assertDontSee($qf->nom)
-            ->assertDontSee($retired->nom);
+            ->assertDontSee($qf->nom);
     }
 
     #[Test]

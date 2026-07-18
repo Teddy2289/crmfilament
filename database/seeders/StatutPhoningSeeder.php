@@ -32,19 +32,19 @@ class StatutPhoningSeeder extends Seeder
         }
 
         $legacy = [
-            ['model_type' => 'partenaire', 'code' => 'std_nr',    'label' => 'STD-NR',    'description' => 'Standard sans réponse', 'couleur' => 'gray',  'icone' => '📵', 'ordre' => 1],
+            ['model_type' => 'partenaire', 'code' => 'std_nr',    'label' => 'STD-NR',    'description' => 'Standard sans réponse', 'couleur' => 'gray',  'icone' => '📵', 'ordre' => 1, 'compte_comme_tentative' => true],
             ['model_type' => 'partenaire', 'code' => 'std_joint', 'label' => 'STD-Joint', 'description' => 'Standard joint',        'couleur' => 'blue',  'icone' => '📞', 'ordre' => 2],
-            ['model_type' => 'partenaire', 'code' => 'cse_nr',    'label' => 'CSE-NR',    'description' => 'CSE sans réponse',      'couleur' => 'orange', 'icone' => '🟠', 'ordre' => 3],
+            ['model_type' => 'partenaire', 'code' => 'cse_nr',    'label' => 'CSE-NR',    'description' => 'CSE sans réponse',      'couleur' => 'orange', 'icone' => '🟠', 'ordre' => 3, 'compte_comme_tentative' => true],
             ['model_type' => 'partenaire', 'code' => 'rp',        'label' => 'RP',        'description' => 'Contact joint',         'couleur' => 'green', 'icone' => '✅', 'ordre' => 4],
             ['model_type' => 'partenaire', 'code' => 'rpc',       'label' => 'RPC',       'description' => 'RDV confirmé',          'couleur' => 'teal',  'icone' => '⭐', 'ordre' => 5],
             ['model_type' => 'partenaire', 'code' => 'ko',        'label' => 'KO',        'description' => 'Refus',                 'couleur' => 'red',   'icone' => '🚫', 'ordre' => 6],
-            ['model_type' => 'opportunite', 'code' => 'std_nr',    'label' => 'STD-NR',    'description' => 'Sans réponse',    'couleur' => 'gray',   'icone' => '📵', 'ordre' => 1],
+            ['model_type' => 'opportunite', 'code' => 'std_nr',    'label' => 'STD-NR',    'description' => 'Sans réponse',    'couleur' => 'gray',   'icone' => '📵', 'ordre' => 1, 'compte_comme_tentative' => true],
             ['model_type' => 'opportunite', 'code' => 'std_joint', 'label' => 'STD-Joint', 'description' => 'Standard joint',  'couleur' => 'blue',   'icone' => '📞', 'ordre' => 2],
-            ['model_type' => 'opportunite', 'code' => 'cse_nr',    'label' => 'CSE-NR',    'description' => 'CSE sans réponse', 'couleur' => 'orange', 'icone' => '🟠', 'ordre' => 3],
+            ['model_type' => 'opportunite', 'code' => 'cse_nr',    'label' => 'CSE-NR',    'description' => 'CSE sans réponse', 'couleur' => 'orange', 'icone' => '🟠', 'ordre' => 3, 'compte_comme_tentative' => true],
             ['model_type' => 'opportunite', 'code' => 'rp',        'label' => 'RP',        'description' => 'Rappel planifié', 'couleur' => 'green',  'icone' => '✅', 'ordre' => 4],
             ['model_type' => 'opportunite', 'code' => 'rpc',       'label' => 'RPC',       'description' => 'RDV confirmé',    'couleur' => 'teal',   'icone' => '⭐', 'ordre' => 5],
             ['model_type' => 'opportunite', 'code' => 'ko',        'label' => 'KO',        'description' => 'Refus',           'couleur' => 'red',    'icone' => '🚫', 'ordre' => 6],
-            ['model_type' => 'client', 'code' => 'std_nr', 'label' => 'Sans réponse', 'description' => 'Pas joignable',      'couleur' => 'gray',  'icone' => '📵', 'ordre' => 1],
+            ['model_type' => 'client', 'code' => 'std_nr', 'label' => 'Sans réponse', 'description' => 'Pas joignable',      'couleur' => 'gray',  'icone' => '📵', 'ordre' => 1, 'compte_comme_tentative' => true],
             ['model_type' => 'client', 'code' => 'rp',     'label' => 'Rappel',       'description' => 'Rappel à planifier', 'couleur' => 'green', 'icone' => '📅', 'ordre' => 2],
             ['model_type' => 'client', 'code' => 'ko',     'label' => 'KO',           'description' => 'Ne plus contacter',  'couleur' => 'red',   'icone' => '🚫', 'ordre' => 3],
         ];
@@ -52,7 +52,10 @@ class StatutPhoningSeeder extends Seeder
         foreach ($legacy as $statut) {
             StatutPhoning::updateOrCreate(
                 ['model_type' => $statut['model_type'], 'code' => $statut['code']],
-                array_merge($statut, ['actif' => true])
+                array_merge($statut, [
+                    'actif' => true,
+                    'compte_comme_tentative' => $statut['compte_comme_tentative'] ?? false,
+                ])
             );
         }
 

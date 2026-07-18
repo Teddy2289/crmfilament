@@ -71,12 +71,29 @@ class CampagnePhoning extends Model
     public function getStats(): array
     {
         $totalContacts = $this->countContacts();
-        $appels = $this->appels();
-        $totalAppels = $appels->count();
+        $totalAppels = $this->appels()->count();
 
-        $contactsTraites = $appels->distinct('appelable_id')->count('appelable_id');
+        // Un contact ne compte comme "traité" que s'il a été réellement joint
+        // au moins une fois (un appel dont le statut n'est pas marqué
+        // "compte_comme_tentative" = simple tentative infructueuse, ex :
+        // NRP, FAX, sans réponse...). Un contact uniquement joint via des
+        // statuts de ce type reste donc "restant" (à rappeler).
+        $codesNonAboutis = StatutPhoning::where('model_type', $this->queueContactType())
+            ->where('compte_comme_tentative', true)
+            ->pluck('code');
 
-        $parStatut = $appels->selectRaw('phoning_status, COUNT(*) as total')
+        $contactsTraites = $this->appels()
+            ->when(
+                $codesNonAboutis->isNotEmpty(),
+                fn (Builder $q) => $q->whereNotIn('phoning_status', $codesNonAboutis)
+            )
+            ->distinct('appelable_id')
+            ->count('appelable_id');
+
+        $contactsRestants = max(0, $totalContacts - $contactsTraites);
+
+        $parStatut = $this->appels()
+            ->selectRaw('phoning_status, COUNT(*) as total')
             ->groupBy('phoning_status')
             ->pluck('total', 'phoning_status')
             ->toArray();
@@ -88,11 +105,66 @@ class CampagnePhoning extends Model
         return [
             'total_contacts' => $totalContacts,
             'contacts_traites' => $contactsTraites,
-            'contacts_restants' => max(0, $totalContacts - $contactsTraites),
+            'contacts_restants' => $contactsRestants,
             'total_appels' => $totalAppels,
             'progression' => $progression,
             'par_statut' => $parStatut,
         ];
+    }
+
+    /**
+     * Codes de statut phoning effectivement rencontrés lors de cette campagne,
+     * ordonnés selon l'ordre de configuration des statuts.
+     */
+    public function statutsUtilises(): array
+    {
+        $codes = $this->appels()
+            ->whereNotNull('phoning_status')
+            ->distinct()
+            ->pluck('phoning_status');
+
+        if ($codes->isEmpty()) {
+            return [];
+        }
+
+        $ordreConnu = StatutPhoning::where('model_type', $this->queueContactType())
+            ->whereIn('code', $codes)
+            ->orderBy('ordre')
+            ->pluck('code');
+
+        // Les codes sans définition StatutPhoning (legacy) sont ajoutés à la fin.
+        return $ordreConnu->merge($codes->diff($ordreConnu))->values()->all();
+    }
+
+    public function statutLabel(string $code): string
+    {
+        $statut = StatutPhoning::where('model_type', $this->queueContactType())
+            ->where('code', $code)
+            ->first();
+
+        return $statut?->label ?? $code;
+    }
+
+    public function statutCouleur(string $code): string
+    {
+        $statut = StatutPhoning::where('model_type', $this->queueContactType())
+            ->where('code', $code)
+            ->first();
+
+        return $statut?->couleur_filament ?? 'gray';
+    }
+
+    /**
+     * Liste des appels de la campagne pour un statut donné, avec le contact
+     * lié chargé — sert de base à la "fiche" de chaque prospect traité.
+     */
+    public function appelsParStatut(string $code)
+    {
+        return $this->appels()
+            ->where('phoning_status', $code)
+            ->with(['appelable', 'user'])
+            ->orderByDesc('date_heure')
+            ->get();
     }
 
     public function estTerminee(): bool
@@ -111,17 +183,14 @@ class CampagnePhoning extends Model
 
     // ── Scopes ───────────────────────────────────────────────────────
 
+    /**
+     * Une campagne est éligible au phoning tant que son statut est "active" —
+     * activable/désactivable à tout moment, sans dépendre de date_debut/date_fin
+     * (ce sont de simples indications de planning, pas des verrous).
+     */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('statut', 'active')
-            ->where(fn ($q) => $q
-                ->whereNull('date_debut')
-                ->orWhere('date_debut', '<=', now()->toDateString())
-            )
-            ->where(fn ($q) => $q
-                ->whereNull('date_fin')
-                ->orWhere('date_fin', '>=', now()->toDateString())
-            );
+        return $query->where('statut', 'active');
     }
 
     /**

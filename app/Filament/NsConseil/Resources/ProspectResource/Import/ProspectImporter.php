@@ -77,20 +77,31 @@ class ProspectImporter
                     continue;
                 }
 
+                $siret = $data['siret'] ?? null;
                 $telephone = $data['telephone'] ?? null;
-                if ($telephone) {
-                    $existingProspect = Prospect::where('telephone', $telephone)->first();
-                } else {
-                    $existingProspect = Prospect::where('nom', $data['nom'])
-                        ->where('departement', $data['departement'] ?? null)
-                        ->first();
+                $matchedBy = null;
+
+                if ($siret) {
+                    $existingProspect = Prospect::where('siret', $siret)->first();
+                    $matchedBy = 'SIRET: '.$siret;
+                }
+                if (! $siret || ! $existingProspect) {
+                    if ($telephone) {
+                        $existingProspect = Prospect::where('telephone', $telephone)->first();
+                        $matchedBy = $existingProspect ? 'téléphone: '.$telephone : $matchedBy;
+                    } else {
+                        $existingProspect = Prospect::where('nom', $data['nom'])
+                            ->where('departement', $data['departement'] ?? null)
+                            ->first();
+                        $matchedBy = $existingProspect ? 'nom + département' : $matchedBy;
+                    }
                 }
 
                 if ($existingProspect) {
                     // Prospect existe déjà - appliquer la stratégie
                     if ($this->strategy === self::STRATEGY_SKIP) {
                         $this->skipped++;
-                        $this->errors[] = 'Ligne '.($i + 1).' : Prospect déjà existant (téléphone: '.$telephone.') — ignoré (mode skip)';
+                        $this->errors[] = 'Ligne '.($i + 1).' : Prospect déjà existant ('.$matchedBy.') — ignoré (mode skip)';
                         continue;
                     }
 
