@@ -21,6 +21,7 @@ class RendezVous extends Model
         'date_heure' => 'datetime',
         'email_confirmation_envoye' => 'boolean',
         'email_invitation_envoye' => 'boolean',
+        'rappel_envoye_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -41,6 +42,7 @@ class RendezVous extends Model
         'enregistrement_audio',
         'email_confirmation_envoye',
         'email_invitation_envoye',
+        'rappel_envoye_at',
         'outlook_event_id',
         'google_event_id',
     ];
@@ -460,6 +462,17 @@ class RendezVous extends Model
     {
         return $query->whereNull('outlook_event_id')
             ->whereNull('google_event_id');
+    }
+
+    public function scopeRappelAEnvoyer($query): Builder
+    {
+        return $query->whereIn('statut', [
+            RendezVousStatut::Planifie->value,
+            RendezVousStatut::Decale->value,
+        ])
+            ->whereNull('rappel_envoye_at')
+            ->where('date_heure', '<=', now()->addHour())
+            ->where('date_heure', '>=', now());
     }
 
     public function scopeARappeler($query): Builder

@@ -10,8 +10,13 @@ use App\Models\CampagnePhoning;
 use App\Models\Client;
 use App\Models\ContactPartenaire;
 use App\Models\Prospect;
+use App\Models\Appel;
+use App\Models\StatutPhoning;
 use Filament\Actions;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Tabs;
+use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
@@ -107,28 +112,96 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
 
             Section::make('Résultats des appels')
                 ->icon('heroicon-o-phone')
-                ->columns(2)
                 ->schema([
                     TextEntry::make('stats_total_appels')
                         ->label('Total appels passés')
                         ->getStateUsing(fn ($record) => $record->getStats()['total_appels'])
                         ->badge()
                         ->color('info'),
-                    TextEntry::make('stats_par_statut')
-                        ->label('Répartition par statut')
-                        ->getStateUsing(function ($record) {
-                            $stats = $record->getStats();
-                            if (empty($stats['par_statut'])) {
-                                return 'Aucun appel enregistré';
-                            }
 
-                            return collect($stats['par_statut'])
-                                ->map(fn ($count, $code) => "{$code}: {$count}")
-                                ->implode(' | ');
-                        })
-                        ->columnSpanFull(),
-            ]),
+                    ...($this->getRecord()->statutsUtilises() === []
+                        ? [
+                            TextEntry::make('aucun_appel')
+                                ->hiddenLabel()
+                                ->getStateUsing(fn () => 'Aucun appel enregistré pour le moment.'),
+                        ]
+                        : [$this->buildResultatsParStatutTabs()]),
+                ]),
         ]));
+    }
+
+    /**
+     * Un onglet par statut réellement rencontré, listant chaque appel sous
+     * forme de fiche (contact, téléphone, date, agent, commentaire) — plutôt
+     * qu'un simple total générique par code.
+     */
+    protected function buildResultatsParStatutTabs(): Tabs
+    {
+        $record = $this->getRecord();
+
+        return Tabs::make('resultats_par_statut')
+            ->columnSpanFull()
+            ->tabs(
+                collect($record->statutsUtilises())
+                    ->map(function (string $code) use ($record) {
+                        $appels = $record->appelsParStatut($code);
+
+                        return Tab::make($record->statutLabel($code))
+                            ->badge($appels->count())
+                            ->badgeColor($record->statutCouleur($code))
+                            ->schema([
+                                RepeatableEntry::make('appels_'.$code)
+                                    ->hiddenLabel()
+                                    // Les entrées imbriquées ci-dessous lisent $record (l'Appel
+                                    // de la ligne courante) via getStateUsing plutôt que des
+                                    // noms en pointillés ("appelable.nom"), car la résolution de
+                                    // chemin absolu d'un RepeatableEntry lié à un état brut (pas
+                                    // une vraie relation Eloquent) ne traverse pas les relations.
+                                    ->state(fn () => $appels)
+                                    ->schema([
+                                        TextEntry::make('contact')
+                                            ->label('Contact')
+                                            ->getStateUsing(fn (Appel $record) => $this->appelContactNom($record))
+                                            ->weight('semibold'),
+                                        TextEntry::make('telephone')
+                                            ->label('Téléphone')
+                                            ->getStateUsing(fn (Appel $record) => $this->appelContactTelephone($record))
+                                            ->placeholder('—'),
+                                        TextEntry::make('date_heure')
+                                            ->label("Date de l'appel")
+                                            ->getStateUsing(fn (Appel $record) => $record->date_heure)
+                                            ->dateTime('d/m/Y H:i')
+                                            ->placeholder('—'),
+                                        TextEntry::make('agent')
+                                            ->label('Agent')
+                                            ->getStateUsing(fn (Appel $record) => $record->user
+                                                ? trim("{$record->user->prenom} {$record->user->nom}")
+                                                : '—'),
+                                        TextEntry::make('commentaire')
+                                            ->label('Commentaire')
+                                            ->getStateUsing(fn (Appel $record) => $record->commentaire ?: $record->phoning_notes)
+                                            ->placeholder('—')
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->columns(4),
+                            ]);
+                    })
+                    ->all()
+            );
+    }
+
+    private function appelContactNom(Appel $appel): string
+    {
+        if (! $appel->appelable) {
+            return 'Contact #'.$appel->appelable_id;
+        }
+
+        return $this->queueContactName($appel->appelable);
+    }
+
+    private function appelContactTelephone(Appel $appel): ?string
+    {
+        return $appel->appelable ? $this->queuePhone($appel->appelable) : null;
     }
 
     public function table(Table $table): Table
@@ -174,16 +247,22 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                     ->badge()
                     ->color(fn (Model $record) => $this->queueStatusColor($record)),
 
+                Tables\Columns\TextColumn::make('queue_suivi')
+                    ->label('Suivi')
+                    ->getStateUsing(fn (Model $record) => $this->queueSuivi($record)['label'])
+                    ->badge()
+                    ->color(fn (Model $record) => $this->queueSuivi($record)['color']),
+
                 Tables\Columns\TextColumn::make('queue_assignee')
                     ->label('Assigné à')
                     ->getStateUsing(fn (Model $record) => $this->queueAssignee($record))
                     ->placeholder('Tous'),
 
                 Tables\Columns\TextColumn::make('queue_next_call')
-                    ->label('Rappel')
+                    ->label('Rappel prévu')
                     ->getStateUsing(fn (Model $record) => $record instanceof Prospect ? $record->rappel_planifie_at : null)
                     ->dateTime('d/m/Y H:i')
-                    ->placeholder('—')
+                    ->placeholder('Aucun rappel programmé')
                     ->color(fn (Model $record) => $record instanceof Prospect && $record->rappel_est_en_retard ? 'danger' : 'gray'),
             ])
             ->recordUrl(fn (Model $record) => $this->queueRecordUrl($record))
@@ -279,6 +358,69 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
             $record instanceof Client && $record->commercial => trim("{$record->commercial->prenom} {$record->commercial->nom}"),
             default => null,
         };
+    }
+
+    /**
+     * @var array<string, Appel>|null
+     */
+    private ?array $dernierAppelParContact = null;
+
+    /**
+     * @var array<string, bool>|null
+     */
+    private ?array $codesSansReponse = null;
+
+    /**
+     * État de suivi d'un contact de la file : jamais appelé, appelé sans
+     * réponse (simple tentative infructueuse : NRP, sans réponse...), ou
+     * déjà traité (un vrai résultat a été obtenu lors du dernier appel).
+     *
+     * @return array{label: string, color: string}
+     */
+    private function queueSuivi(Model $record): array
+    {
+        $appel = $this->dernierAppelPour($record);
+
+        if (! $appel) {
+            return ['label' => 'Jamais appelé', 'color' => 'gray'];
+        }
+
+        $label = $appel->phoning_status ? strtoupper($appel->phoning_status) : 'Appelé';
+
+        if ($this->estCodeSansReponse($appel->phoning_status)) {
+            return ['label' => "Sans réponse ({$label})", 'color' => 'warning'];
+        }
+
+        return ['label' => "Traité ({$label})", 'color' => 'success'];
+    }
+
+    private function dernierAppelPour(Model $record): ?Appel
+    {
+        if ($this->dernierAppelParContact === null) {
+            $this->dernierAppelParContact = Appel::where('campagne_id', $this->getRecord()->id)
+                ->orderByDesc('date_heure')
+                ->get()
+                ->groupBy(fn (Appel $appel) => $appel->appelable_type.'#'.$appel->appelable_id)
+                ->map(fn ($appels) => $appels->first())
+                ->all();
+        }
+
+        return $this->dernierAppelParContact[get_class($record).'#'.$record->getKey()] ?? null;
+    }
+
+    private function estCodeSansReponse(?string $code): bool
+    {
+        if (! $code) {
+            return false;
+        }
+
+        if ($this->codesSansReponse === null) {
+            $this->codesSansReponse = StatutPhoning::where('model_type', $this->getRecord()->queueContactType())
+                ->pluck('compte_comme_tentative', 'code')
+                ->all();
+        }
+
+        return (bool) ($this->codesSansReponse[$code] ?? false);
     }
 
     private function queueRecordUrl(Model $record): ?string

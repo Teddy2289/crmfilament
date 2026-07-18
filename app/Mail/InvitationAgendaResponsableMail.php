@@ -10,6 +10,8 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class InvitationAgendaResponsableMail extends Mailable
 {
@@ -76,17 +78,53 @@ class InvitationAgendaResponsableMail extends Mailable
             'invitation-rdv.ics'
         )->withMime('text/calendar');
 
-        // Fiche récap PDF
+        // Fiche récap (fichier local généré par FicheGenerationService)
         if ($this->fichePdfPath && file_exists($this->fichePdfPath)) {
-            $attachments[] = Attachment::fromPath($this->fichePdfPath)
-                ->withMime('application/pdf');
+            $mime = mime_content_type($this->fichePdfPath) ?: 'application/octet-stream';
+            $attachments[] = Attachment::fromPath($this->fichePdfPath)->withMime($mime);
         }
 
-        // Enregistrement audio
-        if ($this->audioPath && file_exists($this->audioPath)) {
-            $attachments[] = Attachment::fromPath($this->audioPath);
+        // Enregistrement audio de l'appel (URL signée Ringover/AWS, téléchargée à la volée)
+        if ($this->audioPath) {
+            $audioAttachment = $this->fetchAudioAttachment($this->audioPath);
+            if ($audioAttachment) {
+                $attachments[] = $audioAttachment;
+            }
         }
 
         return $attachments;
+    }
+
+    private function fetchAudioAttachment(string $audioPath): ?Attachment
+    {
+        // Chemin local (legacy / tests) : on l'attache directement.
+        if (file_exists($audioPath)) {
+            return Attachment::fromPath($audioPath);
+        }
+
+        // URL distante (cas normal : enregistrement stocké chez Ringover/AWS).
+        try {
+            $response = Http::timeout(15)->get($audioPath);
+
+            if (! $response->successful()) {
+                Log::warning("InvitationAgendaResponsableMail: téléchargement enregistrement audio échoué ({$response->status()})", [
+                    'rdv_id' => $this->rdv->id,
+                ]);
+
+                return null;
+            }
+
+            $extension = pathinfo(parse_url($audioPath, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION) ?: 'mp3';
+            $mime = $response->header('Content-Type') ?: 'audio/mpeg';
+
+            return Attachment::fromData(fn () => $response->body(), "enregistrement-appel.{$extension}")
+                ->withMime($mime);
+        } catch (\Throwable $e) {
+            Log::warning('InvitationAgendaResponsableMail: échec récupération enregistrement audio — '.$e->getMessage(), [
+                'rdv_id' => $this->rdv->id,
+            ]);
+
+            return null;
+        }
     }
 }

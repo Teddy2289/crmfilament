@@ -62,26 +62,42 @@ class ImportPartenairesAction extends Action
 
                         try {
                             $data = array_combine($header, $row);
+                            $siret = trim((string) ($data['siret'] ?? '')) ?: null;
 
-                            Partenaire::updateOrCreate(
-                                ['siret' => $data['siret'] ?? null],
-                                [
-                                    'nom' => $data['nom'] ?? '',
-                                    'entreprise' => $data['entreprise'] ?? null,
-                                    'type' => $this->mapType($data['type'] ?? null),
-                                    'statut' => $this->mapStatut($data['statut'] ?? null),
-                                    'adresse' => $data['adresse'] ?? null,
-                                    'code_postal' => $data['code_postal'] ?? null,
-                                    'ville' => $data['ville'] ?? null,
-                                    'departement' => $data['departement'] ?? null,
-                                    'telephone' => $data['telephone'] ?? null,
-                                    'email' => $data['email'] ?? null,
-                                    'secteur_activite' => $data['secteur_activite'] ?? null,
-                                    'nb_salaries' => $data['nb_salaries'] ?? null,
-                                    'chiffre_affaires' => $data['chiffre_affaires'] ?? null,
-                                    'origine_contact' => $data['origine_contact'] ?? null,
-                                ]
-                            );
+                            $attributes = [
+                                'nom' => $data['nom'] ?? '',
+                                'entreprise' => $data['entreprise'] ?? null,
+                                'type' => $this->mapType($data['type'] ?? null),
+                                'statut' => $this->mapStatut($data['statut'] ?? null),
+                                'adresse' => $data['adresse'] ?? null,
+                                'code_postal' => $data['code_postal'] ?? null,
+                                'ville' => $data['ville'] ?? null,
+                                'departement' => $data['departement'] ?? null,
+                                'telephone' => $data['telephone'] ?? null,
+                                'email' => $data['email'] ?? null,
+                                'secteur_activite' => $data['secteur_activite'] ?? null,
+                                'nb_salaries' => $data['nb_salaries'] ?? null,
+                                'chiffre_affaires' => $data['chiffre_affaires'] ?? null,
+                                'origine_contact' => $data['origine_contact'] ?? null,
+                            ];
+
+                            // Le SIRET identifie une entreprise de façon fiable ; sans lui,
+                            // on évite de faire correspondre plusieurs lignes distinctes
+                            // sur un même partenaire "siret = null" (updateOrCreate collision)
+                            // et on retombe sur nom + ville.
+                            if ($siret) {
+                                Partenaire::updateOrCreate(['siret' => $siret], $attributes);
+                            } else {
+                                $existing = Partenaire::where('nom', $attributes['nom'])
+                                    ->where('ville', $attributes['ville'])
+                                    ->first();
+
+                                if ($existing) {
+                                    $existing->update($attributes);
+                                } else {
+                                    Partenaire::create($attributes + ['siret' => null]);
+                                }
+                            }
 
                             $imported++;
                         } catch (\Exception $e) {

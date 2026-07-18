@@ -44,3 +44,15 @@ Schedule::job(new \App\Jobs\SendRappelRpJob())
 Schedule::job(new \App\Jobs\SendRappelStdNrJob())
     ->dailyAt('09:00')
     ->withoutOverlapping();
+
+// Rappel RDV : créer une tâche de rappel pour le téléprospecteur/commercial à l'heure
+// convenue avec le prospect (toutes les 30 min).
+Schedule::job(new \App\Jobs\SendRappelRdvJob())
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();
+
+// Invitation agenda RDV : envoie l'invitation au commercial (fiche + enregistrement audio)
+// une fois les pièces jointes disponibles, ou au plus tard après 2h (toutes les 10 min).
+Schedule::job(new \App\Jobs\SendInvitationAgendaJob())
+    ->everyTenMinutes()
+    ->withoutOverlapping();

@@ -242,6 +242,19 @@ class CampagnePhoningResource extends Resource
                         'gray' => 'terminee',
                     ]),
 
+                Tables\Columns\ToggleColumn::make('active_toggle')
+                    ->label('Active')
+                    ->getStateUsing(fn ($record) => $record->statut === 'active')
+                    ->updateStateUsing(function ($record, $state) {
+                        $record->update(['statut' => $state ? 'active' : 'terminee']);
+
+                        Notification::make()
+                            ->title($state ? 'Campagne activée' : 'Campagne désactivée')
+                            ->success()
+                            ->send();
+                    })
+                    ->disabled(fn () => ! static::userCanResourcePermission('update')),
+
                 Tables\Columns\BadgeColumn::make('type_entite')
                     ->label('Cible')
                     ->formatStateUsing(fn ($state) => CampagnePhoning::TYPES_ENTITE[$state] ?? $state)
@@ -312,28 +325,6 @@ class CampagnePhoningResource extends Resource
                     ),
             ])
             ->actions([
-                Tables\Actions\Action::make('activer')
-                    ->label('Activer')
-                    ->icon('heroicon-o-play')
-                    ->color('success')
-                    ->visible(fn ($record) => static::userCanResourcePermission('update') && $record->statut === 'brouillon')
-                    ->requiresConfirmation()
-                    ->action(function ($record) {
-                        $record->update(['statut' => 'active']);
-                        Notification::make()->title('Campagne activée')->success()->send();
-                    }),
-
-                Tables\Actions\Action::make('terminer')
-                    ->label('Terminer')
-                    ->icon('heroicon-o-stop')
-                    ->color('danger')
-                    ->visible(fn ($record) => static::userCanResourcePermission('update') && $record->statut === 'active')
-                    ->requiresConfirmation()
-                    ->action(function ($record) {
-                        $record->update(['statut' => 'terminee']);
-                        Notification::make()->title('Campagne terminée')->warning()->send();
-                    }),
-
                 Tables\Actions\Action::make('lancer_phoning')
                     ->label('Lancer le phoning')
                     ->icon('heroicon-o-phone-arrow-up-right')

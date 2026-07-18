@@ -5,7 +5,6 @@ use App\Mail\ContactSansCSEMail;
 use App\Mail\PriseContactBlocMail;
 use App\Mail\ConfirmationRdvProspectMail;
 use App\Mail\GenericProspectionMail;
-use App\Mail\InvitationAgendaResponsableMail;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use Illuminate\Support\Facades\Log;
@@ -57,29 +56,20 @@ class ProspectionMailService
         }
 
         $emailInterlocuteur = $prospect->interlocuteur_email ?: $this->fallbackEmail();
-        $emailCommercial    = $rdv->commercial?->email ?: $this->fallbackEmail();
 
         Log::info("MAIL DEBUG: envoyerRdv", [
             'email_interlocuteur_utilise' => $emailInterlocuteur,
-            'email_commercial_utilise' => $emailCommercial,
             'via_fallback_interlocuteur' => ! $prospect->interlocuteur_email,
-            'via_fallback_commercial' => ! $rdv->commercial?->email,
         ]);
 
         if ($emailInterlocuteur) {
             Mail::to($emailInterlocuteur)->queue(new ConfirmationRdvProspectMail($prospect, $rdv));
+            $rdv->confirmer();
         }
 
-        if ($emailCommercial) {
-            Mail::to($emailCommercial)->queue(
-                new InvitationAgendaResponsableMail(
-                    $prospect,
-                    $rdv,
-                    $contexte['fiche_pdf_path'] ?? null,
-                    $contexte['audio_path'] ?? null,
-                )
-            );
-        }
+        // L'invitation au commercial (avec fiche + enregistrement audio de l'appel)
+        // est envoyée par SendInvitationAgendaJob une fois les pièces jointes prêtes
+        // (l'enregistrement Ringover arrive de façon asynchrone après le raccroché).
     }
 
     protected function envoyerBloc(Prospect $prospect, array $contexte): void
