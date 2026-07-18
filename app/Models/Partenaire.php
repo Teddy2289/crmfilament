@@ -7,6 +7,7 @@ use App\Enums\OrganizationType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Partenaire extends Model
 {
@@ -141,6 +142,100 @@ class Partenaire extends Model
         if (filled($nomenclature)) {
             $this->nomenclature_interne = $nomenclature;
         }
+    }
+
+    /**
+     * @var array<string, array<int, static>>|null
+     */
+    private static ?array $nomenclatureIndex = null;
+
+    /**
+     * Retrouve un partenaire à partir d'un nom importé (nomenclature libre,
+     * ex: "Stellantis Valenciennes CSE") — utilisé pour rattacher un Client
+     * importé à son Partenaire correspondant.
+     *
+     * 1) Correspondance exacte sur nomenclature_interne / nom / nom_retenu
+     *    (rapide, comportement historique).
+     * 2) À défaut, correspondance tolérante (accents, casse, espaces,
+     *    numéro de département inséré/absent) — n'est retenue que si elle
+     *    désigne un seul partenaire sans ambiguïté, pour éviter un mauvais
+     *    rattachement (ex: même enseigne dans plusieurs départements).
+     */
+    public static function resolveByNomenclature(string $nomenclature): ?self
+    {
+        $nomenclature = trim($nomenclature);
+        if ($nomenclature === '') {
+            return null;
+        }
+
+        $exact = static::query()
+            ->where('nomenclature_interne', $nomenclature)
+            ->orWhere('nom', $nomenclature)
+            ->orWhere('nom_retenu', $nomenclature)
+            ->first();
+
+        if ($exact) {
+            return $exact;
+        }
+
+        $candidats = static::nomenclatureIndex()[static::normaliserNomenclature($nomenclature)] ?? [];
+
+        return count($candidats) === 1 ? $candidats[0] : null;
+    }
+
+    /**
+     * Invalide l'index en mémoire (utile après création/modification de
+     * partenaires dans le même run, ex: import en cours).
+     */
+    public static function oublierIndexNomenclature(): void
+    {
+        self::$nomenclatureIndex = null;
+    }
+
+    /**
+     * @return array<string, array<int, static>>
+     */
+    protected static function nomenclatureIndex(): array
+    {
+        if (self::$nomenclatureIndex !== null) {
+            return self::$nomenclatureIndex;
+        }
+
+        $index = [];
+
+        static::query()
+            ->select(['id', 'nom', 'nom_retenu', 'nomenclature_interne'])
+            ->get()
+            ->each(function (self $partenaire) use (&$index) {
+                foreach (array_filter([$partenaire->nom, $partenaire->nom_retenu, $partenaire->nomenclature_interne]) as $candidat) {
+                    $cle = static::normaliserNomenclature($candidat);
+                    if ($cle === '') {
+                        continue;
+                    }
+                    $index[$cle][] = $partenaire;
+                }
+            });
+
+        return self::$nomenclatureIndex = $index;
+    }
+
+    /**
+     * Normalise un nom de partenaire pour comparaison tolérante : majuscules,
+     * sans accents, sans ponctuation, sans nombres isolés (souvent un numéro
+     * de département inséré/absent selon la source), espaces réduits.
+     */
+    protected static function normaliserNomenclature(?string $valeur): string
+    {
+        if (! $valeur) {
+            return '';
+        }
+
+        $valeur = Str::ascii($valeur);
+        $valeur = mb_strtoupper($valeur);
+        $valeur = preg_replace('/\b\d{1,3}\b/', ' ', $valeur);
+        $valeur = preg_replace('/[^A-Z0-9]+/', ' ', $valeur);
+
+        return trim(preg_replace('/\s+/', ' ', $valeur));
     }
 
     public function getAdresseCompleteAttribute(): string

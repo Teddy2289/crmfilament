@@ -349,13 +349,7 @@ abstract class BaseClientImporter
             return $this->partenaireCache[$nomenclature];
         }
 
-        $this->partenaireCache[$nomenclature] = Partenaire::query()
-            ->where('nomenclature_interne', $nomenclature)
-            ->orWhere('nom', $nomenclature)
-            ->orWhere('nom_retenu', $nomenclature)
-            ->first();
-
-        return $this->partenaireCache[$nomenclature];
+        return $this->partenaireCache[$nomenclature] = Partenaire::resolveByNomenclature($nomenclature);
     }
 
     protected function resolveConsultant(string $nomBrut): ?int
