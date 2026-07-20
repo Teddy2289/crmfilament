@@ -126,9 +126,13 @@ class ContactPartenaireResource extends Resource
                     ->label('Partenaire')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('nom_complet')
-                    ->label('Nom complet')
-                    ->searchable(['nom', 'prenom'])
+                Tables\Columns\TextColumn::make('nom')
+                    ->label('Nom')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('prenom')
+                    ->label('Prénom')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('fonction')
                     ->searchable()

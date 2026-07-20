@@ -177,28 +177,35 @@ class ArtisanResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('nom_complet')
-                    ->label('Artisan')
-                    ->searchable(['nom', 'prenom'])
-                    ->sortable(['nom'])
+                Tables\Columns\TextColumn::make('nom')
+                    ->label('Nom')
+                    ->searchable()
+                    ->sortable()
                     ->weight('semibold')
-                    ->description(fn (Artisan $r) => $r->raison_sociale),
+                    ->description(fn(Artisan $r) => $r->raison_sociale),
+
+                Tables\Columns\TextColumn::make('prenom')
+                    ->label('Prénom')
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('corps_de_metier')
                     ->label('Métier')
                     ->sortable()
-                    ->formatStateUsing(fn ($state) => $state->label())
-                    ->color(fn ($state) => $state->color()),
+                    ->formatStateUsing(fn($state) => $state->label())
+                    ->color(fn($state) => $state->color()),
 
                 Tables\Columns\TextColumn::make('statut_compte')
                     ->label('Statut')
                     ->sortable()
-                    ->formatStateUsing(fn ($state) => $state->label())
-                    ->color(fn ($state) => $state->color()),
+                    ->formatStateUsing(fn($state) => $state->label())
+                    ->color(fn($state) => $state->color()),
 
                 Tables\Columns\TextColumn::make('telephone_principal')
                     ->label('Téléphone')
                     ->copyable()
+                    ->badge()
+                    ->color('green')
                     ->icon('heroicon-o-phone'),
 
                 Tables\Columns\IconColumn::make('agenda_disponibilites')
@@ -217,8 +224,8 @@ class ArtisanResource extends Resource
                 Tables\Columns\TextColumn::make('note_moyenne')
                     ->label('Note moy.')
                     ->sortable()
-                    ->formatStateUsing(fn ($state) => $state ? number_format($state, 1).' / 10' : '—')
-                    ->color(fn ($state) => match (true) {
+                    ->formatStateUsing(fn($state) => $state ? number_format($state, 1) . ' / 10' : '—')
+                    ->color(fn($state) => match (true) {
                         $state >= 8 => 'success',
                         $state >= 6 => 'warning',
                         $state !== null => 'danger',
@@ -254,11 +261,11 @@ class ArtisanResource extends Resource
 
                 Tables\Filters\Filter::make('prioritaires')
                     ->label('Métiers prioritaires')
-                    ->query(fn (Builder $q) => $q->prioritaires()),
+                    ->query(fn(Builder $q) => $q->prioritaires()),
 
                 Tables\Filters\Filter::make('bien_notes')
                     ->label('Bien notés (≥ 8)')
-                    ->query(fn (Builder $q) => $q->bienNotes(8)),
+                    ->query(fn(Builder $q) => $q->bienNotes(8)),
             ])
 
             ->actions([
@@ -266,7 +273,7 @@ class ArtisanResource extends Resource
                     ->label('Activer')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (Artisan $r) => $r->estEnAttente())
+                    ->visible(fn(Artisan $r) => $r->estEnAttente())
                     ->requiresConfirmation()
                     ->action(function (Artisan $record) {
                         $record->activer();
@@ -280,7 +287,7 @@ class ArtisanResource extends Resource
                     ->label('Suspendre')
                     ->icon('heroicon-o-pause-circle')
                     ->color('danger')
-                    ->visible(fn (Artisan $r) => $r->estActif())
+                    ->visible(fn(Artisan $r) => $r->estActif())
                     ->form([
                         Forms\Components\Textarea::make('motif')
                             ->label('Motif de suspension')
@@ -303,10 +310,10 @@ class ArtisanResource extends Resource
                     ->label('Envoyer bienvenue')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
-                    ->visible(fn (Artisan $r) => !empty($r->email))
+                    ->visible(fn(Artisan $r) => !empty($r->email))
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer l\'email de bienvenue ?')
-                    ->modalDescription(fn (Artisan $r) => 'Destinataire : ' . $r->email)
+                    ->modalDescription(fn(Artisan $r) => 'Destinataire : ' . $r->email)
                     ->action(function (Artisan $record) {
                         $mailable = new BienvenuArtisanMail($record);
                         Mail::to($record->email)->send($mailable);
@@ -314,7 +321,7 @@ class ArtisanResource extends Resource
                         Notification::make()->title('Email de bienvenue envoyé')->success()->send();
                     }),
 
-                SendEmailAction::make(fn (Artisan $r) => $r->email),
+                SendEmailAction::make(fn(Artisan $r) => $r->email),
             ])
 
             ->bulkActions([
@@ -327,7 +334,7 @@ class ArtisanResource extends Resource
                         ->action(function ($records) {
                             $records->each->activer();
                             Notification::make()
-                                ->title(count($records).' artisan(s) activé(s)')
+                                ->title(count($records) . ' artisan(s) activé(s)')
                                 ->success()
                                 ->send();
                         }),

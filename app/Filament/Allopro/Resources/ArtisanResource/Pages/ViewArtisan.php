@@ -23,7 +23,7 @@ class ViewArtisan extends ViewRecord
                 ->label('Activer')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn () => $this->record->estEnAttente())
+                ->visible(fn() => $this->record->estEnAttente())
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->record->activer();
@@ -35,7 +35,7 @@ class ViewArtisan extends ViewRecord
                 ->label('Suspendre')
                 ->icon('heroicon-o-pause-circle')
                 ->color('danger')
-                ->visible(fn () => $this->record->estActif())
+                ->visible(fn() => $this->record->estActif())
                 ->form([
                     Textarea::make('motif')
                         ->label('Motif')
@@ -80,12 +80,14 @@ class ViewArtisan extends ViewRecord
                 ->schema([
                     TextEntry::make('corps_de_metier')
                         ->label('Métier')
-                        ->formatStateUsing(fn ($state) => $state->label())
+                        ->formatStateUsing(fn($state) => $state->label())
                         ->badge()
-                        ->color(fn ($state) => $state->color()),
+                        ->color(fn($state) => $state->color()),
 
                     TextEntry::make('telephone_principal')
                         ->label('Téléphone principal')
+                        ->badge()
+                        ->color('green')
                         ->icon('heroicon-o-phone')
                         ->copyable(),
 
@@ -96,7 +98,7 @@ class ViewArtisan extends ViewRecord
 
                     TextEntry::make('canal_alerte')
                         ->label('Canal d\'alerte')
-                        ->formatStateUsing(fn ($state) => $state->label())
+                        ->formatStateUsing(fn($state) => $state->label())
                         ->badge(),
 
                     TextEntry::make('zone_intervention')
@@ -110,9 +112,9 @@ class ViewArtisan extends ViewRecord
                 ->schema([
                     TextEntry::make('statut_compte')
                         ->label('Statut')
-                        ->formatStateUsing(fn ($state) => $state->label())
+                        ->formatStateUsing(fn($state) => $state->label())
                         ->badge()
-                        ->color(fn ($state) => $state->color()),
+                        ->color(fn($state) => $state->color()),
 
                     IconEntry::make('agenda_disponibilites')
                         ->label('Agenda configuré')
@@ -124,9 +126,9 @@ class ViewArtisan extends ViewRecord
 
                     TextEntry::make('note_moyenne')
                         ->label('Note moyenne')
-                        ->formatStateUsing(fn ($state) => $state ? number_format($state, 1).' / 10' : '—')
+                        ->formatStateUsing(fn($state) => $state ? number_format($state, 1) . ' / 10' : '—')
                         ->badge()
-                        ->color(fn ($state) => match (true) {
+                        ->color(fn($state) => match (true) {
                             $state >= 8 => 'success',
                             $state >= 6 => 'warning',
                             $state !== null => 'danger',
@@ -145,7 +147,7 @@ class ViewArtisan extends ViewRecord
                     TextEntry::make('priorite_segment')
                         ->label('Priorité segment')
                         ->badge()
-                        ->color(fn ($state) => $state === 'Haute' ? 'danger' : 'gray'),
+                        ->color(fn($state) => $state === 'Haute' ? 'danger' : 'gray'),
                 ]),
 
             Section::make('Notes internes')

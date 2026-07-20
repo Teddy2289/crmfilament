@@ -200,7 +200,7 @@ class PartenaireResource extends Resource
                 // Une fois le partenaire créé, l'onglet "Contacts" (ContactsRelationManager)
                 // gère déjà l'ajout/édition/suppression avec plus de champs et une table
                 // recherchable : on évite ici un second bouton "Ajouter un contact" en double.
-                ->visible(fn (string $operation): bool => $operation === 'create')
+                ->visible(fn(string $operation): bool => $operation === 'create')
                 ->schema([
                     Forms\Components\Repeater::make('contacts')
                         ->relationship()
@@ -264,7 +264,7 @@ class PartenaireResource extends Resource
                     ),
 
                 Tables\Columns\TextColumn::make('departement')
-                    ->label('Dép.')->sortable()->alignCenter(),
+                    ->label('Département')->sortable()->alignCenter(),
 
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')->badge()
@@ -399,16 +399,16 @@ class PartenaireResource extends Resource
                 ]),
             ])
             ->headerActions([
-    Tables\Actions\Action::make('switch_view')
-        ->label('Vue Kanban')
-        ->icon('heroicon-o-squares-2x2')
-        ->color('custom-kanban')
-        ->url(\App\Filament\NsConseil\Resources\PartenaireResource\Pages\PartenaireKanban::getUrl()),
+                Tables\Actions\Action::make('switch_view')
+                    ->label('Vue Kanban')
+                    ->icon('heroicon-o-squares-2x2')
+                    ->color('custom-kanban')
+                    ->url(\App\Filament\NsConseil\Resources\PartenaireResource\Pages\PartenaireKanban::getUrl()),
 
-    \App\Filament\NsConseil\Actions\DownloadImportTemplateAction::make(),
-    // \App\Filament\NsConseil\Actions\ImportPartenairesAction::make(),
-    LancerAppelsAction::make('partenaires'),
-])
+                \App\Filament\NsConseil\Actions\DownloadImportTemplateAction::make(),
+                // \App\Filament\NsConseil\Actions\ImportPartenairesAction::make(),
+                LancerAppelsAction::make('partenaires'),
+            ])
             ->emptyStateHeading('Aucun partenaire')
             ->emptyStateDescription('Créez votre premier partenaire ou importez un fichier Excel.');
     }
@@ -453,11 +453,14 @@ class PartenaireResource extends Resource
                     ),
 
                 Tables\Columns\TextColumn::make('departement')
-                    ->label('Dép.')
+                    ->label('Département')
                     ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('telephone')
                     ->label('Téléphone')
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
                     ->copyable()
                     ->toggleable(),
             ])
@@ -698,7 +701,8 @@ class PartenaireResource extends Resource
                         Infolists\Components\TextEntry::make('telephone')
                             ->label('Téléphone')
                             ->placeholder('—')
-                            ->copyable()
+                            ->badge()
+                            ->color('green')
                             ->icon('heroicon-o-phone')
                             ->url(fn($state) => $state ? 'tel:' . $state : null),
 

@@ -200,17 +200,21 @@ class ClientResource extends Resource
                     ->searchable(['nom_tiers', 'prenom', 'email', 'telephone'])
                     ->sortable()
                     ->weight('bold')
-                    ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').($record->prenom ? $record->prenom.' ' : '').$state)
+                    ->formatStateUsing(
+                        fn($state, Client $record) => trim(($record->civilite ? $record->civilite . ' ' : '') . ($record->prenom ? $record->prenom . ' ' : '') . $state)
                     )
-                    ->description(fn (Client $record) => static::userCanShowField('email') && filled($record->email)
+                    ->description(fn(Client $record) => static::userCanShowField('email') && filled($record->email)
                         ? $record->email
                         : (static::userCanShowField('telephone') ? $record->telephone : null))
                     ->toggleable(),
 
                 // 📞 Contact
                 Tables\Columns\TextColumn::make('telephone')
-                    ->label('Tél.')
+                    ->label('Téléphone')
                     ->copyable()
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
                     ->toggleable()
                     ->toggledHiddenByDefault(),
 
@@ -244,27 +248,27 @@ class ClientResource extends Resource
                 Tables\Columns\TextColumn::make('statut_rattachement_partenaire')
                     ->label('Rattachement')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
+                    ->formatStateUsing(fn($state) => match ($state) {
                         'rattache' => 'Rattaché',
                         'partenaire_non_rattache' => 'Partenaire non rattaché',
                         default => '-',
                     })
-                    ->icon(fn ($state) => match ($state) {
+                    ->icon(fn($state) => match ($state) {
                         'rattache' => 'heroicon-o-link',
                         'partenaire_non_rattache' => 'heroicon-o-link-slash',
                         default => null,
                     })
-                    ->color(fn ($state) => match ($state) {
+                    ->color(fn($state) => match ($state) {
                         'rattache' => 'rattachement',
                         'partenaire_non_rattache' => 'gray',
                         default => 'gray',
                     })
-                    ->tooltip(fn ($state) => match ($state) {
+                    ->tooltip(fn($state) => match ($state) {
                         'rattache' => 'Ce client est relié à un partenaire identifié.',
                         'partenaire_non_rattache' => "Aucun partenaire correspondant n'a été trouvé automatiquement. Utilisez « Vérifier les rattachements » ou rattachez-le manuellement.",
                         default => null,
                     })
-                    ->description(fn (Client $record) => $record->nomenclature_partenaire_import)
+                    ->description(fn(Client $record) => $record->nomenclature_partenaire_import)
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('parrain.nom_prenom')
@@ -277,9 +281,9 @@ class ClientResource extends Resource
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => Client::etatLabel($state))
-                    ->color(fn ($state) => Client::etatColor($state))
-                    ->tooltip(fn ($state) => Client::etatDescription($state))
+                    ->formatStateUsing(fn($state) => Client::etatLabel($state))
+                    ->color(fn($state) => Client::etatColor($state))
+                    ->tooltip(fn($state) => Client::etatDescription($state))
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('montant_cpf')
@@ -332,7 +336,7 @@ class ClientResource extends Resource
 
                 Tables\Filters\Filter::make('partenaire_non_rattache')
                     ->label('Partenaire non rattaché')
-                    ->query(fn (Builder $query): Builder => Client::constrainPartenaireNonRattaches($query))
+                    ->query(fn(Builder $query): Builder => Client::constrainPartenaireNonRattaches($query))
                     ->toggle(),
 
                 Tables\Filters\SelectFilter::make('parrain_id')
@@ -346,7 +350,7 @@ class ClientResource extends Resource
                 Tables\Filters\SelectFilter::make('region')
                     ->label('Région')
                     ->options(
-                        fn () => Client::whereNotNull('region')
+                        fn() => Client::whereNotNull('region')
                             ->where('region', '!=', '')
                             ->distinct()
                             ->orderBy('region')
@@ -359,7 +363,7 @@ class ClientResource extends Resource
                 Tables\Filters\SelectFilter::make('departement')
                     ->label('Département')
                     ->options(
-                        fn () => Client::whereNotNull('departement')
+                        fn() => Client::whereNotNull('departement')
                             ->where('departement', '!=', '')
                             ->distinct()
                             ->orderBy('departement')
@@ -373,7 +377,7 @@ class ClientResource extends Resource
                 Tables\Filters\Filter::make('contactables')
                     ->label('Contactables')
                     ->query(
-                        fn (Builder $q) => $q->where('ne_plus_contacter', false)
+                        fn(Builder $q) => $q->where('ne_plus_contacter', false)
                             ->where(function ($q) {
                                 $q->whereNotNull('email')->orWhereNotNull('telephone');
                             })
@@ -382,12 +386,12 @@ class ClientResource extends Resource
 
                 Tables\Filters\Filter::make('avec_cpf')
                     ->label('Avec CPF')
-                    ->query(fn (Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
+                    ->query(fn(Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('sans_proposition')
                     ->label('Sans proposition')
-                    ->query(fn (Builder $q) => $q->doesntHave('propositions')),
+                    ->query(fn(Builder $q) => $q->doesntHave('propositions')),
 
                 // 🗑️ Corbeille
                 Tables\Filters\TrashedFilter::make()
@@ -400,9 +404,9 @@ class ClientResource extends Resource
                     ->label(''),
 
                 Tables\Actions\Action::make('toggle_contact')
-                    ->label(fn (Client $record) => $record->ne_plus_contacter ? 'Réactiver' : 'Bloquer')
-                    ->icon(fn (Client $record) => $record->ne_plus_contacter ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
-                    ->color(fn (Client $record) => $record->ne_plus_contacter ? 'success' : 'danger')
+                    ->label(fn(Client $record) => $record->ne_plus_contacter ? 'Réactiver' : 'Bloquer')
+                    ->icon(fn(Client $record) => $record->ne_plus_contacter ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->color(fn(Client $record) => $record->ne_plus_contacter ? 'success' : 'danger')
                     ->action(function (Client $record) {
                         if ($record->ne_plus_contacter) {
                             $record->reactiver();
@@ -455,14 +459,14 @@ class ClientResource extends Resource
                     ->label('Client')
                     ->searchable()
                     ->weight('bold')
-                    ->formatStateUsing(fn ($state, Client $record) => trim(($record->civilite ? $record->civilite.' ' : '').($record->prenom ? $record->prenom.' ' : '').$state)),
+                    ->formatStateUsing(fn($state, Client $record) => trim(($record->civilite ? $record->civilite . ' ' : '') . ($record->prenom ? $record->prenom . ' ' : '') . $state)),
 
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => Client::etatLabel($state))
-                    ->color(fn ($state) => Client::etatColor($state))
-                    ->tooltip(fn ($state) => Client::etatDescription($state)),
+                    ->formatStateUsing(fn($state) => Client::etatLabel($state))
+                    ->color(fn($state) => Client::etatColor($state))
+                    ->tooltip(fn($state) => Client::etatDescription($state)),
 
                 Tables\Columns\TextColumn::make('type_tiers')
                     ->label('Type')
@@ -475,6 +479,9 @@ class ClientResource extends Resource
 
                 Tables\Columns\TextColumn::make('telephone')
                     ->label('Téléphone')
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
                     ->copyable()
                     ->toggleable(),
             ])
@@ -511,7 +518,7 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('nom_naissance')
                         ->label('Nom de naissance')
                         ->placeholder('—')
-                        ->visible(fn ($record) => filled($record->nom_naissance)),
+                        ->visible(fn($record) => filled($record->nom_naissance)),
                     Infolists\Components\TextEntry::make('ref_client')
                         ->label('Référence'),
                     Infolists\Components\TextEntry::make('civilite')
@@ -519,7 +526,7 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('date_naissance')
                         ->label('Né(e) le')
                         ->date('d/m/Y'),
-                    
+
                     Infolists\Components\TextEntry::make('entreprise')
                         ->label('Entreprise'),
                     Infolists\Components\TextEntry::make('partenaire.nom')
@@ -563,9 +570,9 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('etat')
                         ->label('État')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => Client::etatLabel($state))
-                        ->color(fn ($state) => Client::etatColor($state))
-                        ->tooltip(fn ($state) => Client::etatDescription($state)),
+                        ->formatStateUsing(fn($state) => Client::etatLabel($state))
+                        ->color(fn($state) => Client::etatColor($state))
+                        ->tooltip(fn($state) => Client::etatDescription($state)),
                     Infolists\Components\TextEntry::make('montant_cpf')
                         ->label('Montant CPF')
                         ->money('EUR'),
