@@ -43,8 +43,10 @@ class ContactsRelationManager extends RelationManager
             Infolists\Components\Section::make('Identité')
                 ->schema([
                     Infolists\Components\Grid::make(3)->schema([
-                        Infolists\Components\TextEntry::make('nom_complet')
-                            ->label('Nom complet'),
+                        Infolists\Components\TextEntry::make('nom')
+                            ->label('Nom'),
+                        Infolists\Components\TextEntry::make('prenom')
+                            ->label('Prénom'),
                         Infolists\Components\TextEntry::make('fonction')
                             ->placeholder('—'),
                         Infolists\Components\TextEntry::make('nom_syndicat')
@@ -70,14 +72,23 @@ class ContactsRelationManager extends RelationManager
                             ->copyable(),
                         Infolists\Components\TextEntry::make('telephone_direct')
                             ->label('Téléphone professionnel')
+                            ->badge()
+                            ->color('green')
+                            ->icon('heroicon-o-phone')
                             ->placeholder('—')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('telephone_mobile')
                             ->label('Téléphone mobile')
+                            ->badge()
+                            ->color('green')
+                            ->icon('heroicon-o-phone')
                             ->placeholder('—')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('telephone_perso')
                             ->label('Téléphone personnel')
+                            ->badge()
+                            ->color('green')
+                            ->icon('heroicon-o-phone')
                             ->placeholder('—')
                             ->copyable(),
                     ]),
@@ -95,7 +106,7 @@ class ContactsRelationManager extends RelationManager
                         Infolists\Components\TextEntry::make('niveau_influence_label')
                             ->label('Niveau d\'influence')
                             ->badge()
-                            ->color(fn ($record) => $record->niveau_influence_color),
+                            ->color(fn($record) => $record->niveau_influence_color),
                     ]),
                 ])
                 ->collapsible(),
@@ -117,9 +128,14 @@ class ContactsRelationManager extends RelationManager
             ->recordTitleAttribute('nom')
             ->columns([
                 Tables\Columns\TextColumn::make('nom')
-                    ->label('Nom complet')
-                    ->formatStateUsing(fn ($record) => "{$record->prenom} {$record->nom}")
-                    ->searchable(['nom', 'prenom']),
+                    ->label('Nom')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('prenom')
+                    ->label('Prénom')
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('fonction')
                     ->label('Fonction'),
@@ -131,7 +147,10 @@ class ContactsRelationManager extends RelationManager
                     ->color('warning'),
 
                 Tables\Columns\TextColumn::make('telephone_direct')
-                    ->label('Tél.')
+                    ->label('Téléphone')
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
                     ->placeholder('—')
                     ->copyable(),
 

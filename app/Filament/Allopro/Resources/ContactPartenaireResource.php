@@ -145,10 +145,14 @@ class ContactPartenaireResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nom_affichage')
-                    ->label('Nom complet')
-                    ->searchable(['nom', 'prenom'])
-                    ->sortable(['nom']),
+                Tables\Columns\TextColumn::make('nom')
+                    ->label('Nom')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('prenom')
+                    ->label('Prénom')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('partenaire.nom')
                     ->label('Partenaire')
                     ->searchable()

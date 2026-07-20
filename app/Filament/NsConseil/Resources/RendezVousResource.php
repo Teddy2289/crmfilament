@@ -67,7 +67,7 @@ class RendezVousResource extends Resource
                     Forms\Components\Select::make('type')
                         ->label('Type')
                         ->options(collect(RendezVousType::cases())
-                            ->mapWithKeys(fn ($t) => [$t->value => $t->label()])
+                            ->mapWithKeys(fn($t) => [$t->value => $t->label()])
                             ->toArray())
                         ->required()
                         ->native(false)
@@ -76,7 +76,7 @@ class RendezVousResource extends Resource
                     Forms\Components\Select::make('statut')
                         ->label('Statut')
                         ->options(collect(RendezVousStatut::cases())
-                            ->mapWithKeys(fn ($s) => [$s->value => $s->label()])
+                            ->mapWithKeys(fn($s) => [$s->value => $s->label()])
                             ->toArray())
                         ->required()
                         ->native(false)
@@ -101,7 +101,7 @@ class RendezVousResource extends Resource
 
                             $service = app(CreneauPropositionService::class);
                             $creneaux = $service->genererPropositions($user);
-                            
+
                             return $service->formaterPourSelect($creneaux);
                         })
                         ->searchable()
@@ -146,26 +146,28 @@ class RendezVousResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('commercial_id')
                         ->label('Commercial')
-                        ->options(fn () => User::whereIn('role_cache', ['commercial', 'team_leader', 'administrateur'])
-                            ->orderBy('nom')
-                            ->get()
-                            ->mapWithKeys(fn (User $u) => [$u->id => "{$u->prenom} {$u->nom}"])
-                            ->toArray()
+                        ->options(
+                            fn() => User::whereIn('role_cache', ['commercial', 'team_leader', 'administrateur'])
+                                ->orderBy('nom')
+                                ->get()
+                                ->mapWithKeys(fn(User $u) => [$u->id => "{$u->prenom} {$u->nom}"])
+                                ->toArray()
                         )
                         ->searchable()
                         ->nullable()
-                        ->default(fn () => auth()->user()?->hasRoleCache('commercial') ? auth()->id() : null),
+                        ->default(fn() => auth()->user()?->hasRoleCache('commercial') ? auth()->id() : null),
 
                     Forms\Components\Select::make('teleprospecteur_id')
                         ->label('Téléprospecteur')
-                        ->options(fn () => User::orderBy('nom')
-                            ->get()
-                            ->mapWithKeys(fn (User $u) => [$u->id => "{$u->prenom} {$u->nom}"])
-                            ->toArray()
+                        ->options(
+                            fn() => User::orderBy('nom')
+                                ->get()
+                                ->mapWithKeys(fn(User $u) => [$u->id => "{$u->prenom} {$u->nom}"])
+                                ->toArray()
                         )
                         ->searchable()
                         ->nullable()
-                        ->default(fn () => auth()->user()?->hasRoleCache('teleprospecteur') ? auth()->id() : null),
+                        ->default(fn() => auth()->user()?->hasRoleCache('teleprospecteur') ? auth()->id() : null),
                 ])->columns(2),
 
             Forms\Components\Section::make('Notes')
@@ -190,22 +192,19 @@ class RendezVousResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state instanceof RendezVousType
-                        ? $state->label()
-                        : RendezVousType::tryFrom((string) $state)?->label() ?? $state
+                    ->formatStateUsing(
+                        fn($state) => $state instanceof RendezVousType
+                            ? $state->label()
+                            : RendezVousType::tryFrom((string) $state)?->label() ?? $state
                     )
-                    ->color(fn ($state) => match (
-                        $state instanceof RendezVousType ? $state : RendezVousType::tryFrom((string) $state)
-                    ) {
+                    ->color(fn($state) => match ($state instanceof RendezVousType ? $state : RendezVousType::tryFrom((string) $state)) {
                         RendezVousType::Appel => 'primary',
                         RendezVousType::Permanence => 'success',
                         RendezVousType::Presentation => 'warning',
                         RendezVousType::Intervention => 'danger',
                         default => 'gray',
                     })
-                    ->icon(fn ($state) => match (
-                        $state instanceof RendezVousType ? $state : RendezVousType::tryFrom((string) $state)
-                    ) {
+                    ->icon(fn($state) => match ($state instanceof RendezVousType ? $state : RendezVousType::tryFrom((string) $state)) {
                         RendezVousType::Appel => 'heroicon-o-phone',
                         RendezVousType::Permanence => 'heroicon-o-building-office-2',
                         RendezVousType::Presentation => 'heroicon-o-presentation-chart-bar',
@@ -224,13 +223,16 @@ class RendezVousResource extends Resource
 
                 Tables\Columns\TextColumn::make('interlocuteur_tel')
                     ->label('Téléphone')
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
                     ->copyable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('commercial.nom')
                     ->label('Commercial')
                     ->sortable()
-                    ->getStateUsing(fn ($record) => $record->commercial
+                    ->getStateUsing(fn($record) => $record->commercial
                         ? "{$record->commercial->prenom} {$record->commercial->nom}" : '—'),
 
                 Tables\Columns\TextColumn::make('lieu')
@@ -240,13 +242,12 @@ class RendezVousResource extends Resource
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state instanceof RendezVousStatut
-                        ? $state->label()
-                        : RendezVousStatut::tryFrom((string) $state)?->label() ?? $state
+                    ->formatStateUsing(
+                        fn($state) => $state instanceof RendezVousStatut
+                            ? $state->label()
+                            : RendezVousStatut::tryFrom((string) $state)?->label() ?? $state
                     )
-                    ->color(fn ($state) => match (
-                        $state instanceof RendezVousStatut ? $state : RendezVousStatut::tryFrom((string) $state)
-                    ) {
+                    ->color(fn($state) => match ($state instanceof RendezVousStatut ? $state : RendezVousStatut::tryFrom((string) $state)) {
                         RendezVousStatut::Planifie => 'info',
                         RendezVousStatut::Realise => 'success',
                         RendezVousStatut::Annule => 'danger',
@@ -261,45 +262,48 @@ class RendezVousResource extends Resource
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('gray')
-                    ->tooltip(fn ($state) => $state ? 'Synchronisé Google Calendar' : 'Non synchronisé'),
+                    ->tooltip(fn($state) => $state ? 'Synchronisé Google Calendar' : 'Non synchronisé'),
             ]))
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
                     ->label('Type')
-                    ->options(collect(RendezVousType::cases())
-                        ->mapWithKeys(fn ($t) => [$t->value => $t->label()])
-                        ->toArray()
+                    ->options(
+                        collect(RendezVousType::cases())
+                            ->mapWithKeys(fn($t) => [$t->value => $t->label()])
+                            ->toArray()
                     ),
 
                 Tables\Filters\SelectFilter::make('statut')
                     ->label('Statut')
-                    ->options(collect(RendezVousStatut::cases())
-                        ->mapWithKeys(fn ($s) => [$s->value => $s->label()])
-                        ->toArray()
+                    ->options(
+                        collect(RendezVousStatut::cases())
+                            ->mapWithKeys(fn($s) => [$s->value => $s->label()])
+                            ->toArray()
                     ),
 
                 Tables\Filters\SelectFilter::make('commercial_id')
                     ->label('Commercial')
-                    ->options(fn () => User::whereIn('role_cache', ['commercial', 'team_leader', 'administrateur'])
-                        ->orderBy('nom')
-                        ->get()
-                        ->mapWithKeys(fn (User $u) => [$u->id => "{$u->prenom} {$u->nom}"])
-                        ->toArray()
+                    ->options(
+                        fn() => User::whereIn('role_cache', ['commercial', 'team_leader', 'administrateur'])
+                            ->orderBy('nom')
+                            ->get()
+                            ->mapWithKeys(fn(User $u) => [$u->id => "{$u->prenom} {$u->nom}"])
+                            ->toArray()
                     ),
 
                 Tables\Filters\Filter::make('a_venir')
                     ->label('À venir')
-                    ->query(fn (Builder $q) => $q->where('date_heure', '>=', now()))
+                    ->query(fn(Builder $q) => $q->where('date_heure', '>=', now()))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('aujourd_hui')
                     ->label("Aujourd'hui")
-                    ->query(fn (Builder $q) => $q->whereDate('date_heure', today()))
+                    ->query(fn(Builder $q) => $q->whereDate('date_heure', today()))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('non_synchro')
                     ->label('Non sync Google')
-                    ->query(fn (Builder $q) => $q->whereNull('google_event_id'))
+                    ->query(fn(Builder $q) => $q->whereNull('google_event_id'))
                     ->toggle(),
 
                 Tables\Filters\TrashedFilter::make(),
@@ -312,13 +316,14 @@ class RendezVousResource extends Resource
                     ->label('Statut')
                     ->icon('heroicon-o-arrow-path')
                     ->color('gray')
-                    ->visible(fn () => static::userCanResourcePermission('update'))
+                    ->visible(fn() => static::userCanResourcePermission('update'))
                     ->form([
                         Forms\Components\Select::make('statut')
                             ->label('Nouveau statut')
-                            ->options(collect(RendezVousStatut::cases())
-                                ->mapWithKeys(fn ($s) => [$s->value => $s->label()])
-                                ->toArray()
+                            ->options(
+                                collect(RendezVousStatut::cases())
+                                    ->mapWithKeys(fn($s) => [$s->value => $s->label()])
+                                    ->toArray()
                             )
                             ->required()
                             ->native(false),
@@ -329,7 +334,7 @@ class RendezVousResource extends Resource
                     ->action(function (RendezVous $record, array $data) {
                         $update = ['statut' => $data['statut']];
                         if (! empty($data['notes'])) {
-                            $update['notes'] = ($record->notes ? $record->notes."\n" : '').$data['notes'];
+                            $update['notes'] = ($record->notes ? $record->notes . "\n" : '') . $data['notes'];
                         }
                         $record->update($update);
                     })
@@ -339,7 +344,7 @@ class RendezVousResource extends Resource
                     ->label('Sync Google')
                     ->icon('heroicon-o-arrow-path')
                     ->color('success')
-                    ->visible(fn (RendezVous $record) => static::userCanResourcePermission('update') && ! $record->google_event_id)
+                    ->visible(fn(RendezVous $record) => static::userCanResourcePermission('update') && ! $record->google_event_id)
                     ->action(function (RendezVous $record) {
                         app(GoogleCalendarService::class)->createEvent($record);
                     }),
@@ -351,7 +356,7 @@ class RendezVousResource extends Resource
                     Tables\Actions\BulkAction::make('sync_google_bulk')
                         ->label('Sync Google Calendar')
                         ->icon('heroicon-o-arrow-path')
-                        ->visible(fn () => static::userCanResourcePermission('update'))
+                        ->visible(fn() => static::userCanResourcePermission('update'))
                         ->action(function ($records) {
                             $service = app(GoogleCalendarService::class);
                             foreach ($records as $rdv) {
@@ -377,13 +382,12 @@ class RendezVousResource extends Resource
                 Infolists\Components\TextEntry::make('type')
                     ->label('Type')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state instanceof RendezVousType
-                        ? $state->label()
-                        : RendezVousType::tryFrom((string) $state)?->label() ?? $state
+                    ->formatStateUsing(
+                        fn($state) => $state instanceof RendezVousType
+                            ? $state->label()
+                            : RendezVousType::tryFrom((string) $state)?->label() ?? $state
                     )
-                    ->color(fn ($state) => match (
-                        $state instanceof RendezVousType ? $state : RendezVousType::tryFrom((string) $state)
-                    ) {
+                    ->color(fn($state) => match ($state instanceof RendezVousType ? $state : RendezVousType::tryFrom((string) $state)) {
                         RendezVousType::Appel => 'primary',
                         RendezVousType::Permanence => 'success',
                         RendezVousType::Presentation => 'warning',
@@ -394,13 +398,12 @@ class RendezVousResource extends Resource
                 Infolists\Components\TextEntry::make('statut')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state instanceof RendezVousStatut
-                        ? $state->label()
-                        : RendezVousStatut::tryFrom((string) $state)?->label() ?? $state
+                    ->formatStateUsing(
+                        fn($state) => $state instanceof RendezVousStatut
+                            ? $state->label()
+                            : RendezVousStatut::tryFrom((string) $state)?->label() ?? $state
                     )
-                    ->color(fn ($state) => match (
-                        $state instanceof RendezVousStatut ? $state : RendezVousStatut::tryFrom((string) $state)
-                    ) {
+                    ->color(fn($state) => match ($state instanceof RendezVousStatut ? $state : RendezVousStatut::tryFrom((string) $state)) {
                         RendezVousStatut::Planifie => 'info',
                         RendezVousStatut::Realise => 'success',
                         RendezVousStatut::Annule => 'danger',
@@ -424,6 +427,9 @@ class RendezVousResource extends Resource
                     ->label('Nom'),
                 Infolists\Components\TextEntry::make('interlocuteur_tel')
                     ->label('Téléphone')
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
                     ->copyable(),
                 Infolists\Components\TextEntry::make('interlocuteur_email')
                     ->label('Email')
@@ -433,11 +439,11 @@ class RendezVousResource extends Resource
             Infolists\Components\Section::make('Équipe')->schema([
                 Infolists\Components\TextEntry::make('commercial.nom')
                     ->label('Commercial')
-                    ->getStateUsing(fn ($record) => $record->commercial
+                    ->getStateUsing(fn($record) => $record->commercial
                         ? "{$record->commercial->prenom} {$record->commercial->nom}" : '—'),
                 Infolists\Components\TextEntry::make('teleprospecteur.nom')
                     ->label('Téléprospecteur')
-                    ->getStateUsing(fn ($record) => $record->teleprospecteur
+                    ->getStateUsing(fn($record) => $record->teleprospecteur
                         ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}" : '—'),
                 Infolists\Components\IconEntry::make('google_event_id')
                     ->label('Google Calendar')

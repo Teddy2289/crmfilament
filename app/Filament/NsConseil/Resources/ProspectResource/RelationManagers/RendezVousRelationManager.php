@@ -41,7 +41,7 @@ class RendezVousRelationManager extends RelationManager
             Forms\Components\TextInput::make('interlocuteur_nom')
                 ->label('Interlocuteur'),
             PhoneNumberInput::make('interlocuteur_tel')
-                ->label('Tél.'),
+                ->label('Téléphone'),
             Forms\Components\TextInput::make('interlocuteur_email')
                 ->label('Email')
                 ->email(),

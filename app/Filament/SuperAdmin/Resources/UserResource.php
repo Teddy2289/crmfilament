@@ -140,9 +140,13 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('nom')
                     ->label('Nom')
-                    ->formatStateUsing(fn ($state, $record) => trim($record->prenom.' '.$record->nom))
-                    ->searchable(['nom', 'prenom'])
+                    ->searchable()
                     ->weight('semibold')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('prenom')
+                    ->label('Prénom')
+                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('email')
@@ -298,9 +302,8 @@ class UserResource extends Resource
             Section::make('Identité')
                 ->columns(3)
                 ->schema([
-                    TextEntry::make('nom')->label('Nom complet')
-                        ->formatStateUsing(fn ($state, $record) => trim($record->prenom.' '.$record->nom))
-                        ->weight('bold'),
+                    TextEntry::make('nom')->label('Nom')->weight('bold'),
+                    TextEntry::make('prenom')->label('Prénom')->weight('bold'),
                     TextEntry::make('email')->label('Email')->copyable()->icon('heroicon-o-envelope'),
                     TextEntry::make('secteur')->label('Secteur')->placeholder('—'),
                     TextEntry::make('groupeTelepro.nom')->label('Groupe télépro')->placeholder('—'),

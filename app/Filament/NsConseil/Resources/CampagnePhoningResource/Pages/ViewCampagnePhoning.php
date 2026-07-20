@@ -43,8 +43,8 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                 ->label('Lancer le phoning')
                 ->icon('heroicon-o-phone-arrow-up-right')
                 ->color('primary')
-                ->visible(fn () => CampagnePhoningResource::canView($record) && $record->statut === 'active')
-                ->url(fn () => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
+                ->visible(fn() => CampagnePhoningResource::canView($record) && $record->statut === 'active')
+                ->url(fn() => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
 
             Actions\EditAction::make(),
         ];
@@ -61,18 +61,18 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                     TextEntry::make('statut')
                         ->label('Statut')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => CampagnePhoning::STATUTS[$state] ?? $state)
-                        ->color(fn ($state) => match ($state) {
+                        ->formatStateUsing(fn($state) => CampagnePhoning::STATUTS[$state] ?? $state)
+                        ->color(fn($state) => match ($state) {
                             'active' => 'success',
                             'terminee' => 'gray',
                             default => 'warning',
                         }),
                     TextEntry::make('type_entite')
                         ->label('Cible')
-                        ->formatStateUsing(fn ($state) => CampagnePhoning::TYPES_ENTITE[$state] ?? $state),
+                        ->formatStateUsing(fn($state) => CampagnePhoning::TYPES_ENTITE[$state] ?? $state),
                     TextEntry::make('user.nom')
                         ->label('Assigné à')
-                        ->formatStateUsing(fn ($record) => $record->user
+                        ->formatStateUsing(fn($record) => $record->user
                             ? trim("{$record->user->prenom} {$record->user->nom}")
                             : 'Tous les agents'),
                     TextEntry::make('date_debut')->label('Début')->date('d/m/Y')->placeholder('—'),
@@ -86,24 +86,24 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                 ->schema([
                     TextEntry::make('stats_contacts')
                         ->label('Contacts total')
-                        ->getStateUsing(fn ($record) => $record->getStats()['total_contacts'])
+                        ->getStateUsing(fn($record) => $record->getStats()['total_contacts'])
                         ->badge()
                         ->color('info'),
                     TextEntry::make('stats_traites')
                         ->label('Contacts traités')
-                        ->getStateUsing(fn ($record) => $record->getStats()['contacts_traites'])
+                        ->getStateUsing(fn($record) => $record->getStats()['contacts_traites'])
                         ->badge()
                         ->color('success'),
                     TextEntry::make('stats_restants')
                         ->label('Contacts restants')
-                        ->getStateUsing(fn ($record) => $record->getStats()['contacts_restants'])
+                        ->getStateUsing(fn($record) => $record->getStats()['contacts_restants'])
                         ->badge()
                         ->color('warning'),
                     TextEntry::make('stats_progression')
                         ->label('Progression')
-                        ->getStateUsing(fn ($record) => $record->getStats()['progression'].'%')
+                        ->getStateUsing(fn($record) => $record->getStats()['progression'] . '%')
                         ->badge()
-                        ->color(fn ($record) => match (true) {
+                        ->color(fn($record) => match (true) {
                             $record->getStats()['progression'] >= 80 => 'success',
                             $record->getStats()['progression'] >= 40 => 'warning',
                             default => 'danger',
@@ -115,7 +115,7 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                 ->schema([
                     TextEntry::make('stats_total_appels')
                         ->label('Total appels passés')
-                        ->getStateUsing(fn ($record) => $record->getStats()['total_appels'])
+                        ->getStateUsing(fn($record) => $record->getStats()['total_appels'])
                         ->badge()
                         ->color('info'),
 
@@ -123,7 +123,7 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                         ? [
                             TextEntry::make('aucun_appel')
                                 ->hiddenLabel()
-                                ->getStateUsing(fn () => 'Aucun appel enregistré pour le moment.'),
+                                ->getStateUsing(fn() => 'Aucun appel enregistré pour le moment.'),
                         ]
                         : [$this->buildResultatsParStatutTabs()]),
                 ]),
@@ -150,36 +150,39 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                             ->badge($appels->count())
                             ->badgeColor($record->statutCouleur($code))
                             ->schema([
-                                RepeatableEntry::make('appels_'.$code)
+                                RepeatableEntry::make('appels_' . $code)
                                     ->hiddenLabel()
                                     // Les entrées imbriquées ci-dessous lisent $record (l'Appel
                                     // de la ligne courante) via getStateUsing plutôt que des
                                     // noms en pointillés ("appelable.nom"), car la résolution de
                                     // chemin absolu d'un RepeatableEntry lié à un état brut (pas
                                     // une vraie relation Eloquent) ne traverse pas les relations.
-                                    ->state(fn () => $appels)
+                                    ->state(fn() => $appels)
                                     ->schema([
                                         TextEntry::make('contact')
                                             ->label('Contact')
-                                            ->getStateUsing(fn (Appel $record) => $this->appelContactNom($record))
+                                            ->getStateUsing(fn(Appel $record) => $this->appelContactNom($record))
                                             ->weight('semibold'),
                                         TextEntry::make('telephone')
                                             ->label('Téléphone')
-                                            ->getStateUsing(fn (Appel $record) => $this->appelContactTelephone($record))
+                                            ->badge()
+                                            ->color('green')
+                                            ->icon('heroicon-o-phone')
+                                            ->getStateUsing(fn(Appel $record) => $this->appelContactTelephone($record))
                                             ->placeholder('—'),
                                         TextEntry::make('date_heure')
                                             ->label("Date de l'appel")
-                                            ->getStateUsing(fn (Appel $record) => $record->date_heure)
+                                            ->getStateUsing(fn(Appel $record) => $record->date_heure)
                                             ->dateTime('d/m/Y H:i')
                                             ->placeholder('—'),
                                         TextEntry::make('agent')
                                             ->label('Agent')
-                                            ->getStateUsing(fn (Appel $record) => $record->user
+                                            ->getStateUsing(fn(Appel $record) => $record->user
                                                 ? trim("{$record->user->prenom} {$record->user->nom}")
                                                 : '—'),
                                         TextEntry::make('commentaire')
                                             ->label('Commentaire')
-                                            ->getStateUsing(fn (Appel $record) => $record->commentaire ?: $record->phoning_notes)
+                                            ->getStateUsing(fn(Appel $record) => $record->commentaire ?: $record->phoning_notes)
                                             ->placeholder('—')
                                             ->columnSpanFull(),
                                     ])
@@ -193,7 +196,7 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
     private function appelContactNom(Appel $appel): string
     {
         if (! $appel->appelable) {
-            return 'Contact #'.$appel->appelable_id;
+            return 'Contact #' . $appel->appelable_id;
         }
 
         return $this->queueContactName($appel->appelable);
@@ -207,21 +210,21 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->heading(fn () => 'File d\'attente - '.$this->getRecord()->countQueueContacts().' contact(s)')
-            ->query(fn () => $this->getRecord()->buildQueueQuery())
+            ->heading(fn() => 'File d\'attente - ' . $this->getRecord()->countQueueContacts() . ' contact(s)')
+            ->query(fn() => $this->getRecord()->buildQueueQuery())
             ->columns([
                 Tables\Columns\TextColumn::make('queue_contact')
                     ->label('Contact')
-                    ->getStateUsing(fn (Model $record) => $this->queueContactName($record))
-                    ->description(fn (Model $record) => $this->queueContactDescription($record))
+                    ->getStateUsing(fn(Model $record) => $this->queueContactName($record))
+                    ->description(fn(Model $record) => $this->queueContactDescription($record))
                     ->weight('semibold')
                     ->wrap(),
 
                 Tables\Columns\TextColumn::make('queue_type')
                     ->label('Type')
-                    ->getStateUsing(fn (Model $record) => $this->queueTypeLabel($record))
+                    ->getStateUsing(fn(Model $record) => $this->queueTypeLabel($record))
                     ->badge()
-                    ->color(fn (Model $record) => match (true) {
+                    ->color(fn(Model $record) => match (true) {
                         $record instanceof Prospect => 'warning',
                         $record instanceof ContactPartenaire => 'primary',
                         $record instanceof Client => 'success',
@@ -230,42 +233,45 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
 
                 Tables\Columns\TextColumn::make('queue_phone')
                     ->label('Téléphone')
-                    ->getStateUsing(fn (Model $record) => $this->queuePhone($record))
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
+                    ->getStateUsing(fn(Model $record) => $this->queuePhone($record))
                     ->placeholder('—')
                     ->copyable(),
 
                 Tables\Columns\TextColumn::make('queue_email')
                     ->label('Email')
-                    ->getStateUsing(fn (Model $record) => $this->queueEmail($record))
+                    ->getStateUsing(fn(Model $record) => $this->queueEmail($record))
                     ->placeholder('—')
                     ->copyable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('queue_status')
                     ->label('Statut')
-                    ->getStateUsing(fn (Model $record) => $this->queueStatus($record))
+                    ->getStateUsing(fn(Model $record) => $this->queueStatus($record))
                     ->badge()
-                    ->color(fn (Model $record) => $this->queueStatusColor($record)),
+                    ->color(fn(Model $record) => $this->queueStatusColor($record)),
 
                 Tables\Columns\TextColumn::make('queue_suivi')
                     ->label('Suivi')
-                    ->getStateUsing(fn (Model $record) => $this->queueSuivi($record)['label'])
+                    ->getStateUsing(fn(Model $record) => $this->queueSuivi($record)['label'])
                     ->badge()
-                    ->color(fn (Model $record) => $this->queueSuivi($record)['color']),
+                    ->color(fn(Model $record) => $this->queueSuivi($record)['color']),
 
                 Tables\Columns\TextColumn::make('queue_assignee')
                     ->label('Assigné à')
-                    ->getStateUsing(fn (Model $record) => $this->queueAssignee($record))
+                    ->getStateUsing(fn(Model $record) => $this->queueAssignee($record))
                     ->placeholder('Tous'),
 
                 Tables\Columns\TextColumn::make('queue_next_call')
                     ->label('Rappel prévu')
-                    ->getStateUsing(fn (Model $record) => $record instanceof Prospect ? $record->rappel_planifie_at : null)
+                    ->getStateUsing(fn(Model $record) => $record instanceof Prospect ? $record->rappel_planifie_at : null)
                     ->dateTime('d/m/Y H:i')
                     ->placeholder('Aucun rappel programmé')
-                    ->color(fn (Model $record) => $record instanceof Prospect && $record->rappel_est_en_retard ? 'danger' : 'gray'),
+                    ->color(fn(Model $record) => $record instanceof Prospect && $record->rappel_est_en_retard ? 'danger' : 'gray'),
             ])
-            ->recordUrl(fn (Model $record) => $this->queueRecordUrl($record))
+            ->recordUrl(fn(Model $record) => $this->queueRecordUrl($record))
             ->defaultPaginationPageOption(25)
             ->paginated([10, 25, 50])
             ->emptyStateHeading('Aucun contact en file d\'attente')
@@ -276,10 +282,10 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
     private function queueContactName(Model $record): string
     {
         return match (true) {
-            $record instanceof Prospect => $record->nom ?: ($record->raison_sociale ?: 'Prospect #'.$record->getKey()),
-            $record instanceof ContactPartenaire => $record->nom_affichage ?: ($record->nom_complet ?: 'Contact partenaire #'.$record->getKey()),
-            $record instanceof Client => trim(($record->prenom ? $record->prenom.' ' : '').($record->nom_tiers ?? '')) ?: 'Client #'.$record->getKey(),
-            default => 'Contact #'.$record->getKey(),
+            $record instanceof Prospect => $record->nom ?: ($record->raison_sociale ?: 'Prospect #' . $record->getKey()),
+            $record instanceof ContactPartenaire => $record->nom_affichage ?: ($record->nom_complet ?: 'Contact partenaire #' . $record->getKey()),
+            $record instanceof Client => trim(($record->prenom ? $record->prenom . ' ' : '') . ($record->nom_tiers ?? '')) ?: 'Client #' . $record->getKey(),
+            default => 'Contact #' . $record->getKey(),
         };
     }
 
@@ -400,12 +406,12 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
             $this->dernierAppelParContact = Appel::where('campagne_id', $this->getRecord()->id)
                 ->orderByDesc('date_heure')
                 ->get()
-                ->groupBy(fn (Appel $appel) => $appel->appelable_type.'#'.$appel->appelable_id)
-                ->map(fn ($appels) => $appels->first())
+                ->groupBy(fn(Appel $appel) => $appel->appelable_type . '#' . $appel->appelable_id)
+                ->map(fn($appels) => $appels->first())
                 ->all();
         }
 
-        return $this->dernierAppelParContact[get_class($record).'#'.$record->getKey()] ?? null;
+        return $this->dernierAppelParContact[get_class($record) . '#' . $record->getKey()] ?? null;
     }
 
     private function estCodeSansReponse(?string $code): bool

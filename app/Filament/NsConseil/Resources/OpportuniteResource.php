@@ -114,7 +114,7 @@ class OpportuniteResource extends Resource
                         ->label('Fonction'),
 
                     PhoneNumberInput::make('interlocuteur_telephone')
-                        ->label('Tél. interlocuteur'),
+                        ->label('Téléphone interlocuteur'),
 
                     Forms\Components\TextInput::make('interlocuteur_email')
                         ->label('Email interlocuteur')
@@ -150,7 +150,7 @@ class OpportuniteResource extends Resource
                     Forms\Components\Select::make('assigne_a')
                         ->label('Assigné à')
                         ->relationship('assigneA', 'nom')
-                        ->getOptionLabelFromRecordUsing(fn (User $r) => "{$r->prenom} {$r->nom}")
+                        ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
                         ->searchable()
                         ->preload(),
 
@@ -166,7 +166,7 @@ class OpportuniteResource extends Resource
                     Forms\Components\Textarea::make('raison_perte')
                         ->label('Raison de perte')
                         ->rows(2)
-                        ->visible(fn (Get $get) => $get('statut') === 'perdu'),
+                        ->visible(fn(Get $get) => $get('statut') === 'perdu'),
                 ])->columns(3),
 
             Forms\Components\Section::make('Notes')
@@ -192,7 +192,7 @@ class OpportuniteResource extends Resource
 
                     Infolists\Components\TextEntry::make('type_pressenti')
                         ->label('Type pressenti')
-                        ->formatStateUsing(fn ($state) => $state instanceof OrganizationType
+                        ->formatStateUsing(fn($state) => $state instanceof OrganizationType
                             ? $state->label()
                             : ($state ? (OrganizationType::tryFrom((string) $state)?->label() ?? $state) : '-')),
 
@@ -231,6 +231,9 @@ class OpportuniteResource extends Resource
                 ->schema([
                     Infolists\Components\TextEntry::make('telephone')
                         ->label('Téléphone')
+                        ->badge()
+                        ->color('green')
+                        ->icon('heroicon-o-phone')
                         ->default('-'),
 
                     Infolists\Components\TextEntry::make('email')
@@ -248,6 +251,9 @@ class OpportuniteResource extends Resource
 
                     Infolists\Components\TextEntry::make('interlocuteur_telephone')
                         ->label('Téléphone interlocuteur')
+                        ->badge()
+                        ->color('green')
+                        ->icon('heroicon-o-phone')
                         ->default('-'),
 
                     Infolists\Components\TextEntry::make('interlocuteur_email')
@@ -262,14 +268,14 @@ class OpportuniteResource extends Resource
                     Infolists\Components\TextEntry::make('statut')
                         ->label('Statut')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => Opportunite::STATUTS[$state] ?? $state)
-                        ->color(fn ($state) => Opportunite::statutColor($state)),
+                        ->formatStateUsing(fn($state) => Opportunite::STATUTS[$state] ?? $state)
+                        ->color(fn($state) => Opportunite::statutColor($state)),
 
                     Infolists\Components\TextEntry::make('potentiel')
                         ->label('Potentiel')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => Opportunite::POTENTIELS[$state] ?? $state)
-                        ->color(fn ($state) => match ($state) {
+                        ->formatStateUsing(fn($state) => Opportunite::POTENTIELS[$state] ?? $state)
+                        ->color(fn($state) => match ($state) {
                             'faible' => 'gray',
                             'moyen' => 'info',
                             'eleve' => 'warning',
@@ -279,11 +285,11 @@ class OpportuniteResource extends Resource
 
                     Infolists\Components\TextEntry::make('source_detection')
                         ->label('Source')
-                        ->formatStateUsing(fn ($state) => Opportunite::SOURCES[$state] ?? $state ?? '-'),
+                        ->formatStateUsing(fn($state) => Opportunite::SOURCES[$state] ?? $state ?? '-'),
 
                     Infolists\Components\TextEntry::make('assigneA.nom')
                         ->label('Assigne a')
-                        ->formatStateUsing(fn ($state, Opportunite $record) => $record->assigneA
+                        ->formatStateUsing(fn($state, Opportunite $record) => $record->assigneA
                             ? trim("{$record->assigneA->prenom} {$record->assigneA->nom}")
                             : '-'),
 
@@ -350,14 +356,14 @@ class OpportuniteResource extends Resource
                 Tables\Columns\TextColumn::make('statut')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => Opportunite::STATUTS[$state] ?? $state)
-                    ->color(fn ($state) => Opportunite::statutColor($state)),
+                    ->formatStateUsing(fn($state) => Opportunite::STATUTS[$state] ?? $state)
+                    ->color(fn($state) => Opportunite::statutColor($state)),
 
                 Tables\Columns\TextColumn::make('potentiel')
                     ->label('Potentiel')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => Opportunite::POTENTIELS[$state] ?? $state)
-                    ->color(fn ($state) => match ($state) {
+                    ->formatStateUsing(fn($state) => Opportunite::POTENTIELS[$state] ?? $state)
+                    ->color(fn($state) => match ($state) {
                         'faible' => 'gray',
                         'moyen' => 'info',
                         'eleve' => 'warning',
@@ -367,11 +373,11 @@ class OpportuniteResource extends Resource
 
                 Tables\Columns\TextColumn::make('source_detection')
                     ->label('Source')
-                    ->formatStateUsing(fn ($state) => Opportunite::SOURCES[$state] ?? $state),
+                    ->formatStateUsing(fn($state) => Opportunite::SOURCES[$state] ?? $state),
 
                 Tables\Columns\TextColumn::make('assigneA.nom')
                     ->label('Assigné')
-                    ->formatStateUsing(fn ($record) => $record->assigneA
+                    ->formatStateUsing(fn($record) => $record->assigneA
                         ? "{$record->assigneA->prenom} {$record->assigneA->nom}"
                         : '—'),
 
@@ -404,7 +410,7 @@ class OpportuniteResource extends Resource
 
                 Tables\Filters\Filter::make('actives')
                     ->label('Actives uniquement')
-                    ->query(fn (Builder $q) => $q->whereNotIn('statut', ['converti', 'perdu'])),
+                    ->query(fn(Builder $q) => $q->whereNotIn('statut', ['converti', 'perdu'])),
 
                 Tables\Filters\TrashedFilter::make(),
             ])
@@ -417,7 +423,7 @@ class OpportuniteResource extends Resource
                     ->label('Qualifier')
                     ->icon('heroicon-o-check-badge')
                     ->color('primary')
-                    ->visible(fn (Opportunite $record) => static::userCanResourcePermission('update')
+                    ->visible(fn(Opportunite $record) => static::userCanResourcePermission('update')
                         && ! in_array($record->statut, ['qualifiee', 'converti', 'perdu']))
                     ->action(function (Opportunite $record) {
                         $record->marquerQualifiee();
@@ -435,7 +441,7 @@ class OpportuniteResource extends Resource
                     ->label('→ Prospect')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->color('success')
-                    ->visible(fn (Opportunite $record) => static::userCanResourcePermission('update') && $record->est_convertible)
+                    ->visible(fn(Opportunite $record) => static::userCanResourcePermission('update') && $record->est_convertible)
                     ->action(function (Opportunite $record) {
                         $record->convertirEnProspect();
                         Notification::make()
@@ -452,7 +458,7 @@ class OpportuniteResource extends Resource
                     ->label('Perdue')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn (Opportunite $record) => static::userCanResourcePermission('update')
+                    ->visible(fn(Opportunite $record) => static::userCanResourcePermission('update')
                         && ! in_array($record->statut, ['converti', 'perdu']))
                     ->form([
                         Forms\Components\Textarea::make('raison_perte')

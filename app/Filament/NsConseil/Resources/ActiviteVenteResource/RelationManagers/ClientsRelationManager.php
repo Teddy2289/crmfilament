@@ -29,9 +29,9 @@ class ClientsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('nom_tiers')
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query
+            ->modifyQueryUsing(fn(Builder $query): Builder => $query
                 ->withCount([
-                    'dossierFormations as ventes_count' => fn (Builder $dossiers): Builder => $dossiers
+                    'dossierFormations as ventes_count' => fn(Builder $dossiers): Builder => $dossiers
                         ->whereNotNull('date_vente'),
                 ]))
             ->columns([
@@ -39,7 +39,7 @@ class ClientsRelationManager extends RelationManager
                     ->label('Client')
                     ->searchable()
                     ->sortable()
-                    ->description(fn (Client $record): ?string => $record->email),
+                    ->description(fn(Client $record): ?string => $record->email),
 
                 Tables\Columns\TextColumn::make('ref_client')
                     ->label('Réf. client')
@@ -48,6 +48,9 @@ class ClientsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('telephone')
                     ->label('Téléphone')
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
                     ->searchable()
                     ->toggleable(),
 
@@ -67,8 +70,8 @@ class ClientsRelationManager extends RelationManager
             ->filters([
                 Tables\Filters\Filter::make('avec_ventes')
                     ->label('Avec ventes')
-                    ->query(fn (Builder $query): Builder => $query
-                        ->whereHas('dossierFormations', fn (Builder $dossiers): Builder => $dossiers
+                    ->query(fn(Builder $query): Builder => $query
+                        ->whereHas('dossierFormations', fn(Builder $dossiers): Builder => $dossiers
                             ->whereNotNull('date_vente')))
                     ->toggle(),
             ])
@@ -77,7 +80,7 @@ class ClientsRelationManager extends RelationManager
                 Tables\Actions\Action::make('ouvrir')
                     ->label('Ouvrir')
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->url(fn (Client $record): string => ClientResource::getUrl('view', ['record' => $record])),
+                    ->url(fn(Client $record): string => ClientResource::getUrl('view', ['record' => $record])),
             ])
             ->bulkActions([]);
     }

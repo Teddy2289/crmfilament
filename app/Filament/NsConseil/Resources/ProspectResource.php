@@ -341,7 +341,7 @@ class ProspectResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('departement')
-                    ->label('Dép.')
+                    ->label('Département')
                     ->alignCenter()
                     ->sortable(),
 
@@ -1146,7 +1146,7 @@ class ProspectResource extends Resource
     {
         $regles = [
             'interlocuteur_nom' => 'Nom interlocuteur CSE',
-            'interlocuteur_telephone' => 'Tél. interlocuteur CSE',
+            'interlocuteur_telephone' => 'Téléphone interlocuteur CSE',
             'interlocuteur_email' => 'Email interlocuteur CSE',
             'telephone' => 'Téléphone entreprise',
             'commercial_id' => 'Commercial assigné',

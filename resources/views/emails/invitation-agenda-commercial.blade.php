@@ -15,7 +15,7 @@ Tu trouveras ci-dessous tous les éléments pour ton rendez-vous. Merci d'accept
 | **Date** | {{ $date->format('d/m/Y') }} à {{ $date->format('H:i') }} |
 | **Lieu** | {{ $rdv->lieu ?: $rdv->adresse_lieu ?: 'À confirmer' }} |
 | **Contact CSE** | {{ $prospect->interlocuteur_nom }} — {{ $prospect->interlocuteur_fonction }} |
-| **Tél. CSE** | {{ $prospect->interlocuteur_telephone }} |
+| **Téléphone CSE** | {{ $prospect->interlocuteur_telephone }} |
 | **Email CSE** | {{ $prospect->interlocuteur_email }} |
 | **Entreprise** | {{ $nom }} — {{ $prospect->secteur_activite }} — {{ $prospect->nb_salaries }} salariés |
 </x-mail::table>

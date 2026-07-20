@@ -68,11 +68,11 @@ class ContactParticulierResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('type_logement')
                                     ->label('Type de Logement')
-                                    ->options(collect(TypeLogement::cases())->mapWithKeys(fn ($enum) => [$enum->value => $enum->label()]))
+                                    ->options(collect(TypeLogement::cases())->mapWithKeys(fn($enum) => [$enum->value => $enum->label()]))
                                     ->required(),
                                 Forms\Components\Select::make('statut_occupant')
                                     ->label('Statut de l\'occupant')
-                                    ->options(collect(StatutOccupant::cases())->mapWithKeys(fn ($enum) => [$enum->value => $enum->label()]))
+                                    ->options(collect(StatutOccupant::cases())->mapWithKeys(fn($enum) => [$enum->value => $enum->label()]))
                                     ->required(),
                             ]),
                     ]),
@@ -83,12 +83,19 @@ class ContactParticulierResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nom_complet')
-                    ->label('Nom complet')
-                    ->searchable(['nom', 'prenom'])
-                    ->sortable(['nom']),
+                Tables\Columns\TextColumn::make('nom')
+                    ->label('Nom')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('prenom')
+                    ->label('Prénom')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('telephone')
                     ->label('Téléphone')
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
                     ->searchable()
                     ->copyable(),
                 Tables\Columns\TextColumn::make('email')
@@ -102,18 +109,18 @@ class ContactParticulierResource extends Resource
                 Tables\Columns\TextColumn::make('type_logement')
                     ->label('Logement')
                     ->badge()
-                    ->state(fn (ContactParticulier $record): string => $record->type_logement_label)
-                    ->color(fn (ContactParticulier $record): string => $record->type_logement_color),
+                    ->state(fn(ContactParticulier $record): string => $record->type_logement_label)
+                    ->color(fn(ContactParticulier $record): string => $record->type_logement_color),
                 Tables\Columns\TextColumn::make('statut_occupant')
                     ->label('Statut')
                     ->badge()
-                    ->state(fn (ContactParticulier $record): string => $record->statut_occupant_label)
-                    ->color(fn (ContactParticulier $record): string => $record->statut_occupant_color),
+                    ->state(fn(ContactParticulier $record): string => $record->statut_occupant_label)
+                    ->color(fn(ContactParticulier $record): string => $record->statut_occupant_color),
                 Tables\Columns\TextColumn::make('nombre_tickets')
                     ->label('Tickets')
                     ->badge()
                     ->color('gray')
-                    ->state(fn (ContactParticulier $record): int => $record->nombre_tickets),
+                    ->state(fn(ContactParticulier $record): int => $record->nombre_tickets),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Créé le')
                     ->dateTime('d/m/Y H:i')
@@ -123,10 +130,10 @@ class ContactParticulierResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('type_logement')
                     ->label('Type de Logement')
-                    ->options(collect(TypeLogement::cases())->mapWithKeys(fn ($enum) => [$enum->value => $enum->label()])),
+                    ->options(collect(TypeLogement::cases())->mapWithKeys(fn($enum) => [$enum->value => $enum->label()])),
                 Tables\Filters\SelectFilter::make('statut_occupant')
                     ->label('Statut Occupant')
-                    ->options(collect(StatutOccupant::cases())->mapWithKeys(fn ($enum) => [$enum->value => $enum->label()])),
+                    ->options(collect(StatutOccupant::cases())->mapWithKeys(fn($enum) => [$enum->value => $enum->label()])),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
