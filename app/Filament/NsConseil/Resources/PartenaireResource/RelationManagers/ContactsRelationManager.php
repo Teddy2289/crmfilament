@@ -73,7 +73,7 @@ class ContactsRelationManager extends RelationManager
                             ->placeholder('—')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('telephone_mobile')
-                            ->label('Tél. mobile')
+                            ->label('Téléphone mobile')
                             ->placeholder('—')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('telephone_perso')
