@@ -27,17 +27,23 @@ enum ProspectStatut: string
         };
     }
 
+    /**
+     * Couleurs Tailwind brutes (comme App\Enums\OrganizationStatus::color())
+     * pour que chacun des 8 statuts reste visuellement distinct : les
+     * couleurs sémantiques du panel ('success'/'warning'/...) sont trop
+     * peu nombreuses pour couvrir 8 cas sans doublon.
+     */
     public function color(): string
     {
         return match ($this) {
             self::AC => 'gray',
-            self::STD_NR => 'warning',
-            self::STD_Joint => 'info',
-            self::CSE_NR => 'warning',
-            self::RP => 'success',
-            self::RPC => 'success',
-            self::KO => 'danger',
-            self::QF => 'primary',
+            self::STD_NR => 'orange',
+            self::STD_Joint => 'blue',
+            self::CSE_NR => 'amber',
+            self::RP => 'indigo',
+            self::RPC => 'teal',
+            self::KO => 'red',
+            self::QF => 'green',
         };
     }
 
@@ -52,6 +58,25 @@ enum ProspectStatut: string
             self::RPC => 'heroicon-o-calendar-days',
             self::KO => 'heroicon-o-x-circle',
             self::QF => 'heroicon-o-check-circle',
+        };
+    }
+
+    /**
+     * Explication en langage courant, affichée en infobulle au survol du
+     * badge pour les utilisateurs qui ne connaissent pas le pipeline par
+     * cœur.
+     */
+    public function description(): string
+    {
+        return match ($this) {
+            self::AC => "Nouveau prospect, personne ne l'a encore appelé.",
+            self::STD_NR => 'Le standard a été appelé mais personne n\'a répondu.',
+            self::STD_Joint => 'Le standard a répondu, la qualification est en cours.',
+            self::CSE_NR => 'Le CSE a été contacté mais n\'a pas répondu.',
+            self::RP => 'Un rappel a été planifié avec ce prospect.',
+            self::RPC => 'Contact qualifié : un rendez-vous reste à planifier.',
+            self::KO => 'Hors cible ou refus : ce prospect ne sera pas poursuivi.',
+            self::QF => 'Rendez-vous qualifié, prêt à être traité par un commercial.',
         };
     }
 

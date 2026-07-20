@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum OrganizationStatus: string
+use Filament\Support\Contracts\HasLabel;
+
+enum OrganizationStatus: string implements HasLabel
 {
     case AProspecter = 'a_prospecter';
     case EnCoursProspection = 'en_cours_prospection';
@@ -21,6 +23,15 @@ enum OrganizationStatus: string
             self::ConventionEngagement => 'Convention d\'engagement',
             self::Refus => 'Refus',
         };
+    }
+
+    /**
+     * Requis par Filament\Support\Contracts\HasLabel pour que les Select
+     * affichent ce label au lieu du nom brut du cas ("AProspecter").
+     */
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 
     /**
@@ -56,6 +67,23 @@ enum OrganizationStatus: string
             self::SigneAccordCadre => 'heroicon-o-document-check',
             self::ConventionEngagement => 'heroicon-o-check-badge',
             self::Refus => 'heroicon-o-x-circle',
+        };
+    }
+
+    /**
+     * Explication en langage courant, affichée en infobulle au survol du
+     * badge pour les utilisateurs qui ne connaissent pas le pipeline par
+     * cœur.
+     */
+    public function description(): string
+    {
+        return match ($this) {
+            self::AProspecter => "Le partenaire n'a pas encore été contacté.",
+            self::EnCoursProspection => 'Un premier contact a été établi, la prospection est en cours.',
+            self::RdvEnCours => 'Un rendez-vous est en cours de planification ou a eu lieu.',
+            self::SigneAccordCadre => "L'accord cadre est signé, en attente de la convention d'engagement.",
+            self::ConventionEngagement => 'La convention est signée : le partenariat est actif.',
+            self::Refus => "Le partenaire a refusé de s'engager.",
         };
     }
 

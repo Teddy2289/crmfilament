@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\ListContactPartenaires;
 use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\CreateContactPartenaire;
 use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\EditContactPartenaire;
+use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Models\ContactPartenaire;
 use App\Support\UsesResourcePermissions;
 use Filament\Forms;
@@ -28,6 +29,8 @@ class ContactPartenaireResource extends Resource
     protected static ?string $modelLabel = 'Contact Partenaire';
 
     protected static ?string $pluralModelLabel = 'Contacts Partenaires';
+
+    protected static ?string $navigationGroup = 'Carnet d\'adresses';
 
     protected static ?int $navigationSort = 3;
 
@@ -71,18 +74,17 @@ class ContactPartenaireResource extends Resource
                             ->email()
                             ->label('Email professionnel')
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('telephone_direct')
-                            ->tel()
-                            ->label('Téléphone professionnel')
-                            ->maxLength(20),
+                        PhoneNumberInput::make('telephone_direct')
+                            ->label('Téléphone professionnel'),
+                           
                         Forms\Components\TextInput::make('email_perso')
                             ->email()
                             ->label('Email personnel')
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('telephone_perso')
-                            ->tel()
+                        PhoneNumberInput::make('telephone_perso')
                             ->label('Téléphone personnel')
-                            ->maxLength(20),
+                           
+
 
                     ])
                     ->columns(2),
@@ -133,6 +135,9 @@ class ContactPartenaireResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('telephone_principal')
                     ->label('Téléphone')
+                    ->badge()
+                    ->icon('heroicon-o-phone')
+                    ->color('green')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('email_principal')
                     ->label('Email')

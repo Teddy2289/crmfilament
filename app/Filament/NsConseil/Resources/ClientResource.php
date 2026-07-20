@@ -2,6 +2,8 @@
 
 namespace App\Filament\NsConseil\Resources;
 
+use App\Filament\NsConseil\Actions\VerifierRattachementsAction;
+use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
 use App\Filament\NsConseil\Resources\ClientResource\Pages;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
@@ -78,9 +80,8 @@ class ClientResource extends Resource
                         ->email()
                         ->live(onBlur: true),
 
-                    Forms\Components\TextInput::make('telephone')
+                    PhoneNumberInput::make('telephone')
                         ->label('Téléphone')
-                        ->tel()
                         ->live(onBlur: true),
 
                     DuplicateWarning::make(
@@ -248,10 +249,20 @@ class ClientResource extends Resource
                         'partenaire_non_rattache' => 'Partenaire non rattaché',
                         default => '-',
                     })
+                    ->icon(fn ($state) => match ($state) {
+                        'rattache' => 'heroicon-o-link',
+                        'partenaire_non_rattache' => 'heroicon-o-link-slash',
+                        default => null,
+                    })
                     ->color(fn ($state) => match ($state) {
-                        'rattache' => 'success',
-                        'partenaire_non_rattache' => 'warning',
+                        'rattache' => 'rattachement',
+                        'partenaire_non_rattache' => 'gray',
                         default => 'gray',
+                    })
+                    ->tooltip(fn ($state) => match ($state) {
+                        'rattache' => 'Ce client est relié à un partenaire identifié.',
+                        'partenaire_non_rattache' => "Aucun partenaire correspondant n'a été trouvé automatiquement. Utilisez « Vérifier les rattachements » ou rattachez-le manuellement.",
+                        default => null,
                     })
                     ->description(fn (Client $record) => $record->nomenclature_partenaire_import)
                     ->toggleable(),
@@ -266,22 +277,9 @@ class ClientResource extends Resource
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'prospect' => 'Prospect',
-                        'en_cours' => 'En cours',
-                        'termine' => 'Terminé',
-                        'certifie' => 'Certifié',
-                        'abandonne' => 'Abandonné',
-                        default => $state ?? '—',
-                    })
-                    ->color(fn ($state) => match ($state) {
-                        'prospect' => 'gray',
-                        'en_cours' => 'primary',
-                        'termine' => 'success',
-                        'certifie' => 'success',
-                        'abandonne' => 'danger',
-                        default => 'gray',
-                    })
+                    ->formatStateUsing(fn ($state) => Client::etatLabel($state))
+                    ->color(fn ($state) => Client::etatColor($state))
+                    ->tooltip(fn ($state) => Client::etatDescription($state))
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('montant_cpf')
@@ -420,21 +418,22 @@ class ClientResource extends Resource
                 ]),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('switch_view')
-                    ->label(session()->get('view_clients', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
-                    ->icon(session()->get('view_clients', 'list') === 'kanban' ? 'heroicon-o-bars-3' : 'heroicon-o-squares-2x2')
-                    ->color('gray')
-                    ->action(function () {
-                        $currentView = session()->get('view_clients', 'list');
-                        session()->put('view_clients', $currentView === 'kanban' ? 'list' : 'kanban');
-                        return redirect()->back();
-                    }),
-                \App\Filament\NsConseil\Actions\DownloadMultiSheetTemplateAction::make(),
-                \App\Filament\NsConseil\Actions\ImportMultiSheetAction::make(),
-                Tables\Actions\ExportAction::make()
-                    ->exporter(ClientExporter::class)
-                    ->label('Exporter les clients')
-                    ->icon('heroicon-o-arrow-down-tray'),
+                // Tables\Actions\Action::make('switch_view')
+                //     ->label(session()->get('view_clients', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
+                //     ->icon(session()->get('view_clients', 'list') === 'kanban' ? 'heroicon-o-bars-3' : 'heroicon-o-squares-2x2')
+                //     ->color('gray')
+                //     ->action(function () {
+                //         $currentView = session()->get('view_clients', 'list');
+                //         session()->put('view_clients', $currentView === 'kanban' ? 'list' : 'kanban');
+                //         return redirect()->back();
+                //     }),
+                // \App\Filament\NsConseil\Actions\DownloadMultiSheetTemplateAction::make(),
+                // \App\Filament\NsConseil\Actions\ImportMultiSheetAction::make(),
+                // Tables\Actions\ExportAction::make()
+                //     ->exporter(ClientExporter::class)
+                //     ->label('Exporter les clients')
+                //     ->icon('heroicon-o-arrow-down-tray'),
+                VerifierRattachementsAction::make(),
                 LancerAppelsAction::make('clients'),
             ])
             ->emptyStateHeading('Aucun client')
@@ -461,12 +460,9 @@ class ClientResource extends Resource
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
-                    ->color(fn ($state) => match($state) {
-                        'en_cours' => 'info',
-                        'termine' => 'success',
-                        'prospect' => 'warning',
-                        default => 'gray',
-                    }),
+                    ->formatStateUsing(fn ($state) => Client::etatLabel($state))
+                    ->color(fn ($state) => Client::etatColor($state))
+                    ->tooltip(fn ($state) => Client::etatDescription($state)),
 
                 Tables\Columns\TextColumn::make('type_tiers')
                     ->label('Type')
@@ -553,22 +549,9 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('etat')
                         ->label('État')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => match ($state) {
-                            'prospect' => 'Prospect',
-                            'en_cours' => 'En cours',
-                            'termine' => 'Terminé',
-                            'certifie' => 'Certifié',
-                            'abandonne' => 'Abandonné',
-                            default => $state ?? '—',
-                        })
-                        ->color(fn ($state) => match ($state) {
-                            'prospect' => 'gray',
-                            'en_cours' => 'primary',
-                            'termine' => 'success',
-                            'certifie' => 'success',
-                            'abandonne' => 'danger',
-                            default => 'gray',
-                        }),
+                        ->formatStateUsing(fn ($state) => Client::etatLabel($state))
+                        ->color(fn ($state) => Client::etatColor($state))
+                        ->tooltip(fn ($state) => Client::etatDescription($state)),
                     Infolists\Components\TextEntry::make('montant_cpf')
                         ->label('Montant CPF')
                         ->money('EUR'),

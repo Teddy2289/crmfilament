@@ -2,6 +2,7 @@
 
 namespace App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
 
+use App\Filament\Shared\Components\PhoneNumberInput;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -28,10 +29,10 @@ class ContactsRelationManager extends RelationManager
             Forms\Components\TextInput::make('nom_syndicat')
                 ->label('Syndicat')
                 ->placeholder('CGT, CFDT…'),
-            Forms\Components\TextInput::make('telephone_direct')->label('Tél. direct')->tel(),
-            Forms\Components\TextInput::make('telephone_perso')->label('Tél. perso')->tel(),
-            Forms\Components\TextInput::make('email')->label('Email pro')->email(),
-            Forms\Components\TextInput::make('email_perso')->label('Email perso')->email(),
+            PhoneNumberInput::make('telephone_direct')->label('Téléphone professionnel'),
+            PhoneNumberInput::make('telephone_perso')->label('Téléphone personnel'),
+            Forms\Components\TextInput::make('email')->label('Email professionnel')->email(),
+            Forms\Components\TextInput::make('email_perso')->label('Email personnel')->email(),
             Forms\Components\Textarea::make('notes')->label('Notes')->rows(2)->columnSpanFull(),
         ])->columns(2);
     }
@@ -60,15 +61,15 @@ class ContactsRelationManager extends RelationManager
                 ->schema([
                     Infolists\Components\Grid::make(2)->schema([
                         Infolists\Components\TextEntry::make('email')
-                            ->label('Email pro')
+                            ->label('Email professionnel')
                             ->placeholder('—')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('email_perso')
-                            ->label('Email perso')
+                            ->label('Email personnel')
                             ->placeholder('—')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('telephone_direct')
-                            ->label('Tél. direct')
+                            ->label('Téléphone professionnel')
                             ->placeholder('—')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('telephone_mobile')
@@ -76,7 +77,7 @@ class ContactsRelationManager extends RelationManager
                             ->placeholder('—')
                             ->copyable(),
                         Infolists\Components\TextEntry::make('telephone_perso')
-                            ->label('Tél. perso')
+                            ->label('Téléphone personnel')
                             ->placeholder('—')
                             ->copyable(),
                     ]),

@@ -57,7 +57,7 @@ class FicheTemplate extends Model
         '${TELEPHONE}' => 'Téléphone standard',
         '${INTERLOCUTEUR_NOM}' => 'Prénom / Nom interlocuteur',
         '${INTERLOCUTEUR_FONCTION}' => 'Fonction interlocuteur',
-        '${INTERLOCUTEUR_TELEPHONE}' => 'Tél. direct interlocuteur',
+        '${INTERLOCUTEUR_TELEPHONE}' => 'Téléphone professionnel interlocuteur',
         '${INTERLOCUTEUR_EMAIL}' => 'Email interlocuteur',
         '${TELEPROSPECTEUR}' => 'Téléprospecteur (propriétaire)',
         '${COMMERCIAL}' => 'Responsable de Secteur assigné',

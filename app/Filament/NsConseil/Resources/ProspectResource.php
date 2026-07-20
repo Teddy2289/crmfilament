@@ -9,6 +9,7 @@ use App\Filament\NsConseil\Resources\ProspectResource\Pages;
 use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers;
 use App\Filament\Shared\Actions\LancerAppelsAction;
 use App\Filament\Shared\Components\DuplicateWarning;
+use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Filament\Shared\Concerns\HasCustomFieldsForm;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Mail\ConfirmationRdvCseMail;
@@ -45,7 +46,7 @@ class ProspectResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-funnel';
 
-    protected static ?string $navigationGroup = 'Pipeline';
+    protected static ?string $navigationGroup = 'Suivi des dossiers';
 
     protected static ?string $navigationLabel = 'Prospects';
 
@@ -116,15 +117,13 @@ class ProspectResource extends Resource
             Forms\Components\Section::make('Contact')
                 ->icon('heroicon-o-phone')
                 ->schema([
-                    Forms\Components\TextInput::make('telephone')
+                    PhoneNumberInput::make('telephone')
                         ->label('Téléphone principal')
-                        ->tel()
                         ->required()
                         ->live(onBlur: true),
 
-                    Forms\Components\TextInput::make('telephone_alt')
+                    PhoneNumberInput::make('telephone_alt')
                         ->label('Téléphone alternatif')
-                        ->tel()
                         ->live(onBlur: true),
 
                     Forms\Components\TextInput::make('email')
@@ -155,9 +154,8 @@ class ProspectResource extends Resource
                     Forms\Components\TextInput::make('interlocuteur_fonction')
                         ->label('Fonction'),
 
-                    Forms\Components\TextInput::make('interlocuteur_telephone')
-                        ->label('Téléphone interlocuteur')
-                        ->tel(),
+                    PhoneNumberInput::make('interlocuteur_telephone')
+                        ->label('Téléphone interlocuteur'),
 
                     Forms\Components\TextInput::make('interlocuteur_email')
                         ->label('Email interlocuteur')
@@ -225,9 +223,8 @@ class ProspectResource extends Resource
                         ->label('Prénom'),
                     Forms\Components\TextInput::make('dirigeant_fonction')
                         ->label('Fonction'),
-                    Forms\Components\TextInput::make('dirigeant_telephone')
-                        ->label('Téléphone')
-                        ->tel(),
+                    PhoneNumberInput::make('dirigeant_telephone')
+                        ->label('Téléphone'),
                     Forms\Components\TextInput::make('dirigeant_email')
                         ->label('Email')
                         ->email(),
@@ -241,17 +238,17 @@ class ProspectResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('cse_secretaire_nom')->label('Secrétaire — Nom'),
                     Forms\Components\TextInput::make('cse_secretaire_prenom')->label('Secrétaire — Prénom'),
-                    Forms\Components\TextInput::make('cse_secretaire_tel_direct')->label('Tél. direct')->tel(),
-                    Forms\Components\TextInput::make('cse_secretaire_tel_perso')->label('Tél. perso')->tel(),
-                    Forms\Components\TextInput::make('cse_secretaire_email_pro')->label('Email pro')->email(),
-                    Forms\Components\TextInput::make('cse_secretaire_email_perso')->label('Email perso')->email(),
+                    PhoneNumberInput::make('cse_secretaire_tel_direct')->label('Téléphone professionnel'),
+                    PhoneNumberInput::make('cse_secretaire_tel_perso')->label('Téléphone personnel'),
+                    Forms\Components\TextInput::make('cse_secretaire_email_pro')->label('Email professionnel')->email(),
+                    Forms\Components\TextInput::make('cse_secretaire_email_perso')->label('Email personnel')->email(),
 
                     Forms\Components\TextInput::make('cse_tresorier_nom')->label('Trésorier — Nom'),
                     Forms\Components\TextInput::make('cse_tresorier_prenom')->label('Trésorier — Prénom'),
-                    Forms\Components\TextInput::make('cse_tresorier_tel_direct')->label('Tél. direct')->tel(),
-                    Forms\Components\TextInput::make('cse_tresorier_tel_perso')->label('Tél. perso')->tel(),
-                    Forms\Components\TextInput::make('cse_tresorier_email_pro')->label('Email pro')->email(),
-                    Forms\Components\TextInput::make('cse_tresorier_email_perso')->label('Email perso')->email(),
+                    PhoneNumberInput::make('cse_tresorier_tel_direct')->label('Téléphone professionnel'),
+                    PhoneNumberInput::make('cse_tresorier_tel_perso')->label('Téléphone personnel'),
+                    Forms\Components\TextInput::make('cse_tresorier_email_pro')->label('Email professionnel')->email(),
+                    Forms\Components\TextInput::make('cse_tresorier_email_perso')->label('Email personnel')->email(),
 
                     Forms\Components\TextInput::make('cse_nb_elus')->label('Nombre d\'élus')->numeric(),
                     Forms\Components\DatePicker::make('cse_date_fin_mandat')
@@ -276,10 +273,10 @@ class ProspectResource extends Resource
                     Forms\Components\TextInput::make('syndicat_responsable_nom')->label('Responsable — Nom'),
                     Forms\Components\TextInput::make('syndicat_responsable_prenom')->label('Responsable — Prénom'),
                     Forms\Components\TextInput::make('syndicat_responsable_fonction')->label('Fonction'),
-                    Forms\Components\TextInput::make('syndicat_tel_direct')->label('Tél. direct')->tel(),
-                    Forms\Components\TextInput::make('syndicat_tel_perso')->label('Tél. perso')->tel(),
-                    Forms\Components\TextInput::make('syndicat_email_pro')->label('Email pro')->email(),
-                    Forms\Components\TextInput::make('syndicat_email_perso')->label('Email perso')->email(),
+                    PhoneNumberInput::make('syndicat_tel_direct')->label('Téléphone professionnel'),
+                    PhoneNumberInput::make('syndicat_tel_perso')->label('Téléphone personnel'),
+                    Forms\Components\TextInput::make('syndicat_email_pro')->label('Email professionnel')->email(),
+                    Forms\Components\TextInput::make('syndicat_email_perso')->label('Email personnel')->email(),
                     Forms\Components\Textarea::make('syndicat_perimetre')
                         ->label('Périmètre')
                         ->rows(2)
@@ -325,6 +322,9 @@ class ProspectResource extends Resource
                         fn($state) => $state instanceof ProspectStatut
                             ? $state->color()
                             : ProspectStatut::tryFrom($state)?->color() ?? 'gray'
+                    )
+                    ->tooltip(
+                        fn($state) => ($state instanceof ProspectStatut ? $state : ProspectStatut::tryFrom($state))?->description()
                     ),
 
                 Tables\Columns\TextColumn::make('teleprospecteur.nom')
@@ -351,6 +351,9 @@ class ProspectResource extends Resource
 
                 Tables\Columns\TextColumn::make('telephone')
                     ->label('Téléphone')
+                    ->icon('heroicon-m-phone')
+                    ->badge()
+                    ->color('green')
                     ->copyable()
                     ->toggleable(),
 
@@ -363,6 +366,7 @@ class ProspectResource extends Resource
 
                 Tables\Columns\IconColumn::make('qf_valide')
                     ->label('QF')
+                    ->tooltip('Prospect qualifié QF')
                     ->boolean()
                     ->toggleable(),
             ], [
@@ -577,6 +581,9 @@ class ProspectResource extends Resource
                         fn($state) => $state instanceof ProspectStatut
                             ? $state->color()
                             : ProspectStatut::tryFrom($state)?->color() ?? 'gray'
+                    )
+                    ->tooltip(
+                        fn($state) => ($state instanceof ProspectStatut ? $state : ProspectStatut::tryFrom($state))?->description()
                     ),
 
                 Tables\Columns\TextColumn::make('teleprospecteur.nom')
@@ -712,10 +719,13 @@ class ProspectResource extends Resource
                             ->label('Type pressenti')
                             ->state(fn(Prospect $r) => $r->type_pressenti_label)
                             ->badge()
-                            ->color('info'),
+                            ->color(fn(Prospect $r) => OrganizationType::tryFrom($r->type_pressenti)?->color() ?? 'gray'),
 
                         TextEntry::make('siret')
                             ->label('SIRET')
+                            ->icon('heroicon-m-document-text')
+                            ->badge()
+                            ->color('primary')
                             ->copyable()
                             ->copyMessage('SIRET copié !')
                             ->placeholder('—'),
@@ -761,7 +771,7 @@ class ProspectResource extends Resource
                                 ->placeholder('—')
                                 ->icon('heroicon-m-phone')
                                 ->badge()
-                                ->color('primary'),
+                                ->color('green'),
 
                             TextEntry::make('telephone_alt')
                                 ->label('Téléphone alternatif')
@@ -769,7 +779,7 @@ class ProspectResource extends Resource
                                 ->placeholder('—')
                                 ->icon('heroicon-m-phone')
                                 ->badge()
-                                ->color('primary'),
+                                ->color('green'),
 
                             TextEntry::make('email')
                                 ->label('Email')
@@ -825,14 +835,14 @@ class ProspectResource extends Resource
                 ]),
 
             // ── Section 4 : Pipeline & Assignation ──
-            Section::make('Pipeline & Assignation')
+            Section::make('Suivi & Attribution')
                 ->icon('heroicon-o-chart-bar-square')
                 ->collapsible()
                 ->schema([
                     Grid::make(2)->schema([
                         Group::make([
                             TextEntry::make('commercial.nom')
-                                ->label('Commercial (validation QF)')
+                                ->label('Commercial responsable')
                                 ->formatStateUsing(
                                     fn($record) => $record->commercial
                                         ? "{$record->commercial->prenom} {$record->commercial->nom}"
@@ -840,32 +850,32 @@ class ProspectResource extends Resource
                                 )
                                 ->icon('heroicon-m-briefcase')
                                 ->placeholder('—'),
-                        ])->label('Assignation'),
+                        ])->label('Qui s\'en occupe ?'),
 
                         Group::make([
                             TextEntry::make('date_premier_contact')
-                                ->label('Premier contact')
+                                ->label('1er contact')
                                 ->date('d/m/Y')
                                 ->placeholder('Jamais contacté')
                                 ->icon('heroicon-m-calendar'),
 
                             TextEntry::make('rappel_planifie_at')
-                                ->label('Rappel planifié')
+                                ->label('Rappel prévu')
                                 ->dateTime('d/m/Y à H:i')
-                                ->placeholder('Aucun rappel planifié')
+                                ->placeholder('Aucun rappel')
                                 ->icon('heroicon-m-clock')
                                 ->color(fn(Prospect $r) => $r->rappel_est_en_retard ? 'danger' : null),
 
                             TextEntry::make('dernier_contact')
-                                ->label('Dernier contact')
+                                ->label('Dernier échange')
                                 ->state(fn(Prospect $r) => $r->dernier_contact ?? 'Jamais')
                                 ->icon('heroicon-m-arrow-path'),
 
                             TextEntry::make('created_at')
-                                ->label('Créé le')
+                                ->label('Date de création')
                                 ->dateTime('d/m/Y à H:i')
                                 ->icon('heroicon-m-plus-circle'),
-                        ])->label('Suivi'),
+                        ])->label('Historique des contacts'),
                     ]),
                 ]),
 
@@ -983,24 +993,24 @@ class ProspectResource extends Resource
                         TextEntry::make('cse_secretaire_nom')->label('Secrétaire — Nom')->placeholder('—'),
                         TextEntry::make('cse_secretaire_prenom')->label('Secrétaire — Prénom')->placeholder('—'),
                         TextEntry::make('cse_secretaire_tel_direct')
-                            ->label('Tél. direct')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
+                            ->label('Téléphone professionnel')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
                         TextEntry::make('cse_secretaire_tel_perso')
-                            ->label('Tél. perso')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
+                            ->label('Téléphone personnel')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
                         TextEntry::make('cse_secretaire_email_pro')
-                            ->label('Email pro')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                            ->label('Email professionnel')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
                         TextEntry::make('cse_secretaire_email_perso')
-                            ->label('Email perso')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                            ->label('Email personnel')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
 
                         TextEntry::make('cse_tresorier_nom')->label('Trésorier — Nom')->placeholder('—'),
                         TextEntry::make('cse_tresorier_prenom')->label('Trésorier — Prénom')->placeholder('—'),
                         TextEntry::make('cse_tresorier_tel_direct')
-                            ->label('Tél. direct')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
+                            ->label('Téléphone professionnel')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
                         TextEntry::make('cse_tresorier_tel_perso')
-                            ->label('Tél. perso')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
+                            ->label('Téléphone personnel')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
                         TextEntry::make('cse_tresorier_email_pro')
-                            ->label('Email pro')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                            ->label('Email professionnel')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
                         TextEntry::make('cse_tresorier_email_perso')
-                            ->label('Email perso')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                            ->label('Email personnel')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
 
                         TextEntry::make('cse_nb_elus')->label('Nombre d\'élus')->placeholder('—')->suffix(' élus'),
                         TextEntry::make('cse_date_fin_mandat')
@@ -1030,13 +1040,13 @@ class ProspectResource extends Resource
                         TextEntry::make('syndicat_responsable_prenom')->label('Responsable — Prénom')->placeholder('—'),
                         TextEntry::make('syndicat_responsable_fonction')->label('Fonction')->placeholder('—'),
                         TextEntry::make('syndicat_tel_direct')
-                            ->label('Tél. direct')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
+                            ->label('Téléphone professionnel')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
                         TextEntry::make('syndicat_tel_perso')
-                            ->label('Tél. perso')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
+                            ->label('Téléphone personnel')->copyable()->placeholder('—')->icon('heroicon-m-phone'),
                         TextEntry::make('syndicat_email_pro')
-                            ->label('Email pro')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                            ->label('Email professionnel')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
                         TextEntry::make('syndicat_email_perso')
-                            ->label('Email perso')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
+                            ->label('Email personnel')->copyable()->placeholder('—')->icon('heroicon-m-envelope'),
                         TextEntry::make('syndicat_perimetre')
                             ->label('Périmètre')->placeholder('—')->columnSpanFull()->prose(),
                         TextEntry::make('syndicat_notes')

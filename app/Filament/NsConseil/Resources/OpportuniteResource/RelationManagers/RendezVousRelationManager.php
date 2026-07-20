@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources\OpportuniteResource\RelationManagers;
 
 use App\Enums\RendezVousStatut;
 use App\Enums\RendezVousType;
+use App\Filament\Shared\Components\PhoneNumberInput;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -53,9 +54,8 @@ class RendezVousRelationManager extends RelationManager
             Forms\Components\TextInput::make('interlocuteur_nom')
                 ->label('Interlocuteur'),
 
-            Forms\Components\TextInput::make('interlocuteur_tel')
-                ->label('Tél.')
-                ->tel(),
+            PhoneNumberInput::make('interlocuteur_tel')
+                ->label('Tél.'),
 
             Forms\Components\TextInput::make('interlocuteur_email')
                 ->label('Email')

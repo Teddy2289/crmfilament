@@ -50,6 +50,57 @@ class Client extends Model
 
     // ── Accesseurs ──────────────────────────────────────────────────
 
+    /**
+     * Label du badge "État" — source unique utilisée par le tableau,
+     * la fiche et le Kanban Client pour éviter que le même état n'ait
+     * un libellé ou une couleur différente selon l'écran.
+     */
+    public static function etatLabel(?string $etat): string
+    {
+        return match ($etat) {
+            'prospect' => 'Prospect',
+            'en_cours' => 'En cours',
+            'termine' => 'Terminé',
+            'certifie' => 'Certifié',
+            'abandonne' => 'Abandonné',
+            default => $etat ?? '—',
+        };
+    }
+
+    /**
+     * Couleur de badge — noms de couleur Tailwind bruts pour que les 5
+     * états restent distincts les uns des autres (voir
+     * App\Enums\OrganizationStatus::color() pour le même principe).
+     */
+    public static function etatColor(?string $etat): string
+    {
+        return match ($etat) {
+            'prospect' => 'gray',
+            'en_cours' => 'blue',
+            'termine' => 'green',
+            'certifie' => 'purple',
+            'abandonne' => 'red',
+            default => 'gray',
+        };
+    }
+
+    /**
+     * Explication en langage courant, affichée en infobulle au survol du
+     * badge pour les utilisateurs qui ne connaissent pas le pipeline par
+     * cœur.
+     */
+    public static function etatDescription(?string $etat): string
+    {
+        return match ($etat) {
+            'prospect' => "N'a pas encore commencé de formation.",
+            'en_cours' => 'La formation est en cours.',
+            'termine' => 'La formation est terminée.',
+            'certifie' => 'La formation est terminée et certifiée.',
+            'abandonne' => 'La formation a été abandonnée en cours de route.',
+            default => '',
+        };
+    }
+
     public function getNomCompletAttribute(): string
     {
         return trim(($this->civilite ? $this->civilite.' ' : '').($this->prenom ? $this->prenom.' ' : '').($this->nom_tiers ?? ''));

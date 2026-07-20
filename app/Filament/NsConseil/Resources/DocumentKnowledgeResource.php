@@ -25,7 +25,7 @@ class DocumentKnowledgeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationGroup = 'Administration';
+    protected static ?string $navigationGroup = 'Paramètres';
 
     protected static ?string $navigationLabel = 'Base de connaissances';
 

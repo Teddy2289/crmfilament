@@ -24,27 +24,35 @@ class PartenaireNomenclatureRule implements ValidationRule
             return;
         }
 
-        // Séparer le nom en parties
-        $parts = explode(' ', trim($value));
+        $trimmed = trim($value);
 
-        // Vérifier qu'il y a au moins 3 parties (Entreprise, Ville, Type)
-        if (count($parts) < 3) {
+        // Vérifier qu'il y a au moins 3 mots (Entreprise, Ville, Type)
+        if (count(explode(' ', $trimmed)) < 3) {
             $fail('Le nom retenu doit suivre le format: [Entreprise] [Ville] [Département] [Type]. Exemple: "MonEntreprise Paris 75 CSE"');
             return;
         }
 
-        // Vérifier que le dernier mot correspond à un type valide
-        $type = end($parts);
+        // Le type valide qui termine la chaîne peut contenir plusieurs mots
+        // (ex: "Entreprise directe", "Partenariat annulé") : on ne peut donc
+        // pas se contenter du dernier mot, il faut tester le suffixe contre
+        // chaque valeur possible, en gardant la correspondance la plus longue.
         $validTypes = collect(OrganizationType::cases())
             ->map(fn ($case) => $case->value)
             ->toArray();
 
-        if (!in_array($type, $validTypes)) {
-            $fail('Le type doit être l\'un des suivants: ' . implode(', ', $validTypes));
+        $matchedType = collect($validTypes)
+            ->filter(fn ($type) => str_ends_with($trimmed, $type))
+            ->sortByDesc(fn ($type) => strlen($type))
+            ->first();
+
+        if ($matchedType === null) {
+            $fail('Le type doit être l\'un des suivants: '.implode(', ', $validTypes));
+
+            return;
         }
 
-        // Vérifier que le nom de l'entreprise n'est pas vide
-        $entreprise = $parts[0];
+        // Vérifier que le nom de l'entreprise (avant le type) n'est pas vide
+        $entreprise = trim(substr($trimmed, 0, -strlen($matchedType)));
         if (empty($entreprise)) {
             $fail('Le nom de l\'entreprise est requis.');
         }

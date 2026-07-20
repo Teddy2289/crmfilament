@@ -21,7 +21,8 @@
         "ptplugins/filament-number-input": "^1.0",
         "saade/filament-fullcalendar": "^3.0",
         "spatie/laravel-model-states": "^2.12",
-        "spatie/laravel-permission": "^7.4"
+        "spatie/laravel-permission": "^7.4",
+        "ysfkaya/filament-phone-input": "^3.2"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^4.2",
