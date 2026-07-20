@@ -197,14 +197,6 @@ class Prospect extends Model
         ])->filter()->implode(', ');
     }
 
-    public function getLocalisationAttribute(): string
-    {
-        return collect([
-            $this->ville,
-            $this->departement,
-        ])->filter()->implode(' (').($this->departement ? ')' : '');
-    }
-
     public function getInterlocuteurCompletAttribute(): string
     {
         if (! $this->interlocuteur_nom) {

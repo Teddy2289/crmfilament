@@ -749,10 +749,18 @@ class ProspectResource extends Resource
                             ->money('EUR')
                             ->placeholder('—'),
 
-                        TextEntry::make('adresse_complete')
-                            ->label('Adresse complète')
-                            ->state(fn(Prospect $r) => $r->adresse_complete ?: '—')
+                        TextEntry::make('adresse')
+                            ->label('Adresse')
+                            ->placeholder('—')
                             ->copyable(),
+
+                        TextEntry::make('code_postal')
+                            ->label('Code postal')
+                            ->placeholder('—'),
+
+                        TextEntry::make('ville')
+                            ->label('Ville')
+                            ->placeholder('—'),
                     ]),
                 ]),
 
@@ -761,7 +769,7 @@ class ProspectResource extends Resource
                 ->icon('heroicon-o-phone')
                 ->collapsible()
                 ->schema([
-                    Grid::make(3)->schema([
+                    Grid::make(2)->schema([
                         // Coordonnées entité
                         Group::make([
                             TextEntry::make('telephone')
@@ -816,21 +824,6 @@ class ProspectResource extends Resource
                                 ->icon('heroicon-m-envelope'),
                         ])->label('Interlocuteur'),
 
-                        // Localisation
-                        Group::make([
-                            TextEntry::make('localisation')
-                                ->label('Localisation')
-                                ->state(fn(Prospect $r) => $r->localisation ?: '—')
-                                ->icon('heroicon-m-map-pin'),
-
-                            TextEntry::make('ville')
-                                ->label('Ville')
-                                ->placeholder('—'),
-
-                            TextEntry::make('code_postal')
-                                ->label('Code postal')
-                                ->placeholder('—'),
-                        ])->label('Localisation'),
                     ]),
                 ]),
 
@@ -1138,9 +1131,7 @@ class ProspectResource extends Resource
             'statut_description' => 'statut',
             'jours_depuis_premier_contact' => 'date_premier_contact',
             'jours_avant_rappel' => 'rappel_planifie_at',
-            'adresse_complete' => 'adresse',
             'interlocuteur_complet' => 'interlocuteur_nom',
-            'localisation' => 'ville',
             'dernier_contact' => 'date_premier_contact',
             'taux_engagement' => 'statut',
             'validePar.nom' => 'valide_par',
