@@ -175,13 +175,6 @@ class Client extends Model
             ->implode(', ');
     }
 
-    public function getLocalisationAttribute(): string
-    {
-        return collect([$this->ville, $this->departement, $this->region])
-            ->filter()
-            ->implode(' - ');
-    }
-
     public function getEstContactableAttribute(): bool
     {
         return ! $this->ne_plus_contacter && ($this->email || $this->telephone);

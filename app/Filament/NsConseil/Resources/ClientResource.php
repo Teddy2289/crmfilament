@@ -534,14 +534,28 @@ class ClientResource extends Resource
                 ->schema([
                     Infolists\Components\TextEntry::make('telephone')
                         ->label('Téléphone')
+                        ->badge()
+                        ->icon('heroicon-o-phone')
+                        ->color('green')
                         ->copyable(),
                     Infolists\Components\TextEntry::make('email')
                         ->label('Email')
                         ->copyable(),
-                    Infolists\Components\TextEntry::make('adresse_complete')
-                        ->label('Adresse'),
-                    Infolists\Components\TextEntry::make('localisation')
-                        ->label('Localisation'),
+                    Infolists\Components\TextEntry::make('adresse')
+                        ->label('Adresse')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('code_postal')
+                        ->label('Code postal')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('ville')
+                        ->label('Ville')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('departement')
+                        ->label('Département')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('region')
+                        ->label('Région')
+                        ->placeholder('—'),
                 ])->columns(2),
 
             Infolists\Components\Section::make('Formation')
@@ -559,7 +573,10 @@ class ClientResource extends Resource
                         ->label('Ne plus contacter')
                         ->boolean(),
                     Infolists\Components\TextEntry::make('source_sheet')
-                        ->label('Fichier source'),
+                        ->label('Fichier source')
+                        ->placeholder('Aucun fichier')
+                        ->badge()
+                        ->color('primary'),
                 ])->columns(2),
 
             Infolists\Components\Section::make('Statistiques formation')
@@ -590,8 +607,6 @@ class ClientResource extends Resource
             'age' => 'date_naissance',
             'partenaire.nom' => 'partenaire_id',
             'parrain.nom_prenom' => 'parrain_id',
-            'adresse_complete' => 'adresse',
-            'localisation' => 'ville',
             'total_heures_formation' => 'etat',
             'total_heures_realisees' => 'etat',
             'total_heures_restantes' => 'etat',
