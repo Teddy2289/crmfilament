@@ -207,7 +207,7 @@ Informations sur le dirigeant de l'entreprise mère (au-dessus du CSE ou du synd
 | Nom / Prénom du dirigeant | Texte | Non |
 | Fonction | Texte | Non |
 | Téléphone direct | Téléphone | Non |
-| Email pro | Email | Non |
+| Email professionnel | Email | Non |
 | Notes | Texte libre | Non |
 
 #### Bloc CSE *(non obligatoire — affiché si Type = CSE)*
@@ -258,7 +258,7 @@ En complément des blocs structurés ci-dessus, chaque partenaire peut avoir un 
 | Fonction | Texte libre |
 | Syndicat d'appartenance | Texte libre |
 | Téléphone direct / personnel | Téléphone ×2 |
-| Email pro / personnel | Email ×2 |
+| Email professionnel / personnel | Email ×2 |
 | Disponibilités / permanences | Texte |
 | Notes | Texte libre |
 

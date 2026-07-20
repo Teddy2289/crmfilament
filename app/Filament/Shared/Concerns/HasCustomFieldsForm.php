@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Concerns;
 
+use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Models\CustomField;
 use App\Models\CustomFieldValue;
 use Filament\Forms;
@@ -67,7 +68,7 @@ trait HasCustomFieldsForm
                         'checkbox' => Forms\Components\Checkbox::make('custom_field_'.$field->id),
                         'date' => Forms\Components\DatePicker::make('custom_field_'.$field->id),
                         'email' => Forms\Components\TextInput::make('custom_field_'.$field->id)->email(),
-                        'tel' => Forms\Components\TextInput::make('custom_field_'.$field->id)->tel(),
+                        'tel' => PhoneNumberInput::make('custom_field_'.$field->id),
                         default => Forms\Components\TextInput::make('custom_field_'.$field->id),
                     };
 
@@ -77,7 +78,7 @@ trait HasCustomFieldsForm
                         $component->required();
                     }
 
-                    if ($field->placeholder) {
+                    if ($field->placeholder && method_exists($component, 'placeholder')) {
                         $component->placeholder($field->placeholder);
                     }
 

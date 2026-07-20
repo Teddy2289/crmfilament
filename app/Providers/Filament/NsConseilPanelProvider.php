@@ -56,27 +56,43 @@ class NsConseilPanelProvider extends PanelProvider
             ->brandLogoHeight('3.5rem')
             ->favicon($theme?->favicon_path)
             ->colors([
-                'primary'       => Color::hex('#2C4A5E'), 
+                // Palette Tailwind complète (blue, orange, indigo, teal, violet, ...)
+                // enregistrée en premier : c'est ce qui permet aux badges de statut
+                // (App\Enums\OrganizationStatus, OrganizationType, ProspectStatut,
+                // Client::etatColor, ...) d'utiliser des noms de couleur "bruts" et
+                // d'être réellement colorés. Sans ce registre, Filament ne génère
+                // aucune variable CSS pour un nom de couleur qui n'est pas déclaré
+                // ici, et le badge s'affiche sans couleur.
+                ...Color::all(),
+
+                // Alias de marque NS Conseil — déclarés après pour prendre le pas
+                // sur les valeurs par défaut de Color::all() ci-dessus.
+                'primary'       => Color::hex('#2C4A5E'),
                 'gray'          => Color::Slate,
                 'secondary'     => Color::hex('#3F8FA3'),
-                'info'          => Color::hex('#3F8FA3'),
-                'custom-kanban' => Color::hex('#F3DCB0'), 
+                'info'          => Color::hex('#00d2fc'),
+                'custom-kanban' => Color::hex('#F3DCB0'),
                 'success'       => Color::hex('#D9A455'),
-                'warning'       => Color::hex('#E8B873'), 
+                'warning'       => Color::hex('#E8B873'),
+                'rattachement'   => Color::hex('#00c9a7'),
+                'programme'      => Color::hex('#ff8066'),
+                'green'         => Color::Emerald,
                 'danger'        => Color::Rose,
-            
+
             ])
             ->defaultThemeMode(ThemeMode::Light)
             ->navigationGroups([
-                NavigationGroup::make('Pipeline')
+                NavigationGroup::make('Suivi des dossiers')
                     ->icon('heroicon-o-chart-bar'),
+                NavigationGroup::make('Carnet d\'adresses')
+                    ->icon('heroicon-o-book-open'),    
                 NavigationGroup::make('Contacts')
                     ->icon('heroicon-o-users'),
                 NavigationGroup::make('Activités')
                     ->icon('heroicon-o-phone'),
                 NavigationGroup::make('Clients & Formations')
                     ->icon('heroicon-o-academic-cap'),
-                NavigationGroup::make('Administration')
+                NavigationGroup::make('Paramètres')
                     ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ])

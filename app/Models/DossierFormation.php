@@ -97,61 +97,97 @@ class DossierFormation extends Model
         return $this->hasOne(PlanningFormation::class, 'dossier_id', 'id');
     }
 
-    // ─── Accesseurs pour les statuts ─────────────────────────────────
+    // ─── Statuts : source unique (options de formulaire, table, filtres,
+    // fiche) — les valeurs 'interrompu'/'abandon'/'termine' (etat) sont
+    // absentes du mapping historique alors qu'elles existent réellement
+    // en base (cf. audit tinker du 2026-07-20).
+    // ────────────────────────────────────────────────────────────────
 
-    public function getStatutLabelAttribute(): string
+    public static function statutFormationOptions(): array
     {
-        $mapping = [
+        return [
             'a_venir' => 'À venir',
             'en_cours' => 'En cours',
             'termine' => 'Terminé',
             'valide' => 'Validé',
-            'annule' => 'Annulé',
             'reporte' => 'Reporté',
+            'interrompu' => 'Interrompu',
+            'annule' => 'Annulé',
+            'abandon' => 'Abandonné',
         ];
-
-        return $mapping[$this->statut_formation] ?? $this->statut_formation ?? '—';
     }
 
-    public function getEtatLabelAttribute(): string
+    public static function statutFormationLabel(?string $statut): string
     {
-        $mapping = [
+        return static::statutFormationOptions()[$statut] ?? $statut ?? '—';
+    }
+
+    public static function statutFormationColor(?string $statut): string
+    {
+        return match ($statut) {
+            'a_venir' => 'blue',
+            'en_cours' => 'amber',
+            'termine' => 'green',
+            'valide' => 'indigo',
+            'reporte' => 'gray',
+            'interrompu' => 'orange',
+            'annule' => 'red',
+            'abandon' => 'pink',
+            default => 'gray',
+        };
+    }
+
+    public static function etatOptions(): array
+    {
+        return [
             'brouillon' => 'Brouillon',
             'en_cours' => 'En cours',
             'soumis' => 'Soumis',
             'approuve' => 'Approuvé',
             'rejete' => 'Rejeté',
             'cloture' => 'Clôturé',
+            'termine' => 'Terminé',
         ];
-
-        return $mapping[$this->etat] ?? $this->etat ?? '—';
     }
 
-    public function getStatutColorAttribute(): string
+    public static function etatLabel(?string $etat): string
     {
-        $mapping = [
-            'a_venir' => 'gray',
-            'en_cours' => 'warning',
-            'termine' => 'success',
-            'valide' => 'primary',
-            'annule' => 'danger',
-            'reporte' => 'info',
-        ];
-
-        return $mapping[$this->statut_formation] ?? 'gray';
+        return static::etatOptions()[$etat] ?? $etat ?? '—';
     }
 
-    public function getEtatColorAttribute(): string
+    public static function etatColor(?string $etat): string
     {
-        $mapping = [
+        return match ($etat) {
             'brouillon' => 'gray',
             'en_cours' => 'primary',
             'soumis' => 'warning',
             'approuve' => 'success',
             'rejete' => 'danger',
-            'cloture' => 'success',
-        ];
+            'cloture' => 'indigo',
+            'termine' => 'teal',
+            default => 'gray',
+        };
+    }
 
-        return $mapping[$this->etat] ?? 'gray';
+    // ─── Accesseurs pour les statuts (fiche/exports) ──────────────────
+
+    public function getStatutLabelAttribute(): string
+    {
+        return static::statutFormationLabel($this->statut_formation);
+    }
+
+    public function getEtatLabelAttribute(): string
+    {
+        return static::etatLabel($this->etat);
+    }
+
+    public function getStatutColorAttribute(): string
+    {
+        return static::statutFormationColor($this->statut_formation);
+    }
+
+    public function getEtatColorAttribute(): string
+    {
+        return static::etatColor($this->etat);
     }
 }

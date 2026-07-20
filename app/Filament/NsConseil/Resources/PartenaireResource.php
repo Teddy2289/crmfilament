@@ -8,6 +8,7 @@ use App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 use App\Filament\NsConseil\Resources\PartenaireResource\RelationManagers;
 use App\Filament\Shared\Actions\LancerAppelsAction;
 use App\Filament\Shared\Components\DuplicateWarning;
+use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Filament\Shared\Concerns\HasCustomFieldsForm;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Models\Consultant;
@@ -37,7 +38,7 @@ class PartenaireResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
 
-    protected static ?string $navigationGroup = 'Pipeline';
+    protected static ?string $navigationGroup = 'Suivi des dossiers';
 
     protected static ?string $navigationLabel = 'Partenaires';
 
@@ -184,7 +185,7 @@ class PartenaireResource extends Resource
             Forms\Components\Section::make('Coordonnées')
                 ->icon('heroicon-o-map-pin')
                 ->schema([
-                    Forms\Components\TextInput::make('telephone')->label('Téléphone')->tel()
+                    PhoneNumberInput::make('telephone')->label('Téléphone')
                         ->live(onBlur: true),
                     Forms\Components\TextInput::make('email')->label('Email générique')->email()
                         ->live(onBlur: true),
@@ -196,6 +197,10 @@ class PartenaireResource extends Resource
 
             Forms\Components\Section::make('Contacts')
                 ->icon('heroicon-o-user-group')
+                // Une fois le partenaire créé, l'onglet "Contacts" (ContactsRelationManager)
+                // gère déjà l'ajout/édition/suppression avec plus de champs et une table
+                // recherchable : on évite ici un second bouton "Ajouter un contact" en double.
+                ->visible(fn (string $operation): bool => $operation === 'create')
                 ->schema([
                     Forms\Components\Repeater::make('contacts')
                         ->relationship()
@@ -206,7 +211,7 @@ class PartenaireResource extends Resource
                             Forms\Components\TextInput::make('fonction')
                                 ->label('Fonction')
                                 ->placeholder('Secrétaire CSE, Trésorier, RH…'),
-                            Forms\Components\TextInput::make('telephone_direct')->label('Tél. direct')->tel(),
+                            PhoneNumberInput::make('telephone_direct')->label('Téléphone professionnel'),
                             Forms\Components\TextInput::make('email')->label('Email')->email(),
                         ])
                         ->columns(2)
@@ -251,13 +256,12 @@ class PartenaireResource extends Resource
                             ? $state->value
                             : OrganizationType::tryFrom((string) $state)?->value ?? $state
                     )
-                    ->color(fn($state) => match ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state)) {
-                        OrganizationType::CSE => 'primary',
-                        OrganizationType::Syndicat => 'warning',
-                        OrganizationType::EntrepriseDirecte => 'info',
-                        OrganizationType::Association => 'success',
-                        default => 'gray',
-                    }),
+                    ->color(
+                        fn($state) => ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state))?->color() ?? 'gray'
+                    )
+                    ->icon(
+                        fn($state) => ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state))?->icon()
+                    ),
 
                 Tables\Columns\TextColumn::make('departement')
                     ->label('Dép.')->sortable()->alignCenter(),
@@ -272,6 +276,9 @@ class PartenaireResource extends Resource
                     )
                     ->icon(
                         fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state))?->icon()
+                    )
+                    ->tooltip(
+                        fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom((string) $state))?->description()
                     ),
 
                 // CORRECTIF : conseiller (Consultant) au lieu de commercial (User)
@@ -428,6 +435,9 @@ class PartenaireResource extends Resource
                         fn($state) => $state instanceof OrganizationStatus
                             ? $state->color()
                             : OrganizationStatus::tryFrom($state)?->color() ?? 'gray'
+                    )
+                    ->tooltip(
+                        fn($state) => ($state instanceof OrganizationStatus ? $state : OrganizationStatus::tryFrom($state))?->description()
                     ),
 
                 Tables\Columns\TextColumn::make('type')
@@ -437,6 +447,9 @@ class PartenaireResource extends Resource
                         fn($state) => $state instanceof OrganizationType
                             ? $state->label()
                             : OrganizationType::tryFrom($state)?->label() ?? $state
+                    )
+                    ->color(
+                        fn($state) => ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom($state))?->color() ?? 'gray'
                     ),
 
                 Tables\Columns\TextColumn::make('departement')

@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\EntrepriseResource\Pages;
+use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Models\Entreprise;
 use App\Support\UsesResourcePermissions;
 use Filament\Forms;
@@ -26,7 +27,7 @@ class EntrepriseResource extends Resource
 
     protected static ?string $navigationLabel = 'Entreprises';
 
-    protected static ?string $navigationGroup = 'Pipeline';
+    protected static ?string $navigationGroup = 'Suivi des dossiers';
 
     protected static ?int $navigationSort = 4;
 
@@ -98,10 +99,8 @@ class EntrepriseResource extends Resource
 
                         Forms\Components\Grid::make(3)
                             ->schema([
-                                Forms\Components\TextInput::make('telephone')
-                                    ->label('Téléphone')
-                                    ->tel()
-                                    ->maxLength(255),
+                                PhoneNumberInput::make('telephone')
+                                    ->label('Téléphone'),
 
                                 Forms\Components\TextInput::make('email')
                                     ->label('Email')

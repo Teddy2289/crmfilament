@@ -180,7 +180,12 @@ class Partenaire extends Model
 
         $candidats = static::nomenclatureIndex()[static::normaliserNomenclature($nomenclature)] ?? [];
 
-        return count($candidats) === 1 ? $candidats[0] : null;
+        // Dédoublonner par id : un même partenaire peut apparaître deux fois
+        // sous la même clé (ex. nom_retenu et nomenclature_interne identiques),
+        // ce qui ne doit pas être compté comme une ambiguïté entre 2 partenaires.
+        $partenaires = collect($candidats)->unique('id');
+
+        return $partenaires->count() === 1 ? $partenaires->first() : null;
     }
 
     /**
@@ -204,10 +209,21 @@ class Partenaire extends Model
         $index = [];
 
         static::query()
-            ->select(['id', 'nom', 'nom_retenu', 'nomenclature_interne'])
+            ->select(['id', 'nom', 'nom_retenu', 'nomenclature_interne', 'entreprise', 'type'])
             ->get()
             ->each(function (self $partenaire) use (&$index) {
-                foreach (array_filter([$partenaire->nom, $partenaire->nom_retenu, $partenaire->nomenclature_interne]) as $candidat) {
+                $candidats = [$partenaire->nom, $partenaire->nom_retenu, $partenaire->nomenclature_interne];
+
+                // Nomenclature courte "[Entreprise] [Type]", sans ville ni
+                // département : certaines sources (ex. imports clients) ne
+                // renseignent que ces deux informations et ne mentionnent
+                // jamais la ville, ce que la clé complète ci-dessus ne peut
+                // pas matcher.
+                if ($partenaire->type instanceof OrganizationType) {
+                    $candidats[] = trim(($partenaire->entreprise ?: $partenaire->nom).' '.$partenaire->type->value);
+                }
+
+                foreach (array_filter($candidats) as $candidat) {
                     $cle = static::normaliserNomenclature($candidat);
                     if ($cle === '') {
                         continue;

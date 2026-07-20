@@ -25,15 +25,16 @@ class ViewTicket extends ViewRecord
                 ->label('Changer statut')
                 ->icon('heroicon-o-arrow-right-circle')
                 ->color('primary')
-                ->visible(fn () => $this->record->estActif() &&
-                    count($this->record->statut->statutsSuivants()) > 0
+                ->visible(
+                    fn() => $this->record->estActif() &&
+                        count($this->record->statut->statutsSuivants()) > 0
                 )
-                ->form(fn () => [
+                ->form(fn() => [
                     Forms\Components\Select::make('nouveau_statut')
                         ->label('Nouveau statut')
                         ->options(
                             collect($this->record->statut->statutsSuivants())
-                                ->mapWithKeys(fn ($s) => [$s->value => $s->label()])
+                                ->mapWithKeys(fn($s) => [$s->value => $s->label()])
                                 ->toArray()
                         )
                         ->required()
@@ -47,7 +48,7 @@ class ViewTicket extends ViewRecord
                     $this->record->changerStatut($nouveau, $data['notes'] ?? null);
                     $this->refreshFormData(['statut', 'notes']);
                     Notification::make()
-                        ->title('→ '.$nouveau->label())
+                        ->title('→ ' . $nouveau->label())
                         ->success()
                         ->send();
                 }),
@@ -56,14 +57,14 @@ class ViewTicket extends ViewRecord
                 ->label('Assigner artisan')
                 ->icon('heroicon-o-wrench-screwdriver')
                 ->color('warning')
-                ->visible(fn () => is_null($this->record->artisan_id) && $this->record->estActif())
+                ->visible(fn() => is_null($this->record->artisan_id) && $this->record->estActif())
                 ->form([
                     Forms\Components\Select::make('artisan_id')
                         ->label('Artisan disponible')
                         ->options(
                             Artisan::disponibles()->get()
-                                ->mapWithKeys(fn ($a) => [
-                                    $a->id => $a->nom_complet.' — '.$a->corps_de_metier->label(),
+                                ->mapWithKeys(fn($a) => [
+                                    $a->id => $a->nom_complet . ' — ' . $a->corps_de_metier->label(),
                                 ])
                         )
                         ->required()
@@ -75,7 +76,7 @@ class ViewTicket extends ViewRecord
                     $this->record->assignerArtisan($artisan);
                     $this->refreshFormData(['artisan_id']);
                     Notification::make()
-                        ->title('Artisan assigné : '.$artisan->nom_complet)
+                        ->title('Artisan assigné : ' . $artisan->nom_complet)
                         ->success()
                         ->send();
                 }),
@@ -88,44 +89,45 @@ class ViewTicket extends ViewRecord
     {
         return $infolist->schema(TicketResource::applyShowFieldPermissions([
 
-            Section::make('Pipeline')
+            Section::make('Avancement du dossier')
                 ->icon('heroicon-o-arrows-right-left')
                 ->schema([
                     TextEntry::make('statut')
-                        ->label('Statut actuel')
+                        ->label('État actuel')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => $state instanceof TicketStatut ? $state->label() : $state)
-                        ->color(fn ($state) => $state instanceof TicketStatut ? $state->color() : 'gray')
-                        ->icon(fn ($state) => $state instanceof TicketStatut ? $state->icon() : null),
+                        ->formatStateUsing(fn($state) => $state instanceof TicketStatut ? $state->label() : $state)
+                        ->color(fn($state) => $state instanceof TicketStatut ? $state->color() : 'gray')
+                        ->icon(fn($state) => $state instanceof TicketStatut ? $state->icon() : null),
 
                     TextEntry::make('niveau_priorite')
-                        ->label('Priorité')
+                        ->label('Niveau de priorité')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => $state?->label() ?? 'Non défini')
-                        ->color(fn ($state) => $state?->color() ?? 'gray'),
+                        ->formatStateUsing(fn($state) => $state?->label() ?? 'Non défini')
+                        ->color(fn($state) => $state?->color() ?? 'gray'),
 
                     TextEntry::make('progression_pourcentage')
-                        ->label('Progression')
-                        ->formatStateUsing(fn ($state) => $state.'%'),
+                        ->label('Progression du dossier')
+                        ->formatStateUsing(fn($state) => $state . '%'),
 
                     TextEntry::make('duree_traitement_formatee')
-                        ->label('Durée de traitement'),
+                        ->label('Temps passé sur le dossier'),
 
                     IconEntry::make('sla_respecte')
-                        ->label('SLA')
+                        ->label('Délai respecté ?')
                         ->boolean()
                         ->trueColor('success')
                         ->falseColor('danger'),
                 ])
                 ->columns(5),
 
-            Section::make('Client')
+            Section::make('Informations client')
                 ->icon('heroicon-o-user')
                 ->columns(3)
                 ->schema([
                     TextEntry::make('contactParticulier.nom')
-                        ->label('Nom')
-                        ->formatStateUsing(fn ($state, $record) => trim(($record->contactParticulier?->prenom ?? '').' '.($record->contactParticulier?->nom ?? '')) ?: '—'
+                        ->label('Nom du client')
+                        ->formatStateUsing(
+                            fn($state, $record) => trim(($record->contactParticulier?->prenom ?? '') . ' ' . ($record->contactParticulier?->nom ?? '')) ?: '—'
                         ),
 
                     TextEntry::make('contactParticulier.telephone')
@@ -138,78 +140,80 @@ class ViewTicket extends ViewRecord
                         ->icon('heroicon-o-map-pin'),
 
                     TextEntry::make('contactParticulier.type_logement')
-                        ->label('Logement')
-                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
+                        ->label('Type de logement')
+                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
                         ->badge(),
 
                     TextEntry::make('contactParticulier.statut_occupant')
-                        ->label('Occupant')
-                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
+                        ->label('Statut d\'occupation')
+                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
                         ->badge(),
                 ]),
 
-            Section::make('Artisan')
+            Section::make('Informations artisan')
                 ->icon('heroicon-o-wrench-screwdriver')
                 ->columns(3)
                 ->schema([
                     TextEntry::make('artisan.nom')
-                        ->label('Artisan')
-                        ->formatStateUsing(fn ($state, $record) => $record->artisan?->nom_complet ?? '—'
+                        ->label('Nom de l\'artisan')
+                        ->formatStateUsing(
+                            fn($state, $record) => $record->artisan?->nom_complet ?? '—'
                         )
                         ->placeholder('Non assigné'),
 
                     TextEntry::make('artisan.telephone_principal')
-                        ->label('Téléphone artisan')
+                        ->label('Téléphone')
                         ->copyable()
                         ->placeholder('—'),
 
                     TextEntry::make('artisan.corps_de_metier')
-                        ->label('Métier')
-                        ->formatStateUsing(fn ($state) => $state?->label() ?? '—')
+                        ->label('Métier / Spécialité')
+                        ->formatStateUsing(fn($state) => $state?->label() ?? '—')
                         ->badge(),
 
                     TextEntry::make('rdv_planifie_at')
-                        ->label('RDV planifié')
+                        ->label('Rendez-vous prévu')
                         ->dateTime('d/m/Y H:i')
                         ->placeholder('Non planifié'),
 
                     TextEntry::make('rappel_promise_at')
-                        ->label('Rappel promis')
+                        ->label('Rappel promis au client')
                         ->dateTime('d/m/Y H:i')
                         ->placeholder('—'),
                 ]),
 
-            Section::make('Informations')
+            Section::make('Informations générales')
                 ->icon('heroicon-o-information-circle')
                 ->columns(3)
                 ->collapsible()
                 ->schema([
                     TextEntry::make('reference')
-                        ->label('Référence')
+                        ->label('Numéro de dossier')
                         ->copyable()
                         ->weight('bold'),
 
                     TextEntry::make('date_creation')
-                        ->label('Créé le')
+                        ->label('Date de création')
                         ->dateTime('d/m/Y H:i'),
 
                     TextEntry::make('date_cloture')
-                        ->label('Clôturé le')
+                        ->label('Date de clôture')
                         ->dateTime('d/m/Y H:i')
                         ->placeholder('En cours'),
 
                     TextEntry::make('operateur.prenom')
-                        ->label('Opérateur')
-                        ->formatStateUsing(fn ($state, $record) => trim(($record->operateur?->prenom ?? '').' '.($record->operateur?->nom ?? '')) ?: '—'
+                        ->label('Opérateur responsable')
+                        ->formatStateUsing(
+                            fn($state, $record) => trim(($record->operateur?->prenom ?? '') . ' ' . ($record->operateur?->nom ?? '')) ?: '—'
                         ),
 
                     TextEntry::make('ringover_call_id')
-                        ->label('ID Ringover')
+                        ->label('ID appel Ringover')
                         ->copyable()
                         ->placeholder('—'),
                 ]),
 
-            Section::make('Notes')
+            Section::make('Notes et commentaires')
                 ->icon('heroicon-o-document-text')
                 ->collapsible()
                 ->schema([

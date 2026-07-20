@@ -105,14 +105,7 @@ class DossierFormationResource extends Resource
 
                     Forms\Components\Select::make('statut_formation')
                         ->label('Statut de la formation')
-                        ->options([
-                            'a_venir' => 'À venir',
-                            'en_cours' => 'En cours',
-                            'termine' => 'Terminé',
-                            'valide' => 'Validé',
-                            'annule' => 'Annulé',
-                            'reporte' => 'Reporté',
-                        ])
+                        ->options(DossierFormation::statutFormationOptions())
                         ->nullable(),
 
                     Forms\Components\TextInput::make('no_dossier_edof')
@@ -123,14 +116,7 @@ class DossierFormationResource extends Resource
 
                     Forms\Components\Select::make('etat')
                         ->label('État du dossier')
-                        ->options([
-                            'brouillon' => 'Brouillon',
-                            'en_cours' => 'En cours',
-                            'soumis' => 'Soumis',
-                            'approuve' => 'Approuvé',
-                            'rejete' => 'Rejeté',
-                            'cloture' => 'Clôturé',
-                        ])
+                        ->options(DossierFormation::etatOptions())
                         ->default('brouillon')
                         ->nullable(),
                 ])->columns(2),
@@ -182,6 +168,8 @@ class DossierFormationResource extends Resource
 
                 Tables\Columns\TextColumn::make('intitule_programme')
                     ->label('Programme')
+                    ->badge()
+                    ->color('programme')
                     ->searchable()
                     ->sortable()
                     ->limit(30)
@@ -199,6 +187,8 @@ class DossierFormationResource extends Resource
                 Tables\Columns\TextColumn::make('montant_ht')
                     ->label('Montant HT')
                     ->money('EUR')
+                    ->badge()
+                    ->color('green')
                     ->sortable()
                     ->alignRight()
                     ->toggleable(),
@@ -206,6 +196,8 @@ class DossierFormationResource extends Resource
                 Tables\Columns\TextColumn::make('montant_cpf')
                     ->label('Montant CPF')
                     ->money('EUR')
+                    ->badge()
+                    ->color('secondary')
                     ->sortable()
                     ->alignRight()
                     ->toggleable(),
@@ -221,47 +213,15 @@ class DossierFormationResource extends Resource
                 Tables\Columns\TextColumn::make('statut_formation')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'a_venir' => 'À venir',
-                        'en_cours' => 'En cours',
-                        'termine' => 'Terminé',
-                        'valide' => 'Validé',
-                        'annule' => 'Annulé',
-                        'reporte' => 'Reporté',
-                        default => $state ?? '—',
-                    })
-                    ->color(fn ($state) => match ($state) {
-                        'a_venir' => 'info',
-                        'en_cours' => 'warning',
-                        'termine' => 'success',
-                        'valide' => 'primary',
-                        'annule' => 'danger',
-                        'reporte' => 'gray',
-                        default => 'gray',
-                    })
+                    ->formatStateUsing(fn ($state) => DossierFormation::statutFormationLabel($state))
+                    ->color(fn ($state) => DossierFormation::statutFormationColor($state))
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('etat')
                     ->label('État')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'brouillon' => 'Brouillon',
-                        'en_cours' => 'En cours',
-                        'soumis' => 'Soumis',
-                        'approuve' => 'Approuvé',
-                        'rejete' => 'Rejeté',
-                        'cloture' => 'Clôturé',
-                        default => $state ?? '—',
-                    })
-                    ->color(fn ($state) => match ($state) {
-                        'brouillon' => 'gray',
-                        'en_cours' => 'primary',
-                        'soumis' => 'warning',
-                        'approuve' => 'success',
-                        'rejete' => 'danger',
-                        'cloture' => 'success',
-                        default => 'gray',
-                    })
+                    ->formatStateUsing(fn ($state) => DossierFormation::etatLabel($state))
+                    ->color(fn ($state) => DossierFormation::etatColor($state))
                     ->toggleable()
                     ->toggledHiddenByDefault(),
 
@@ -300,26 +260,12 @@ class DossierFormationResource extends Resource
                 // 📊 Filtres statut
                 Tables\Filters\SelectFilter::make('statut_formation')
                     ->label('Statut de la formation')
-                    ->options([
-                        'En attente' => 'En attente',
-                        'Validé' => 'Validé',
-                        'En cours' => 'En cours',
-                        'Terminé' => 'Terminé',
-                        'Annulé' => 'Annulé',
-                        'Reporté' => 'Reporté',
-                    ])
+                    ->options(DossierFormation::statutFormationOptions())
                     ->placeholder('Tous les statuts'),
 
                 Tables\Filters\SelectFilter::make('etat')
                     ->label('État du dossier')
-                    ->options([
-                        'Brouillon' => 'Brouillon',
-                        'En cours' => 'En cours',
-                        'Soumis' => 'Soumis',
-                        'Approuvé' => 'Approuvé',
-                        'Rejeté' => 'Rejeté',
-                        'Clôturé' => 'Clôturé',
-                    ])
+                    ->options(DossierFormation::etatOptions())
                     ->placeholder('Tous les états'),
 
                 // 🤝 Relations
@@ -521,7 +467,12 @@ class DossierFormationResource extends Resource
                         ->label('Référence client'),
 
                     Infolists\Components\TextEntry::make('intitule_programme')
-                        ->label('Programme'),
+                        ->label('Programme')
+                        ->badge()
+                        ->placeholder('Non défini')
+                        ->tooltip(fn (DossierFormation $record) => $record->intitule_programme)
+                        ->color('programme')
+                        ->copyable(),
 
                     Infolists\Components\TextEntry::make('entite.nom')
                         ->label('Entité commerciale')
@@ -556,30 +507,14 @@ class DossierFormationResource extends Resource
                     Infolists\Components\TextEntry::make('statut_formation')
                         ->label('Statut')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => $state ?? '—')
-                        ->color(fn ($state) => match ($state) {
-                            'En attente' => 'gray',
-                            'Validé' => 'primary',
-                            'En cours' => 'warning',
-                            'Terminé' => 'success',
-                            'Annulé' => 'danger',
-                            'Reporté' => 'info',
-                            default => 'gray',
-                        }),
+                        ->formatStateUsing(fn ($state) => DossierFormation::statutFormationLabel($state))
+                        ->color(fn ($state) => DossierFormation::statutFormationColor($state)),
 
                     Infolists\Components\TextEntry::make('etat')
                         ->label('État du dossier')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => $state ?? '—')
-                        ->color(fn ($state) => match ($state) {
-                            'Brouillon' => 'gray',
-                            'En cours' => 'primary',
-                            'Soumis' => 'warning',
-                            'Approuvé' => 'success',
-                            'Rejeté' => 'danger',
-                            'Clôturé' => 'success',
-                            default => 'gray',
-                        }),
+                        ->formatStateUsing(fn ($state) => DossierFormation::etatLabel($state))
+                        ->color(fn ($state) => DossierFormation::etatColor($state)),
 
                     Infolists\Components\TextEntry::make('no_dossier_edof')
                         ->label('N° dossier EDOF')
@@ -652,7 +587,7 @@ class DossierFormationResource extends Resource
     {
         return [
             'Client' => $record->personne?->nom_tiers ?? 'N/A',
-            'Statut' => $record->statut_formation ?? 'N/A',
+            'Statut' => DossierFormation::statutFormationLabel($record->statut_formation),
             'Montant CPF' => $record->montant_cpf ? number_format($record->montant_cpf, 2, ',', ' ').' €' : '0,00 €',
         ];
     }

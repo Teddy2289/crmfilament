@@ -7,6 +7,7 @@ use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRe
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\NsConseil\Resources\OpportuniteResource\Pages;
 use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers\AppelsRelationManager;
+use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Models\Opportunite;
 use App\Models\User;
 use App\Support\UsesResourcePermissions;
@@ -31,7 +32,7 @@ class OpportuniteResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-light-bulb';
 
-    protected static ?string $navigationGroup = 'Pipeline';
+    protected static ?string $navigationGroup = 'Suivi des dossiers';
 
     protected static ?string $navigationLabel = 'Opportunités';
 
@@ -94,9 +95,8 @@ class OpportuniteResource extends Resource
             Forms\Components\Section::make('Contact')
                 ->icon('heroicon-o-phone')
                 ->schema([
-                    Forms\Components\TextInput::make('telephone')
-                        ->label('Téléphone')
-                        ->tel(),
+                    PhoneNumberInput::make('telephone')
+                        ->label('Téléphone'),
 
                     Forms\Components\TextInput::make('email')
                         ->label('Email')
@@ -113,16 +113,15 @@ class OpportuniteResource extends Resource
                     Forms\Components\TextInput::make('interlocuteur_fonction')
                         ->label('Fonction'),
 
-                    Forms\Components\TextInput::make('interlocuteur_telephone')
-                        ->label('Tél. interlocuteur')
-                        ->tel(),
+                    PhoneNumberInput::make('interlocuteur_telephone')
+                        ->label('Tél. interlocuteur'),
 
                     Forms\Components\TextInput::make('interlocuteur_email')
                         ->label('Email interlocuteur')
                         ->email(),
                 ])->columns(3),
 
-            Forms\Components\Section::make('Pipeline')
+            Forms\Components\Section::make('Suivi des dossiers')
                 ->icon('heroicon-o-chart-bar')
                 ->schema([
                     Forms\Components\Select::make('statut')

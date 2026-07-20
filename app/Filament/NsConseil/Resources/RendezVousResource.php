@@ -8,6 +8,7 @@ use App\Filament\NsConseil\Resources\RendezVousResource\Pages\CreateRendezVous;
 use App\Filament\NsConseil\Resources\RendezVousResource\Pages\EditRendezVous;
 use App\Filament\NsConseil\Resources\RendezVousResource\Pages\ListRendezVous;
 use App\Filament\NsConseil\Resources\RendezVousResource\Pages\ViewRendezVous;
+use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Models\RendezVous;
 use App\Models\User;
 use App\Services\CreneauPropositionService;
@@ -132,9 +133,8 @@ class RendezVousResource extends Resource
                         ->label('Nom')
                         ->required(),
 
-                    Forms\Components\TextInput::make('interlocuteur_tel')
-                        ->label('Téléphone')
-                        ->tel(),
+                    PhoneNumberInput::make('interlocuteur_tel')
+                        ->label('Téléphone'),
 
                     Forms\Components\TextInput::make('interlocuteur_email')
                         ->label('Email')
