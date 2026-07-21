@@ -38,6 +38,7 @@ class MesPartenairesRecentWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('statut')
                     ->formatStateUsing(fn (OrganizationStatus $state) => $state->label())
+                    ->badge()
                     ->color(fn (OrganizationStatus $state) => $state->color())
                     ->icon(fn (OrganizationStatus $state) => $state->icon()),
 
