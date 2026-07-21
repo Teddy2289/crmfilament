@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Entreprise extends Model
@@ -42,8 +43,8 @@ class Entreprise extends Model
         return $this->hasMany(Partenaire::class);
     }
 
-    public function clients(): HasMany
+    public function clients(): HasManyThrough
     {
-        return $this->hasMany(Client::class);
+        return $this->hasManyThrough(Client::class, Partenaire::class, 'entreprise_id', 'partenaire_id');
     }
 }
