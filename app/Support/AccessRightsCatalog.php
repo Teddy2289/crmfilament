@@ -128,7 +128,7 @@ class AccessRightsCatalog
                 ],
             ],
             'groupe_telepros' => [
-                'label' => 'AOPIA - Groupes de télépros',
+                'label' => 'AOPIA - Groupes de téléprospecteurs',
                 'panel' => 'ns-conseil',
                 'permissions' => [
                     'groupe_telepros.view_any' => 'Lister',
@@ -427,7 +427,7 @@ class AccessRightsCatalog
                 ]),
             ],
             'groupe_telepros' => [
-                'label' => 'AOPIA - Groupes de télépros',
+                'label' => 'AOPIA - Groupes de téléprospecteurs',
                 'panel' => 'ns-conseil',
                 'fields' => static::fieldLabelsForModel(GroupeTelepro::class, [
                     'nom' => 'Nom',
