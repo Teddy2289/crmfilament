@@ -9,6 +9,7 @@ use App\Filament\Allopro\Resources\AffaireInterventionResource\Pages\EditAffaire
 use App\Filament\Allopro\Resources\AffaireInterventionResource\Pages\ListAffaireInterventions;
 use App\Filament\Allopro\Resources\AffaireInterventionResource\Pages\ViewAffaireIntervention;
 use App\Models\AffaireIntervention;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -19,7 +20,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class AffaireInterventionResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = AffaireIntervention::class;
+
+    protected static string $permissionPrefix = 'affaire_interventions';
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
 
@@ -479,8 +484,4 @@ class AffaireInterventionResource extends Resource
         ];
     }
 
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->hasAnyRole(['operateur_n1', 'responsable_plateau']) ?? false;
-    }
 }

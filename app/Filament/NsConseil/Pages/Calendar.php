@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Pages;
 use App\Filament\NsConseil\Widgets\CalendarWidget;
 use App\Models\RendezVous;
 use App\Services\GoogleCalendarService;
+use App\Support\AccessRightsCatalog;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -20,6 +21,16 @@ class Calendar extends Page
     protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.ns-conseil.pages.calendar';
+
+    public static function canAccess(): bool
+    {
+        return AccessRightsCatalog::userCan(auth()->user(), 'calendrier.view');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
 
     public bool $isGoogleConnected = false;
 

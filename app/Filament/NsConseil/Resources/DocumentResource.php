@@ -7,6 +7,7 @@ use App\Filament\NsConseil\Resources\DocumentResource\Pages;
 use App\Models\Document;
 use App\Models\Partenaire;
 use App\Models\Prospect;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -17,7 +18,11 @@ use Illuminate\Support\Facades\Storage;
 
 class DocumentResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = Document::class;
+
+    protected static string $permissionPrefix = 'documents';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
 

@@ -200,6 +200,7 @@ class AccessRightsCatalog
                 'label' => 'AlloPro - Fiche P2',
                 'panel' => 'allopro',
                 'permissions' => [
+                    'fiche_p2.view_any' => 'Lister',
                     'fiche_p2.create' => 'Créer',
                     'fiche_p2.view' => 'Voir',
                     'fiche_p2.update' => 'Modifier',
@@ -209,16 +210,21 @@ class AccessRightsCatalog
                 'label' => 'AlloPro - Artisans',
                 'panel' => 'allopro',
                 'permissions' => [
+                    'artisans.view_any' => 'Lister',
                     'artisans.view' => 'Voir',
+                    'artisans.create' => 'Créer',
                     'artisans.update' => 'Modifier',
+                    'artisans.delete' => 'Supprimer',
                 ],
             ],
             'reclamations' => [
                 'label' => 'AlloPro - Réclamations',
                 'panel' => 'allopro',
                 'permissions' => [
+                    'reclamations.view_any' => 'Lister',
                     'reclamations.view' => 'Voir',
                     'reclamations.create' => 'Créer',
+                    'reclamations.update' => 'Modifier',
                     'reclamations.valider' => 'Valider',
                 ],
             ],
@@ -226,6 +232,8 @@ class AccessRightsCatalog
                 'label' => 'AlloPro - Satisfaction',
                 'panel' => 'allopro',
                 'permissions' => [
+                    'rapports_satisfaction.view_any' => 'Lister',
+                    'rapports_satisfaction.view' => 'Voir',
                     'rapports_satisfaction.create' => 'Créer',
                 ],
             ],
@@ -242,6 +250,27 @@ class AccessRightsCatalog
                 'panel' => 'allopro',
                 'permissions' => [
                     'dashboard.temps_reel' => 'Voir le tableau de bord temps réel',
+                ],
+            ],
+            'calendrier' => [
+                'label' => 'AOPIA - Calendrier',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'calendrier.view' => 'Voir',
+                ],
+            ],
+            'statuts_appels_cse' => [
+                'label' => 'AOPIA - Statuts appels CSE',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'statuts_appels_cse.view' => 'Voir',
+                ],
+            ],
+            'workflow_prospection_cse' => [
+                'label' => 'AOPIA - Parcours prospection CSE',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'workflow_prospection_cse.view' => 'Voir',
                 ],
             ],
         ];
@@ -980,6 +1009,10 @@ class AccessRightsCatalog
             'reclamation',
             'rapport_satisfaction',
             'ticket',
+            'devis',
+            'facture',
+            'bon_de_commande',
+            'affaire_intervention',
         ])) {
             return 'allopro';
         }

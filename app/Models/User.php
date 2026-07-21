@@ -217,6 +217,16 @@ class User extends Authenticatable implements FilamentUser
         $this->update(['role_cache' => $role]);
     }
 
+    // Réaligne role_cache sur les rôles Spatie réellement assignés (à appeler après toute modification des rôles)
+    public function syncRoleCacheFromRoles(): void
+    {
+        $role = $this->roles()->pluck('name')->first();
+
+        if ($this->role_cache !== $role) {
+            $this->update(['role_cache' => $role]);
+        }
+    }
+
     // ── Méthodes métier ─────────────────────────────────────────────
     public function activer(): void
     {

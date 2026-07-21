@@ -17,6 +17,7 @@ use App\Filament\Shared\Actions\SendEmailAction;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Mail\BienvenuArtisanMail;
 use App\Models\Artisan;
+use App\Support\UsesResourcePermissions;
 use Illuminate\Support\Facades\Mail;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -25,11 +26,14 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 class ArtisanResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = Artisan::class;
+
+    protected static string $permissionPrefix = 'artisans';
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
 
@@ -376,19 +380,4 @@ class ArtisanResource extends Resource
         ];
     }
 
-    // ── Permissions par rôle ─────────────────────────────────────
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->hasAnyRole(['responsable_plateau', 'back_office']) ?? false;
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return auth()->user()?->hasAnyRole(['responsable_plateau', 'back_office']) ?? false;
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return auth()->user()?->hasRole('responsable_plateau') ?? false;
-    }
 }

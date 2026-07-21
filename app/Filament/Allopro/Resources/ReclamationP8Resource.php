@@ -6,6 +6,7 @@ use App\Enums\StatutReclamation;
 use App\Filament\Allopro\Resources\ReclamationP8Resource\Pages\ListReclamationP8s;
 use App\Filament\Allopro\Resources\ReclamationP8Resource\Pages\ViewReclamationP8;
 use App\Models\ReclamationP8;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\IconEntry;
@@ -20,7 +21,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ReclamationP8Resource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = ReclamationP8::class;
+
+    protected static string $permissionPrefix = 'reclamations';
 
     protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';
 

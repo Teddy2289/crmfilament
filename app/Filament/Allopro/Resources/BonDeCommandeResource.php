@@ -9,6 +9,7 @@ use App\Filament\Allopro\Resources\BonDeCommandeResource\Pages\ListBonDeCommande
 use App\Filament\Allopro\Resources\BonDeCommandeResource\Pages\ViewBonDeCommande;
 use App\Filament\Allopro\Resources\BonDeCommandeResource\RelationManagers\FactureRelationManager;
 use App\Models\BonDeCommande;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
@@ -22,7 +23,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class BonDeCommandeResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = BonDeCommande::class;
+
+    protected static string $permissionPrefix = 'bon_de_commandes';
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
@@ -446,8 +451,4 @@ class BonDeCommandeResource extends Resource
         ];
     }
 
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->hasAnyRole(['back_office', 'responsable_plateau']) ?? false;
-    }
 }

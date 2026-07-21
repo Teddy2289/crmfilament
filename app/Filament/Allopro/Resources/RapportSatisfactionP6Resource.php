@@ -9,6 +9,7 @@ use App\Filament\Allopro\Resources\RapportSatisfactionP6Resource\Pages\ViewRappo
 use App\Filament\Allopro\Resources\RapportSatisfactionP6Resource\RelationManagers\ReclamationRelationManager;
 use App\Models\RapportSatisfactionP6;
 use App\Models\Ticket;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -24,7 +25,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RapportSatisfactionP6Resource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = RapportSatisfactionP6::class;
+
+    protected static string $permissionPrefix = 'rapports_satisfaction';
 
     protected static ?string $navigationIcon = 'heroicon-o-star';
 
@@ -430,8 +435,4 @@ class RapportSatisfactionP6Resource extends Resource
         ];
     }
 
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->hasAnyRole(['back_office', 'responsable_plateau']) ?? false;
-    }
 }

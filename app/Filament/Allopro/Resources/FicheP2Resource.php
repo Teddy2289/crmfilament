@@ -9,6 +9,7 @@ use App\Enums\StatutOccupant;
 use App\Enums\TypeLogement;
 use App\Filament\Allopro\Resources\FicheP2Resource\Pages;
 use App\Models\FicheP2;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -18,7 +19,11 @@ use Filament\Tables\Table;
 
 class FicheP2Resource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = FicheP2::class;
+
+    protected static string $permissionPrefix = 'fiche_p2';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 

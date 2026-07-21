@@ -10,6 +10,7 @@ use App\Filament\Allopro\Resources\DevisResource\Pages\ViewDevis;
 use App\Filament\Allopro\Resources\DevisResource\RelationManagers\BonDeCommandeRelationManager;
 use App\Models\Devis;
 use App\Models\Ticket;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
@@ -24,7 +25,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DevisResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = Devis::class;
+
+    protected static string $permissionPrefix = 'devis';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
@@ -481,8 +486,4 @@ class DevisResource extends Resource
         ];
     }
 
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->hasAnyRole(['back_office', 'responsable_plateau']) ?? false;
-    }
 }

@@ -8,6 +8,7 @@ use App\Filament\Allopro\Resources\FactureResource\Pages\CreateFacture;
 use App\Filament\Allopro\Resources\FactureResource\Pages\ListFactures;
 use App\Filament\Allopro\Resources\FactureResource\Pages\ViewFacture;
 use App\Models\Facture;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
@@ -21,7 +22,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class FactureResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = Facture::class;
+
+    protected static string $permissionPrefix = 'factures';
 
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
 
@@ -480,8 +485,4 @@ class FactureResource extends Resource
         ];
     }
 
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->hasAnyRole(['back_office', 'responsable_plateau']) ?? false;
-    }
 }

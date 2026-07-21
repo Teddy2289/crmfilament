@@ -4,6 +4,7 @@ namespace App\Filament\Allopro\Resources;
 
 use App\Filament\Allopro\Resources\ContactPartenaireResource\Pages;
 use App\Models\ContactPartenaire;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,7 +13,11 @@ use Filament\Tables\Table;
 
 class ContactPartenaireResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = ContactPartenaire::class;
+
+    protected static string $permissionPrefix = 'contact_partenaires';
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 

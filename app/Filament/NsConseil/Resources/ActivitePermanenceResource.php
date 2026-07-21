@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\ActivitePermanenceResource\Pages;
 use App\Models\ActivitePermanence;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,7 +13,11 @@ use Filament\Tables\Table;
 
 class ActivitePermanenceResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = ActivitePermanence::class;
+
+    protected static string $permissionPrefix = 'activite_permanences';
 
     protected static ?string $navigationIcon = 'heroicon-o-clock';
 
