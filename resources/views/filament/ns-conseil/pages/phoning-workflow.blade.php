@@ -1686,20 +1686,49 @@ $tentativesActuelles = $this->getTentativesAppel();
     @push('scripts')
     <script>
         (function() {
-            function loadRingoverSdk(callback) {
+            const RINGOVER_SDK_URL = 'https://webcdn.ringover.com/resources/SDK/1.1.3/ringover-sdk.js';
+            const RINGOVER_LOAD_TIMEOUT_MS = 8000;
+
+            function loadRingoverSdk(onReady, onError) {
                 if (window.RingoverSDK) {
-                    callback();
+                    onReady();
                     return;
                 }
+
                 let script = document.getElementById('ringover-sdk-script');
+                if (script && script.dataset.failed === '1') {
+                    // tentative précédente échouée : on repart d'un script propre
+                    script.remove();
+                    script = null;
+                }
+
                 if (script) {
-                    script.addEventListener('load', callback);
+                    script.addEventListener('load', onReady);
+                    script.addEventListener('error', onError);
                     return;
                 }
+
                 script = document.createElement('script');
                 script.id = 'ringover-sdk-script';
-                script.src = 'https://webcdn.ringover.com/resources/SDK/1.1.3/ringover-sdk.js';
-                script.onload = callback;
+
+                // Certains bloqueurs/proxys avalent la requête sans jamais déclencher
+                // 'error' (pas de réponse réseau) : ce filet de sécurité évite un widget
+                // qui reste silencieusement vide indéfiniment.
+                const timeout = setTimeout(() => {
+                    script.dataset.failed = '1';
+                    onError();
+                }, RINGOVER_LOAD_TIMEOUT_MS);
+
+                script.onload = () => {
+                    clearTimeout(timeout);
+                    onReady();
+                };
+                script.onerror = () => {
+                    clearTimeout(timeout);
+                    script.dataset.failed = '1';
+                    onError();
+                };
+                script.src = RINGOVER_SDK_URL;
                 document.head.appendChild(script);
             }
 
@@ -1719,19 +1748,47 @@ $tentativesActuelles = $this->getTentativesAppel();
                 }
             }
 
-            function initRingoverWidget() {
+            function showRingoverError(container) {
+                container.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:1.5rem; text-align:center; background:rgb(249 250 251);">
+                        <div style="width:3rem; height:3rem; border-radius:9999px; background:rgb(254 226 226); display:flex; align-items:center; justify-content:center; margin-bottom:0.75rem;">
+                            <svg style="width:1.5rem;height:1.5rem;color:rgb(220 38 38);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                            </svg>
+                        </div>
+                        <p style="font-weight:600; color:rgb(31 41 55); margin:0 0 0.375rem; font-size:0.875rem;">Ringover n'a pas pu se charger</p>
+                        <p style="font-size:0.75rem; color:rgb(107 114 128); margin:0 0 1rem; max-width:22rem; line-height:1.4;">
+                            Vérifiez votre connexion, désactivez un éventuel bloqueur de pub pour ce site, et assurez-vous d'être connecté(e) à Ringover — puis réessayez.
+                            En navigation privée, la session Ringover ne peut pas toujours être conservée.
+                        </p>
+                        <button type="button" id="ringover-retry-btn" style="padding:0.5rem 1.25rem; background:rgb(37 99 235); color:white; border:none; border-radius:0.375rem; font-weight:600; font-size:0.8125rem; cursor:pointer;">
+                            ↻ Réessayer
+                        </button>
+                    </div>
+                `;
+                const retryBtn = container.querySelector('#ringover-retry-btn');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', () => {
+                        container.innerHTML = '';
+                        initRingoverWidget(true);
+                    });
+                }
+            }
+
+            function initRingoverWidget(forceRetry) {
                 const container = document.getElementById('ringover-embed-phoning');
                 // sécurité : on ne fait rien si on n'est pas sur cette page
-                if (!container) return; 
+                if (!container) return;
 
-                if (window.ringoverPhone && window.ringoverPhone.__mountedIn === container) {
+                if (!forceRetry && window.ringoverPhone && window.ringoverPhone.__mountedIn === container) {
                     // déjà monté ici, rien à refaire
-                    return; 
+                    return;
                 }
 
                 loadRingoverSdk(() => {
                      // au cas où une instance orpheline traînait
                     destroyRingoverWidget();
+                    container.innerHTML = '';
 
                     window.ringoverPhone = new window.RingoverSDK({
                         type: 'relative',
@@ -1747,6 +1804,8 @@ $tentativesActuelles = $this->getTentativesAppel();
                     window.ringoverPhone.on('dialerReady', () => {
                         window.ringoverPhone.__ready = true;
                     });
+                }, () => {
+                    showRingoverError(container);
                 });
             }
 
@@ -1766,8 +1825,8 @@ $tentativesActuelles = $this->getTentativesAppel();
             };
 
             // Montage à l'arrivée sur cette page (chargement direct ou navigation SPA)
-            document.addEventListener('DOMContentLoaded', initRingoverWidget);
-            document.addEventListener('livewire:navigated', initRingoverWidget);
+            document.addEventListener('DOMContentLoaded', () => initRingoverWidget(false));
+            document.addEventListener('livewire:navigated', () => initRingoverWidget(false));
 
             // Démontage dès qu'on quitte n'importe quelle page (no-op si rien n'est monté)
             document.addEventListener('livewire:navigating', destroyRingoverWidget);
