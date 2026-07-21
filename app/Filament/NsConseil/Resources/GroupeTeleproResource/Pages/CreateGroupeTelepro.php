@@ -3,7 +3,6 @@
 namespace App\Filament\NsConseil\Resources\GroupeTeleproResource\Pages;
 
 use App\Filament\NsConseil\Resources\GroupeTeleproResource;
-use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateGroupeTelepro extends CreateRecord
@@ -22,8 +21,6 @@ class CreateGroupeTelepro extends CreateRecord
 
     protected function afterCreate(): void
     {
-        if ($this->membres !== []) {
-            User::whereIn('id', $this->membres)->update(['groupe_telepro_id' => $this->record->id]);
-        }
+        $this->record->membres()->sync($this->membres);
     }
 }

@@ -59,11 +59,11 @@ class UserResource extends Resource
                     Forms\Components\TextInput::make('secteur')
                         ->label('Secteur')->nullable(),
 
-                    Forms\Components\Select::make('groupe_telepro_id')
-                        ->label('Groupe de téléprospection')
-                        ->relationship('groupeTelepro', 'nom')
+                    Forms\Components\Select::make('groupesTelepro')
+                        ->label('Groupes de téléprospection')
+                        ->relationship('groupesTelepro', 'nom')
+                        ->multiple()
                         ->searchable()
-                        ->nullable()
                         ->placeholder('Aucun groupe'),
 
                     Forms\Components\Toggle::make('actif')
@@ -166,8 +166,10 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('secteur')
                     ->label('Secteur')->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('groupeTelepro.nom')
-                    ->label('Groupe télépro')
+                Tables\Columns\TextColumn::make('groupesTelepro.nom')
+                    ->label('Groupes télépro')
+                    ->badge()
+                    ->separator(',')
                     ->placeholder('—')
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -306,7 +308,7 @@ class UserResource extends Resource
                     TextEntry::make('prenom')->label('Prénom')->weight('bold'),
                     TextEntry::make('email')->label('Email')->copyable()->icon('heroicon-o-envelope'),
                     TextEntry::make('secteur')->label('Secteur')->placeholder('—'),
-                    TextEntry::make('groupeTelepro.nom')->label('Groupe télépro')->placeholder('—'),
+                    TextEntry::make('groupesTelepro.nom')->label('Groupes télépro')->badge()->placeholder('—'),
                     IconEntry::make('actif')->label('Actif')->boolean(),
                     TextEntry::make('created_at')->label('Créé le')->date('d/m/Y H:i'),
                     TextEntry::make('last_login_at')->label('Dernière connexion')->since()->placeholder('Jamais'),

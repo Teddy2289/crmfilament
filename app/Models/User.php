@@ -26,7 +26,6 @@ class User extends Authenticatable implements FilamentUser
         'secteur',
         'actif',
         'role_cache',
-        'groupe_telepro_id',
         'google_token',
         'ringover_user_id',
         'ringover_email',
@@ -317,9 +316,9 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Ticket::class, 'operateur_id');
     }
 
-    public function groupeTelepro()
+    public function groupesTelepro()
     {
-        return $this->belongsTo(GroupeTelepro::class, 'groupe_telepro_id');
+        return $this->belongsToMany(GroupeTelepro::class, 'groupe_telepro_user')->withTimestamps();
     }
 
     public function prospectsTeleprospecteur()

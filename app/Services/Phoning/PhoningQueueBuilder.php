@@ -12,17 +12,16 @@ use App\Models\StatutPhoning;
 
 /**
  * Builds and sanitizes the phoning call queue: assembles the default queue
- * from a user's active campaigns, drops entries that became invalid or
- * ineligible since being queued, and prioritizes CSE/rappel entries
- * (workflow v2 rule: overdue or same-day rappels jump to the front).
+ * from a user's active campaigns (interleaved round-robin across campaigns
+ * so none gets exhausted before the others are ever reached), drops entries
+ * that became invalid or ineligible since being queued, and prioritizes
+ * CSE/rappel entries (workflow v2 rule: overdue or same-day rappels jump to
+ * the front).
  */
 class PhoningQueueBuilder
 {
     public function buildDefaultQueue(int $userId, ?int $campagneId): array
     {
-        $queue = [];
-        $seen = [];
-
         $query = CampagnePhoning::active()->forUser($userId);
 
         // Si une campagne spécifique est demandée, ne charger que celle-là
@@ -30,14 +29,46 @@ class PhoningQueueBuilder
             $query->where('id', $campagneId);
         }
 
-        $campagnes = $query->get();
+        $listesParCampagne = $query->get()
+            ->map(fn (CampagnePhoning $campagne) => $campagne->getContactsQueue())
+            ->filter(fn (array $contacts) => $contacts !== [])
+            ->values()
+            ->all();
 
-        foreach ($campagnes as $campagne) {
-            foreach ($campagne->getContactsQueue() as $contact) {
-                $key = $contact['type'].'_'.$contact['id'];
-                if (! isset($seen[$key])) {
+        return $this->interleave($listesParCampagne);
+    }
+
+    /**
+     * Alterne les contacts des différentes campagnes en tour de rôle (round-robin) :
+     * un contact de la campagne 1, un de la campagne 2, etc., pour qu'un
+     * téléprospecteur affecté à plusieurs campagnes ne reste jamais bloqué sur
+     * la première jusqu'à épuisement avant de voir les suivantes.
+     */
+    protected function interleave(array $listesParCampagne): array
+    {
+        $queue = [];
+        $seen = [];
+        $curseurs = array_fill(0, count($listesParCampagne), 0);
+        $restant = true;
+
+        while ($restant) {
+            $restant = false;
+
+            foreach ($listesParCampagne as $i => $liste) {
+                while ($curseurs[$i] < count($liste)) {
+                    $contact = $liste[$curseurs[$i]];
+                    $curseurs[$i]++;
+
+                    $key = $contact['type'].'_'.$contact['id'];
+                    if (isset($seen[$key])) {
+                        continue;
+                    }
+
                     $seen[$key] = true;
                     $queue[] = $contact;
+                    $restant = true;
+
+                    break;
                 }
             }
         }
