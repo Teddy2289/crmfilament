@@ -49,6 +49,7 @@ class CampagnePhoningQueueTest extends TestCase
             'nom' => 'CSE Appelable',
             'statut' => 'AC',
             'teleprospecteur_id' => $user->id,
+            'commercial_id' => null,
         ]);
 
         $ko = Prospect::factory()->create([
@@ -110,9 +111,13 @@ class CampagnePhoningQueueTest extends TestCase
         $groupeA = GroupeTelepro::create(['nom' => 'Groupe 44-45-75', 'actif' => true]);
         $groupeB = GroupeTelepro::create(['nom' => 'Groupe 60-80', 'actif' => true]);
 
-        $membreGroupeA = User::factory()->create(['groupe_telepro_id' => $groupeA->id]);
-        $membreGroupeB = User::factory()->create(['groupe_telepro_id' => $groupeB->id]);
-        $sansGroupe = User::factory()->create(['groupe_telepro_id' => null]);
+        $membreGroupeA = User::factory()->create();
+        $membreGroupeA->groupesTelepro()->attach($groupeA->id);
+
+        $membreGroupeB = User::factory()->create();
+        $membreGroupeB->groupesTelepro()->attach($groupeB->id);
+
+        $sansGroupe = User::factory()->create();
 
         $campagneGroupeA = CampagnePhoning::create([
             'nom' => 'Campagne 75',
@@ -144,6 +149,38 @@ class CampagnePhoningQueueTest extends TestCase
         $this->assertTrue(
             CampagnePhoning::query()->forUser($sansGroupe->id)->whereKey($campagneOuverte->id)->exists()
         );
+    }
+
+    #[Test]
+    public function a_user_belonging_to_two_groups_sees_campaigns_from_both(): void
+    {
+        $groupeA = GroupeTelepro::create(['nom' => 'Groupe 44', 'actif' => true]);
+        $groupeB = GroupeTelepro::create(['nom' => 'Groupe 45', 'actif' => true]);
+
+        $membreDesDeux = User::factory()->create();
+        $membreDesDeux->groupesTelepro()->attach([$groupeA->id, $groupeB->id]);
+
+        $campagneA = CampagnePhoning::create([
+            'nom' => 'Campagne A',
+            'statut' => 'active',
+            'type_entite' => 'prospects',
+            'groupe_telepro_id' => $groupeA->id,
+        ]);
+
+        $campagneB = CampagnePhoning::create([
+            'nom' => 'Campagne B',
+            'statut' => 'active',
+            'type_entite' => 'prospects',
+            'groupe_telepro_id' => $groupeB->id,
+        ]);
+
+        $this->assertTrue(
+            CampagnePhoning::query()->forUser($membreDesDeux->id)->whereKey($campagneA->id)->exists()
+        );
+        $this->assertTrue(
+            CampagnePhoning::query()->forUser($membreDesDeux->id)->whereKey($campagneB->id)->exists()
+        );
+        $this->assertCount(2, $membreDesDeux->groupesTelepro);
     }
 
     private function userWithFullAccess(): User

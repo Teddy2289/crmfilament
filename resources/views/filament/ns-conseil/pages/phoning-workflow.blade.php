@@ -861,7 +861,7 @@ $tentativesActuelles = $this->getTentativesAppel();
     $info = $this->getContactInfo();
     $tel = $info['telephone'] ?? null;
     $teleprospecteurs = $this->getTeleprospecteurs();
-    $nbEnFile = count($this->contactQueue);
+    $nbEnFile = $this->getContactsRestantsCount();
     $progress = $this->progress;
     $statutsGroupes = $this->getStatutsPhoningGroupes();
     $options = $this->getStatutsPhoning();
@@ -914,11 +914,6 @@ $tentativesActuelles = $this->getTentativesAppel();
                 style="padding:0.25rem 0.75rem; background:rgb(229 231 235); border:none; border-radius:0.375rem; font-size:0.75rem; cursor:pointer; white-space:nowrap;">
                 🔄 Rafraîchir
             </button>
-            @if ($currentCampagneId)
-            <span style="font-size:0.6875rem; color:rgb(107 114 128); white-space:nowrap;">
-                📋 Campagne #{{ $currentCampagneId }}
-            </span>
-            @endif
         </div>
 
         {{-- RÉSULTATS DE RECHERCHE --}}

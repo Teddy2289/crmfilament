@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -24,9 +25,9 @@ class GroupeTelepro extends Model
 
     // ── Relations ────────────────────────────────────────────────────
 
-    public function membres(): HasMany
+    public function membres(): BelongsToMany
     {
-        return $this->hasMany(User::class, 'groupe_telepro_id');
+        return $this->belongsToMany(User::class, 'groupe_telepro_user')->withTimestamps();
     }
 
     public function campagnes(): HasMany

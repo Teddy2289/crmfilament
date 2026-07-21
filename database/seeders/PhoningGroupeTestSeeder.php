@@ -61,7 +61,7 @@ class PhoningGroupeTestSeeder extends Seeder
                     ]
                 );
 
-                $user->update(['groupe_telepro_id' => $groupe->id]);
+                $user->groupesTelepro()->syncWithoutDetaching([$groupe->id]);
                 $user->syncRoles(['teleprospecteur']);
 
                 $this->command->line("  ✓ Télépro {$t['prenom']} {$t['nom']} ({$t['email']} / changeme123)");

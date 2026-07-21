@@ -125,6 +125,14 @@ class PhoningWorkflow extends Page
 
     public ?int $currentCampagneId = null;
 
+    /**
+     * Filtre de campagne explicitement choisi par l'utilisateur (via "Choisir
+     * une campagne" ou le paramètre d'URL), distinct de $currentCampagneId qui
+     * lui reflète la campagne d'origine du contact affiché à l'instant (et
+     * change à chaque appel en mode "toutes les campagnes" mélangées).
+     */
+    public ?int $campagneFiltreId = null;
+
     // ── Mount ────────────────────────────────────────────────────────
     public function mount(): void
     {
@@ -138,6 +146,7 @@ class PhoningWorkflow extends Page
         // Filtrer sur une campagne spécifique si passée en URL
         if ($campagneId = request()->query('campagne_id')) {
             $this->currentCampagneId = (int) $campagneId;
+            $this->campagneFiltreId = (int) $campagneId;
         }
 
         $this->loadQueue();
@@ -288,7 +297,7 @@ class PhoningWorkflow extends Page
 
     protected function buildDefaultQueue(int $userId): array
     {
-        return app(PhoningQueueBuilder::class)->buildDefaultQueue($userId, $this->currentCampagneId);
+        return app(PhoningQueueBuilder::class)->buildDefaultQueue($userId, $this->campagneFiltreId);
     }
 
     /**
@@ -947,6 +956,7 @@ class PhoningWorkflow extends Page
     public function selectCampagne(int $campagneId): void
     {
         $this->currentCampagneId = $campagneId;
+        $this->campagneFiltreId = $campagneId;
         $this->completed = 0;
         $this->loadQueue();
         $this->loadNextContact();
@@ -962,6 +972,7 @@ class PhoningWorkflow extends Page
     public function clearCampagne(): void
     {
         $this->currentCampagneId = null;
+        $this->campagneFiltreId = null;
         $this->completed = 0;
         $this->loadQueue();
         $this->loadNextContact();
@@ -997,6 +1008,27 @@ class PhoningWorkflow extends Page
             'progression' => $stats['progression'],
             'total_appels' => $stats['total_appels'],
         ];
+    }
+
+    /**
+     * Nombre exact de contacts encore appelables (ignore ceux déjà traités
+     * définitivement, mais garde les "non répondu" et assimilés puisqu'ils
+     * restent à rappeler) — recalculé en base à chaque affichage plutôt que
+     * déduit de la taille de $contactQueue, qui elle diminue de façon
+     * irréversible au fil des appels de la session en cours.
+     */
+    public function getContactsRestantsCount(): int
+    {
+        if ($this->campagneFiltreId) {
+            return CampagnePhoning::find($this->campagneFiltreId)?->countQueueContacts() ?? 0;
+        }
+
+        $userId = $this->supervisedUserId ?? Auth::id();
+
+        return CampagnePhoning::active()
+            ->forUser($userId)
+            ->get()
+            ->sum(fn (CampagnePhoning $campagne) => $campagne->countQueueContacts());
     }
 
     public function getCampagnesDisponibles(): array

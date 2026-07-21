@@ -68,10 +68,10 @@ class GroupeTeleproResource extends Resource
                         ->options(fn () => static::membresOptions())
                         ->searchable()
                         ->columnSpanFull()
-                        ->helperText('Un téléprospecteur sélectionné ici est retiré de son groupe précédent, le cas échéant.')
+                        ->helperText('Un téléprospecteur peut appartenir à plusieurs groupes en même temps.')
                         ->afterStateHydrated(function (Forms\Components\Select $component, ?GroupeTelepro $record) {
                             if ($record) {
-                                $component->state($record->membres()->pluck('id')->toArray());
+                                $component->state($record->membres()->pluck('users.id')->toArray());
                             }
                         }),
                 ]),

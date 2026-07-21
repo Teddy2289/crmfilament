@@ -195,16 +195,17 @@ class CampagnePhoning extends Model
 
     /**
      * Visible si : ouverte à tous (user_id et groupe_telepro_id null),
-     * assignée directement à l'utilisateur, ou assignée à son groupe.
+     * assignée directement à l'utilisateur, ou assignée à l'un de ses groupes
+     * (un téléprospecteur peut appartenir à plusieurs groupes).
      */
     public function scopeForUser(Builder $query, int $userId): Builder
     {
-        $groupeId = User::whereKey($userId)->value('groupe_telepro_id');
+        $groupeIds = User::find($userId)?->groupesTelepro()->pluck('groupes_telepro.id') ?? collect();
 
-        return $query->where(function ($q) use ($userId, $groupeId) {
+        return $query->where(function ($q) use ($userId, $groupeIds) {
             $q->where(fn ($q2) => $q2->whereNull('user_id')->whereNull('groupe_telepro_id'))
                 ->orWhere('user_id', $userId)
-                ->when($groupeId, fn ($q2) => $q2->orWhere('groupe_telepro_id', $groupeId));
+                ->when($groupeIds->isNotEmpty(), fn ($q2) => $q2->orWhereIn('groupe_telepro_id', $groupeIds));
         });
     }
 
