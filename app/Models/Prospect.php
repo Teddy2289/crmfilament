@@ -22,6 +22,8 @@ class Prospect extends Model
         'statut' => ProspectStatut::class,
         'date_premier_contact' => 'date',
         'rappel_planifie_at' => 'datetime',
+        'difficile' => 'boolean',
+        'difficile_at' => 'datetime',
         'qf_valide' => 'boolean',
         'qf_valide_at' => 'datetime',
         'nb_salaries' => 'integer',
@@ -52,6 +54,8 @@ class Prospect extends Model
         'commercial_id',
         'date_premier_contact',
         'rappel_planifie_at',
+        'difficile',
+        'difficile_at',
         'interlocuteur_nom',
         'interlocuteur_prenom',
         'interlocuteur_fonction',
@@ -338,6 +342,23 @@ class Prospect extends Model
         $this->update(['rappel_planifie_at' => null]);
     }
 
+    public function marquerDifficile(): void
+    {
+        if ($this->difficile) {
+            return;
+        }
+
+        $this->update([
+            'difficile' => true,
+            'difficile_at' => now(),
+        ]);
+    }
+
+    public function retirerDifficile(): void
+    {
+        $this->update(['difficile' => false, 'difficile_at' => null]);
+    }
+
     public function validerQF(int $userId): void
     {
         $this->update([
@@ -414,6 +435,24 @@ class Prospect extends Model
         return $query->whereNull('date_premier_contact');
     }
 
+    /**
+     * Fiches jamais appelées : aucun appel enregistré, dossier non finalisé.
+     */
+    public function scopeVierges($query): Builder
+    {
+        return $query->whereDoesntHave('appels')
+            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value]);
+    }
+
+    /**
+     * Fiches déjà appelées au moins une fois mais pas encore finalisées (ni KO ni QF).
+     */
+    public function scopeEnCoursDeTraitement($query): Builder
+    {
+        return $query->whereHas('appels')
+            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value]);
+    }
+
     public function scopeRappelPlanifie($query): Builder
     {
         return $query->whereNotNull('rappel_planifie_at')
@@ -425,6 +464,11 @@ class Prospect extends Model
         return $query->whereNotNull('rappel_planifie_at')
             ->where('rappel_planifie_at', '<', now())
             ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value]);
+    }
+
+    public function scopeDifficiles($query): Builder
+    {
+        return $query->where('difficile', true);
     }
 
     public function scopeAReponsePositive($query): Builder

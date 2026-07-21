@@ -4,12 +4,13 @@
  * Paramètres CRM — remplace les valeurs statiques de config/aopia.php.
  */
 return [
-    ['groupe' => 'prospection', 'cle' => 'max_standard_attempts', 'valeur' => '3', 'type' => 'int', 'label' => 'Tentatives max au standard', 'description' => 'Nombre de tentatives NRP/FAX avant passage STD-NR', 'ordre' => 1],
+    ['groupe' => 'prospection', 'cle' => 'max_standard_attempts', 'valeur' => '3', 'type' => 'int', 'label' => 'Tentatives max au standard', 'description' => 'Nombre de tentatives NRP/FAX avant passage STD-NR et marquage difficile', 'ordre' => 1],
     ['groupe' => 'prospection', 'cle' => 'std_nr_reminder_days', 'valeur' => '2', 'type' => 'int', 'label' => 'Relance STD-NR (jours)', 'description' => 'Délai de rappel après STD-NR', 'ordre' => 2],
-    ['groupe' => 'prospection', 'cle' => 'rpc_delay_hours', 'valeur' => '48', 'type' => 'int', 'label' => 'Délai RPC (heures)', 'description' => 'Délai avant relance RPC sans date', 'ordre' => 3],
-    ['groupe' => 'prospection', 'cle' => 'cse_ni_reminder_days', 'valeur' => '7', 'type' => 'int', 'label' => 'Relance CSE-NI (jours)', 'description' => 'Rappel commercial après élu non intéressé', 'ordre' => 4],
-    ['groupe' => 'prospection', 'cle' => 'bloc_reminder_days', 'valeur' => '2', 'type' => 'int', 'label' => 'Relance BLOC (jours)', 'description' => 'Rappel après blocage standard', 'ordre' => 5],
-    ['groupe' => 'prospection', 'cle' => 'ringover_rule', 'valeur' => 'DEP_XX + tag statut obligatoires par appel', 'type' => 'string', 'label' => 'Règle Ringover', 'description' => 'Règle d\'or tags téléphonie', 'ordre' => 6],
+    ['groupe' => 'prospection', 'cle' => 'retry_reminder_hours', 'valeur' => '3', 'type' => 'int', 'label' => 'Relance tentative infructueuse (heures)', 'description' => 'Délai avant nouveau rappel auto entre 2 tentatives (avant le seuil difficile)', 'ordre' => 3],
+    ['groupe' => 'prospection', 'cle' => 'rpc_delay_hours', 'valeur' => '48', 'type' => 'int', 'label' => 'Délai RPC (heures)', 'description' => 'Délai avant relance RPC sans date', 'ordre' => 4],
+    ['groupe' => 'prospection', 'cle' => 'cse_ni_reminder_days', 'valeur' => '7', 'type' => 'int', 'label' => 'Relance CSE-NI (jours)', 'description' => 'Rappel commercial après élu non intéressé', 'ordre' => 5],
+    ['groupe' => 'prospection', 'cle' => 'bloc_reminder_days', 'valeur' => '2', 'type' => 'int', 'label' => 'Relance BLOC (jours)', 'description' => 'Rappel après blocage standard', 'ordre' => 6],
+    ['groupe' => 'prospection', 'cle' => 'ringover_rule', 'valeur' => 'DEP_XX + tag statut obligatoires par appel', 'type' => 'string', 'label' => 'Règle Ringover', 'description' => 'Règle d\'or tags téléphonie', 'ordre' => 7],
 
     ['groupe' => 'qf', 'cle' => 'minimum_employee_count', 'valeur' => '12', 'type' => 'int', 'label' => 'Effectif minimum QF', 'description' => 'Seuil salariés pour qualification', 'ordre' => 1],
     ['groupe' => 'qf', 'cle' => 'team_leader_roles', 'valeur' => '["team_leader","administrateur","super_admin"]', 'type' => 'json', 'label' => 'Rôles validateurs QF', 'description' => 'Profils autorisés à valider le statut QF', 'ordre' => 2],

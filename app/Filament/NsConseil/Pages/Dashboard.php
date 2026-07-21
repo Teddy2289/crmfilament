@@ -2,6 +2,7 @@
 
 namespace App\Filament\NsConseil\Pages;
 
+use App\Filament\NsConseil\Widgets\ActiviteTraitementWidget;
 use App\Filament\NsConseil\Widgets\CommercialAgendaWidget;
 use App\Filament\NsConseil\Widgets\CommercialKpiWidget;
 use App\Filament\NsConseil\Widgets\DirectionDerniersPartenairesWidget;
@@ -67,6 +68,7 @@ class Dashboard extends BaseDashboard
 
         // Téléprospecteur
         if ($user->hasRoleCache('teleprospecteur') || $user->hasRoleCache('superviseur') || $user->hasRoleCache('admin') || $user->isSuperAdmin()) {
+            $widgets[] = ActiviteTraitementWidget::class;
             $widgets[] = ProspectionKpiWidget::class;
             $widgets[] = ProspectionStatutsChart::class;
             $widgets[] = RappelsDuJourWidget::class;
@@ -86,6 +88,9 @@ class Dashboard extends BaseDashboard
 
     public function getColumns(): int|array
     {
-        return 1;
+        return [
+            'default' => 1,
+            'lg' => 2,
+        ];
     }
 }

@@ -636,8 +636,13 @@ class PhoningWorkflow extends Page
             if ($tentatives >= $max) {
                 $stdNr = ProspectStatut::tryFrom('STD_NR') ?? ProspectStatut::STD_NR;
                 $prospect->changerStatut($stdNr, "{$max} tentatives sans réponse");
+                $prospect->marquerDifficile();
                 $jours = (int) app(CrmSettingsService::class)->get('prospection.std_nr_reminder_days', 2);
                 $prospect->programmerRappel(now()->addDays($jours));
+            } else {
+                // Fiche encore sous le seuil : nouvelle tentative auto après un délai court
+                $heures = (int) app(CrmSettingsService::class)->get('prospection.retry_reminder_hours', 3);
+                $prospect->programmerRappel(now()->addHours($heures));
             }
         }
     }
