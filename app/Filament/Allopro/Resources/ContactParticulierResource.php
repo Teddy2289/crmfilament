@@ -6,6 +6,7 @@ use App\Enums\StatutOccupant;
 use App\Enums\TypeLogement;
 use App\Filament\Allopro\Resources\ContactParticulierResource\Pages;
 use App\Models\ContactParticulier;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,7 +15,11 @@ use Filament\Tables\Table;
 
 class ContactParticulierResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = ContactParticulier::class;
+
+    protected static string $permissionPrefix = 'contact_particuliers';
 
     protected static ?string $navigationIcon = 'heroicon-o-user';
 

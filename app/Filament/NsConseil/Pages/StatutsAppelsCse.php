@@ -2,6 +2,7 @@
 
 namespace App\Filament\NsConseil\Pages;
 
+use App\Support\AccessRightsCatalog;
 use Filament\Pages\Page;
 
 class StatutsAppelsCse extends Page
@@ -19,4 +20,14 @@ class StatutsAppelsCse extends Page
     protected static string $view = 'filament.ns-conseil.pages.statuts-appels-cse';
 
     protected static ?string $slug = 'statuts-appels-cse';
+
+    public static function canAccess(): bool
+    {
+        return AccessRightsCatalog::userCan(auth()->user(), 'statuts_appels_cse.view');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\CustomFieldResource\Pages;
 use App\Models\CustomField;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,7 +14,11 @@ use Filament\Tables\Table;
 
 class CustomFieldResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = CustomField::class;
+
+    protected static string $permissionPrefix = 'custom_fields';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 

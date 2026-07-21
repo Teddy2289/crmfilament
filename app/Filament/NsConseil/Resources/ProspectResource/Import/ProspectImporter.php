@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
+use Spatie\Permission\Models\Role;
 
 class ProspectImporter
 {
@@ -574,6 +575,9 @@ class ProspectImporter
         );
 
         if ($user->wasRecentlyCreated) {
+            Role::firstOrCreate(['name' => $roleCacheSiNouveau, 'guard_name' => 'web']);
+            $user->assignRole($roleCacheSiNouveau);
+
             $label = User::ROLES[$roleCacheSiNouveau] ?? $roleCacheSiNouveau;
             $this->rowWarnings[] = "Info : \"{$name}\" introuvable en base — nouveau compte {$label} "
                 ."créé automatiquement (#{$user->id}, email placeholder, compte inactif) — à vérifier/compléter manuellement.";

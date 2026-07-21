@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\EmailTemplateResource\Pages;
 use App\Models\EmailTemplate;
+use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,7 +13,11 @@ use Filament\Tables\Table;
 
 class EmailTemplateResource extends Resource
 {
+    use UsesResourcePermissions;
+
     protected static ?string $model = EmailTemplate::class;
+
+    protected static string $permissionPrefix = 'email_templates';
     protected static ?string $navigationIcon = 'heroicon-o-envelope-open';
     protected static ?string $navigationGroup = 'Communication';
     protected static ?string $navigationLabel = 'Modèles d\'e-mail';

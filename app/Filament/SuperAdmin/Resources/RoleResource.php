@@ -44,6 +44,13 @@ class RoleResource extends Resource
         'rapports',
         'document_knowledges',
         'statut_phonings',
+        'activite_permanences',
+        'custom_fields',
+        'documents',
+        'email_templates',
+        'calendrier',
+        'statuts_appels_cse',
+        'workflow_prospection_cse',
     ];
 
     private const ALLOPRO_MODULES = [
@@ -54,6 +61,11 @@ class RoleResource extends Resource
         'rapports_satisfaction',
         'prospection_artisans',
         'dashboard',
+        'devis',
+        'factures',
+        'bon_de_commandes',
+        'affaire_interventions',
+        'contact_particuliers',
     ];
 
     private const FIELD_GROUPS = [

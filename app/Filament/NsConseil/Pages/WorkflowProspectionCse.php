@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Pages;
 
 use App\Models\WorkflowGroupe;
 use App\Models\WorkflowStep;
+use App\Support\AccessRightsCatalog;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -37,6 +38,16 @@ class WorkflowProspectionCse extends Page implements HasForms, HasActions
     protected static string $view = 'filament.ns-conseil.pages.workflow-prospection-cse';
 
     protected static ?string $slug = 'workflow-prospection-cse';
+
+    public static function canAccess(): bool
+    {
+        return AccessRightsCatalog::userCan(auth()->user(), 'workflow_prospection_cse.view');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
 
     public ?WorkflowGroupe $selectedGroupe = null;
 

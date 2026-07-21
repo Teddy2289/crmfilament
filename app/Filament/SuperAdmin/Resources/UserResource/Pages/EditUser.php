@@ -18,4 +18,9 @@ class EditUser extends EditRecord
                 ->visible(fn () => $this->record->id !== auth()->id()),
         ];
     }
+
+    protected function afterSave(): void
+    {
+        $this->record->syncRoleCacheFromRoles();
+    }
 }
