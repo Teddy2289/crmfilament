@@ -24,15 +24,15 @@ class GroupeTeleproResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?string $navigationLabel = 'Groupes de télépros';
+    protected static ?string $navigationLabel = 'Groupes de téléprospecteurs';
 
     protected static ?string $navigationGroup = 'Activités';
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $modelLabel = 'Groupe de télépros';
+    protected static ?string $modelLabel = 'Groupe de téléprospecteurs';
 
-    protected static ?string $pluralModelLabel = 'Groupes de télépros';
+    protected static ?string $pluralModelLabel = 'Groupes de téléprospecteurs';
 
     protected static function membresOptions(): array
     {
@@ -63,12 +63,12 @@ class GroupeTeleproResource extends Resource
                         ->inline(false),
 
                     Forms\Components\Select::make('membres')
-                        ->label('Télépros membres')
+                        ->label('Téléprospecteurs membres')
                         ->multiple()
                         ->options(fn () => static::membresOptions())
                         ->searchable()
                         ->columnSpanFull()
-                        ->helperText('Un télépro sélectionné ici est retiré de son groupe précédent, le cas échéant.')
+                        ->helperText('Un téléprospecteur sélectionné ici est retiré de son groupe précédent, le cas échéant.')
                         ->afterStateHydrated(function (Forms\Components\Select $component, ?GroupeTelepro $record) {
                             if ($record) {
                                 $component->state($record->membres()->pluck('id')->toArray());
@@ -89,9 +89,9 @@ class GroupeTeleproResource extends Resource
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('membres_count')
-                    ->label('Télépros')
+                    ->label('Téléprospecteurs')
                     ->counts('membres')
-                    ->suffix(' télépro(s)')
+                    ->suffix(' téléprospecteur(s)')
                     ->badge()
                     ->color('info'),
 
