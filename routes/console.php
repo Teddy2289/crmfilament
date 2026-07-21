@@ -35,10 +35,10 @@ Schedule::job(new \App\Jobs\SendFicheJauneJ7Job())
     ->dailyAt('08:00')
     ->withoutOverlapping();
 
-// WF7 — Rappel RP : créer tâches de rappel pour téléprospecteurs (toutes les 30 min).
-Schedule::job(new \App\Jobs\SendRappelRpJob())
-    ->everyThirtyMinutes()
-    ->withoutOverlapping();
+// WF7 — Rappel RP : retiré du scheduler (2026-07-21). Interrogeait des colonnes
+// obsolètes (statut_phoning/rappel_date/rappel_envoye_at sur prospects) et échouait
+// à chaque exécution. SendRappelRdvJob ci-dessous couvre déjà ce besoin via la table
+// rendez_vous. Fichier App\Jobs\SendRappelRpJob conservé mais non planifié.
 
 // Rappel STD-NR J+2 : créer tâches de rappel pour prospects STD-NR (quotidien 09h00).
 Schedule::job(new \App\Jobs\SendRappelStdNrJob())

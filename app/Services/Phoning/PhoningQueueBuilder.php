@@ -63,6 +63,7 @@ class PhoningQueueBuilder
             : Prospect::query()
                 ->whereIn('id', $prospectIds)
                 ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
+                ->whereNull('commercial_id')
                 ->whereNull('deleted_at')
                 ->pluck('id')
                 ->all();

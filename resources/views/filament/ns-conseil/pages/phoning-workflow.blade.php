@@ -981,6 +981,11 @@ $tentativesActuelles = $this->getTentativesAppel();
                             ⚠ RAPPEL EN RETARD
                         </span>
                         @endif
+                        @if (!empty($info['difficile']))
+                        <span style="font-size:0.6875rem; background:rgb(254 243 199); color:rgb(146 64 14); padding:0.125rem 0.5rem; border-radius:9999px; font-weight:700;">
+                            ⚑ FICHE DIFFICILE
+                        </span>
+                        @endif
                     </div>
                     <div class="pw-contact-sub">
                         @if (!empty($info['siret']))

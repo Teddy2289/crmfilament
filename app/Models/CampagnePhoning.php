@@ -306,7 +306,7 @@ class CampagnePhoning extends Model
         $query->whereNotIn('statut', [
             ProspectStatut::KO->value,
             ProspectStatut::QF->value,
-        ]);
+        ])->whereNull('commercial_id');
 
         if ($retireCodes !== []) {
             $query->whereDoesntHave(

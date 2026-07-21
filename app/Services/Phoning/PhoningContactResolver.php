@@ -69,6 +69,7 @@ class PhoningContactResolver
                 'date_premier_contact' => $model->date_premier_contact?->format('d/m/Y'),
                 'rappel_planifie_at' => $model->rappel_planifie_at?->format('d/m/Y à H:i'),
                 'rappel_en_retard' => $model->rappel_est_en_retard,
+                'difficile' => $model->difficile,
                 'jours_depuis_contact' => $model->jours_depuis_premier_contact,
                 'notes' => $model->description,
                 'motif_ko' => $model->motif_ko,

@@ -2,10 +2,14 @@
 
 namespace App\Jobs;
 
+use App\Filament\NsConseil\Resources\PartenaireResource;
+use App\Filament\NsConseil\Resources\ProspectResource;
 use App\Models\Partenaire;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use App\Models\Task;
+use App\Models\User;
+use Filament\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -49,6 +53,8 @@ class SendRappelRdvJob implements ShouldQueue
 
             $rdv->update(['rappel_envoye_at' => now()]);
 
+            $this->notifierUtilisateur($assigneA, $nomContact, $rdv);
+
             Log::info("Rappel RDV créé pour rendez-vous #{$rdv->id} — assigné à l'utilisateur #{$assigneA}");
         }
 
@@ -62,5 +68,32 @@ class SendRappelRdvJob implements ShouldQueue
         }
 
         return $entite->nom ?? $entite->raison_sociale ?? 'Contact #'.$entite->getKey();
+    }
+
+    private function notifierUtilisateur(int $userId, string $nomContact, RendezVous $rdv): void
+    {
+        $user = User::find($userId);
+
+        if (! $user) {
+            return;
+        }
+
+        $url = match (true) {
+            $rdv->rdvable instanceof Prospect => ProspectResource::getUrl('view', ['record' => $rdv->rdvable_id], panel: 'ns-conseil'),
+            $rdv->rdvable instanceof Partenaire => PartenaireResource::getUrl('view', ['record' => $rdv->rdvable_id], panel: 'ns-conseil'),
+            default => null,
+        };
+
+        Notification::make()
+            ->title("Rappel RDV : {$nomContact}")
+            ->body("Rendez-vous prévu maintenant — {$rdv->date_heure->format('d/m/Y H:i')}")
+            ->icon('heroicon-o-bell-alert')
+            ->warning()
+            ->when($url, fn (Notification $n) => $n->actions([
+                \Filament\Notifications\Actions\Action::make('voir')
+                    ->label('Voir la fiche')
+                    ->url($url),
+            ]))
+            ->sendToDatabase($user);
     }
 }

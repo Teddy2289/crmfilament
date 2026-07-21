@@ -327,6 +327,14 @@ class ProspectResource extends Resource
                         fn($state) => ($state instanceof ProspectStatut ? $state : ProspectStatut::tryFrom($state))?->description()
                     ),
 
+                Tables\Columns\IconColumn::make('difficile')
+                    ->label('Difficile')
+                    ->icon(fn(bool $state) => $state ? 'heroicon-s-flag' : null)
+                    ->color('warning')
+                    ->tooltip(fn($record) => $record->difficile
+                        ? 'Fiche difficile — '.($record->difficile_at?->format('d/m/Y H:i'))
+                        : null),
+
                 Tables\Columns\TextColumn::make('teleprospecteur.nom')
                     ->label('Commercial')
                     ->icon('heroicon-m-user')
@@ -409,6 +417,11 @@ class ProspectResource extends Resource
                                 ProspectStatut::QF->value,
                             ])
                     )
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('difficiles')
+                    ->label('Fiches difficiles')
+                    ->query(fn(Builder $q) => $q->where('difficile', true))
                     ->toggle(),
 
                 Tables\Filters\TrashedFilter::make(),
@@ -645,6 +658,16 @@ class ProspectResource extends Resource
                                             : ProspectStatut::tryFrom($state)?->color() ?? 'gray'
                                     )
                                     ->size(TextEntry\TextEntrySize::Large),
+
+                                TextEntry::make('difficile_at')
+                                    ->label('')
+                                    ->badge()
+                                    ->color('warning')
+                                    ->icon('heroicon-s-flag')
+                                    ->state(fn(Prospect $r) => $r->difficile
+                                        ? 'Fiche difficile — '.$r->difficile_at?->format('d/m/Y H:i')
+                                        : null)
+                                    ->visible(fn(Prospect $r) => $r->difficile),
 
                                 TextEntry::make('taux_engagement')
                                     ->label('Engagement')
