@@ -126,21 +126,6 @@ class RendezVousResource extends Resource
                         ->columnSpan(2),
                 ])->columns(3),
 
-            Forms\Components\Section::make('Interlocuteur')
-                ->icon('heroicon-o-user')
-                ->schema([
-                    Forms\Components\TextInput::make('interlocuteur_nom')
-                        ->label('Nom')
-                        ->required(),
-
-                    PhoneNumberInput::make('interlocuteur_tel')
-                        ->label('Téléphone'),
-
-                    Forms\Components\TextInput::make('interlocuteur_email')
-                        ->label('Email')
-                        ->email(),
-                ])->columns(3),
-
             Forms\Components\Section::make('Assignation')
                 ->icon('heroicon-o-users')
                 ->schema([
@@ -169,6 +154,22 @@ class RendezVousResource extends Resource
                         ->nullable()
                         ->default(fn() => auth()->user()?->hasRoleCache('teleprospecteur') ? auth()->id() : null),
                 ])->columns(2),
+
+            Forms\Components\Section::make('Interlocuteur')
+                ->icon('heroicon-o-user')
+                ->schema([
+                    Forms\Components\TextInput::make('interlocuteur_nom')
+                        ->label('Nom')
+                        ->required(),
+
+                    PhoneNumberInput::make('interlocuteur_tel')
+                        ->label('Téléphone'),
+
+                    Forms\Components\TextInput::make('interlocuteur_email')
+                        ->label('Email')
+                        ->email(),
+                ])->columns(3),
+
 
             Forms\Components\Section::make('Notes')
                 ->icon('heroicon-o-pencil-square')

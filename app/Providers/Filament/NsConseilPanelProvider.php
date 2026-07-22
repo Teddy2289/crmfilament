@@ -10,6 +10,7 @@ use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserInteractions;
 use App\Http\Responses\NsConseil\LoginResponse;
 use App\Models\Theme as ThemeModel;
+use App\Services\Crm\CrmSettingsService;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -81,21 +82,7 @@ class NsConseilPanelProvider extends PanelProvider
 
             ])
             ->defaultThemeMode(ThemeMode::Light)
-            ->navigationGroups([
-                NavigationGroup::make('Suivi des dossiers')
-                    ->icon('heroicon-o-chart-bar'),
-                NavigationGroup::make('Carnet d\'adresses')
-                    ->icon('heroicon-o-book-open'),    
-                NavigationGroup::make('Contacts')
-                    ->icon('heroicon-o-users'),
-                NavigationGroup::make('Activités')
-                    ->icon('heroicon-o-phone'),
-                NavigationGroup::make('Clients & Formations')
-                    ->icon('heroicon-o-academic-cap'),
-                NavigationGroup::make('Paramètres')
-                    ->icon('heroicon-o-cog-6-tooth')
-                    ->collapsed(),
-            ])
+            ->navigationGroups(static::buildNavigationGroups())
             ->plugins([
                 FilamentFullCalendarPlugin::make()
                     ->selectable(true)
@@ -167,5 +154,101 @@ class NsConseilPanelProvider extends PanelProvider
                     ? '<style>' . $requestTheme->custom_css . '</style>'
                     : '',
             );
+    }
+
+    /**
+     * Clé du réglage CrmSetting (groupe "navigation") qui stocke l'ordre
+     * choisi par le super-admin pour les groupes de menu ci-dessous.
+     */
+    public const NAVIGATION_ORDER_SETTING_KEY = 'navigation.ns_conseil_group_order';
+
+    /**
+     * Groupes de menu gérables depuis le back-office super-admin, avec
+     * leur icône et leur état replié par défaut.
+     *
+     * @return array<string, array{icon: string, collapsed: bool}>
+     */
+    public static function navigationGroupDefinitions(): array
+    {
+        return [
+            'Activités' => ['icon' => 'heroicon-o-phone', 'collapsed' => false],
+            'Suivi des dossiers' => ['icon' => 'heroicon-o-chart-bar', 'collapsed' => false],
+            'Carnet d\'adresses' => ['icon' => 'heroicon-o-book-open', 'collapsed' => false],
+            'Clients & Formations' => ['icon' => 'heroicon-o-academic-cap', 'collapsed' => false],
+            'Contacts' => ['icon' => 'heroicon-o-users', 'collapsed' => false],
+            'Configuration' => ['icon' => 'heroicon-o-adjustments-horizontal', 'collapsed' => false],
+            'Communication' => ['icon' => 'heroicon-o-envelope', 'collapsed' => false],
+            'Gestion documentaire' => ['icon' => 'heroicon-o-folder', 'collapsed' => false],
+            'Recherche' => ['icon' => 'heroicon-o-magnifying-glass', 'collapsed' => false],
+            'Paramètres' => ['icon' => 'heroicon-o-cog-6-tooth', 'collapsed' => true],
+        ];
+    }
+
+    /**
+     * Ordre par défaut : Activités, Suivi des dossiers, Carnet d'adresses
+     * et Clients & Formations en tête (demande commune admin/télépro),
+     * puis le reste.
+     *
+     * @return list<string>
+     */
+    public static function defaultNavigationGroupOrder(): array
+    {
+        return array_keys(static::navigationGroupDefinitions());
+    }
+
+    /**
+     * Ne garde que les noms de groupes connus et complète avec ceux qui
+     * manqueraient (nouveau groupe ajouté après coup, réglage périmé, ...).
+     *
+     * @param  array<int, mixed>  $order
+     * @return list<string>
+     */
+    public static function sanitizeNavigationGroupOrder(array $order): array
+    {
+        $known = array_keys(static::navigationGroupDefinitions());
+
+        $clean = array_values(array_intersect($order, $known));
+
+        return array_merge($clean, array_diff($known, $clean));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function navigationGroupLabels(): array
+    {
+        return array_combine(
+            array_keys(static::navigationGroupDefinitions()),
+            array_keys(static::navigationGroupDefinitions()),
+        );
+    }
+
+    /**
+     * @return array<string, NavigationGroup>
+     */
+    public static function buildNavigationGroups(): array
+    {
+        $definitions = static::navigationGroupDefinitions();
+
+        $order = static::sanitizeNavigationGroupOrder(
+            app(CrmSettingsService::class)->get(
+                static::NAVIGATION_ORDER_SETTING_KEY,
+                static::defaultNavigationGroupOrder(),
+            ) ?? static::defaultNavigationGroupOrder(),
+        );
+
+        // Important : le tableau doit être indexé par le libellé du groupe
+        // (et non une simple liste 0..n), sinon l'algorithme de tri interne
+        // de Filament (NavigationManager::get()) confond les clés
+        // numériques avec les libellés et fait passer le premier groupe de
+        // la liste au même rang que tous les groupes auto-détectés
+        // (Configuration, Communication, ...), ce qui mélangeait l'ordre.
+        return collect($order)
+            ->mapWithKeys(fn (string $name) => [
+                $name => NavigationGroup::make($name)
+                    ->icon($definitions[$name]['icon'])
+                    ->collapsed($definitions[$name]['collapsed']),
+            ])
+            ->all();
     }
 }
