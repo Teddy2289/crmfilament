@@ -1469,7 +1469,6 @@ $tentativesActuelles = $this->getTentativesAppel();
                                 <div>
                                     <div class="pw-field-label">
                                         Email CSE
-                                        <span style="color:rgb(239 68 68);">*</span>
                                         <span style="font-size:0.6rem; color:rgb(100 116 139);">Déclenche Mail 1</span>
                                     </div>
                                     <input type="email" wire:model="interlocuteur_email"
