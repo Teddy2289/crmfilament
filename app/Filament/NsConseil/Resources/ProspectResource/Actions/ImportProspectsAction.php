@@ -29,7 +29,7 @@ class ImportProspectsAction extends Action
             ->modalHeading('Importer des prospects depuis Excel')
             ->modalDescription(
                 'Colonnes reconnues : Nom / Raison sociale, Téléphone, Département, CP, Ville, '.
-                "Secteur d'activité, Nb salariés, CA, Email, Statut, Conseiller / Téléprospecteur, ".
+                "Secteur d'activité, Nb salariés, CA, Email, Statut, Conseiller, ".
                 'Date rappel, Commentaires.'
             )
             ->modalWidth('xl')
@@ -65,8 +65,9 @@ class ImportProspectsAction extends Action
                             ->nullable()
                             ->native(false),
 
-                        Forms\Components\Select::make('teleprospecteur_id')
-                            ->label('Téléprospecteur assigné')
+                        Forms\Components\Select::make('commercial_id')
+                            ->label('Conseiller assigné')
+                            ->helperText('Utilisé si la colonne "Conseiller" est absente du fichier.')
                             ->options(function () {
                                 return User::whereIn('role_cache', [
                                     'teleprospecteur', 'commercial', 'team_leader', 'administrateur',
@@ -133,7 +134,7 @@ class ImportProspectsAction extends Action
                 $defaults = [
                     'statut' => $data['statut'],
                     'type_pressenti' => $data['type_pressenti'] ?? null,
-                    'teleprospecteur_id' => $data['teleprospecteur_id'] ?? null,
+                    'commercial_id' => $data['commercial_id'] ?? null,
                     'secteur_activite' => $data['secteur_activite'] ?? null,
                 ];
 
