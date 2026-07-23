@@ -243,7 +243,7 @@
                                 $rappelSoon = $prospect->rappel_planifie_at && !$rappelLate;
                                 $viewUrl    = \App\Filament\NsConseil\Resources\ProspectResource::getUrl('view', ['record' => $prospect->id]);
                                 $editUrl    = \App\Filament\NsConseil\Resources\ProspectResource::getUrl('edit',  ['record' => $prospect->id]);
-                                $tele       = $prospect->teleprospecteur;
+                                $tele       = $prospect->commercial;
                                 $teleInit   = $tele ? strtoupper(substr($tele->prenom ?? '', 0, 1) . substr($tele->nom ?? '', 0, 1)) : null;
                             @endphp
 

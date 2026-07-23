@@ -23,11 +23,39 @@ class PartenaireKanban extends KanbanBoard
 
     protected static bool $shouldRegisterNavigation = false;
 
+    /**
+     * Nombre de cartes affichées par colonne avant "Charger plus" — sans ça,
+     * une colonne à 500 partenaires oblige à scroller indéfiniment.
+     */
+    protected int $kanbanPageSize = 10;
+
+    public array $visibleCounts = [];
+
+    public function visibleCountFor(string|int $statusId): int
+    {
+        return $this->visibleCounts[$statusId] ?? $this->kanbanPageSize;
+    }
+
+    public function loadMore(string|int $statusId): void
+    {
+        $this->visibleCounts[$statusId] = $this->visibleCountFor($statusId) + $this->kanbanPageSize;
+    }
+
     public function onStatusChanged(int|string $recordId, string $status, array $fromOrderedIds, array $toOrderedIds): void
 {
     $partenaire = Partenaire::find($recordId);
     $partenaire->changerStatut(OrganizationStatus::from($status));
 }
+
+    /**
+     * Charge le commercial en avance : la carte du Kanban affiche ses
+     * initiales, sans ça ce serait une requête par carte affichée.
+     */
+    protected function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('commercial');
+    }
+
  protected function getHeaderActions(): array
 {
     return [

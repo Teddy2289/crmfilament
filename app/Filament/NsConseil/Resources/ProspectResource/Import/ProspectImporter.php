@@ -135,14 +135,17 @@ class ProspectImporter
     protected function mergeData(Prospect $existing, array $newData): array
     {
         // Champs à préserver (ne pas écraser s'ils existent)
+        // Note : commercial_id (le "Conseiller" du fichier, colonnes A à E)
+        // n'est volontairement PAS préservé — le fichier réimporté fait
+        // autorité sur cette assignation. teleprospecteur_id n'apparaît
+        // jamais dans $newData (l'import ne le renseigne jamais), donc il
+        // n'a pas besoin de figurer ici non plus.
         $preserveFields = [
             'statut',
             'description',
             'motif_ko',
             'date_premier_contact',
             'rappel_planifie_at',
-            'teleprospecteur_id',
-            'commercial_id',
             'mail1_envoye',
             'mail1_envoye_at',
             'mail2_envoye',
@@ -379,10 +382,13 @@ class ProspectImporter
         $statut = $this->resolveStatut($get('statut'))
             ?? ($this->defaults['statut'] ?? ProspectStatut::AC->value);
 
-        $conseillerBrut = $get('teleprospecteur');
-        $teleprospecteurId = $this->resolveOrCreateUserId($conseillerBrut, User::ROLE_COMMERCIAL);
-
-        $commercialBrut = $get('commercial');
+        // Le "Conseiller" du fichier (colonnes A à E, alias "teleprospecteur"
+        // dans le mapping de colonnes — cf. buildColumnMapping) est en fait
+        // le commercial rattaché au prospect dès sa création. Le champ
+        // teleprospecteur_id, lui, n'est JAMAIS renseigné par l'import : il
+        // n'est affecté que plus tard, quand un téléprospecteur appelle
+        // effectivement le prospect en phoning.
+        $commercialBrut = $get('teleprospecteur') ?? $get('commercial');
         $commercialId = $this->resolveOrCreateUserId($commercialBrut, User::ROLE_COMMERCIAL);
 
         $data = [
@@ -412,8 +418,9 @@ class ProspectImporter
             'interlocuteur_email' => $get('interlocuteur_email'),
 
             // ── Pipeline ─────────────────────────────────────────────
+            // teleprospecteur_id est volontairement absent d'ici : il ne doit
+            // jamais être renseigné par l'import (cf. commentaire plus haut).
             'statut' => $statut,
-            'teleprospecteur_id' => $teleprospecteurId ?? ($this->defaults['teleprospecteur_id'] ?? null),
             'commercial_id' => $commercialId ?? ($this->defaults['commercial_id'] ?? null),
             'date_premier_contact' => $this->parseDate($get('date_premier_contact')),
             'rappel_planifie_at' => $this->parseDate($get('rappel_planifie_at')),

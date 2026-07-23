@@ -174,6 +174,7 @@ class ProspectResource extends Resource
 
                     Forms\Components\Select::make('teleprospecteur_id')
                         ->label('Téléprospecteur')
+                        ->helperText('Assigné automatiquement lors d\'un appel en phoning — ne se remplit pas à l\'import.')
                         ->relationship('teleprospecteur', 'nom')
                         ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
                         ->searchable()
@@ -181,7 +182,7 @@ class ProspectResource extends Resource
                         ->default(fn() => auth()->user()?->hasRoleCache('teleprospecteur') ? auth()->id() : null),
 
                     Forms\Components\Select::make('commercial_id')
-                        ->label('Commercial (si QF)')
+                        ->label('Conseiller')
                         ->relationship('commercial', 'nom')
                         ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
                         ->searchable()
@@ -335,14 +336,14 @@ class ProspectResource extends Resource
                         ? 'Fiche difficile — '.($record->difficile_at?->format('d/m/Y H:i'))
                         : null),
 
-                Tables\Columns\TextColumn::make('teleprospecteur.nom')
-                    ->label('Commercial')
+                Tables\Columns\TextColumn::make('commercial.nom')
+                    ->label('Conseiller')
                     ->icon('heroicon-m-user')
-                    ->formatStateUsing(fn($record) => $record->teleprospecteur
-                        ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}"
+                    ->formatStateUsing(fn($record) => $record->commercial
+                        ? "{$record->commercial->prenom} {$record->commercial->nom}"
                         : '—')
                     ->searchable(query: fn(Builder $q, string $search) => $q->whereHas(
-                        'teleprospecteur',
+                        'commercial',
                         fn(Builder $q2) => $q2->where('nom', 'like', "%{$search}%")
                             ->orWhere('prenom', 'like', "%{$search}%")
                     ))
@@ -378,7 +379,7 @@ class ProspectResource extends Resource
                     ->boolean()
                     ->toggleable(),
             ], [
-                'teleprospecteur.nom' => 'teleprospecteur_id',
+                'commercial.nom' => 'commercial_id',
             ]))
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
@@ -389,13 +390,13 @@ class ProspectResource extends Resource
                     ->options(OrganizationType::class)
                     ->label('Type'),
 
-                Tables\Filters\SelectFilter::make('teleprospecteur_id')
-                    ->relationship('teleprospecteur', 'nom')
-                    ->label('Commercial'),
-
                 Tables\Filters\SelectFilter::make('commercial_id')
                     ->relationship('commercial', 'nom')
-                    ->label('Commercial (QF)'),
+                    ->label('Conseiller'),
+
+                Tables\Filters\SelectFilter::make('teleprospecteur_id')
+                    ->relationship('teleprospecteur', 'nom')
+                    ->label('Téléprospecteur'),
 
                 Tables\Filters\Filter::make('a_relancer')
                     ->label('À relancer')
@@ -566,7 +567,7 @@ class ProspectResource extends Resource
                         session()->put('view_prospects', $currentView === 'kanban' ? 'list' : 'kanban');
                         return redirect()->back();
                     }),
-                LancerAppelsAction::make('prospects'),
+                // LancerAppelsAction::make('prospects'),
             ])
             ->emptyStateHeading('Aucun prospect')
             ->emptyStateDescription('Créez votre premier prospect.');
@@ -599,10 +600,10 @@ class ProspectResource extends Resource
                         fn($state) => ($state instanceof ProspectStatut ? $state : ProspectStatut::tryFrom($state))?->description()
                     ),
 
-                Tables\Columns\TextColumn::make('teleprospecteur.nom')
-                    ->label('Commercial')
-                    ->formatStateUsing(fn($record) => $record->teleprospecteur
-                        ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}"
+                Tables\Columns\TextColumn::make('commercial.nom')
+                    ->label('Conseiller')
+                    ->formatStateUsing(fn($record) => $record->commercial
+                        ? "{$record->commercial->prenom} {$record->commercial->nom}"
                         : '—'),
 
                 Tables\Columns\TextColumn::make('departement')
@@ -669,22 +670,22 @@ class ProspectResource extends Resource
                                         : null)
                                     ->visible(fn(Prospect $r) => $r->difficile),
 
-                                TextEntry::make('taux_engagement')
-                                    ->label('Engagement')
-                                    ->state(fn(Prospect $r) => $r->taux_engagement)
-                                    ->formatStateUsing(function ($state) {
-                                        $niveau = (int) $state;
-                                        return str_repeat('⭐', max(0, min(5, $niveau)))
-                                            . str_repeat('☆', 5 - max(0, min(5, $niveau)));
-                                    })
-                                    ->size(TextEntry\TextEntrySize::Large)
-                                    ->extraAttributes(['class' => 'tracking-wide mt-1']),
+                                // TextEntry::make('taux_engagement')
+                                //     ->label('Engagement')
+                                //     ->state(fn(Prospect $r) => $r->taux_engagement)
+                                //     ->formatStateUsing(function ($state) {
+                                //         $niveau = (int) $state;
+                                //         return str_repeat('⭐', max(0, min(5, $niveau)))
+                                //             . str_repeat('☆', 5 - max(0, min(5, $niveau)));
+                                //     })
+                                //     ->size(TextEntry\TextEntrySize::Large)
+                                //     ->extraAttributes(['class' => 'tracking-wide mt-1']),
 
-                                TextEntry::make('statut_description')
-                                    ->label('')
-                                    ->state(fn(Prospect $r) => $r->statut_description)
-                                    ->color('gray')
-                                    ->extraAttributes(['class' => 'italic text-sm mt-2 opacity-75']),
+                                // TextEntry::make('statut_description')
+                                //     ->label('')
+                                //     ->state(fn(Prospect $r) => $r->statut_description)
+                                //     ->color('gray')
+                                //     ->extraAttributes(['class' => ' text-sm mt-2 opacity-75']),
                             ]),
                         ])
                         ->extraAttributes(['class' => 'rounded-xl shadow-sm h-full']),
@@ -858,13 +859,23 @@ class ProspectResource extends Resource
                     Grid::make(2)->schema([
                         Group::make([
                             TextEntry::make('commercial.nom')
-                                ->label('Commercial responsable')
+                                ->label('Conseiller')
                                 ->formatStateUsing(
                                     fn($record) => $record->commercial
                                         ? "{$record->commercial->prenom} {$record->commercial->nom}"
                                         : '—'
                                 )
                                 ->icon('heroicon-m-briefcase')
+                                ->placeholder('—'),
+
+                            TextEntry::make('teleprospecteur.nom')
+                                ->label('Téléprospecteur')
+                                ->formatStateUsing(
+                                    fn($record) => $record->teleprospecteur
+                                        ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}"
+                                        : '—'
+                                )
+                                ->icon('heroicon-m-phone')
                                 ->placeholder('—'),
                         ])->label('Qui s\'en occupe ?'),
 

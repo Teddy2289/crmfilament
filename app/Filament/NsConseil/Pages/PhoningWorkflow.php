@@ -295,6 +295,17 @@ class PhoningWorkflow extends Page
         return app(PhoningQueueBuilder::class)->filterValidQueue($queue);
     }
 
+    /**
+     * Action déclenchée par les boutons "Rafraîchir" de la vue (barre de
+     * recherche et écran "File vide") : recharge la file puis recalcule le
+     * prochain contact en un seul aller-retour Livewire.
+     */
+    public function refreshQueue(): void
+    {
+        $this->loadQueue();
+        $this->loadNextContact();
+    }
+
     protected function buildDefaultQueue(int $userId): array
     {
         return app(PhoningQueueBuilder::class)->buildDefaultQueue($userId, $this->campagneFiltreId);
@@ -612,6 +623,7 @@ class PhoningWorkflow extends Page
             $prospect->changerStatut($nouveauStatut, $note);
         }
         $prospect->marquerContact();
+        $prospect->assignerTeleprospecteur(Auth::id());
 
 
         // ── Envoi du mail correspondant au statut ──────────────────────
@@ -1052,10 +1064,15 @@ class PhoningWorkflow extends Page
     {
         return [
             // Actions principales visibles
+            // "Choisir une campagne" / "Toutes les campagnes" changent le
+            // périmètre de TOUTE la file (potentiellement celle d'un autre
+            // téléprospecteur en mode supervision) : réservé aux superviseurs
+            // et admins, un téléprospecteur travaille sa file telle qu'assignée.
             Action::make('choisir_campagne')
                 ->label('Choisir une campagne')
                 ->icon('heroicon-o-megaphone')
                 ->color('primary')
+                ->visible(fn () => $this->isSupervisorMode)
                 ->form([
                     \Filament\Forms\Components\Select::make('campagne_id')
                         ->label('Campagne')
@@ -1076,19 +1093,18 @@ class PhoningWorkflow extends Page
                 ->label('Toutes les campagnes')
                 ->icon('heroicon-o-squares-2x2')
                 ->color('secondary')
-                ->visible(fn() => $this->currentCampagneId !== null)
+                ->visible(fn() => $this->isSupervisorMode && $this->currentCampagneId !== null)
                 ->action(fn() => $this->clearCampagne()),
 
             Action::make('refresh')
                 ->label('Rafraîchir')
                 ->icon('heroicon-o-arrow-path')
                 ->color('gray')
-                ->action(function () {
-                    $this->loadQueue();
-                    $this->loadNextContact();
-                }),
+                ->action(fn () => $this->refreshQueue()),
 
-            // Groupe d'actions dans un dropdown
+            // Groupe d'actions dans un dropdown — outils de configuration/
+            // pilotage (back-office, paramétrage CSE v2) réservés aux
+            // superviseurs/admins, pas au téléprospecteur qui appelle.
             ActionGroup::make([
                 Action::make('voir_campagne')
                     ->label('Statistiques campagne')
@@ -1121,6 +1137,7 @@ class PhoningWorkflow extends Page
                 ->label('Outils')
                 ->icon('heroicon-o-cog-6-tooth')
                 ->color('gray')
+                ->visible(fn () => $this->isSupervisorMode)
                 ->dropdownPlacement('bottom-end'),
         ];
     }

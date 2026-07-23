@@ -250,12 +250,12 @@ $tentativesActuelles = $this->getTentativesAppel();
         }
 
         .pw-en-file-num {
-            font-size: 1.25rem;
+            font-size: 1rem;
             font-weight: 700;
         }
 
         .pw-en-file-label {
-            font-size: 0.625rem;
+            font-size: 0.525rem;
             text-transform: uppercase;
             color: rgb(107 114 128);
         }
@@ -289,7 +289,7 @@ $tentativesActuelles = $this->getTentativesAppel();
 
         .pw-result-panel {
             flex-shrink: 0;
-            max-height: 48%;
+            max-height: 72%;
             overflow-y: auto;
             background: white;
             padding: 0.875rem 1.25rem 1.125rem;
@@ -305,11 +305,11 @@ $tentativesActuelles = $this->getTentativesAppel();
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.8125rem;
+            font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: rgb(55 65 81);
+            color: rgb(4, 212, 248);
             margin-bottom: 0.875rem;
         }
 
@@ -321,44 +321,116 @@ $tentativesActuelles = $this->getTentativesAppel();
             font-size: 1rem;
         }
 
-        .pw-result-groups {
+        .pw-chip-groups {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 0.875rem;
-            margin-bottom: 0.875rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.625rem;
+            margin-bottom: 0.75rem;
         }
 
-        .pw-result-group {
-            border: 1px solid rgb(229 231 235);
+        @media (max-width: 700px) {
+            .pw-chip-groups {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pw-chip-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3125rem;
+            padding: 0.5rem 0.5625rem;
+            border: 1px solid rgb(226 232 240);
             border-radius: 0.625rem;
-            padding: 0.75rem;
             background: rgb(249 250 251);
         }
 
-        .dark .pw-result-group {
-            border-color: rgb(55 65 81);
-            background: rgb(31 41 55 / 0.5);
+        .dark .pw-chip-group {
+            border-color: rgb(51 65 85);
+            background: rgb(30 41 59 / .4);
         }
 
-        .pw-result-group-label {
-            font-size: 0.65rem;
+        .pw-chip-group-label {
+            font-size: 0.625rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.06em;
             color: rgb(100 116 139);
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.375rem;
-            border-bottom: 1px solid rgb(226 232 240);
         }
 
-        .dark .pw-result-group-label {
-            border-bottom-color: rgb(55 65 81);
+        .dark .pw-chip-group-label {
+            color: rgb(148 163 184);
         }
 
-        .pw-result-group-options {
+        .pw-chip-row {
             display: flex;
             flex-direction: column;
-            gap: 0.375rem;
+            gap: 0.25rem;
+        }
+
+        .pw-chip {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.4375rem;
+            padding: 0.3125rem 0.5rem;
+            border-radius: 0.375rem;
+            border-left: 3px solid transparent;
+            background: white;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+
+        .dark .pw-chip {
+            background: rgb(31 41 55);
+        }
+
+        .pw-chip:hover {
+            background: rgb(243 244 246);
+        }
+
+        .dark .pw-chip:hover {
+            background: rgb(51 65 81);
+        }
+
+        .pw-chip-icon {
+            font-size: 0.8125rem;
+            line-height: 1.15;
+            flex-shrink: 0;
+        }
+
+        .pw-chip-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pw-chip-label-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3125rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgb(30 41 59);
+        }
+
+        .dark .pw-chip-label-row {
+            color: rgb(226 232 240);
+        }
+
+        .pw-chip-sub {
+            display: block;
+            font-size: 0.6875rem;
+            color: rgb(100 116 139);
+            margin-top: 1px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dark .pw-chip-sub {
+            color: rgb(148 163 184);
+        }
+
+        .pw-chip-star {
+            font-size: 0.625rem;
         }
 
         .pw-infos {
@@ -563,7 +635,7 @@ $tentativesActuelles = $this->getTentativesAppel();
         .pw-nr-box {
             background: rgb(249 250 251);
             border-radius: 0.5rem;
-            padding: 0.875rem 1rem;
+            padding: 0.5rem 1rem;
             margin-bottom: 1.25rem;
             border: 1px solid rgb(229 231 235);
         }
@@ -585,7 +657,8 @@ $tentativesActuelles = $this->getTentativesAppel();
         }
 
         .pw-nr-count {
-            font-size: 2rem;
+            font-size: 1rem;
+            color: rgb(158, 9, 9);
             font-weight: 700;
         }
 
@@ -908,12 +981,6 @@ $tentativesActuelles = $this->getTentativesAppel();
                 </button>
                 @endif
             </div>
-
-            {{-- Bouton pour réinitialiser la file --}}
-            <button wire:click="loadQueue" wire:then="loadNextContact"
-                style="padding:0.25rem 0.75rem; background:rgb(229 231 235); border:none; border-radius:0.375rem; font-size:0.75rem; cursor:pointer; white-space:nowrap;">
-                🔄 Rafraîchir
-            </button>
         </div>
 
         {{-- RÉSULTATS DE RECHERCHE --}}
@@ -959,18 +1026,13 @@ $tentativesActuelles = $this->getTentativesAppel();
         @if ($currentContact)
         <div class="pw-contact-bar">
             <div style="display:flex; align-items:center; gap:1rem;">
-                <div class="pw-contact-avatar">
-                    {{ strtoupper(substr($info['prenom'] ?? ($info['nom'] ?? 'C'), 0, 1) . substr($info['nom'] ?? '?', 0, 1)) }}
-                </div>
+             
                 <div>
                     <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                         <h2 class="pw-contact-name">
                             {{ Str::upper(trim(($info['prenom'] ?? '') . ' ' . ($info['nom'] ?? ''))) ?: 'CONTACT SANS NOM' }}
                         </h2>
                         <span class="pw-badge {{ $statutCls }}">{{ $statutLabel }}</span>
-                        @if (!empty($info['taux_engagement']))
-                        <span style="font-size:0.875rem;">{{ $info['taux_engagement'] }}</span>
-                        @endif
                         @if (!empty($info['rappel_en_retard']) && $info['rappel_en_retard'])
                         <span style="font-size:0.6875rem; background:rgb(254 226 226); color:rgb(153 27 27); padding:0.125rem 0.5rem; border-radius:9999px; font-weight:700; animation:pulse 2s infinite;">
                             ⚠ RAPPEL EN RETARD
@@ -987,20 +1049,13 @@ $tentativesActuelles = $this->getTentativesAppel();
                         <span>SIRET&nbsp;{{ $info['siret'] }}</span> ·
                         @endif
                         @if (!empty($info['ville']))
-                        <span>📍 {{ $info['ville'] }}{{ !empty($info['departement']) ? ' (' . $info['departement'] . ')' : '' }}</span>
+                        <span> {{ $info['ville'] }}{{ !empty($info['departement']) ? ' (' . $info['departement'] . ')' : '' }}</span>
                         @endif
-                        @if (!empty($info['type_pressenti']) && $info['type_pressenti'] !== 'Non défini')
-                        · <span>🏢 {{ $info['type_pressenti'] }}</span>
-                        @endif
+                
                         @if (!empty($info['secteur_activite']))
                         · <span>{{ $info['secteur_activite'] }}</span>
                         @endif
-                        @if (!empty($info['nb_salaries']))
-                        · <span>👥 {{ $info['nb_salaries'] }} sal.</span>
-                        @endif
-                        @if (!empty($info['chiffre_affaires']))
-                        · <span>💰 {{ $info['chiffre_affaires'] }}</span>
-                        @endif
+                  
                     </div>
                 </div>
             </div>
@@ -1028,55 +1083,44 @@ $tentativesActuelles = $this->getTentativesAppel();
             <div class="pw-left">
                 <div class="pw-result-panel">
                 <div class="pw-result-header">
-                    <span class="pw-result-header-icon">📞</span>
+                   
                     <span>Résultat de l'appel</span>
                 </div>
 
-                <div class="pw-result-groups">
+                <div class="pw-chip-groups">
                     @foreach ($statutsGroupes as $groupeKey => $groupe)
-                    <div class="pw-result-group">
-                        <div class="pw-result-group-label">
-                            {{ $groupe['label'] }}
+                    <div class="pw-chip-group">
+                        <div class="pw-chip-group-label">{{ $groupe['label'] }}</div>
+                        <div class="pw-chip-row">
+                            @foreach ($groupe['statuts'] as $option)
+                            @php
+                                $isActive = $statut_resultat === $option['value'];
+                                $optColor = \Illuminate\Support\Str::after($option['bar'], 'background:');
+                            @endphp
+                            <label wire:click="$set('statut_resultat', '{{ $option['value'] }}')"
+                                onclick="toggleRappel('{{ $option['value'] }}')"
+                                title="{{ $option['label'] }} — {{ $option['sub'] }}{{ $option['action'] ? ' → '.$option['action'] : '' }}"
+                                class="pw-chip"
+                                style="border-left-color: {{ $optColor }}; {{ $isActive ? $option['bar'].'; color:white;' : '' }}">
+                                <span class="pw-chip-icon">{{ $option['icon'] ?? '•' }}</span>
+                                <span class="pw-chip-main">
+                                    <span class="pw-chip-label-row" style="{{ $isActive ? 'color:white;' : '' }}">
+                                        {{ $option['label'] }}
+                                        @if (!empty($option['prioritaire']))
+                                        <span class="pw-chip-star" title="Prioritaire">★</span>
+                                        @endif
+                                    </span>
+                                    <span class="pw-chip-sub" style="{{ $isActive ? 'color:rgba(255,255,255,.85);' : '' }}">
+                                        {{ $option['sub'] }}{{ $option['action'] ? ' → '.$option['action'] : '' }}
+                                    </span>
+                                </span>
+                                <input type="radio" wire:model="statut_resultat" value="{{ $option['value'] }}" style="display:none;">
+                            </label>
+                            @endforeach
+                        </div>
                     </div>
-                    <div class="pw-result-group-options">
-                        @foreach ($groupe['statuts'] as $option)
-                        @php
-                        $isActive = $statut_resultat === $option['value'];
-                        @endphp
-                        <label wire:click="$set('statut_resultat', '{{ $option['value'] }}')"
-                            onclick="toggleRappel('{{ $option['value'] }}')"
-                            style="display:flex; align-items:center; gap:0.625rem; padding:0.5rem 0.625rem; border-radius:0.5rem; cursor:pointer; transition:all .15s ease; border:1.5px solid {{ $isActive ? 'currentColor' : 'rgb(226 232 240)' }}; background:{{ $isActive ? 'rgba(0,0,0,0.03)' : 'white' }}; {{ $isActive ? $option['bar'] . '; border-color:' . \Illuminate\Support\Str::after($option['bar'], 'background:') . ';' : '' }}">
-                            <div style="font-size:1.1rem; width:1.5rem; text-align:center; flex-shrink:0;">
-                                {{ $option['icon'] ?? '•' }}
-                            </div>
-                            <div style="flex:1; min-width:0;">
-                                <div style="font-size:0.8125rem; font-weight:600; color:{{ $isActive ? 'white' : 'rgb(30 41 59)' }};">
-                                    {{ $option['label'] }}
-                                    @if (!empty($option['prioritaire']))
-                                    <span style="font-size:0.6rem; background:#E0FAF9; color:#006b68; padding:1px 5px; border-radius:8px; margin-left:4px;">prioritaire</span>
-                                    @endif
-                                </div>
-                                <div style="font-size:0.7rem; color:{{ $isActive ? 'rgba(255,255,255,0.8)' : 'rgb(100 116 139)' }};">
-                                    {{ $option['sub'] }}
-                                </div>
-                                @if (!empty($option['action']))
-                                <div style="font-size:0.65rem; color:{{ $isActive ? 'rgba(255,255,255,0.7)' : 'rgb(148 163 184)' }}; margin-top:2px;">
-                                    → {{ $option['action'] }}
-                                </div>
-                                @endif
-                            </div>
-                            @if ($isActive)
-                            <svg style="width:1rem;height:1rem;color:white;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
-                            @endif
-                            <input type="radio" wire:model="statut_resultat" value="{{ $option['value'] }}" style="display:none;">
-                        </label>
-                        @endforeach
-                    </div>
+                    @endforeach
                 </div>
-                @endforeach
-            </div>
 
             <div id="pw-rappel-box"
                 class="pw-rappel-box {{ in_array($statut_resultat, $rappelCodes) ? 'visible' : '' }}">
@@ -1229,9 +1273,6 @@ $tentativesActuelles = $this->getTentativesAppel();
 
                     <div class="pw-info-tabs">
                         <button class="pw-info-tab active" data-tab="contact" onclick="switchInfoTab('contact')">📞 Contact</button>
-                        @if (($info['type'] ?? '') !== 'client')
-                        <button class="pw-info-tab" data-tab="entreprise" onclick="switchInfoTab('entreprise')">🏢 Entreprise</button>
-                        @endif
                         @if (!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur']))
                         <button class="pw-info-tab" data-tab="interlocuteur" onclick="switchInfoTab('interlocuteur')">👤 Interlocuteur</button>
                         @endif
@@ -1310,42 +1351,6 @@ $tentativesActuelles = $this->getTentativesAppel();
                                 </div>
                             </div>
                             @endif
-                        </div>
-                    </div>
-
-                    <div class="pw-info-panel" data-tab="entreprise" style="display:none;">
-                        <div class="pw-info-grid">
-                            <div>
-                                <div class="pw-field-label">Raison sociale</div>
-                                <div class="pw-field-value" style="font-weight:700; font-size:0.9375rem;">
-                                    {{ $info['nom'] ?? '—' }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="pw-field-label">SIRET</div>
-                                <div class="pw-field-value copyable"
-                                    onclick="copyToClipboard('{{ $info['siret'] ?? '' }}')">
-                                    {{ $info['siret'] ?? '—' }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="pw-field-label">Type pressenti</div>
-                                <div class="pw-field-value">{{ $info['type_pressenti'] ?? '—' }}</div>
-                            </div>
-                            <div>
-                                <div class="pw-field-label">Secteur d'activité</div>
-                                <div class="pw-field-value">{{ $info['secteur_activite'] ?? '—' }}</div>
-                            </div>
-                            <div>
-                                <div class="pw-field-label">Nombre de salariés</div>
-                                <div class="pw-field-value">
-                                    {{ $info['nb_salaries'] ?? null ? $info['nb_salaries'] . ' salariés' : '—' }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="pw-field-label">Chiffre d'affaires</div>
-                                <div class="pw-field-value">{{ $info['chiffre_affaires'] ?? '—' }}</div>
-                            </div>
                         </div>
                     </div>
 
@@ -1668,14 +1673,16 @@ $tentativesActuelles = $this->getTentativesAppel();
                 Tous les contacts ont été traités ou aucun prospect n'est assigné à ce téléprospecteur.
             </p>
             <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
-                <button wire:click="loadQueue" wire:then="loadNextContact"
+                <button wire:click="refreshQueue"
                     style="padding:0.5rem 1.5rem; background:rgb(37 99 235); color:white; border-radius:0.5rem; font-weight:600; border:none; cursor:pointer;">
                     Rafraîchir
                 </button>
+                @if ($isSupervisorMode)
                 <a href="{{ route('filament.ns-conseil.pages.phoning-back-office') }}"
                     style="padding:0.5rem 1.5rem; background:rgb(249 250 251); color:rgb(55 65 81); border-radius:0.5rem; font-weight:600; border:1px solid rgb(229 231 235); text-decoration:none;">
                     ⚙ Gérer la file
                 </a>
+                @endif
             </div>
         </div>
     </div>

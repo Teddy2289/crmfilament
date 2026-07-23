@@ -104,7 +104,7 @@ class ViewProspect extends ViewRecord
                         ->label('Date et heure du rappel')
                         ->required()
                         ->seconds(false)
-                        ->minDate(now()),
+                        ->minDate(now()->startOfMinute()),
                 ])
                 ->action(function (array $data) {
                     $this->record->programmerRappel(new \DateTime($data['rappel_at']));
