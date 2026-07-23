@@ -264,8 +264,7 @@ $tentativesActuelles = $this->getTentativesAppel();
             display: grid;
             grid-template-columns: 1fr 400px;
             gap: 0;
-            height: calc(100vh - 168px);
-            overflow: hidden;
+            height: auto;
         }
 
         @media (max-width: 1024px) {
@@ -417,7 +416,7 @@ $tentativesActuelles = $this->getTentativesAppel();
 
         .pw-chip-sub {
             display: block;
-            font-size: 0.6875rem;
+            font-size: 0.6000rem;
             color: rgb(100 116 139);
             margin-top: 1px;
             overflow: hidden;
@@ -436,9 +435,7 @@ $tentativesActuelles = $this->getTentativesAppel();
         .pw-infos {
             flex-shrink: 0;
             border-top: 2px solid rgb(229 231 235);
-            background: white;
-            max-height: 55%;
-            overflow-y: auto;
+            background: white;     
         }
 
         /* Le dossier prospect partage la colonne de gauche avec le bloc
