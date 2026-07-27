@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Mail\InvitationAgendaResponsableMail;
 use App\Models\Appel;
-use App\Models\Document;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,6 +11,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SendInvitationAgendaJob implements ShouldQueue
 {
@@ -77,17 +77,24 @@ class SendInvitationAgendaJob implements ShouldQueue
 
     private function resolveFichePath(Prospect $prospect, RendezVous $rdv): ?string
     {
-        $document = Document::where('documentable_type', Prospect::class)
-            ->where('documentable_id', $prospect->id)
-            ->where('created_at', '>=', $rdv->created_at->subMinutes(10))
-            ->latest('created_at')
+        // La fiche bleue est générée en fiche_word_path (disque public) par
+        // GenerateFicheWordJob, pas via le mécanisme Document/FicheTemplate
+        // (celui-ci ne se déclenche jamais : ses codes de statut sont en
+        // majuscules alors que phoning_status est enregistré en minuscules).
+        $appel = Appel::where('appelable_type', Prospect::class)
+            ->where('appelable_id', $prospect->id)
+            ->where('fiche_type', 'bleue')
+            ->whereNotNull('fiche_word_path')
+            ->where('date_heure', '>=', $rdv->created_at->subMinutes(10))
+            ->latest('date_heure')
             ->first();
 
-        if (! $document) {
+        if (! $appel) {
             return null;
         }
 
-        $absolutePath = Storage::path($document->path);
+        $relative = Str::after($appel->fiche_word_path, '/storage/');
+        $absolutePath = Storage::disk('public')->path($relative);
 
         return file_exists($absolutePath) ? $absolutePath : null;
     }

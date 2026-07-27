@@ -762,6 +762,9 @@ class PhoningWorkflow extends Page
         $info = $this->currentContactData;
         $prospect = $this->currentContact;
 
+        $teleprospecteur = Auth::user();
+        $commercial = $prospect instanceof Prospect ? $prospect->commercial : null;
+
         $base = [
             'raison_sociale' => $info['nom'] ?? null,
             'secteur_activite' => $info['secteur_activite'] ?? null,
@@ -771,8 +774,8 @@ class PhoningWorkflow extends Page
             'interlocuteur_fonction' => $this->interlocuteur_fonction ?: ($info['interlocuteur_fonction'] ?? null),
             'interlocuteur_telephone' => $this->interlocuteur_telephone ?: ($info['interlocuteur_telephone'] ?? null),
             'interlocuteur_email' => $this->interlocuteur_email ?: ($info['interlocuteur_email'] ?? null),
-            'teleprospecteur_id' => Auth::id(),
-            'commercial_id' => $prospect?->commercial_id ?? null,
+            'teleprospecteur_nom' => $teleprospecteur ? trim("{$teleprospecteur->prenom} {$teleprospecteur->nom}") : null,
+            'commercial_nom' => $commercial ? trim("{$commercial->prenom} {$commercial->nom}") : null,
             'date_appel' => now()->format('d/m/Y'),
         ];
 
@@ -781,8 +784,8 @@ class PhoningWorkflow extends Page
                 'date_rdv' => $this->rappel_date ?: null,
                 'heure_rdv' => $this->rappel_heure ?: null,
                 'lieu_rdv' => $this->lieu_rdv ?: null,
-                'invitation_agenda_envoyee' => $this->invitation_agenda_envoyee,
-                'enregistrement_appel_joint' => $this->enregistrement_appel_joint,
+                'invitation_agenda_envoyee' => $this->invitation_agenda_envoyee ? 'Oui' : 'Non',
+                'enregistrement_appel_joint' => $this->enregistrement_appel_joint ? 'Oui' : 'Non',
                 'enregistrement_raison' => $this->enregistrement_raison ?: null,
                 'besoins_exprimes' => $this->besoins_exprimes ?: null,
                 'objections_soulevees' => $this->objections_soulevees ?: null,

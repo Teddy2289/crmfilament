@@ -62,6 +62,12 @@ class FichesWordRecentesWidget extends BaseWidget
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->toggleable(),
+                Tables\Columns\IconColumn::make('fiche_verte_envoyee_at')
+                    ->label('Verte envoyée')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('fiche_word_path')
                     ->label('Télécharger')
                     ->formatStateUsing(fn ($state) => 'Télécharger')
