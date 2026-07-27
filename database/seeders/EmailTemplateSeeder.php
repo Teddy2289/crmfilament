@@ -122,6 +122,13 @@ class EmailTemplateSeeder extends Seeder
                 'description' => 'Email d\'invitation envoyé à un nouvel utilisateur CRM',
                 'corps'       => "Bonjour {{user_prenom_nom}},\n\nVotre compte CRM NS Conseil a été créé.\n\nEmail : {{user_email}}\nRôle : {{role}}\n\nConnectez-vous ici : {{lien_connexion}}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.\n\nNS Conseil",
             ],
+            [
+                'nom'         => 'Confirmation RDV Prospect (CSE)',
+                'cle'         => 'prospect.confirmation_rdv',  
+                'sujet'       => 'Confirmation de votre rendez-vous avec NS Conseil — {{rdv_date}} à {{rdv_heure}}',
+                'description' => 'Email envoyé au CSE après la prise de RDV (statut rdv)',
+                'corps'       => "Bonjour {{prospect_prenom}},\n\nNous confirmons votre rendez-vous avec notre Responsable de Secteur :\n\nDate : {{rdv_jour}} {{rdv_date}}\nHeure : {{rdv_heure}}\nLieu : {{rdv_lieu}}\n\nVotre interlocuteur : {{commercial_nom}}\n\nNous restons à votre disposition.\n\nCordialement,\nL'équipe NS Conseil",
+            ],
         ];
 
         foreach ($templates as $data) {

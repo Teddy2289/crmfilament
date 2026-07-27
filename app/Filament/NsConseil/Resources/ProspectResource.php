@@ -174,12 +174,11 @@ class ProspectResource extends Resource
 
                     Forms\Components\Select::make('teleprospecteur_id')
                         ->label('Téléprospecteur')
-                        ->helperText('Assigné automatiquement lors d\'un appel en phoning — ne se remplit pas à l\'import.')
+                        ->helperText('Assigné automatiquement lors d\'un appel en phoning — ne se remplit pas à l\'import ni à la création.')
                         ->relationship('teleprospecteur', 'nom')
                         ->getOptionLabelFromRecordUsing(fn(User $r) => "{$r->prenom} {$r->nom}")
                         ->searchable()
-                        ->preload()
-                        ->default(fn() => auth()->user()?->hasRoleCache('teleprospecteur') ? auth()->id() : null),
+                        ->preload(),
 
                     Forms\Components\Select::make('commercial_id')
                         ->label('Conseiller')
@@ -374,8 +373,8 @@ class ProspectResource extends Resource
                     ->color(fn($state) => $state && $state instanceof Carbon && $state->isPast() ? 'danger' : null),
 
                 Tables\Columns\IconColumn::make('qf_valide')
-                    ->label('QF')
-                    ->tooltip('Prospect qualifié QF')
+                    ->label('Validé TL')
+                    ->tooltip('Validation Team Leader/superviseur, distincte du statut "RDV qualifié" (QF). Débloque la conversion en partenaire. Reste vide tant qu\'un TL n\'a pas validé, même si le statut QF est déjà atteint.')
                     ->boolean()
                     ->toggleable(),
             ], [
@@ -429,6 +428,8 @@ class ProspectResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+
+                Tables\Actions\ActionGroup::make([
                 Tables\Actions\EditAction::make(),
 
                 Tables\Actions\Action::make('envoyer_mail1')
@@ -550,6 +551,10 @@ class ProspectResource extends Resource
                             ->send();
                     })
                     ->requiresConfirmation(),
+                ])
+                    ->label('Actions')
+                    ->icon('heroicon-o-ellipsis-vertical')
+                    ->color('gray'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

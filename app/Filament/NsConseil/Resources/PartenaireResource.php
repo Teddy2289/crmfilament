@@ -347,24 +347,30 @@ class PartenaireResource extends Resource
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
                 Tables\Actions\ViewAction::make()->color('secondary'),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('changer_statut')
-                    ->label('Statut')->icon('heroicon-o-arrow-path')->color('warning')
-                    ->form([
-                        Forms\Components\Select::make('statut')
-                            ->label('Nouveau statut')
-                            ->options(OrganizationStatus::class)
-                            ->required()->native(false),
-                        Forms\Components\Textarea::make('commentaire')
-                            ->label('Commentaire (optionnel)')->rows(2),
-                    ])
-                    ->action(fn(Partenaire $record, array $data) => $record->changerStatut(
-                        OrganizationStatus::from($data['statut'])
-                    ))
-                    ->modalHeading('Changer le statut du partenaire')
-                    ->modalWidth('md'),
 
-                \App\Filament\Shared\Actions\SendEmailAction::make(fn(Partenaire $r) => $r->email ?? ''),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\Action::make('changer_statut')
+                        ->label('Statut')->icon('heroicon-o-arrow-path')->color('warning')
+                        ->form([
+                            Forms\Components\Select::make('statut')
+                                ->label('Nouveau statut')
+                                ->options(OrganizationStatus::class)
+                                ->required()->native(false),
+                            Forms\Components\Textarea::make('commentaire')
+                                ->label('Commentaire (optionnel)')->rows(2),
+                        ])
+                        ->action(fn(Partenaire $record, array $data) => $record->changerStatut(
+                            OrganizationStatus::from($data['statut'])
+                        ))
+                        ->modalHeading('Changer le statut du partenaire')
+                        ->modalWidth('md'),
+
+                    \App\Filament\Shared\Actions\SendEmailAction::make(fn(Partenaire $r) => $r->email ?? ''),
+                ])
+                    ->label('Actions')
+                    ->icon('heroicon-o-ellipsis-vertical')
+                    ->color('gray'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -115,4 +115,24 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
     'redirect_all_to' => env('MAIL_REDIRECT_ALL_TO'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Markdown Mail Settings
+    |--------------------------------------------------------------------------
+    |
+    | Requis pour que les mailables utilisant @component('mail::message')
+    | (FicheJauneJ7Mail, FicheVerteCommercialMail, SendWeeklyReportJob...)
+    | trouvent le namespace de vue "mail". Sans cette entrée, le
+    | MailServiceProvider n'enregistre jamais ce hint path et toute vue
+    | mail::* échoue avec "No hint path defined for [mail]".
+    |
+    */
+
+    'markdown' => [
+        'theme' => 'default',
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
 ];

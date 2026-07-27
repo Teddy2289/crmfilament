@@ -56,3 +56,9 @@ Schedule::job(new \App\Jobs\SendRappelRdvJob())
 Schedule::job(new \App\Jobs\SendInvitationAgendaJob())
     ->everyTenMinutes()
     ->withoutOverlapping();
+
+// Fiche verte (BLOC2 / NCSE-50) : transmission au commercial dès que le dossier
+// est prêt, pas de délai fixe contrairement à la fiche jaune (toutes les 10 min).
+Schedule::job(new \App\Jobs\SendFicheVerteCommercialJob())
+    ->everyTenMinutes()
+    ->withoutOverlapping();

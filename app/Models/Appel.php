@@ -19,6 +19,7 @@ class Appel extends Model
         'fiche_data' => 'array',
         'fiche_word_generated_at' => 'datetime',
         'fiche_jaune_j7_envoye_at' => 'datetime',
+        'fiche_verte_envoyee_at' => 'datetime',
         'ringover_tags' => 'array',
         'ringover_tag_validation' => 'array',
         'ringover_tag_is_complete' => 'boolean',
@@ -67,6 +68,7 @@ class Appel extends Model
         'fiche_word_path',
         'fiche_word_generated_at',
         'fiche_jaune_j7_envoye_at',
+        'fiche_verte_envoyee_at',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -432,30 +434,33 @@ class Appel extends Model
     }
 
     /**
-     * Raccourcis pratiques pour les relations polymorphiques
+     * Raccourcis pratiques pour les relations polymorphiques.
+     *
+     * Ne pas ajouter de ->where('appelable_type', ...) ici : cette colonne
+     * vit sur `appels`, pas sur la table cible (partenaires/prospects/...),
+     * la requête échoue donc systématiquement (SQLSTATE 42S22). Le filtrage
+     * par type est déjà fait par `appelable_type` sur l'appel lui-même —
+     * n'utiliser ces raccourcis que lorsqu'on sait déjà à quel type l'appel
+     * est rattaché (sinon préférer la relation polymorphique appelable()).
      */
     public function partenaire()
     {
-        return $this->belongsTo(Partenaire::class, 'appelable_id')
-            ->where('appelable_type', Partenaire::class);
+        return $this->belongsTo(Partenaire::class, 'appelable_id');
     }
 
     public function artisan()
     {
-        return $this->belongsTo(Artisan::class, 'appelable_id')
-            ->where('appelable_type', Artisan::class);
+        return $this->belongsTo(Artisan::class, 'appelable_id');
     }
 
     public function prospect()
     {
-        return $this->belongsTo(Prospect::class, 'appelable_id')
-            ->where('appelable_type', Prospect::class);
+        return $this->belongsTo(Prospect::class, 'appelable_id');
     }
 
     public function contactParticulier()
     {
-        return $this->belongsTo(ContactParticulier::class, 'appelable_id')
-            ->where('appelable_type', ContactParticulier::class);
+        return $this->belongsTo(ContactParticulier::class, 'appelable_id');
     }
 
     public function campagne()

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Appel;
+use App\Models\Prospect;
 use App\Models\User;
 use App\Services\Crm\FicheWordService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,8 +24,9 @@ class SendFicheJauneJ7Job implements ShouldQueue
         $dateJMoins7Fin = now()->subDays(7)->endOfDay();
 
         $appels = Appel::whereBetween('date_heure', [$dateJMoins7, $dateJMoins7Fin])
-            ->where('phoning_status', 'CSE-NI')
+            ->where('phoning_status', 'cse_ni')
             ->whereNotNull('fiche_word_path') // S'assurer que la fiche word a déjà été générée
+            ->with('appelable')
             ->get();
 
         if ($appels->isEmpty()) {
@@ -64,11 +66,22 @@ class SendFicheJauneJ7Job implements ShouldQueue
 
                 // Envoyer l'email avec la fiche jaune en pièce jointe
                 if ($appel->fiche_word_path) {
-                    $destinataire = $appel->user ?: $appel->phoning_agent;
+                    // Le rappel J+7 est porté par le Responsable de Secteur
+                    // assigné au prospect (cf. fiche jaune : "Responsable de
+                    // Secteur assigné"), pas par le téléprospecteur qui a
+                    // passé l'appel initial. On ne retombe sur ce dernier que
+                    // si aucun commercial n'est encore assigné, pour ne pas
+                    // perdre le rappel.
+                    $prospect = $appel->appelable instanceof Prospect ? $appel->appelable : null;
+                    $destinataire = $prospect?->commercial ?: ($appel->user ?: $appel->phoning_agent);
 
                     if ($destinataire && $destinataire->email) {
+                        if (! $prospect?->commercial) {
+                            Log::warning("Fiche jaune J+7 : aucun commercial assigné au prospect #{$prospect?->id}, envoi de repli au téléprospecteur #{$destinataire->id}");
+                        }
+
                         Mail::to($destinataire->email)
-                            ->queue(new FicheJauneJ7Mail($appel));
+                            ->queue(new FicheJauneJ7Mail($appel, $destinataire));
 
                         // Marquer comme envoyé pour éviter les doublons
                         $appel->update([
@@ -76,6 +89,8 @@ class SendFicheJauneJ7Job implements ShouldQueue
                         ]);
 
                         Log::info("Fiche jaune J+7 envoyée pour l'appel #{$appel->id} à {$destinataire->email}");
+                    } else {
+                        Log::warning("Fiche jaune J+7 : aucun destinataire disponible pour l'appel #{$appel->id} (ni commercial, ni téléprospecteur)");
                     }
                 }
             } catch (\Exception $e) {

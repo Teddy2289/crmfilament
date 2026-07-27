@@ -1,19 +1,19 @@
 @component('mail::message')
 # Fiche Jaune J+7 - Rappel Commercial
 
-Bonjour {{ $appel->user ? $appel->user->prenom : $appel->phoning_agent->prenom ?? 'Collaborateur' }},
+Bonjour {{ $destinataire?->prenom ?? 'Collaborateur' }},
 
-Une fiche jaune J+7 a été générée pour un appel que vous avez effectué il y a 7 jours.
+Un rappel commercial est dû ce jour : le CSE contacté il y a 7 jours n'était pas intéressé lors du premier appel, la procédure prévoit une relance à J+7.
 
-## Détails de l'appel
+## Détails de l'appel initial
 - **Date et heure** : {{ $appel->date_heure->format('d/m/Y H:i') }}
 - **Type d'appel** : {{ $appel->typeLabel }}
 - **Résultat** : CSE pas intéressé (CSE-NI)
-- **Interlocuteur** : {{ $appel->prospect->nom ?? $appel->partenaire->nom ?? 'Non spécifié' }}
-- **Téléphone** : {{ $appel->prospect->telephone ?? $appel->partenaire->telephone ?? 'Non spécifié' }}
+- **Interlocuteur** : {{ $appel->appelable->nom ?? 'Non spécifié' }}
+- **Téléphone** : {{ $appel->appelable->telephone ?? 'Non spécifié' }}
 
 ## Action requise
-Cette fiche jaune indique que le CSE n'était pas intéressé lors de l'appel initial. Selon la procédure, vous devez rappeler ce contact dans les 7 jours suivant ce premier contact (donc aujourd'hui).
+En tant que Responsable de Secteur assigné à ce dossier, il vous revient de reprendre contact avec cet interlocuteur.
 
 La fiche détaillée est jointe à cet email en format Word (.docx). Vous y trouverez toutes les informations nécessaires pour préparer votre rappel.
 

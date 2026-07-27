@@ -104,12 +104,16 @@ class SendEmailAction
                 $destinataire = $data['destinataire'];
                 $cc = !empty($data['cc']) ? array_map('trim', explode(',', $data['cc'])) : [];
 
-                // Envoi via Laravel Mail::raw
+                // Envoi brut (pas de vue Blade) : Message::html()/text() sont les
+                // méthodes correctes sous Symfony Mailer. setBody()/addPart()
+                // viennent de l'ancienne API SwiftMailer (Laravel <= 8) et
+                // provoquent un TypeError ici (Symfony\Mime\Message::setBody()
+                // attend un AbstractPart, pas une chaîne).
                 Mail::send([], [], function (Message $message) use ($sujet, $corps, $destinataire, $cc) {
                     $message->to($destinataire)
                         ->subject($sujet)
-                        ->setBody(nl2br(htmlspecialchars($corps)), 'text/html')
-                        ->addPart($corps, 'text/plain');
+                        ->html(nl2br(e($corps)))
+                        ->text($corps);
 
                     foreach ($cc as $ccAddress) {
                         if (filter_var($ccAddress, FILTER_VALIDATE_EMAIL)) {

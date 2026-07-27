@@ -1277,7 +1277,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                         <button class="pw-info-tab" data-tab="standard-cse" onclick="switchInfoTab('standard-cse')">📋 Standard / CSE</button>
                         @endif
                         @if (($info['type'] ?? '') !== 'client')
-                        <button class="pw-info-tab" data-tab="pipeline" onclick="switchInfoTab('pipeline')">📊 Pipeline</button>
+                        <button class="pw-info-tab" data-tab="pipeline" onclick="switchInfoTab('pipeline')">📊 Suivi commercial</button>
                         @endif
                         @if (($info['type'] ?? '') === 'prospect' && !empty($info['notes']))
                         <button class="pw-info-tab" data-tab="notes" onclick="switchInfoTab('notes')">📝 Notes</button>
@@ -1353,38 +1353,7 @@ $tentativesActuelles = $this->getTentativesAppel();
 
                     @if (!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur']))
                     <div class="pw-info-panel" data-tab="interlocuteur" style="display:none;">
-                        <div class="pw-interlocuteur-card">
-                            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.875rem;">
-                                <div style="width:2.5rem; height:2.5rem; border-radius:9999px; background:rgb(219 234 254); display:flex; align-items:center; justify-content:center; font-weight:700; color:rgb(37 99 235);">
-                                    {{ strtoupper(substr($info['interlocuteur_nom'] ?? ($info['interlocuteur'] ?? '?'), 0, 1)) }}
-                                </div>
-                                <div>
-                                    <div style="font-weight:700; font-size:0.9375rem;">
-                                        {{ $info['interlocuteur_nom'] ?? ($info['interlocuteur'] ?? '—') }}
-                                    </div>
-                                    @if (!empty($info['interlocuteur_fonction']))
-                                    <div style="font-size:0.8125rem; color:rgb(107 114 128);">
-                                        {{ $info['interlocuteur_fonction'] }}
-                                    </div>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="pw-info-grid">
-                                <div>
-                                    <div class="pw-field-label">Téléphone direct</div>
-                                    <div class="pw-field-value">{{ $info['interlocuteur_telephone'] ?? '—' }}</div>
-                                </div>
-                                <div>
-                                    <div class="pw-field-label">Email direct</div>
-                                    @if (!empty($info['interlocuteur_email']))
-                                    <a href="mailto:{{ $info['interlocuteur_email'] }}"
-                                        style="font-size:0.8125rem; color:rgb(37 99 235);">{{ $info['interlocuteur_email'] }}</a>
-                                    @else
-                                    <div class="pw-field-value">—</div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
+                      
 
                         <div style="margin-top:1rem;">
                             <div class="pw-field-label" style="margin-bottom:0.5rem;">Nouveau contact identifié à l'appel</div>
