@@ -8,6 +8,12 @@ class RedirectAllMailListener
 {
     public function handle(MessageSending $event): void
     {
+        // Garde-fou : ne jamais rediriger les mails en production, même si
+        // MAIL_REDIRECT_ALL_TO traîne par erreur dans le .env du serveur.
+        if (app()->environment('production')) {
+            return;
+        }
+
         $redirectTo = config('mail.redirect_all_to');
 
         if (! $redirectTo) {
