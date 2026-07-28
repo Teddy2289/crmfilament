@@ -56,8 +56,30 @@ class InvitationAgendaResponsableMail extends Mailable
     {
         return new Envelope(
             subject: $this->getRenderedSubject(),
-            cc: self::CC_FIXES,
+            cc: $this->resolveCc(),
         );
+    }
+
+    /**
+     * Cc bruno/nirina (règle R4), sauf si l'un des deux est le commercial du RDV
+     * (déjà destinataire principal), + le téléprospecteur qui a pris le RDV.
+     */
+    private function resolveCc(): array
+    {
+        $commercialEmail = $this->rdv->commercial?->email;
+
+        $cc = collect(self::CC_FIXES)
+            ->reject(fn (string $email) => $commercialEmail && strcasecmp($email, $commercialEmail) === 0);
+
+        $teleproEmail = $this->rdv->teleprospecteur?->email;
+        if ($teleproEmail
+            && (! $commercialEmail || strcasecmp($teleproEmail, $commercialEmail) !== 0)
+            && ! $cc->contains(fn (string $email) => strcasecmp($email, $teleproEmail) === 0)
+        ) {
+            $cc->push($teleproEmail);
+        }
+
+        return $cc->values()->all();
     }
 
     public function content(): Content
