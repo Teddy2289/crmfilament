@@ -61,12 +61,18 @@ class EmailTemplateResource extends Resource
                         ->helperText('Utilisez {{variable}} pour les variables dynamiques')
                         ->columnSpanFull(),
 
-                    Forms\Components\Textarea::make('corps')
+                    Forms\Components\RichEditor::make('corps')
                         ->label('Corps du mail')
                         ->required()
-                        ->rows(15)
                         ->columnSpanFull()
-                        ->helperText('Variables disponibles entre doubles accolades : {{prenom}}, {{nom}}, {{date}}, etc.'),
+                        ->helperText('Variables disponibles entre doubles accolades : {{prenom}}, {{nom}}, {{date}}, etc.')
+                        ->toolbarButtons([
+                            'bold', 'italic', 'underline', 'strike',
+                            'h2', 'h3',
+                            'bulletList', 'orderedList',
+                            'link', 'blockquote',
+                            'undo', 'redo',
+                        ]),
 
                     Forms\Components\Section::make('Variables disponibles')
                         ->description('Cliquez sur l\'icône de copie pour copier la variable')

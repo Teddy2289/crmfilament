@@ -101,6 +101,8 @@ class SendEmailAction
 
                 $sujet = $template->renderSujet($variables);
                 $corps = $template->renderCorps($variables);
+                $corpsHtml = $template->corpsEstHtml() ? $corps : nl2br($corps);
+                $corpsText = $template->renderCorpsPlainText($variables);
                 $destinataire = $data['destinataire'];
                 $cc = !empty($data['cc']) ? array_map('trim', explode(',', $data['cc'])) : [];
 
@@ -109,11 +111,11 @@ class SendEmailAction
                 // viennent de l'ancienne API SwiftMailer (Laravel <= 8) et
                 // provoquent un TypeError ici (Symfony\Mime\Message::setBody()
                 // attend un AbstractPart, pas une chaîne).
-                Mail::send([], [], function (Message $message) use ($sujet, $corps, $destinataire, $cc) {
+                Mail::send([], [], function (Message $message) use ($sujet, $corpsHtml, $corpsText, $destinataire, $cc) {
                     $message->to($destinataire)
                         ->subject($sujet)
-                        ->html(nl2br(e($corps)))
-                        ->text($corps);
+                        ->html($corpsHtml)
+                        ->text($corpsText);
 
                     foreach ($cc as $ccAddress) {
                         if (filter_var($ccAddress, FILTER_VALIDATE_EMAIL)) {

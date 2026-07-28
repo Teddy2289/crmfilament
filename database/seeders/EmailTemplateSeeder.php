@@ -124,10 +124,31 @@ class EmailTemplateSeeder extends Seeder
             ],
             [
                 'nom'         => 'Confirmation RDV Prospect (CSE)',
-                'cle'         => 'prospect.confirmation_rdv',  
+                'cle'         => 'prospect.confirmation_rdv',
                 'sujet'       => 'Confirmation de votre rendez-vous avec NS Conseil — {{rdv_date}} à {{rdv_heure}}',
                 'description' => 'Email envoyé au CSE après la prise de RDV (statut rdv)',
                 'corps'       => "Bonjour {{prospect_prenom}},\n\nNous confirmons votre rendez-vous avec notre Responsable de Secteur :\n\nDate : {{rdv_jour}} {{rdv_date}}\nHeure : {{rdv_heure}}\nLieu : {{rdv_lieu}}\n\nVotre interlocuteur : {{commercial_nom}}\n\nNous restons à votre disposition.\n\nCordialement,\nL'équipe NS Conseil",
+            ],
+            [
+                'nom'         => 'Prise de contact — Standard bloqué (BLOC)',
+                'cle'         => 'prospect.prise_contact_bloc',
+                'sujet'       => 'Prise de contact — {{entreprise_nom}}',
+                'description' => 'Envoyé à l\'élu CSE quand le standard de l\'entreprise a transmis ses coordonnées mais bloque le contact téléphonique direct (statut bloc)',
+                'corps'       => "Bonjour {{elu_prenom}} {{elu_nom}},\n\nJe me permets de vous contacter par email suite à notre appel auprès du standard de {{entreprise_nom}}, qui m'a transmis vos coordonnées en tant qu'élu(e) du CSE.\n\nJe suis {{teleprospecteur_nom}}, en charge du développement de NS Conseil dans votre secteur. Nous accompagnons les CSE dans la mise en place de formations et d'actions dédiées aux salariés.\n\nJe souhaiterais échanger avec vous pour vous présenter notre accompagnement. Vos disponibilités éventuelles : {{disponibilites}}\n\nN'hésitez pas à me recontacter directement par retour de mail ou au {{elu_telephone}}.\n\nCordialement,\n{{teleprospecteur_nom}} — NS Conseil",
+            ],
+            [
+                'nom'         => 'Prise de contact — Sans CSE (NCSE-50)',
+                'cle'         => 'prospect.contact_sans_cse',
+                'sujet'       => 'NS Conseil — {{entreprise_nom}}',
+                'description' => 'Envoyé au contact identifié quand l\'entreprise n\'a pas de CSE (statut ncse_50, moins de 50 salariés)',
+                'corps'       => "Bonjour {{contact_prenom}} {{contact_nom}},\n\nJe vous contacte au sujet de {{entreprise_nom}} ({{nb_salaries}} salarié(s)), suite à notre échange téléphonique.\n\nJe suis {{teleprospecteur_nom}}, en charge du développement de NS Conseil dans votre secteur. Nous accompagnons les entreprises et leurs salariés au travers de formations et d'actions dédiées, y compris en l'absence de CSE.\n\nJe reste à votre disposition pour vous présenter notre accompagnement.\n\nCordialement,\n{{teleprospecteur_nom}} — NS Conseil",
+            ],
+            [
+                'nom'         => 'CSE hors zone — Transmission interne',
+                'cle'         => 'interne.cse_hors_zone',
+                'sujet'       => '[CSE hors zone] {{entreprise_nom}} — {{departement}}',
+                'description' => 'Email interne (non envoyé au prospect) transmettant un CSE identifié hors de la zone de prospection pour traitement centralisé (statut cse_hz)',
+                'corps'       => "Bonjour,\n\nLe CSE suivant a été identifié hors de notre zone de prospection habituelle et vous est transmis pour traitement centralisé :\n\nEntreprise : {{entreprise_nom}}\nÉlu contact : {{elu_nom}}\nEmail : {{elu_email}}\nTéléphone : {{elu_telephone}}\nDépartement : {{departement}}\nVille : {{ville}}\n\nMerci de prendre le relais sur ce dossier.\n\nNS Conseil",
             ],
         ];
 
@@ -138,6 +159,6 @@ class EmailTemplateSeeder extends Seeder
             );
         }
 
-        $this->command->info('16 templates email créés/mis à jour avec succès.');
+        $this->command->info(count($templates) . ' templates email créés/mis à jour avec succès.');
     }
 }

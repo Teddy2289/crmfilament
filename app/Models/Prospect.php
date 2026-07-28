@@ -22,6 +22,7 @@ class Prospect extends Model
         'statut' => ProspectStatut::class,
         'date_premier_contact' => 'date',
         'rappel_planifie_at' => 'datetime',
+        'rappel_notifie_retard_at' => 'datetime',
         'difficile' => 'boolean',
         'difficile_at' => 'datetime',
         'qf_valide' => 'boolean',
@@ -54,6 +55,7 @@ class Prospect extends Model
         'commercial_id',
         'date_premier_contact',
         'rappel_planifie_at',
+        'rappel_notifie_retard_at',
         'difficile',
         'difficile_at',
         'interlocuteur_nom',
@@ -639,6 +641,12 @@ class Prospect extends Model
                 ! $prospect->date_premier_contact
             ) {
                 $prospect->date_premier_contact = now();
+            }
+
+            // Toute replanification manuelle du rappel (ex: formulaire d'édition)
+            // doit rouvrir le droit à une nouvelle notification de retard.
+            if ($prospect->isDirty('rappel_planifie_at') && ! $prospect->isDirty('rappel_notifie_retard_at')) {
+                $prospect->rappel_notifie_retard_at = null;
             }
         });
     }

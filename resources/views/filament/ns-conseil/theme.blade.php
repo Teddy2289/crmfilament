@@ -451,6 +451,7 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
     border-radius: var(--ns-radius-lg) !important;
     border: 1px solid var(--ns-border) !important;
     box-shadow: 0 12px 36px rgba(30, 52, 68, 0.18) !important;
+   
 }
 
 .fi-modal-header {
@@ -755,5 +756,27 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
 .ns-import-progress-dismiss svg {
     width: 100%;
     height: 100%;
+}
+
+/* ── Ringover vs modales/notifications Filament ────────────
+   L'écran de connexion Ringover est en position:fixed. Un simple z-index
+   ne suffit pas : `position:fixed` se positionne par rapport au viewport
+   et ignore l'overflow:hidden d'un ancêtre normal, donc il continue de
+   s'afficher par-dessus tout (sidebar, cloche de notifications) même si
+   son conteneur #ringover-embed-phoning ne fait que 560px de haut.
+   `contain: layout paint` force ce conteneur à devenir le "containing
+   block" de ses descendants fixed/absolute : ceux-ci sont alors
+   positionnés et rognés PAR RAPPORT AU CONTENEUR, plus au viewport. */
+#ringover-embed-phoning {
+    position: relative !important;
+    contain: layout paint !important;
+}
+
+/* Sécurité complémentaire : si un élément Ringover s'échappe malgré tout
+   (widget flottant hors du conteneur dédié), on le repasse sous les
+   modales Filament plutôt qu'au-dessus. */
+.fi-modal-close-overlay,
+.fi-modal .z-40 {
+    z-index: 999999 !important;
 }
 </style>
