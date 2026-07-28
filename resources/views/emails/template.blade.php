@@ -1,5 +1,5 @@
 @extends('emails.layout')
 
 @section('content')
-{{ $corps }}
+{!! $corps !!}
 @endsection

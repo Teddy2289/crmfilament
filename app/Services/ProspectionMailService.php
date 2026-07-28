@@ -1,14 +1,15 @@
 <?php
 namespace App\Services;
 
+use App\Jobs\SendProspectionMailJob;
 use App\Mail\ContactSansCSEMail;
 use App\Mail\PriseContactBlocMail;
 use App\Mail\ConfirmationRdvProspectMail;
 use App\Mail\GenericProspectionMail;
 use App\Models\Prospect;
 use App\Models\RendezVous;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class ProspectionMailService
 {
@@ -63,7 +64,13 @@ class ProspectionMailService
         ]);
 
         if ($emailInterlocuteur) {
-            Mail::to($emailInterlocuteur)->queue(new ConfirmationRdvProspectMail($prospect, $rdv));
+            dispatch(new SendProspectionMailJob(
+                mailable: new ConfirmationRdvProspectMail($prospect, $rdv),
+                to: $emailInterlocuteur,
+                emailLabel: 'Confirmation RDV',
+                prospectId: $prospect->id,
+                notifyUserId: Auth::id(),
+            ));
             $rdv->confirmer();
         }
 
@@ -86,12 +93,18 @@ class ProspectionMailService
             return;
         }
 
-        Mail::to($email)->queue(new PriseContactBlocMail($prospect, [
-            'nom' => $prospect->interlocuteur_nom,
-            'fonction' => $prospect->interlocuteur_fonction,
-            'email' => $prospect->interlocuteur_email,
-            'telephone' => $prospect->interlocuteur_telephone,
-        ]));
+        dispatch(new SendProspectionMailJob(
+            mailable: new PriseContactBlocMail($prospect, [
+                'nom' => $prospect->interlocuteur_nom,
+                'fonction' => $prospect->interlocuteur_fonction,
+                'email' => $prospect->interlocuteur_email,
+                'telephone' => $prospect->interlocuteur_telephone,
+            ]),
+            to: $email,
+            emailLabel: 'Prise de contact (bloc)',
+            prospectId: $prospect->id,
+            notifyUserId: Auth::id(),
+        ));
     }
 
     protected function envoyerNcse50(Prospect $prospect, array $contexte): void
@@ -108,13 +121,19 @@ class ProspectionMailService
             return;
         }
 
-        Mail::to($email)->queue(new ContactSansCSEMail($prospect, [
-            'nom' => $prospect->interlocuteur_nom,
-            'fonction' => $prospect->interlocuteur_fonction,
-            'email' => $prospect->interlocuteur_email,
-            'telephone' => $prospect->interlocuteur_telephone,
-            'nb_salaries' => $prospect->nb_salaries,
-        ]));
+        dispatch(new SendProspectionMailJob(
+            mailable: new ContactSansCSEMail($prospect, [
+                'nom' => $prospect->interlocuteur_nom,
+                'fonction' => $prospect->interlocuteur_fonction,
+                'email' => $prospect->interlocuteur_email,
+                'telephone' => $prospect->interlocuteur_telephone,
+                'nb_salaries' => $prospect->nb_salaries,
+            ]),
+            to: $email,
+            emailLabel: 'Contact sans CSE',
+            prospectId: $prospect->id,
+            notifyUserId: Auth::id(),
+        ));
     }
 
     protected function envoyerHorsZone(Prospect $prospect, array $contexte): void
@@ -128,16 +147,22 @@ class ProspectionMailService
 
         Log::info("MAIL DEBUG: envoyerHorsZone", ['destinataire' => $destinataire]);
 
-        Mail::to($destinataire)->queue(new GenericProspectionMail(
-            templateKey: 'interne.cse_hors_zone',
-            variables: [
-                'entreprise_nom' => $prospect->nom,
-                'elu_nom' => $prospect->interlocuteur_nom,
-                'elu_email' => $prospect->interlocuteur_email,
-                'elu_telephone' => $prospect->interlocuteur_telephone,
-                'departement' => $prospect->departement,
-                'ville' => $prospect->ville,
-            ],
+        dispatch(new SendProspectionMailJob(
+            mailable: new GenericProspectionMail(
+                templateKey: 'interne.cse_hors_zone',
+                variables: [
+                    'entreprise_nom' => $prospect->nom,
+                    'elu_nom' => $prospect->interlocuteur_nom,
+                    'elu_email' => $prospect->interlocuteur_email,
+                    'elu_telephone' => $prospect->interlocuteur_telephone,
+                    'departement' => $prospect->departement,
+                    'ville' => $prospect->ville,
+                ],
+            ),
+            to: $destinataire,
+            emailLabel: 'CSE hors zone',
+            prospectId: $prospect->id,
+            notifyUserId: Auth::id(),
         ));
     }
 

@@ -51,6 +51,12 @@ Schedule::job(new \App\Jobs\SendRappelRdvJob())
     ->everyThirtyMinutes()
     ->withoutOverlapping();
 
+// Rappel en retard : notifie (cloche) le téléprospecteur/commercial dès qu'un
+// rappel programmé sur un prospect passe en retard (toutes les 15 min).
+Schedule::job(new \App\Jobs\SendRappelEnRetardJob())
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();
+
 // Invitation agenda RDV : envoie l'invitation au commercial (fiche + enregistrement audio)
 // une fois les pièces jointes disponibles, ou au plus tard après 2h (toutes les 10 min).
 Schedule::job(new \App\Jobs\SendInvitationAgendaJob())
