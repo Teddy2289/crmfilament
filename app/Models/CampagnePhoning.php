@@ -19,6 +19,11 @@ class CampagnePhoning extends Model
         'statut',
         'type_entite',
         'criteres',
+        'max_tentatives',
+        'jours_refroidissement',
+        'exclure_autres_campagnes',
+        'exclure_sans_telephone',
+        'script_appel',
         'date_debut',
         'date_fin',
         'user_id',
@@ -30,11 +35,17 @@ class CampagnePhoning extends Model
         'criteres' => 'array',
         'date_debut' => 'date',
         'date_fin' => 'date',
+        'max_tentatives' => 'integer',
+        'jours_refroidissement' => 'integer',
+        'exclure_autres_campagnes' => 'boolean',
+        'exclure_sans_telephone' => 'boolean',
     ];
 
     public const STATUTS = [
         'brouillon' => 'Brouillon',
-        'active' => 'Active',
+        'planifiee' => 'Planifiée',
+        'active' => 'Active (En cours)',
+        'en_pause' => 'En Pause',
         'terminee' => 'Terminée',
     ];
 
@@ -220,8 +231,10 @@ class CampagnePhoning extends Model
     {
         return match ($this->statut) {
             'active' => 'success',
+            'planifiee' => 'info',
+            'en_pause' => 'warning',
             'terminee' => 'gray',
-            default => 'warning',
+            default => 'danger',
         };
     }
 
@@ -323,9 +336,57 @@ class CampagnePhoning extends Model
     {
         $q = Prospect::query()->whereNull('deleted_at');
 
+        // Règle 1: Exclusion si téléphone absent / non renseigné
+        if ($this->exclure_sans_telephone ?? true) {
+            $q->where(function ($sub) {
+                $sub->whereNotNull('telephone')
+                    ->where('telephone', '!=', '')
+                    ->orWhere(function ($s2) {
+                        $s2->whereNotNull('telephone_alt')->where('telephone_alt', '!=', '');
+                    });
+            });
+        }
+
+        // Règle 2: Période de refroidissement (refroidissement depuis le dernier appel)
+        if (! empty($this->jours_refroidissement) && $this->jours_refroidissement > 0) {
+            $dateLimite = now()->subDays((int) $this->jours_refroidissement);
+            $q->whereDoesntHave('appels', function (Builder $aQuery) use ($dateLimite) {
+                $aQuery->where('date_heure', '>=', $dateLimite);
+            });
+        }
+
+        // Règle 4: Nombre maximal de tentatives d'appel non abouties
+        if (! empty($this->max_tentatives) && $this->max_tentatives > 0) {
+            $max = (int) $this->max_tentatives;
+            $q->withCount(['appels' => function ($aQuery) {
+                $aQuery->where('compte_comme_tentative', true);
+            }])->having('appels_count', '<', $max);
+        }
+
         if (is_array($c['statuts'] ?? null) && count($c['statuts']) > 0) {
             $q->whereIn('statut', $c['statuts']);
         }
+
+        // Filtres de dates : Rappel planifié
+        if (! empty($c['rappel_date_debut'])) {
+            $q->where('rappel_planifie_at', '>=', $c['rappel_date_debut']);
+        }
+        if (! empty($c['rappel_date_fin'])) {
+            $q->where('rappel_planifie_at', '<=', $c['rappel_date_fin'] . ' 23:59:59');
+        }
+
+        // Filtres de dates : Rendez-vous prévus
+        if (! empty($c['rdv_date_debut']) || ! empty($c['rdv_date_fin'])) {
+            $q->whereHas('rendezVous', function (Builder $rdvQuery) use ($c) {
+                if (! empty($c['rdv_date_debut'])) {
+                    $rdvQuery->where('date_heure', '>=', $c['rdv_date_debut']);
+                }
+                if (! empty($c['rdv_date_fin'])) {
+                    $rdvQuery->where('date_heure', '<=', $c['rdv_date_fin'] . ' 23:59:59');
+                }
+            });
+        }
+
         if (! empty($c['departement'])) {
             $q->where('departement', $c['departement']);
         }

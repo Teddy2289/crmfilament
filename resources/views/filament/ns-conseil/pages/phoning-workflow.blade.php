@@ -1,5 +1,5 @@
 @php
-$rappelCodes = ['rdv', 'rapl_elu', 'rapl_std', 'cse_ni', 'rp', 'rpc', 'bloc'];
+$rappelCodes = $this->getRappelStatusCodes();
 $maxTentatives = app(\App\Services\Crm\CrmSettingsService::class)->get('prospection.max_standard_attempts', 3);
 $tentativesActuelles = $this->getTentativesAppel();
 @endphp
