@@ -140,13 +140,13 @@ class StatutPhoningResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('groupe')
                         ->label('Groupe / Cas')
-                        ->options(fn() => WorkflowGroupe::forModelType('prospect')->pluck('label', 'code'))
+                        ->options(fn (\Filament\Forms\Get $get) => WorkflowGroupe::forModelType($get('model_type') ?? 'prospect')->pluck('label', 'code'))
                         ->searchable()
                         ->native(false),
 
                     Forms\Components\Select::make('pipeline_statut')
                         ->label('Statut pipeline cible')
-                        ->options(fn() => PipelineStatut::optionsFor('prospect'))
+                        ->options(fn (\Filament\Forms\Get $get) => PipelineStatut::optionsFor($get('model_type') ?? 'prospect'))
                         ->searchable()
                         ->native(false)
                         ->helperText('Statut prospect appliqué après cet appel'),

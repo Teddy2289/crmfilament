@@ -41,182 +41,283 @@ class CampagnePhoningResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema(static::applyFormFieldPermissions([
+            Forms\Components\Wizard::make([
+                // ── Étape 1 : Identité & Attribution ────────────────────
+                Forms\Components\Wizard\Step::make('Identité & Attribution')
+                    ->description('Nom, dates, entité et agents affectés')
+                    ->icon('heroicon-o-megaphone')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('nom')
+                            ->label('Nom de la campagne')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
 
-            // ── Identité ─────────────────────────────────────────────
-            Forms\Components\Section::make('Campagne')
-                ->icon('heroicon-o-megaphone')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\TextInput::make('nom')
-                        ->label('Nom de la campagne')
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpanFull(),
+                        Forms\Components\Textarea::make('description')
+                            ->label('Description')
+                            ->rows(3)
+                            ->columnSpanFull(),
 
-                    Forms\Components\Textarea::make('description')
-                        ->label('Description')
-                        ->rows(3)
-                        ->columnSpanFull(),
+                        Forms\Components\Select::make('statut')
+                            ->label('Statut')
+                            ->options(CampagnePhoning::STATUTS)
+                            ->default('brouillon')
+                            ->required(),
 
-                    Forms\Components\Select::make('statut')
-                        ->label('Statut')
-                        ->options(CampagnePhoning::STATUTS)
-                        ->default('brouillon')
-                        ->required(),
+                        Forms\Components\Select::make('entite_id')
+                            ->label('Entité commerciale')
+                            ->options(fn () => EntiteCommerciale::orderBy('nom')->pluck('nom', 'id'))
+                            ->searchable()
+                            ->nullable(),
 
-                    Forms\Components\Select::make('entite_id')
-                        ->label('Entité commerciale')
-                        ->options(fn () => EntiteCommerciale::orderBy('nom')->pluck('nom', 'id'))
-                        ->searchable()
-                        ->nullable(),
-                ]),
+                        Forms\Components\Select::make('groupe_telepro_id')
+                            ->label('Groupe assigné')
+                            ->options(fn () => GroupeTelepro::actifs()->orderBy('nom')->pluck('nom', 'id'))
+                            ->searchable()
+                            ->nullable()
+                            ->placeholder('Tous les groupes (ouverte à tous)')
+                            ->helperText('Tous les télépros de ce groupe voient cette campagne.'),
 
-            // ── Assignation ──────────────────────────────────────────
-            Forms\Components\Section::make('Assignation')
-                ->icon('heroicon-o-user')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\Select::make('groupe_telepro_id')
-                        ->label('Groupe assigné')
-                        ->options(fn () => GroupeTelepro::actifs()->orderBy('nom')->pluck('nom', 'id'))
-                        ->searchable()
-                        ->nullable()
-                        ->placeholder('Tous les groupes (ouverte à tous)')
-                        ->helperText('Tous les télépros de ce groupe voient cette campagne.'),
+                        Forms\Components\Select::make('user_id')
+                            ->label('Agent spécifique (optionnel)')
+                            ->options(
+                                fn () => User::where('actif', true)
+                                    ->orderBy('nom')
+                                    ->get()
+                                    ->mapWithKeys(fn ($u) => [$u->id => trim("{$u->prenom} {$u->nom}")])
+                            )
+                            ->searchable()
+                            ->nullable()
+                            ->default(fn () => auth()->user()?->hasRoleCache('teleprospecteur') ? auth()->id() : null)
+                            ->placeholder('Personne en particulier')
+                            ->helperText('Prioritaire sur le groupe si renseigné.'),
 
-                    Forms\Components\Select::make('user_id')
-                        ->label('Agent spécifique (optionnel)')
-                        ->options(
-                            fn () => User::where('actif', true)
-                                ->orderBy('nom')
-                                ->get()
-                                ->mapWithKeys(fn ($u) => [$u->id => trim("{$u->prenom} {$u->nom}")])
-                        )
-                        ->searchable()
-                        ->nullable()
-                        ->default(fn () => auth()->user()?->hasRoleCache('teleprospecteur') ? auth()->id() : null)
-                        ->placeholder('Personne en particulier')
-                        ->helperText('Prioritaire sur le groupe si renseigné.'),
+                        Forms\Components\DatePicker::make('date_debut')
+                            ->label('Date de début')
+                            ->nullable()
+                            ->displayFormat('d/m/Y'),
 
-                    Forms\Components\Select::make('type_entite')
-                        ->label('Cible')
-                        ->options(CampagnePhoning::TYPES_ENTITE)
-                        ->default('prospects')
-                        ->required()
-                        ->live()
-                        ->afterStateUpdated(fn (Forms\Set $set) => $set('criteres', [])),
+                        Forms\Components\DatePicker::make('date_fin')
+                            ->label('Date de fin')
+                            ->nullable()
+                            ->displayFormat('d/m/Y')
+                            ->afterOrEqual('date_debut'),
+                    ]),
 
-                    Forms\Components\DatePicker::make('date_debut')
-                        ->label('Date de début')
-                        ->nullable()
-                        ->displayFormat('d/m/Y'),
+                // ── Étape 2 : Ciblage & Filtres ─────────────────────────
+                Forms\Components\Wizard\Step::make('Ciblage du Public')
+                    ->description('Segment cible et critères de sélection')
+                    ->icon('heroicon-o-funnel')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Select::make('type_entite')
+                            ->label('Segment Cible')
+                            ->options(CampagnePhoning::TYPES_ENTITE)
+                            ->default('prospects')
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('criteres', []))
+                            ->columnSpanFull(),
 
-                    Forms\Components\DatePicker::make('date_fin')
-                        ->label('Date de fin')
-                        ->nullable()
-                        ->displayFormat('d/m/Y')
-                        ->afterOrEqual('date_debut'),
-                ]),
+                        // Critères Prospects
+                        Forms\Components\Group::make([
+                            Forms\Components\CheckboxList::make('criteres.statuts')
+                                ->label('Statuts à inclure')
+                                ->options(collect(ProspectStatut::cases())->mapWithKeys(
+                                    fn ($case) => [$case->value => $case->label()]
+                                ))
+                                ->default([])
+                                ->live()
+                                ->columns(3)
+                                ->columnSpanFull(),
 
-            // ── Critères Prospects ───────────────────────────────────
-            Forms\Components\Section::make('Critères — Prospects')
-                ->icon('heroicon-o-funnel')
-                ->columns(2)
-                ->visible(fn (Get $get) => $get('type_entite') === 'prospects')
-                ->schema([
-                    Forms\Components\CheckboxList::make('criteres.statuts')
-                        ->label('Statuts à inclure')
-                        ->options(collect(ProspectStatut::cases())->mapWithKeys(
-                            fn ($case) => [$case->value => $case->label()]
-                        ))
-                        ->default([])
-                        ->columns(3)
-                        ->columnSpanFull(),
+                            Forms\Components\TextInput::make('criteres.departement')
+                                ->label('Département')
+                                ->placeholder('ex: 75')
+                                ->maxLength(3),
 
-                    Forms\Components\TextInput::make('criteres.departement')
-                        ->label('Département')
-                        ->placeholder('ex: 75')
-                        ->maxLength(3),
+                            Forms\Components\TextInput::make('criteres.secteur_activite')
+                                ->label("Secteur d'activité")
+                                ->placeholder('ex: BTP, Industrie…'),
 
-                    Forms\Components\TextInput::make('criteres.secteur_activite')
-                        ->label("Secteur d'activité")
-                        ->placeholder('ex: BTP, Industrie…'),
+                            Forms\Components\TextInput::make('criteres.nb_salaries_min')
+                                ->label('Nb salariés min')
+                                ->numeric()
+                                ->minValue(0),
 
-                    Forms\Components\TextInput::make('criteres.nb_salaries_min')
-                        ->label('Nb salariés min')
-                        ->numeric()
-                        ->minValue(0),
+                            Forms\Components\TextInput::make('criteres.nb_salaries_max')
+                                ->label('Nb salariés max')
+                                ->numeric()
+                                ->minValue(0),
 
-                    Forms\Components\TextInput::make('criteres.nb_salaries_max')
-                        ->label('Nb salariés max')
-                        ->numeric()
-                        ->minValue(0),
+                            Forms\Components\Select::make('criteres.type_pressenti')
+                                ->label('Type pressenti')
+                                ->options([
+                                    'cse' => 'CSE',
+                                    'artisan' => 'Artisan',
+                                    'direct' => 'Direct',
+                                ])
+                                ->nullable()
+                                ->placeholder('Tous'),
 
-                    Forms\Components\Select::make('criteres.type_pressenti')
-                        ->label('Type pressenti')
-                        ->options([
-                            'cse' => 'CSE',
-                            'artisan' => 'Artisan',
-                            'direct' => 'Direct',
+                            // ── Filtres de Dates Rappel (Visible si statut Rappel RP sélectionné) ──
+                            Forms\Components\Section::make('Filtre par Date de Rappel Planifié')
+                                ->icon('heroicon-o-calendar')
+                                ->columns(2)
+                                ->columnSpanFull()
+                                ->visible(function (Get $get) {
+                                    $statuts = $get('criteres.statuts') ?? [];
+                                    return is_array($statuts) && in_array('RP', $statuts);
+                                })
+                                ->schema([
+                                    Forms\Components\DatePicker::make('criteres.rappel_date_debut')
+                                        ->label('Rappel planifié — Du')
+                                        ->displayFormat('d/m/Y')
+                                        ->nullable(),
+
+                                    Forms\Components\DatePicker::make('criteres.rappel_date_fin')
+                                        ->label('Rappel planifié — Au')
+                                        ->displayFormat('d/m/Y')
+                                        ->afterOrEqual('criteres.rappel_date_debut')
+                                        ->nullable(),
+                                ]),
+
+                            // ── Filtres de Dates RDV (Visible si statuts RDV sélectionnés) ──
+                            Forms\Components\Section::make('Filtre par Date de Rendez-Vous Prévu')
+                                ->icon('heroicon-o-calendar-days')
+                                ->columns(2)
+                                ->columnSpanFull()
+                                ->visible(function (Get $get) {
+                                    $statuts = $get('criteres.statuts') ?? [];
+                                    $rdvCodes = ['RDV', 'RDV_PRIS', 'RDV_A_PRENDRE'];
+                                    return is_array($statuts) && count(array_intersect($rdvCodes, $statuts)) > 0;
+                                })
+                                ->schema([
+                                    Forms\Components\DatePicker::make('criteres.rdv_date_debut')
+                                        ->label('RDV prévu — Du')
+                                        ->displayFormat('d/m/Y')
+                                        ->nullable(),
+
+                                    Forms\Components\DatePicker::make('criteres.rdv_date_fin')
+                                        ->label('RDV prévu — Au')
+                                        ->displayFormat('d/m/Y')
+                                        ->afterOrEqual('criteres.rdv_date_debut')
+                                        ->nullable(),
+                                ]),
                         ])
-                        ->nullable()
-                        ->placeholder('Tous'),
-                ]),
-
-            // ── Critères Partenaires ─────────────────────────────────
-            Forms\Components\Section::make('Critères — Partenaires')
-                ->icon('heroicon-o-funnel')
-                ->columns(2)
-                ->visible(fn (Get $get) => $get('type_entite') === 'partenaires')
-                ->schema([
-                    Forms\Components\CheckboxList::make('criteres.statuts')
-                        ->label('Statuts à inclure')
-                        ->default([])
-                        ->options(Partenaire::STATUTS)
                         ->columns(2)
+                        ->visible(fn (Get $get) => $get('type_entite') === 'prospects')
                         ->columnSpanFull(),
 
-                    Forms\Components\TextInput::make('criteres.departement')
-                        ->label('Département')
-                        ->placeholder('ex: 75')
-                        ->maxLength(3),
+                        // Critères Partenaires
+                        Forms\Components\Group::make([
+                            Forms\Components\CheckboxList::make('criteres.statuts')
+                                ->label('Statuts à inclure')
+                                ->default([])
+                                ->options(Partenaire::STATUTS)
+                                ->columns(2)
+                                ->columnSpanFull(),
 
-                    Forms\Components\TextInput::make('criteres.secteur_activite')
-                        ->label("Secteur d'activité"),
+                            Forms\Components\TextInput::make('criteres.departement')
+                                ->label('Département')
+                                ->placeholder('ex: 75')
+                                ->maxLength(3),
 
-                    Forms\Components\Select::make('criteres.type')
-                        ->label('Type de partenaire')
-                        ->options(OrganizationType::class)
-                        ->nullable()
-                        ->placeholder('Tous'),
-                ]),
+                            Forms\Components\TextInput::make('criteres.secteur_activite')
+                                ->label("Secteur d'activité"),
 
-            // ── Critères Clients ─────────────────────────────────────
-            Forms\Components\Section::make('Critères — Clients')
-                ->icon('heroicon-o-funnel')
-                ->columns(2)
-                ->visible(fn (Get $get) => $get('type_entite') === 'clients')
-                ->schema([
-                    Forms\Components\TextInput::make('criteres.departement')
-                        ->label('Département')
-                        ->placeholder('ex: 75')
-                        ->maxLength(3),
-
-                    Forms\Components\Select::make('criteres.etat')
-                        ->label('État')
-                        ->options([
-                            'actif' => 'Actif',
-                            'inactif' => 'Inactif',
-                            'prospect' => 'Prospect',
+                            Forms\Components\Select::make('criteres.type')
+                                ->label('Type de partenaire')
+                                ->options(OrganizationType::class)
+                                ->nullable()
+                                ->placeholder('Tous'),
                         ])
-                        ->nullable()
-                        ->placeholder('Tous'),
+                        ->columns(2)
+                        ->visible(fn (Get $get) => $get('type_entite') === 'partenaires')
+                        ->columnSpanFull(),
 
-                    Forms\Components\TextInput::make('criteres.type_tiers')
-                        ->label('Type de tiers')
-                        ->placeholder('ex: particulier, entreprise…'),
-                ]),
+                        // Critères Clients
+                        Forms\Components\Group::make([
+                            Forms\Components\TextInput::make('criteres.departement')
+                                ->label('Département')
+                                ->placeholder('ex: 75')
+                                ->maxLength(3),
 
+                            Forms\Components\Select::make('criteres.etat')
+                                ->label('État')
+                                ->options([
+                                    'actif' => 'Actif',
+                                    'inactif' => 'Inactif',
+                                    'prospect' => 'Prospect',
+                                ])
+                                ->nullable()
+                                ->placeholder('Tous'),
+
+                            Forms\Components\TextInput::make('criteres.type_tiers')
+                                ->label('Type de tiers')
+                                ->placeholder('ex: particulier, entreprise…'),
+                        ])
+                        ->columns(2)
+                        ->visible(fn (Get $get) => $get('type_entite') === 'clients')
+                        ->columnSpanFull(),
+                    ]),
+
+                // ── Étape 3 : Règles métier & Exclusions ────────────────
+                Forms\Components\Wizard\Step::make('Exclusions & Limites')
+                    ->description('Refroidissement et limites de réessai')
+                    ->icon('heroicon-o-shield-exclamation')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('max_tentatives')
+                            ->label('Nombre max de tentatives par contact')
+                            ->numeric()
+                            ->default(4)
+                            ->required()
+                            ->minValue(1)
+                            ->maxValue(10)
+                            ->helperText('Nombre maximal d\'appels non aboutis avant sortie automatique.'),
+
+                        Forms\Components\TextInput::make('jours_refroidissement')
+                            ->label('Délai de refroidissement (jours)')
+                            ->numeric()
+                            ->default(15)
+                            ->required()
+                            ->minValue(0)
+                            ->helperText('Exclure les contacts ayant eu un appel au cours des X derniers jours.'),
+
+                        Forms\Components\Toggle::make('exclure_sans_telephone')
+                            ->label('Exclure les fiches sans téléphone valide')
+                            ->default(true)
+                            ->helperText('Exclut automatiquement les prospects n\'ayant ni téléphone fixe ni mobile.'),
+
+                        Forms\Components\Toggle::make('exclure_autres_campagnes')
+                            ->label('Exclure les fiches déjà engagées dans une autre campagne active')
+                            ->default(true)
+                            ->helperText('Évite les doublons d\'appels simultanés sur un même prospect.'),
+                    ]),
+
+                // ── Étape 4 : Script & Consignes ─────────────────────────
+                Forms\Components\Wizard\Step::make('Script & Consignes')
+                    ->description('Guide d\'appel et pitch pour les téléprospecteurs')
+                    ->icon('heroicon-o-document-text')
+                    ->schema([
+                        Forms\Components\RichEditor::make('script_appel')
+                            ->label('Script d\'appel / Guide d\'entretien')
+                            ->placeholder('Rédigez ici les consignes, arguments et objections pour les télépros…')
+                            ->toolbarButtons([
+                                'bold',
+                                'italic',
+                                'bulletList',
+                                'orderedList',
+                                'h2',
+                                'h3',
+                                'link',
+                            ])
+                            ->columnSpanFull(),
+                    ]),
+            ])
+            ->columnSpanFull(),
         ]));
     }
 
@@ -238,7 +339,9 @@ class CampagnePhoningResource extends Resource
                     ->formatStateUsing(fn ($state) => CampagnePhoning::STATUTS[$state] ?? $state)
                     ->colors([
                         'warning' => 'brouillon',
+                        'info' => 'planifiee',
                         'success' => 'active',
+                        'danger' => 'en_pause',
                         'gray' => 'terminee',
                     ]),
 

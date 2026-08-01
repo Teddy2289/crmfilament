@@ -429,18 +429,10 @@ class PhoningWorkflow extends Page
             return;
         }
 
-        $codesValides = StatutPhoning::forModelType($this->contactType)
-            ->pluck('code')
-            ->implode(',');
-
-        if (empty($codesValides)) {
-            $codesValides = $this->contactType === 'client'
-                ? 'std_nr,rp,ko'
-                : 'nrp,fax,supp,maj,rdv,cse_ni,rapl_elu,rapl_std,bloc,bloc2,ncse_50,ncse_plus50,cse_zone,cse_hz';
-        }
+        $codesValides = $this->getStatusValidationCodes();
 
         $this->validate([
-            'statut_resultat' => 'required|in:' . $codesValides,
+            'statut_resultat' => 'required|in:' . implode(',', $codesValides),
             'commentaires' => $this->commentaireRequis() ? 'required|string|min:5|max:2000' : 'nullable|string|max:2000',
             'interlocuteur_email' => 'nullable|email',
             'email_general_standard' => 'nullable|email',
@@ -699,24 +691,56 @@ class PhoningWorkflow extends Page
         }
     }
 
+    public function getStatusValidationCodes(): array
+    {
+        $type = $this->contactType ?: 'prospect';
+
+        return StatutPhoning::forModelType($type)
+            ->pluck('code')
+            ->filter(fn ($code) => filled($code))
+            ->values()
+            ->all();
+    }
+
+    public function getSelectedStatus(): ?StatutPhoning
+    {
+        if (blank($this->statut_resultat)) {
+            return null;
+        }
+
+        return StatutPhoning::where('model_type', $this->contactType ?: 'prospect')
+            ->where('code', $this->statut_resultat)
+            ->first();
+    }
+
+    public function getRappelStatusCodes(): array
+    {
+        $type = $this->contactType ?: 'prospect';
+
+        return StatutPhoning::forModelType($type)
+            ->filter(fn (StatutPhoning $statut) => filled($statut->action_immediate)
+                || filled($statut->fiche_type)
+                || (int) ($statut->delai_rappel_jours ?? 0) > 0)
+            ->pluck('code')
+            ->filter(fn ($code) => filled($code))
+            ->values()
+            ->all();
+    }
+
     protected function commentaireRequis(): bool
     {
         if (blank($this->statut_resultat)) {
             return false;
         }
 
-        $statut = StatutPhoning::where('model_type', $this->contactType ?: 'prospect')
-            ->where('code', $this->statut_resultat)
-            ->first();
+        $statut = $this->getSelectedStatus();
 
         return (bool) ($statut?->note_obligatoire);
     }
 
     protected function messageCommentaireObligatoire(): string
     {
-        $statut = StatutPhoning::where('model_type', $this->contactType ?: 'prospect')
-            ->where('code', $this->statut_resultat)
-            ->first();
+        $statut = $this->getSelectedStatus();
 
         if ($statut?->message_note_obligatoire) {
             return 'Note obligatoire : ' . $statut->message_note_obligatoire;
@@ -750,11 +774,7 @@ class PhoningWorkflow extends Page
     // ── Fiches récap ──────────────────────────────────────────────────
     protected function determineFicheType(): ?string
     {
-        $statut = StatutPhoning::where('model_type', $this->contactType ?: 'prospect')
-            ->where('code', $this->statut_resultat)
-            ->first();
-
-        return $statut?->fiche_type;
+        return $this->getSelectedStatus()?->fiche_type;
     }
 
     protected function buildFicheData(string $ficheType): array
@@ -893,9 +913,7 @@ class PhoningWorkflow extends Page
 
     protected function getResultLabel(): string
     {
-        $statut = StatutPhoning::where('model_type', $this->contactType)
-            ->where('code', $this->statut_resultat)
-            ->first();
+        $statut = $this->getSelectedStatus();
 
         if ($statut) {
             return trim("{$statut->icone} {$statut->label}");
