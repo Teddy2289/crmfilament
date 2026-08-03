@@ -121,4 +121,52 @@ class PhoningQueueBuilderInterleaveTest extends TestCase
         $this->assertGreaterThan(1, count($uniqueQueues));
         $this->assertTrue(collect($queues)->every(fn ($queue) => str_contains($queue, 'campagne_id')));
     }
+
+    #[Test]
+    public function a_contact_cannot_be_reserved_by_two_users_simultaneously(): void
+    {
+        $groupe = GroupeTelepro::create(['nom' => 'Groupe concurrence', 'actif' => true]);
+
+        $teleproA = User::factory()->create();
+        $teleproA->groupesTelepro()->attach($groupe->id);
+
+        $teleproB = User::factory()->create();
+        $teleproB->groupesTelepro()->attach($groupe->id);
+
+        $campagne = CampagnePhoning::create([
+            'nom' => 'Campagne concurrence',
+            'statut' => 'active',
+            'type_entite' => 'prospects',
+            'groupe_telepro_id' => $groupe->id,
+            'criteres' => ['statuts' => ['AC']],
+        ]);
+
+        $prospects = Prospect::factory()->count(3)->create([
+            'statut' => 'AC',
+            'commercial_id' => null,
+            'departement' => '44',
+        ]);
+
+        $queue = app(PhoningQueueBuilder::class)->buildDefaultQueue($teleproA->id, $campagne->id);
+        $this->assertNotEmpty($queue);
+
+        $reservedForA = app(PhoningQueueBuilder::class)->reserveQueueForUser($teleproA->id, $queue);
+        $this->assertNotEmpty($reservedForA);
+
+        $reservedForB = app(PhoningQueueBuilder::class)->reserveQueueForUser($teleproB->id, $queue);
+        $this->assertSame([], $reservedForB);
+
+        $reservedIdsForA = collect($reservedForA)->pluck('id')->all();
+        $this->assertSame(
+            collect($queue)->pluck('id')->all(),
+            $reservedIdsForA,
+        );
+
+        foreach ($prospects as $prospect) {
+            app(PhoningQueueBuilder::class)->releaseQueueReservationForUser($teleproA->id, 'prospect', (int) $prospect->id);
+        }
+
+        $afterRelease = app(PhoningQueueBuilder::class)->reserveQueueForUser($teleproB->id, $queue);
+        $this->assertNotEmpty($afterRelease);
+    }
 }
