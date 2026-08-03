@@ -2,6 +2,7 @@
 
 namespace App\Filament\NsConseil\Resources;
 
+use App\Filament\Exports\AppelExporter;
 use App\Filament\NsConseil\Resources\AppelResource\Pages\ListAppels;
 use App\Filament\NsConseil\Resources\AppelResource\Pages\ViewAppel;
 use App\Models\Appel;
@@ -257,6 +258,12 @@ class AppelResource extends Resource
                 Tables\Filters\Filter::make('has_recording')
                     ->label('Avec enregistrement')
                     ->query(fn ($query) => $query->where('enregistrement_audio', true)),
+            ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(AppelExporter::class)
+                    ->label('Exporter mon historique Ringover')
+                    ->icon('heroicon-o-arrow-down-tray'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

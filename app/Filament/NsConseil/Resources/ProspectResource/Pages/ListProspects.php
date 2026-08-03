@@ -6,6 +6,7 @@ use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\ProspectResource;
 use App\Filament\NsConseil\Resources\ProspectResource\Actions\ImportProspectsAction;
 use App\Models\Prospect;
+use App\Traits\HasResponsiveTable;
 use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListProspects extends ListRecords
 {
-    use WithCommonEagerLoading;
+    use HasResponsiveTable, WithCommonEagerLoading;
 
     protected static string $resource = ProspectResource::class;
 

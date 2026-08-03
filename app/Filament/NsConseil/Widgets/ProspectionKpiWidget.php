@@ -15,7 +15,7 @@ class ProspectionKpiWidget extends BaseWidget
 
     protected static ?int $sort = 1;
 
-    protected static ?string $pollingInterval = '60s';
+    protected static ?string $pollingInterval = '120s';
 
     protected int|string|array $columnSpan = [
         'sm' => 2,

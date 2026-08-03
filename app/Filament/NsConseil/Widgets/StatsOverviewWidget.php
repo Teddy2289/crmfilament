@@ -107,6 +107,6 @@ class StatsOverviewWidget extends BaseWidget
 
     protected function getPollingInterval(): ?string
     {
-        return '60s';
+        return '120s';
     }
 }

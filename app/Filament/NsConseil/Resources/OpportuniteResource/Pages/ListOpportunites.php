@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListOpportunites extends ListRecords
 {
-    use WithCommonEagerLoading;
+    use HasResponsiveTable, WithCommonEagerLoading;
 
     protected static string $resource = OpportuniteResource::class;
 
