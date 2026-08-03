@@ -6,6 +6,7 @@ use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\ProspectResource;
 use App\Filament\NsConseil\Resources\ProspectResource\Actions\ImportProspectsAction;
 use App\Models\Prospect;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListProspects extends ListRecords
 {
+    use WithCommonEagerLoading;
+
     protected static string $resource = ProspectResource::class;
 
     protected function getHeaderActions(): array
@@ -29,7 +32,9 @@ class ListProspects extends ListRecords
      */
     protected function getTableQuery(): Builder
     {
-        return Prospect::query()->withoutTrashed();
+        return $this->loadCommonProspectRelations(
+            Prospect::query()->withoutTrashed()
+        );
     }
 
     /**

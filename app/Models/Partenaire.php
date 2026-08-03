@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
+use App\Traits\HasModelValidation;
+use App\Traits\HasInputSanitization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,7 +13,91 @@ use Illuminate\Support\Str;
 
 class Partenaire extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasModelValidation, HasInputSanitization;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($partenaire) {
+            HistoriqueModification::enregistrerCreation($partenaire);
+        });
+
+        static::updated(function ($partenaire) {
+            $champsSuivis = [
+                'nom', 'entreprise', 'nom_retenu', 'siret', 'type', 'nomenclature_interne',
+                'adresse', 'code_postal', 'ville', 'departement', 'telephone', 'email',
+                'secteur_activite', 'nb_salaries', 'chiffre_affaires', 'statut',
+                'commercial_id', 'notes',
+            ];
+
+            foreach ($champsSuivis as $champ) {
+                if ($partenaire->isDirty($champ)) {
+                    HistoriqueModification::enregistrerModification(
+                        $partenaire,
+                        $champ,
+                        $partenaire->getOriginal($champ),
+                        $partenaire->$champ
+                    );
+                }
+            }
+        });
+
+        static::deleted(function ($partenaire) {
+            HistoriqueModification::enregistrerSuppression($partenaire);
+        });
+
+        static::bootHasModelValidation();
+        
+        static::bootHasInputSanitization();
+
+        static::restored(function ($partenaire) {
+            HistoriqueModification::create([
+                'model_type' => get_class($partenaire),
+                'model_id' => $partenaire->id,
+                'user_id' => auth()->id(),
+                'champ' => null,
+                'ancienne_valeur' => null,
+                'nouvelle_valeur' => $partenaire->toArray(),
+                'type_modification' => 'restauration',
+                'date_modification' => now(),
+            ]);
+        });
+    }
+
+    // ── Validation Rules ─────────────────────────────────────────────
+    public function getValidationRules(): array
+    {
+        return [
+            'nom' => 'required|string|max:255',
+            'entreprise' => 'nullable|string|max:255',
+            'nom_retenu' => 'nullable|string|max:255',
+            'siret' => 'nullable|string|min:14|max:14',
+            'type' => 'nullable|string',
+            'telephone' => 'nullable|string|max:20',
+            'email' => 'nullable|email',
+            'code_postal' => 'nullable|string|max:5',
+            'ville' => 'nullable|string|max:255',
+            'departement' => 'nullable|string|max:3',
+            'statut' => 'required|string',
+        ];
+    }
+
+    // ── Sanitization Fields ───────────────────────────────────────────
+    public function getSanitizableFields(): array
+    {
+        return [
+            'nom' => 'sanitizeString',
+            'entreprise' => 'sanitizeString',
+            'nom_retenu' => 'sanitizeString',
+            'telephone' => 'sanitizePhone',
+            'email' => 'sanitizeEmail',
+            'ville' => 'sanitizeString',
+            'departement' => 'sanitizeString',
+            'siret' => 'sanitizeSiret',
+            'code_postal' => 'sanitizePostalCode',
+        ];
+    }
 
     /**
      * @deprecated Utiliser OrganizationStatus::pourSelect() — conservé pour compat
@@ -508,11 +594,6 @@ class Partenaire extends Model
     public function clients()
     {
         return $this->hasMany(Client::class);
-    }
-
-    public function personnes()
-    {
-        return $this->hasMany(Client::class, 'partenaire_id');
     }
 
     public function historiqueInteractions()

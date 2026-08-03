@@ -3,12 +3,24 @@
 namespace App\Filament\NsConseil\Resources\ClientResource\Pages;
 
 use App\Filament\NsConseil\Resources\ClientResource;
+use App\Filament\Widgets\HistoriqueModificationsWidget;
+use App\Models\Client;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewClient extends ViewRecord
 {
     protected static string $resource = ClientResource::class;
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            HistoriqueModificationsWidget::make([
+                'modelType' => Client::class,
+                'modelId' => $this->record->id,
+            ]),
+        ];
+    }
 
     protected function getHeaderActions(): array
     {

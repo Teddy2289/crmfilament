@@ -13,6 +13,14 @@ class StatsOverviewWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
 
+    protected int|string|array $columnSpan = [
+        'sm' => 2,
+        'md' => 2,
+        'lg' => 4,
+        'xl' => 4,
+        '2xl' => 4,
+    ];
+
     protected function getStats(): array
     {
         $user = auth()->user();

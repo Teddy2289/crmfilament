@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
 use App\Enums\ProspectStatut;
+use App\Traits\HasModelValidation;
+use App\Traits\HasInputSanitization;
 use Database\Factories\ProspectFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,9 +16,90 @@ use Illuminate\Support\Facades\DB;
 
 class Prospect extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasModelValidation, HasInputSanitization;
 
     protected $table = 'prospects';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($prospect) {
+            HistoriqueModification::enregistrerCreation($prospect);
+        });
+
+        static::updated(function ($prospect) {
+            $champsSuivis = [
+                'nom', 'type_pressenti', 'departement', 'telephone', 'telephone_alt',
+                'email', 'adresse', 'code_postal', 'ville', 'siret', 'secteur_activite',
+                'statut', 'commercial_id', 'difficile', 'qf_valide', 'notes',
+            ];
+
+            foreach ($champsSuivis as $champ) {
+                if ($prospect->isDirty($champ)) {
+                    HistoriqueModification::enregistrerModification(
+                        $prospect,
+                        $champ,
+                        $prospect->getOriginal($champ),
+                        $prospect->$champ
+                    );
+                }
+            }
+        });
+
+        static::deleted(function ($prospect) {
+            HistoriqueModification::enregistrerSuppression($prospect);
+        });
+
+        static::bootHasModelValidation();
+        
+        static::bootHasInputSanitization();
+
+        static::restored(function ($prospect) {
+            HistoriqueModification::create([
+                'model_type' => get_class($prospect),
+                'model_id' => $prospect->id,
+                'user_id' => auth()->id(),
+                'champ' => null,
+                'ancienne_valeur' => null,
+                'nouvelle_valeur' => $prospect->toArray(),
+                'type_modification' => 'restauration',
+                'date_modification' => now(),
+            ]);
+        });
+    }
+
+    // ── Validation Rules ─────────────────────────────────────────────
+    public function getValidationRules(): array
+    {
+        return [
+            'nom' => 'required|string|max:255',
+            'type_pressenti' => 'nullable|string',
+            'telephone' => 'nullable|string|max:20',
+            'telephone_alt' => 'nullable|string|max:20',
+            'email' => 'nullable|email',
+            'code_postal' => 'nullable|string|max:5',
+            'ville' => 'nullable|string|max:255',
+            'departement' => 'nullable|string|max:3',
+            'siret' => 'nullable|string|min:14|max:14',
+            'statut' => 'required|string',
+        ];
+    }
+
+    // ── Sanitization Fields ───────────────────────────────────────────
+    public function getSanitizableFields(): array
+    {
+        return [
+            'nom' => 'sanitizeString',
+            'telephone' => 'sanitizePhone',
+            'telephone_alt' => 'sanitizePhone',
+            'email' => 'sanitizeEmail',
+            'ville' => 'sanitizeString',
+            'departement' => 'sanitizeString',
+            'siret' => 'sanitizeSiret',
+            'code_postal' => 'sanitizePostalCode',
+        ];
+    }
 
     protected $casts = [
         'statut' => ProspectStatut::class,

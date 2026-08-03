@@ -6,17 +6,26 @@ use App\Enums\ProspectStatut;
 use App\Enums\RendezVousStatut;
 use App\Models\Prospect;
 use App\Models\RendezVous;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 
 class CommercialAgendaWidget extends BaseWidget
 {
+    use WithCommonEagerLoading;
+
     protected static ?string $heading = '📅 RDV à venir & Prospects en attente';
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = [
+        'sm' => 12,
+        'md' => 12,
+        'lg' => 6,
+        'xl' => 6,
+        '2xl' => 4,
+    ];
 
     public string $activeTab = 'rdv';
 
@@ -42,15 +51,17 @@ class CommercialAgendaWidget extends BaseWidget
 
         return $table
             ->query(
-                RendezVous::query()
-                    ->when($isCommercial, fn ($q) => $q->where('commercial_id', $user->id))
-                    ->whereIn('statut', [
-                        RendezVousStatut::Planifie->value,
-                        RendezVousStatut::Decale->value,
-                    ])
-                    ->where('date_heure', '>=', now())
-                    ->where('date_heure', '<=', now()->endOfWeek()->addWeek())
-                    ->orderBy('date_heure')
+                $this->loadCommonRendezVousRelations(
+                    RendezVous::query()
+                        ->when($isCommercial, fn ($q) => $q->where('commercial_id', $user->id))
+                        ->whereIn('statut', [
+                            RendezVousStatut::Planifie->value,
+                            RendezVousStatut::Decale->value,
+                        ])
+                        ->where('date_heure', '>=', now())
+                        ->where('date_heure', '<=', now()->endOfWeek()->addWeek())
+                        ->orderBy('date_heure')
+                )
             )
             ->columns([
                 Tables\Columns\TextColumn::make('date_heure')
@@ -98,11 +109,13 @@ class CommercialAgendaWidget extends BaseWidget
     {
         return $table
             ->query(
-                Prospect::query()
-                    ->when($isCommercial, fn ($q) => $q->where('commercial_id', $user->id))
-                    ->whereIn('statut', [ProspectStatut::RP->value, ProspectStatut::RPC->value])
-                    ->orderByRaw('CASE WHEN rappel_planifie_at IS NOT NULL THEN 0 ELSE 1 END, rappel_planifie_at ASC')
-                    ->limit(20)
+                $this->loadCommonProspectRelations(
+                    Prospect::query()
+                        ->when($isCommercial, fn ($q) => $q->where('commercial_id', $user->id))
+                        ->whereIn('statut', [ProspectStatut::RP->value, ProspectStatut::RPC->value])
+                        ->orderByRaw('CASE WHEN rappel_planifie_at IS NOT NULL THEN 0 ELSE 1 END, rappel_planifie_at ASC')
+                        ->limit(20)
+                )
             )
             ->columns([
                 Tables\Columns\TextColumn::make('nom')

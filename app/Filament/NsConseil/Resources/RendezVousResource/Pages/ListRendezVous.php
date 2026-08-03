@@ -7,6 +7,7 @@ namespace App\Filament\NsConseil\Resources\RendezVousResource\Pages;
 use App\Enums\RendezVousStatut;
 use App\Filament\NsConseil\Resources\RendezVousResource;
 use App\Models\RendezVous;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListRendezVous extends ListRecords
 {
+    use WithCommonEagerLoading;
+
     protected static string $resource = RendezVousResource::class;
 
     protected function getHeaderActions(): array
@@ -73,6 +76,8 @@ class ListRendezVous extends ListRecords
 
     protected function getTableQuery(): Builder
     {
-        return RendezVous::query()->withoutTrashed();
+        return $this->loadCommonRendezVousRelations(
+            RendezVous::query()->withoutTrashed()
+        );
     }
 }

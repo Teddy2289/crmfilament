@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Services\Crm\CrmProfileService;
+use App\Traits\HasInputSanitization;
+use App\Traits\HasModelValidation;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -16,7 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes, HasModelValidation, HasInputSanitization;
 
     protected $fillable = [
         'nom',
@@ -29,12 +31,15 @@ class User extends Authenticatable implements FilamentUser
         'google_token',
         'ringover_user_id',
         'ringover_email',
+        'email_password',
+        'email_last_sync',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
         'google_token',
+        'email_password',
     ];
 
     protected function casts(): array
@@ -42,8 +47,10 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'google_token' => 'array',
+            'google_token' => 'encrypted:array',
             'actif' => 'boolean',
+            'email_last_sync' => 'datetime',
+            'email_password' => 'encrypted',
         ];
     }
 
@@ -308,6 +315,36 @@ class User extends Authenticatable implements FilamentUser
                 $user->actif = true;
             }
         });
+
+        // Définir les règles de validation
+        static::bootHasModelValidation();
+        
+        // Définir les champs à nettoyer
+        static::bootHasInputSanitization();
+    }
+
+    // ── Validation Rules ─────────────────────────────────────────────
+    public function getValidationRules(): array
+    {
+        return [
+            'nom' => 'required|string|max:100',
+            'prenom' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email,'.($this->id ?? 'NULL'),
+            'secteur' => 'nullable|string|in:nord,sud,est,ouest,idf,national',
+            'ringover_email' => 'nullable|email',
+        ];
+    }
+
+    // ── Sanitization Fields ───────────────────────────────────────────
+    public function getSanitizableFields(): array
+    {
+        return [
+            'nom' => 'sanitizeName',
+            'prenom' => 'sanitizeName',
+            'email' => 'sanitizeEmail',
+            'secteur' => 'sanitizeString',
+            'ringover_email' => 'sanitizeEmail',
+        ];
     }
 
     // ── Relations ────────────────────────────────────────────────────

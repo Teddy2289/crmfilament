@@ -16,6 +16,8 @@ class CalendarWidget extends FullCalendarWidget
 {
     protected static bool $isDiscovered = false;
 
+    protected int|string|array $columnSpan = 'full';
+
     public bool $showEventModal = false;
 
     public array $selectedEvent = [];

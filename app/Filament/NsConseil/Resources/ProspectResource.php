@@ -54,10 +54,7 @@ class ProspectResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Prospect::whereNotIn('statut', [
-            ProspectStatut::KO->value,
-            ProspectStatut::QF->value,
-        ])->count();
+        return (string) app(NavigationBadgeCacheService::class)->getProspectsCount();
     }
 
     public static function getNavigationBadgeColor(): ?string

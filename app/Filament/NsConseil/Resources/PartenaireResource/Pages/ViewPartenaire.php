@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 
 use App\Filament\NsConseil\Resources\PartenaireResource;
+use App\Filament\Widgets\HistoriqueModificationsWidget;
 use App\Models\Partenaire;
 use Filament\Actions;
 use Filament\Forms\Components\Select;
@@ -11,6 +12,16 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewPartenaire extends ViewRecord
 {
     protected static string $resource = PartenaireResource::class;
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            HistoriqueModificationsWidget::make([
+                'modelType' => Partenaire::class,
+                'modelId' => $this->record->id,
+            ]),
+        ];
+    }
 
     protected function getHeaderActions(): array
     {

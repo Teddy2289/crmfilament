@@ -17,7 +17,13 @@ class DirectionDerniersPartenairesWidget extends BaseWidget
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'sm' => 12,
+        'md' => 12,
+        'lg' => 6,
+        'xl' => 6,
+        '2xl' => 4,
+    ];
 
     public static function canView(): bool
     {

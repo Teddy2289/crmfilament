@@ -2190,11 +2190,65 @@ $tentativesActuelles = $this->getTentativesAppel();
             window.appelerAvecRingover = function(numero) {
                 if (!numero) return;
                 const e164 = toE164Fr(numero);
+                const nowIso = new Date().toISOString();
+                const lifecycle = {
+                    callId: null,
+                    startedAt: nowIso,
+                    endedAt: null,
+                };
+
+                const captureLifecycle = (payload = null, type = 'generic') => {
+                    const rawStarted = payload && (payload.started_at || payload.startedAt || payload.start_time || payload.startTime || payload.started || payload.begin_at || payload.beginAt);
+                    const rawEnded = payload && (payload.ended_at || payload.endedAt || payload.end_time || payload.endTime || payload.ended || payload.end_at || payload.endAt);
+
+                    if (rawStarted) {
+                        lifecycle.startedAt = new Date(rawStarted).toISOString();
+                    }
+
+                    if (rawEnded) {
+                        lifecycle.endedAt = new Date(rawEnded).toISOString();
+                    }
+
+                    const payloadCallId = payload && (payload.call_id || payload.callId || payload.uuid || payload.id || payload.call_uuid || payload.uuid_call);
+                    if (payloadCallId) {
+                        lifecycle.callId = String(payloadCallId);
+                    }
+
+                    Livewire.dispatch('ringover-call-lifecycle', {
+                        callId: lifecycle.callId,
+                        startedAt: lifecycle.startedAt,
+                        endedAt: lifecycle.endedAt,
+                        type,
+                    });
+                };
+
                 const lancerAppel = () => {
                     if (!window.ringoverPhone) return;
                     window.ringoverPhone.show();
+                    if (typeof window.ringoverPhone.getCallId === 'function') {
+                        lifecycle.callId = window.ringoverPhone.getCallId();
+                    }
+                    if (typeof window.ringoverPhone.on === 'function') {
+                        ['callStarted', 'call:started', 'started', 'call.started'].forEach((eventName) => {
+                            try {
+                                window.ringoverPhone.on(eventName, (payload) => captureLifecycle(payload, eventName));
+                            } catch (e) {}
+                        });
+
+                        ['callEnded', 'call:ended', 'ended', 'call.ended', 'hangup'].forEach((eventName) => {
+                            try {
+                                window.ringoverPhone.on(eventName, (payload) => {
+                                    if (!payload || !payload.endedAt && !payload.ended_at && !payload.endTime && !payload.end_time && !payload.ended) {
+                                        lifecycle.endedAt = new Date().toISOString();
+                                    }
+                                    captureLifecycle(payload, eventName);
+                                });
+                            } catch (e) {}
+                        });
+                    }
                     window.ringoverPhone.dial(e164);
                 };
+                Livewire.dispatch('ringover-call-lifecycle', { callId: null, startedAt: lifecycle.startedAt, endedAt: null });
                 if (window.ringoverPhone && window.ringoverPhone.__ready) {
                     lancerAppel();
                 } else if (window.ringoverPhone) {

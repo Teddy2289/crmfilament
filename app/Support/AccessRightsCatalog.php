@@ -273,6 +273,20 @@ class AccessRightsCatalog
                     'workflow_prospection_cse.view' => 'Voir',
                 ],
             ],
+            'historique_modifications' => [
+                'label' => 'AOPIA - Historique des modifications',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'view_historique_modifications' => 'Voir l\'historique',
+                ],
+            ],
+            'historique_appels' => [
+                'label' => 'AOPIA - Historique des appels',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'view_historique_appels' => 'Voir l\'historique',
+                ],
+            ],
         ];
 
         return $modules + static::dynamicTableModules($modules);

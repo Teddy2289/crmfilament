@@ -6,6 +6,7 @@ use App\Enums\OrganizationStatus;
 use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Filament\NsConseil\Resources\PartenaireResource\Actions\ImportPartenairesAction;
 use App\Models\Partenaire;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListPartenaires extends ListRecords
 {
+    use WithCommonEagerLoading;
+
     protected static string $resource = PartenaireResource::class;
 
     protected function getHeaderActions(): array
@@ -79,6 +82,8 @@ class ListPartenaires extends ListRecords
 
     protected function getTableQuery(): Builder
     {
-        return Partenaire::query()->withoutTrashed();
+        return $this->loadCommonPartenaireRelations(
+            Partenaire::query()->withoutTrashed()
+        );
     }
 }

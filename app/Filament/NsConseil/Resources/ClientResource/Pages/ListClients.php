@@ -6,6 +6,7 @@ use App\Filament\NsConseil\Resources\ClientResource;
 use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
 use App\Filament\NsConseil\Widgets\ImportProgressWidget;
 use App\Models\Client;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListClients extends ListRecords
 {
+    use WithCommonEagerLoading;
+
     protected static string $resource = ClientResource::class;
 
     protected function getHeaderActions(): array
@@ -80,6 +83,8 @@ class ListClients extends ListRecords
 
     protected function getTableQuery(): Builder
     {
-        return Client::query()->withoutTrashed();
+        return $this->loadCommonClientRelations(
+            Client::query()->withoutTrashed()
+        );
     }
 }
