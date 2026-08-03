@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 
 use App\Filament\NsConseil\Resources\PartenaireResource;
+use App\Traits\HasResponsiveForm;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use App\Filament\NsConseil\Concerns\HasRoleAccess;
@@ -10,7 +11,7 @@ use App\Models\Partenaire;
 
 class EditPartenaire extends EditRecord
 {
-    use HasRoleAccess;
+    use HasResponsiveForm, HasRoleAccess;
     protected static string $resource = PartenaireResource::class;
 
     /**

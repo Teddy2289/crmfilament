@@ -4,11 +4,15 @@ namespace App\Filament\NsConseil\Resources\AppelResource\Pages;
 
 use App\Filament\NsConseil\Resources\AppelResource;
 use App\Models\Appel;
+use App\Traits\HasResponsiveTable;
+use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListAppels extends ListRecords
 {
+    use HasResponsiveTable;
+
     protected static string $resource = AppelResource::class;
 
     protected function getHeaderActions(): array
