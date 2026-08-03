@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Widgets;
 
 use App\Enums\ProspectStatut;
 use App\Models\Prospect;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -11,11 +12,19 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class RappelsDuJourWidget extends BaseWidget
 {
+    use WithCommonEagerLoading;
+
     protected static ?string $heading = '📞 Rappels du jour';
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = [
+        'sm' => 12,
+        'md' => 12,
+        'lg' => 6,
+        'xl' => 6,
+        '2xl' => 4,
+    ];
 
     public function table(Table $table): Table
     {
@@ -23,17 +32,19 @@ class RappelsDuJourWidget extends BaseWidget
 
         return $table
             ->query(
-                Prospect::query()
-                    ->whereDate('rappel_planifie_at', today())
-                    ->whereNotIn('statut', [
-                        ProspectStatut::KO->value,
-                        ProspectStatut::QF->value,
-                    ])
-                    ->when(
-                        $user->hasRole('teleprospecteur'),
-                        fn ($q) => $q->where('teleprospecteur_id', $user->id)
-                    )
-                    ->orderBy('rappel_planifie_at', 'asc')
+                $this->loadCommonProspectRelations(
+                    Prospect::query()
+                        ->whereDate('rappel_planifie_at', today())
+                        ->whereNotIn('statut', [
+                            ProspectStatut::KO->value,
+                            ProspectStatut::QF->value,
+                        ])
+                        ->when(
+                            $user->hasRole('teleprospecteur'),
+                            fn ($q) => $q->where('teleprospecteur_id', $user->id)
+                        )
+                        ->orderBy('rappel_planifie_at', 'asc')
+                )
             )
             ->columns([
                 Tables\Columns\TextColumn::make('rappel_planifie_at')

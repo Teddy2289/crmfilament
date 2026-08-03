@@ -2,15 +2,97 @@
 
 namespace App\Models;
 
+use App\Traits\HasModelValidation;
+use App\Traits\HasInputSanitization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Client extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasModelValidation, HasInputSanitization;
 
     protected $table = 'clients';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($client) {
+            HistoriqueModification::enregistrerCreation($client);
+        });
+
+        static::updated(function ($client) {
+            $champsSuivis = [
+                'ref_client', 'civilite', 'prenom', 'nom_tiers', 'email', 'telephone',
+                'adresse', 'code_postal', 'ville', 'region', 'departement', 'date_naissance',
+                'entreprise', 'type_tiers', 'avis_google', 'etat', 'montant_cpf',
+                'ne_plus_contacter', 'partenaire_id', 'parrain_id', 'commercial_id',
+                'notes_commerciales',
+            ];
+
+            foreach ($champsSuivis as $champ) {
+                if ($client->isDirty($champ)) {
+                    HistoriqueModification::enregistrerModification(
+                        $client,
+                        $champ,
+                        $client->getOriginal($champ),
+                        $client->$champ
+                    );
+                }
+            }
+        });
+
+        static::deleted(function ($client) {
+            HistoriqueModification::enregistrerSuppression($client);
+        });
+
+        static::bootHasModelValidation();
+        
+        static::bootHasInputSanitization();
+
+        static::restored(function ($client) {
+            HistoriqueModification::create([
+                'model_type' => get_class($client),
+                'model_id' => $client->id,
+                'user_id' => auth()->id(),
+                'champ' => null,
+                'ancienne_valeur' => null,
+                'nouvelle_valeur' => $client->toArray(),
+                'type_modification' => 'restauration',
+                'date_modification' => now(),
+            ]);
+        });
+    }
+
+    // ── Validation Rules ─────────────────────────────────────────────
+    public function getValidationRules(): array
+    {
+        return [
+            'nom_tiers' => 'required|string|max:255',
+            'prenom' => 'nullable|string|max:255',
+            'email' => 'nullable|email',
+            'telephone' => 'nullable|string|max:20',
+            'code_postal' => 'nullable|string|max:5',
+            'ville' => 'nullable|string|max:255',
+            'departement' => 'nullable|string|max:3',
+            'date_naissance' => 'nullable|date',
+        ];
+    }
+
+    // ── Sanitization Fields ───────────────────────────────────────────
+    public function getSanitizableFields(): array
+    {
+        return [
+            'nom_tiers' => 'sanitizeName',
+            'prenom' => 'sanitizeName',
+            'email' => 'sanitizeEmail',
+            'telephone' => 'sanitizePhone',
+            'ville' => 'sanitizeString',
+            'departement' => 'sanitizeString',
+            'code_postal' => 'sanitizePostalCode',
+        ];
+    }
 
     protected $casts = [
         'date_naissance' => 'date',
@@ -513,11 +595,6 @@ class Client extends Model
         // whereNotNull garantit qu'on ne fait jamais WHERE ref_client = NULL
         return $this->hasMany(Proposition::class, 'ref_client', 'ref_client')
             ->whereNotNull('ref_client');
-    }
-
-    public function partenaires()
-    {
-        return $this->belongsToMany(Partenaire::class);
     }
 
     public function partenaire()

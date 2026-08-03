@@ -15,6 +15,7 @@ use App\Filament\Shared\Actions\LancerAppelsAction;
 use App\Filament\Shared\Components\DuplicateWarning;
 use App\Filament\Shared\Concerns\HasCustomFieldsForm;
 use App\Models\Client;
+use App\Services\Cache\NavigationBadgeCacheService;
 use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -44,7 +45,7 @@ class ClientResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Client::count();
+        return (string) app(NavigationBadgeCacheService::class)->getClientsCount();
     }
 
     // ─────────────────────────────────────────────────────────────────

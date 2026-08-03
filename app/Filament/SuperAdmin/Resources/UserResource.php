@@ -61,9 +61,14 @@ class UserResource extends Resource
 
                     Forms\Components\Select::make('groupesTelepro')
                         ->label('Groupes de téléprospection')
-                        ->relationship('groupesTelepro', 'nom')
+                        ->relationship(
+                            name: 'groupesTelepro',
+                            titleAttribute: 'nom',
+                            modifyQueryUsing: fn ($query) => $query->where('actif', true)
+                        )
                         ->multiple()
                         ->searchable()
+                        ->preload()
                         ->placeholder('Aucun groupe'),
 
                     Forms\Components\Toggle::make('actif')

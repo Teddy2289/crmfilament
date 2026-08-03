@@ -20,6 +20,7 @@ use App\Services\Phoning\PhoningContactSearchService;
 use App\Services\Phoning\PhoningQueueBuilder;
 use App\Services\ProspectionMailService;
 use App\Support\CsePhoningWorkflow;
+use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Notifications\Notification;
@@ -124,6 +125,12 @@ class PhoningWorkflow extends Page
     public array $contactQueue = [];
 
     public ?int $currentCampagneId = null;
+
+    public ?string $ringoverCallId = null;
+
+    public ?string $ringoverCallStartedAt = null;
+
+    public ?string $ringoverCallEndedAt = null;
 
     /**
      * Filtre de campagne explicitement choisi par l'utilisateur (via "Choisir
@@ -416,10 +423,30 @@ class PhoningWorkflow extends Page
         }
         $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
 
+        $this->ringoverCallId = null;
+        $this->ringoverCallStartedAt = now()->toIso8601String();
+        $this->ringoverCallEndedAt = null;
+
         // On ne redirige plus toute la page : on envoie le numéro au badge
         // Ringover flottant (déjà persistant sur tout le site) via un événement
         // browser, écouté dans phoning-workflow.blade.php.
         $this->dispatch('ringover-call', phone: $phoneNumber);
+    }
+
+    #[\Livewire\Attributes\On('ringover-call-lifecycle')]
+    public function updateRingoverCallLifecycle(?string $callId = null, ?string $startedAt = null, ?string $endedAt = null): void
+    {
+        if (filled($callId)) {
+            $this->ringoverCallId = $callId;
+        }
+
+        if (filled($startedAt)) {
+            $this->ringoverCallStartedAt = $startedAt;
+        }
+
+        if (filled($endedAt)) {
+            $this->ringoverCallEndedAt = $endedAt;
+        }
     }
 
     // ── Enregistrement ────────────────────────────────────────────────
@@ -844,20 +871,32 @@ class PhoningWorkflow extends Page
 
         $ficheType = $this->determineFicheType();
 
+        $dateHeure = filled($this->ringoverCallStartedAt)
+            ? Carbon::parse($this->ringoverCallStartedAt)
+            : now();
+
+        $dateFin = filled($this->ringoverCallEndedAt)
+            ? Carbon::parse($this->ringoverCallEndedAt)
+            : now();
+
+        $dureeSecondes = max(0, (int) $dateFin->diffInSeconds($dateHeure, false));
+
         $appel = Appel::create([
             'appelable_type' => get_class($this->currentContact),
             'appelable_id' => $this->currentContact->id,
             'user_id' => Auth::id(),
             'type' => EventType::Appel,
-            'date_heure' => now(),
+            'date_heure' => $dateHeure,
+            'duree_secondes' => $dureeSecondes,
             'resultat' => $eventResult,
             'commentaire' => $this->commentaires ?: null,
             'phoning_status' => $this->statut_resultat,
             'phoning_result' => $this->getResultLabel(),
             'phoning_notes' => $this->commentaires ?: null,
-            'phoning_completed_at' => now(),
+            'phoning_completed_at' => $dateFin,
             'phoning_agent_id' => Auth::id(),
             'campagne_id' => $this->currentCampagneId,
+            'ringover_call_id' => $this->ringoverCallId,
             'fiche_type' => $ficheType,
             'fiche_data' => $ficheType ? $this->buildFicheData($ficheType) : null,
         ]);

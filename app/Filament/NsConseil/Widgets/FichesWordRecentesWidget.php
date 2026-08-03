@@ -14,7 +14,13 @@ class FichesWordRecentesWidget extends BaseWidget
 
     protected static ?int $sort = 5;
 
-    protected int | string | array $columnSpan = 1;
+    protected int | string | array $columnSpan = [
+        'sm' => 12,
+        'md' => 6,
+        'lg' => 4,
+        'xl' => 4,
+        '2xl' => 4,
+    ];
 
     public function table(Table $table): Table
     {

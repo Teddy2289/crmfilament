@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources\ProspectResource\Pages;
 
 use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\ProspectResource;
+use App\Filament\Widgets\HistoriqueModificationsWidget;
 use App\Models\FicheTemplate;
 use App\Services\Aopia\FicheGenerationService;
 use Filament\Actions;
@@ -18,6 +19,16 @@ use Illuminate\Support\Facades\Storage;
 class ViewProspect extends ViewRecord
 {
     protected static string $resource = ProspectResource::class;
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            HistoriqueModificationsWidget::make([
+                'modelType' => Prospect::class,
+                'modelId' => $this->record->id,
+            ]),
+        ];
+    }
 
     protected function getHeaderActions(): array
     {

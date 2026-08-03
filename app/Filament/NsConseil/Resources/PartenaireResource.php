@@ -46,7 +46,7 @@ class PartenaireResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) static::getModel()::whereNotIn('statut', [OrganizationStatus::Refus->value])->count();
+        return (string) app(NavigationBadgeCacheService::class)->getPartenairesCount();
     }
 
     public static function getNavigationBadgeColor(): ?string

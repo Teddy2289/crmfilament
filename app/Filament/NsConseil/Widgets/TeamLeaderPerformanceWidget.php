@@ -17,7 +17,13 @@ class TeamLeaderPerformanceWidget extends BaseWidget
 
     protected static ?int $sort = 2;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'sm' => 12,
+        'md' => 12,
+        'lg' => 12,
+        'xl' => 12,
+        '2xl' => 12,
+    ];
 
     protected static ?string $pollingInterval = '120s';
 

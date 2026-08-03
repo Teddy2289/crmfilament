@@ -11,6 +11,52 @@ class ContactPartenaire extends Model
 
     protected $table = 'contact_partenaires';
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($contact) {
+            HistoriqueModification::enregistrerCreation($contact);
+        });
+
+        static::updated(function ($contact) {
+            $champsSuivis = [
+                'civilite', 'nom', 'prenom', 'fonction', 'nom_syndicat', 'service',
+                'email', 'telephone_direct', 'telephone_mobile', 'telephone_perso',
+                'email_perso', 'preference_contact', 'date_naissance', 'notes',
+                'est_principal', 'est_decisionnaire', 'niveau_influence', 'canal_prefere',
+            ];
+
+            foreach ($champsSuivis as $champ) {
+                if ($contact->isDirty($champ)) {
+                    HistoriqueModification::enregistrerModification(
+                        $contact,
+                        $champ,
+                        $contact->getOriginal($champ),
+                        $contact->$champ
+                    );
+                }
+            }
+        });
+
+        static::deleted(function ($contact) {
+            HistoriqueModification::enregistrerSuppression($contact);
+        });
+
+        static::restored(function ($contact) {
+            HistoriqueModification::create([
+                'model_type' => get_class($contact),
+                'model_id' => $contact->id,
+                'user_id' => auth()->id(),
+                'champ' => null,
+                'ancienne_valeur' => null,
+                'nouvelle_valeur' => $contact->toArray(),
+                'type_modification' => 'restauration',
+                'date_modification' => now(),
+            ]);
+        });
+    }
+
     protected $fillable = [
         'partenaire_id',
         'civilite',

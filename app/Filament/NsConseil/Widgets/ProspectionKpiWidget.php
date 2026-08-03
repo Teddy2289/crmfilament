@@ -17,6 +17,14 @@ class ProspectionKpiWidget extends BaseWidget
 
     protected static ?string $pollingInterval = '60s';
 
+    protected int|string|array $columnSpan = [
+        'sm' => 2,
+        'md' => 2,
+        'lg' => 4,
+        'xl' => 4,
+        '2xl' => 4,
+    ];
+
     public static function canView(): bool
     {
         $user = auth()->user();

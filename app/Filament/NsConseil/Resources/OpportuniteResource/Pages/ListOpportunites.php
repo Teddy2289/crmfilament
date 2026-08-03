@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources\OpportuniteResource\Pages;
 
 use App\Filament\NsConseil\Resources\OpportuniteResource;
 use App\Models\Opportunite;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListOpportunites extends ListRecords
 {
+    use WithCommonEagerLoading;
+
     protected static string $resource = OpportuniteResource::class;
 
     public function getDefaultActiveTab(): string|int|null
@@ -61,5 +64,13 @@ class ListOpportunites extends ListRecords
                 ->badge(Opportunite::where('statut', 'perdu')->count())
                 ->badgeColor('danger'),
         ];
+    }
+
+    protected function getTableQuery(): Builder
+    {
+        return Opportunite::query()->with([
+            'assigne_a:id,nom,prenom,email',
+            'prospect:id,nom,telephone',
+        ]);
     }
 }
