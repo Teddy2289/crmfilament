@@ -4,8 +4,8 @@ namespace App\Filament\NsConseil\Resources\ClientResource\Pages;
 
 use App\Filament\NsConseil\Resources\ClientResource;
 use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
-use App\Filament\NsConseil\Widgets\ImportProgressWidget;
 use App\Models\Client;
+use App\Traits\HasResponsiveTable;
 use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;

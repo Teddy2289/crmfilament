@@ -6,6 +6,7 @@ use App\Enums\OrganizationStatus;
 use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Filament\NsConseil\Resources\PartenaireResource\Actions\ImportPartenairesAction;
 use App\Models\Partenaire;
+use App\Traits\HasResponsiveTable;
 use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListPartenaires extends ListRecords
 {
-    use WithCommonEagerLoading;
+    use HasResponsiveTable, WithCommonEagerLoading;
 
     protected static string $resource = PartenaireResource::class;
 

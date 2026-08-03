@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListRendezVous extends ListRecords
 {
-    use WithCommonEagerLoading;
+    use HasResponsiveTable, WithCommonEagerLoading;
 
     protected static string $resource = RendezVousResource::class;
 
