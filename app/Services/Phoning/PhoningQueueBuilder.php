@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\ContactPartenaire;
 use App\Models\Prospect;
 use App\Models\StatutPhoning;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Builds and sanitizes the phoning call queue: assembles the default queue
@@ -112,6 +113,42 @@ class PhoningQueueBuilder
         }
 
         return $queue;
+    }
+
+    public function reserveQueueForUser(int $userId, array $queue): array
+    {
+        if ($queue === []) {
+            return [];
+        }
+
+        $available = [];
+
+        foreach ($queue as $item) {
+            $type = $item['type'] ?? null;
+            $id = $item['id'] ?? null;
+
+            if (! is_string($type) || $id === null) {
+                continue;
+            }
+
+            $cacheKey = "phoning_queue_reservation_{$type}_{$id}";
+
+            if (Cache::add($cacheKey, $userId, now()->addMinutes(15))) {
+                $available[] = $item;
+            }
+        }
+
+        return $available;
+    }
+
+    public function releaseQueueReservationForUser(int $userId, string $type, int $id): void
+    {
+        $cacheKey = "phoning_queue_reservation_{$type}_{$id}";
+        $ownerId = Cache::get($cacheKey);
+
+        if ((int) $ownerId === $userId) {
+            Cache::forget($cacheKey);
+        }
     }
 
     public function filterValidQueue(array $queue): array

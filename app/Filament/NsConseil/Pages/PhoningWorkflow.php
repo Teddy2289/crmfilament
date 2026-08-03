@@ -293,12 +293,14 @@ class PhoningWorkflow extends Page
 
         if ($ordered) {
             $this->contactQueue = $this->prioriserFile($this->filterValidQueue($ordered));
+            $this->contactQueue = app(PhoningQueueBuilder::class)->reserveQueueForUser($userId, $this->contactQueue);
 
             return;
         }
 
         $this->contactQueue = $this->buildDefaultQueue($userId);
         $this->contactQueue = $this->prioriserFile($this->contactQueue);
+        $this->contactQueue = app(PhoningQueueBuilder::class)->reserveQueueForUser($userId, $this->contactQueue);
     }
 
     protected function filterValidQueue(array $queue): array
@@ -617,6 +619,14 @@ class PhoningWorkflow extends Page
             ->body('Statut : ' . $this->getResultLabel())
             ->success()
             ->send();
+
+        if ($this->currentContact && $this->contactType) {
+            app(PhoningQueueBuilder::class)->releaseQueueReservationForUser(
+                Auth::id(),
+                $this->contactType,
+                (int) $this->currentContact->getKey(),
+            );
+        }
 
         array_shift($this->contactQueue);
         $this->completed++;
