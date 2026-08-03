@@ -132,6 +132,10 @@ class PhoningWorkflow extends Page
 
     public ?string $ringoverCallEndedAt = null;
 
+    public array $incomingCallMatches = [];
+
+    public ?string $incomingCallPhone = null;
+
     /**
      * Filtre de campagne explicitement choisi par l'utilisateur (via "Choisir
      * une campagne" ou le paramètre d'URL), distinct de $currentCampagneId qui
@@ -433,6 +437,107 @@ class PhoningWorkflow extends Page
         $this->dispatch('ringover-call', phone: $phoneNumber);
     }
 
+    #[\Livewire\Attributes\On('search-incoming-call')]
+    public function searchIncomingCallMatch(string $phone, ?string $targetType = null, ?int $targetId = null): void
+    {
+        $phone = preg_replace('/[^0-9+]/', '', (string) $phone) ?: null;
+
+        if (! $phone) {
+            Notification::make()
+                ->title('Numéro d’appel entrant invalide')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $this->incomingCallPhone = $phone;
+
+        if ($targetType && $targetId) {
+            $typeMap = [
+                Prospect::class => 'prospect',
+                \App\Models\Client::class => 'client',
+                \App\Models\Partenaire::class => 'partenaire',
+                \App\Models\ContactPartenaire::class => 'partenaire',
+                \App\Models\ContactParticulier::class => 'particulier',
+            ];
+
+            $resolvedType = $typeMap[$targetType] ?? null;
+            if ($resolvedType) {
+                $model = $this->resolveModel($resolvedType, $targetId);
+                if ($model) {
+                    $this->currentContact = $model;
+                    $this->contactType = $resolvedType;
+                    $this->currentContactData = $this->buildContactData($model, $resolvedType);
+                    $this->incomingCallMatches = [[
+                        'id' => $targetId,
+                        'type' => $resolvedType,
+                        'nom' => $this->currentContactData['nom'] ?? 'Contact',
+                        'telephone' => $this->currentContactData['telephone'] ?? $phone,
+                        'ville' => $this->currentContactData['ville'] ?? null,
+                        'statut' => $this->currentContactData['statut'] ?? null,
+                        'type_entite' => ucfirst($resolvedType),
+                    ]];
+
+                    $this->reset([
+                        'commentaires',
+                        'statut_resultat',
+                        'rappel_date',
+                        'rappel_heure',
+                    ]);
+
+                    Notification::make()
+                        ->title('Fiche CRM retrouvée')
+                        ->body(($this->currentContactData['nom'] ?? 'Contact').' a été associé automatiquement au numéro d’appel entrant.')
+                        ->success()
+                        ->send();
+
+                    return;
+                }
+            }
+        }
+
+        $this->incomingCallMatches = app(PhoningContactSearchService::class)->findByPhone($phone);
+
+        if ($this->incomingCallMatches === []) {
+            Notification::make()
+                ->title('Aucun contact reconnu')
+                ->body('Le numéro '.$phone.' ne correspond à aucune fiche CRM.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $first = $this->incomingCallMatches[0];
+        $model = $this->resolveModel($first['type'], $first['id']);
+
+        if (! $model) {
+            return;
+        }
+
+        $this->selectedContactId = $first['id'];
+        $this->selectedContactType = $first['type'];
+        $this->showSearchResults = false;
+        $this->searchQuery = $first['nom'];
+        $this->currentContact = $model;
+        $this->contactType = $first['type'];
+        $this->currentContactData = $this->buildContactData($model, $first['type']);
+
+        $this->reset([
+            'commentaires',
+            'statut_resultat',
+            'rappel_date',
+            'rappel_heure',
+        ]);
+
+        Notification::make()
+            ->title('Fiche CRM retrouvée')
+            ->body($first['nom'].' a été associé automatiquement au numéro d’appel entrant.')
+            ->success()
+            ->send();
+    }
+
     #[\Livewire\Attributes\On('ringover-call-lifecycle')]
     public function updateRingoverCallLifecycle(?string $callId = null, ?string $startedAt = null, ?string $endedAt = null): void
     {
@@ -446,6 +551,10 @@ class PhoningWorkflow extends Page
 
         if (filled($endedAt)) {
             $this->ringoverCallEndedAt = $endedAt;
+        }
+
+        if (filled($this->ringoverCallStartedAt) && ! empty($this->ringoverCallStartedAt) && ! $this->incomingCallPhone) {
+            $this->incomingCallPhone = $this->currentContactData['telephone'] ?? null;
         }
     }
 

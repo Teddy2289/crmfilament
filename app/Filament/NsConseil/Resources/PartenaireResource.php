@@ -14,6 +14,7 @@ use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Models\Consultant;
 use App\Models\Partenaire;
 use App\Rules\PartenaireNomenclatureRule;
+use App\Services\Cache\NavigationBadgeCacheService;
 use App\Support\UsesResourcePermissions;
 use Filament\Forms;
 use Filament\Forms\Form;

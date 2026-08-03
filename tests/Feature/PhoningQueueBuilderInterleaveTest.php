@@ -84,4 +84,41 @@ class PhoningQueueBuilderInterleaveTest extends TestCase
 
         $this->assertSame($prospects->pluck('id')->all(), collect($queue)->pluck('id')->all());
     }
+
+    #[Test]
+    public function queue_selection_is_balanced_and_not_deterministic_across_campaigns(): void
+    {
+        $groupe = GroupeTelepro::create(['nom' => 'Groupe aléatoire', 'actif' => true]);
+        $telepro = User::factory()->create();
+        $telepro->groupesTelepro()->attach($groupe->id);
+
+        foreach (['Campagne A', 'Campagne B', 'Campagne C'] as $nom) {
+            CampagnePhoning::create([
+                'nom' => $nom,
+                'statut' => 'active',
+                'type_entite' => 'prospects',
+                'groupe_telepro_id' => $groupe->id,
+                'criteres' => ['statuts' => ['AC']],
+            ]);
+        }
+
+        $campagnes = CampagnePhoning::query()->orderBy('id')->get();
+        $campagnes->each(function (CampagnePhoning $campagne, int $index) {
+            Prospect::factory()->count(2)->create([
+                'statut' => 'AC',
+                'commercial_id' => null,
+                'departement' => (string) (44 + $index),
+            ]);
+        });
+
+        $queues = [];
+        foreach (range(1, 5) as $i) {
+            $queues[] = json_encode(app(PhoningQueueBuilder::class)->buildDefaultQueue($telepro->id, null));
+        }
+
+        $uniqueQueues = array_unique($queues);
+
+        $this->assertGreaterThan(1, count($uniqueQueues));
+        $this->assertTrue(collect($queues)->every(fn ($queue) => str_contains($queue, 'campagne_id')));
+    }
 }

@@ -46,30 +46,68 @@ class PhoningQueueBuilder
      */
     protected function interleave(array $listesParCampagne): array
     {
+        if ($listesParCampagne === []) {
+            return [];
+        }
+
         $queue = [];
         $seen = [];
-        $curseurs = array_fill(0, count($listesParCampagne), 0);
+        $campagnes = collect($listesParCampagne)
+            ->map(function (array $liste, int $index) {
+                return [
+                    'index' => $index,
+                    'items' => $liste,
+                ];
+            })
+            ->values()
+            ->all();
+
         $restant = true;
+        $tour = 0;
 
         while ($restant) {
             $restant = false;
+            $ordre = range(0, count($campagnes) - 1);
+            shuffle($ordre);
 
-            foreach ($listesParCampagne as $i => $liste) {
-                while ($curseurs[$i] < count($liste)) {
-                    $contact = $liste[$curseurs[$i]];
-                    $curseurs[$i]++;
+            foreach ($ordre as $campagneIndex) {
+                $campagne = $campagnes[$campagneIndex];
+                $liste = $campagne['items'];
 
-                    $key = $contact['type'].'_'.$contact['id'];
-                    if (isset($seen[$key])) {
+                if ($liste === []) {
+                    continue;
+                }
+
+                $cible = $liste[array_rand($liste)];
+                $key = $cible['type'].'_'.$cible['id'];
+
+                if (isset($seen[$key])) {
+                    $remaining = collect($liste)->reject(fn ($item) => isset($seen[$item['type'].'_'.$item['id']]))->values()->all();
+                    if ($remaining === []) {
                         continue;
                     }
 
-                    $seen[$key] = true;
-                    $queue[] = $contact;
-                    $restant = true;
-
-                    break;
+                    $cible = $remaining[array_rand($remaining)];
+                    $key = $cible['type'].'_'.$cible['id'];
                 }
+
+                if (isset($seen[$key])) {
+                    continue;
+                }
+
+                $seen[$key] = true;
+                $queue[] = $cible;
+                $restant = true;
+
+                $campagnes[$campagneIndex]['items'] = collect($liste)
+                    ->reject(fn ($item) => ($item['type'].'_'.$item['id']) === $key)
+                    ->values()
+                    ->all();
+            }
+
+            $tour++;
+            if ($tour > 1000) {
+                break;
             }
         }
 
