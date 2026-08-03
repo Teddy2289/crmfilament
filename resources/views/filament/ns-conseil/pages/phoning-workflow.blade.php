@@ -1206,7 +1206,15 @@ $tentativesActuelles = $this->getTentativesAppel();
             }
         }
 
+        function rechercherAppelEntrant(numero) {
+            if (!numero) return;
+            const normalized = String(numero).replace(/[^0-9+]/g, '');
+            if (!normalized) return;
+            Livewire.dispatch('search-incoming-call', { phone: normalized });
+        }
+
         window.appelerAvecRingover = appelerAvecRingover;
+        window.rechercherAppelEntrant = rechercherAppelEntrant;
     </script>
     @endpush
 
@@ -1322,6 +1330,40 @@ $tentativesActuelles = $this->getTentativesAppel();
             <div style="font-size:0.875rem;">Aucun contact trouvé pour "{{ $searchQuery }}"</div>
         </div>
         @endif
+        @if ($incomingCallPhone || $incomingCallMatches)
+        <div style="margin:1rem 1.25rem 0; background:rgb(239 246 255); border:1px solid rgb(191 219 254); border-radius:0.75rem; padding:0.875rem 1rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:0.625rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(30 64 175); font-weight:700;">Appel entrant détecté</div>
+                    <div style="font-size:1rem; font-weight:700; color:rgb(30 41 59); margin-top:0.25rem;">{{ $incomingCallPhone ?? 'Numéro inconnu' }}</div>
+                </div>
+                @if ($incomingCallMatches)
+                <button type="button" onclick="rechercherAppelEntrant('{{ $incomingCallPhone }}')" style="padding:0.5rem 0.875rem; border:none; border-radius:0.5rem; background:rgb(37 99 235); color:white; font-weight:600; cursor:pointer;">
+                    Rechercher la fiche
+                </button>
+                @endif
+            </div>
+
+            @if ($incomingCallMatches)
+            <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
+                @foreach ($incomingCallMatches as $match)
+                <button type="button" wire:click="selectSearchResult({{ $match['id'] }}, '{{ $match['type'] }}')" style="text-align:left; padding:0.625rem 0.75rem; border:1px solid rgb(191 219 254); border-radius:0.625rem; background:white; cursor:pointer;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+                        <div>
+                            <div style="font-weight:700; color:rgb(17 24 39);">{{ $match['nom'] }}</div>
+                            <div style="font-size:0.75rem; color:rgb(75 85 99); margin-top:0.125rem;">{{ $match['type_entite'] }} · {{ $match['telephone'] ?? '—' }}</div>
+                        </div>
+                        @if ($match['statut'])
+                        <span style="font-size:0.625rem; padding:0.15rem 0.45rem; border-radius:9999px; background:rgb(243 244 246); color:rgb(55 65 81); font-weight:600;">{{ $match['statut'] }}</span>
+                        @endif
+                    </div>
+                </button>
+                @endforeach
+            </div>
+            @endif
+        </div>
+        @endif
+
         @if ($currentContact)
 
         {{-- ── CARD ENTREPRISE ── --}}
@@ -2231,7 +2273,15 @@ $tentativesActuelles = $this->getTentativesAppel();
                     if (typeof window.ringoverPhone.on === 'function') {
                         ['callStarted', 'call:started', 'started', 'call.started'].forEach((eventName) => {
                             try {
-                                window.ringoverPhone.on(eventName, (payload) => captureLifecycle(payload, eventName));
+                                window.ringoverPhone.on(eventName, (payload) => {
+                                    const direction = payload && (payload.direction || payload.type || payload.call_direction || payload.callDirection);
+                                    const caller = payload && (payload.from_number || payload.fromNumber || payload.caller_number || payload.callerNumber || payload.from || payload.caller);
+                                    const isInbound = direction === 'inbound' || String(direction).toLowerCase().includes('inbound') || String(direction).toLowerCase().includes('incoming');
+                                    captureLifecycle(payload, eventName);
+                                    if (isInbound && caller) {
+                                        rechercherAppelEntrant(caller);
+                                    }
+                                });
                             } catch (e) {}
                         });
 

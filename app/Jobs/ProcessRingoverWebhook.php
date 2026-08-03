@@ -28,9 +28,35 @@ class ProcessRingoverWebhook implements ShouldQueue
     {
         try {
             $result = $sync->sync($this->payload, source: $this->source);
-            
+
+            $status = $this->payload['status'] ?? $this->payload['state'] ?? null;
+            $direction = $this->payload['direction'] ?? $this->payload['type'] ?? null;
+
+            if (in_array((string) $status, ['ringing', 'answered', 'done', 'completed', 'hangup'], true)
+                || in_array((string) $direction, ['inbound', 'incoming'], true)) {
+                $incomingTarget = $sync->resolveIncomingCallTarget($this->payload);
+
+                if ($incomingTarget) {
+                    $callableType = get_class($incomingTarget);
+                    $callableId = $incomingTarget->id;
+
+                    $result['appel']->update([
+                        'appelable_type' => $callableType,
+                        'appelable_id' => $callableId,
+                    ]);
+
+                    if (class_exists('\Livewire\Livewire')) {
+                        \Livewire\Livewire::dispatch('search-incoming-call', [
+                            'phone' => $result['appel']->numero_appelant,
+                            'target_type' => $callableType,
+                            'target_id' => $callableId,
+                        ]);
+                    }
+                }
+            }
+
             $this->broadcastEvent($this->payload, $result['appel']?->user_id);
-            
+
             Log::info('Ringover webhook processed', [
                 'call_id' => $result['appel']->ringover_call_id,
                 'created' => $result['created'],

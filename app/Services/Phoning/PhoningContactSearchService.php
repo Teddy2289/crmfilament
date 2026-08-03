@@ -129,4 +129,192 @@ class PhoningContactSearchService
 
         return $results;
     }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function findByPhone(string $phone): array
+    {
+        $normalized = $this->normalizePhone($phone);
+
+        if (! $normalized) {
+            return [];
+        }
+
+        $results = [];
+
+        foreach ($this->searchMatchesForProspects($normalized) as $record) {
+            $results[] = [
+                'id' => $record->id,
+                'type' => 'prospect',
+                'nom' => $record->nom,
+                'telephone' => $record->telephone,
+                'ville' => $record->ville,
+                'statut' => $record->statut_label,
+                'type_entite' => 'Prospect',
+                'label' => $record->nom.' - '.($record->ville ?? 'Sans ville'),
+            ];
+        }
+
+        foreach ($this->searchMatchesForClients($normalized) as $record) {
+            $results[] = [
+                'id' => $record->id,
+                'type' => 'client',
+                'nom' => $record->nom_tiers,
+                'telephone' => $record->telephone,
+                'ville' => null,
+                'statut' => $record->etat ?? 'Client',
+                'type_entite' => 'Client',
+                'label' => $record->nom_tiers.' - '.($record->entreprise ?? ''),
+            ];
+        }
+
+        foreach ($this->searchMatchesForPartenaires($normalized) as $record) {
+            $results[] = [
+                'id' => $record->id,
+                'type' => 'partenaire',
+                'nom' => $record->nom,
+                'telephone' => $record->telephone,
+                'ville' => $record->ville,
+                'statut' => $record->statut_label,
+                'type_entite' => 'Partenaire',
+                'label' => $record->nom.' - '.($record->entreprise ?? ''),
+            ];
+        }
+
+        foreach ($this->searchMatchesForContactsPartenaire($normalized) as $record) {
+            $results[] = [
+                'id' => $record->id,
+                'type' => 'partenaire',
+                'nom' => trim($record->prenom.' '.$record->nom).' ('.($record->partenaire->nom ?? '').')',
+                'telephone' => $record->telephone_direct ?? $record->telephone_mobile ?? $record->telephone_perso,
+                'ville' => $record->partenaire->ville ?? null,
+                'statut' => $record->partenaire->statut_label ?? 'Contact',
+                'type_entite' => 'Contact Partenaire',
+                'label' => trim($record->prenom.' '.$record->nom).' - '.($record->fonction ?? ''),
+            ];
+        }
+
+        foreach ($this->searchMatchesForContactsParticuliers($normalized) as $record) {
+            $results[] = [
+                'id' => $record->id,
+                'type' => 'particulier',
+                'nom' => trim($record->prenom.' '.$record->nom),
+                'telephone' => $record->telephone,
+                'ville' => null,
+                'statut' => $record->statut_occupant?->label() ?? 'Particulier',
+                'type_entite' => 'Particulier',
+                'label' => trim($record->prenom.' '.$record->nom),
+            ];
+        }
+
+        return $this->deduplicateResults($results);
+    }
+
+    private function normalizePhone(?string $phone): ?string
+    {
+        if (! $phone) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', (string) $phone) ?: '';
+
+        if ($digits === '') {
+            return null;
+        }
+
+        if (str_starts_with($digits, '33') && strlen($digits) === 11) {
+            $digits = '0' . substr($digits, 2);
+        }
+
+        return $digits;
+    }
+
+    private function matchesPhone(?string $candidate, string $needle): bool
+    {
+        if (! filled($candidate)) {
+            return false;
+        }
+
+        return $this->normalizePhone($candidate) === $needle;
+    }
+
+    private function deduplicateResults(array $results): array
+    {
+        $seen = [];
+
+        return array_values(array_filter($results, function ($result) use (&$seen) {
+            $key = $result['type'].'-'.$result['id'];
+
+            if (isset($seen[$key])) {
+                return false;
+            }
+
+            $seen[$key] = true;
+
+            return true;
+        }));
+    }
+
+    private function searchMatchesForProspects(string $normalized): array
+    {
+        $prospects = Prospect::query()
+            ->whereNull('deleted_at')
+            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
+            ->get();
+
+        return $prospects->filter(function ($prospect) use ($normalized) {
+            return $this->matchesPhone($prospect->telephone, $normalized)
+                || $this->matchesPhone($prospect->telephone_alt, $normalized)
+                || $this->matchesPhone($prospect->interlocuteur_telephone, $normalized);
+        })->values()->all();
+    }
+
+    private function searchMatchesForClients(string $normalized): array
+    {
+        $clients = Client::query()
+            ->whereNull('deleted_at')
+            ->where(function ($query) {
+                $query->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false);
+            })
+            ->get();
+
+        return $clients->filter(function ($client) use ($normalized) {
+            return $this->matchesPhone($client->telephone, $normalized);
+        })->values()->all();
+    }
+
+    private function searchMatchesForPartenaires(string $normalized): array
+    {
+        $partenaires = Partenaire::query()
+            ->whereNull('deleted_at')
+            ->get();
+
+        return $partenaires->filter(function ($partenaire) use ($normalized) {
+            return $this->matchesPhone($partenaire->telephone, $normalized);
+        })->values()->all();
+    }
+
+    private function searchMatchesForContactsPartenaire(string $normalized): array
+    {
+        $contacts = \App\Models\ContactPartenaire::query()
+            ->whereNull('deleted_at')
+            ->with('partenaire')
+            ->get();
+
+        return $contacts->filter(function ($contact) use ($normalized) {
+            return $this->matchesPhone($contact->telephone_direct, $normalized)
+                || $this->matchesPhone($contact->telephone_mobile, $normalized)
+                || $this->matchesPhone($contact->telephone_perso, $normalized);
+        })->values()->all();
+    }
+
+    private function searchMatchesForContactsParticuliers(string $normalized): array
+    {
+        $contacts = \App\Models\ContactParticulier::query()->get();
+
+        return $contacts->filter(function ($contact) use ($normalized) {
+            return $this->matchesPhone($contact->telephone, $normalized);
+        })->values()->all();
+    }
 }

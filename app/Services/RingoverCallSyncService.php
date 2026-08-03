@@ -43,9 +43,14 @@ class RingoverCallSyncService
         $appel = Appel::query()->firstOrNew(['ringover_call_id' => $callId]);
         $created = ! $appel->exists;
 
-        if ($created && $localTarget) {
-            $appel->appelable_type = get_class($localTarget);
-            $appel->appelable_id = $localTarget->id;
+        if ($localTarget) {
+            $targetType = get_class($localTarget);
+            $targetId = $localTarget->id;
+
+            if ($created || $appel->appelable_type !== $targetType || $appel->appelable_id !== $targetId) {
+                $appel->appelable_type = $targetType;
+                $appel->appelable_id = $targetId;
+            }
         }
 
         $appel->fill([
@@ -95,6 +100,38 @@ class RingoverCallSyncService
             'created' => $created,
             'tag_validation' => $tagValidation,
         ];
+    }
+
+    public function resolveIncomingCallTarget(array $call): ?Model
+    {
+        $phone = $this->normalizePhone($this->extractPhoneNumber($call));
+
+        if (! $phone) {
+            return null;
+        }
+
+        foreach ($this->phoneFieldsByModel() as $modelClass => $fields) {
+            /** @var class-string<Model> $modelClass */
+            $records = $modelClass::query()
+                ->where(function ($query) use ($fields): void {
+                    foreach ($fields as $field) {
+                        $query->orWhereNotNull($field);
+                    }
+                })
+                ->latest('updated_at')
+                ->limit(1000)
+                ->get();
+
+            foreach ($records as $record) {
+                foreach ($fields as $field) {
+                    if ($this->normalizePhone($record->{$field} ?? null) === $phone) {
+                        return $record;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public function unwrapCallPayload(array $payload): array
