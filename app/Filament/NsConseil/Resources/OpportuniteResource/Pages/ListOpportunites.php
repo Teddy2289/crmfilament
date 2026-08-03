@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources\OpportuniteResource\Pages;
 
 use App\Filament\NsConseil\Resources\OpportuniteResource;
 use App\Models\Opportunite;
+use App\Traits\HasResponsiveTable;
 use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;

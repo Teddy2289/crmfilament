@@ -16,6 +16,7 @@ use App\Mail\ConfirmationRdvCseMail;
 use App\Mail\InvitationAgendaResponsableMail;
 use App\Models\Prospect;
 use App\Models\User;
+use App\Services\Cache\NavigationBadgeCacheService;
 use App\Support\UsesResourcePermissions;
 use Carbon\Carbon;
 use Filament\Forms;

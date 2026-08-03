@@ -7,6 +7,7 @@ namespace App\Filament\NsConseil\Resources\RendezVousResource\Pages;
 use App\Enums\RendezVousStatut;
 use App\Filament\NsConseil\Resources\RendezVousResource;
 use App\Models\RendezVous;
+use App\Traits\HasResponsiveTable;
 use App\Traits\WithCommonEagerLoading;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;

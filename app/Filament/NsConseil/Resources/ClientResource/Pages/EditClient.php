@@ -3,11 +3,14 @@
 namespace App\Filament\NsConseil\Resources\ClientResource\Pages;
 
 use App\Filament\NsConseil\Resources\ClientResource;
+use App\Traits\HasResponsiveForm;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditClient extends EditRecord
 {
+    use HasResponsiveForm;
+
     protected static string $resource = ClientResource::class;
 
     protected function mutateFormDataBeforeSave(array $data): array

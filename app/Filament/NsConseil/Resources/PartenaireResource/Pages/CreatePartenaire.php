@@ -3,10 +3,13 @@
 namespace App\Filament\NsConseil\Resources\PartenaireResource\Pages;
 
 use App\Filament\NsConseil\Resources\PartenaireResource;
+use App\Traits\HasResponsiveForm;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreatePartenaire extends CreateRecord
 {
+    use HasResponsiveForm;
+
     protected static string $resource = PartenaireResource::class;
 
     protected function getRedirectUrl(): string
