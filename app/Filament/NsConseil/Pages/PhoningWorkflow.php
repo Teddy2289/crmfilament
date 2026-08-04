@@ -779,7 +779,9 @@ class PhoningWorkflow extends Page
             $prospect->changerStatut($nouveauStatut, $note);
         }
         $prospect->marquerContact();
-        $prospect->assignerTeleprospecteur(Auth::id());
+        if (! $prospect->teleprospecteur_id) {
+            $prospect->assignerTeleprospecteur(Auth::id());
+        }
 
         $this->persistProspectInterlocuteurFields($prospect);
 

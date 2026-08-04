@@ -35,6 +35,11 @@ Schedule::job(new \App\Jobs\SendFicheJauneJ7Job())
     ->dailyAt('08:00')
     ->withoutOverlapping();
 
+// Rappel du jour : notification quotidienne au téléprospecteur qui a programmé le rappel.
+Schedule::job(new \App\Jobs\SendRappelDuJourJob())
+    ->dailyAt('08:00')
+    ->withoutOverlapping();
+
 // WF7 — Rappel RP : retiré du scheduler (2026-07-21). Interrogeait des colonnes
 // obsolètes (statut_phoning/rappel_date/rappel_envoye_at sur prospects) et échouait
 // à chaque exécution. SendRappelRdvJob ci-dessous couvre déjà ce besoin via la table
