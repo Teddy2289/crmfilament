@@ -789,12 +789,9 @@ class PhoningWorkflow extends Page
         }
 
         $recipient = $this->resolvePreviewRecipient($this->statut_resultat);
-        if (! $recipient) {
-            return null;
-        }
 
         return [
-            'recipient' => $recipient,
+            'recipient' => $recipient ?? '',
             'subject' => $this->getMailableSubject($mailable),
             'body' => $this->getMailableBody($mailable),
         ];
@@ -892,7 +889,11 @@ class PhoningWorkflow extends Page
 
     protected function localPreviewFallbackEmail(): ?string
     {
-        return app()->environment('production') ? null : config('mail.redirect_all_to');
+        if (app()->environment('production')) {
+            return null;
+        }
+
+        return config('mail.redirect_all_to');
     }
 
     protected function getMailableSubject(Mailable $mailable): string
