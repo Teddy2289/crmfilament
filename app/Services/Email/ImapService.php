@@ -32,6 +32,10 @@ class ImapService
             throw new \Exception('Aucune configuration email trouvée pour cet utilisateur');
         }
 
+        if (! class_exists(Client::class)) {
+            throw new \Exception('Le paquet webklex/php-imap est requis pour synchroniser les emails.');
+        }
+
         $this->connect();
     }
 

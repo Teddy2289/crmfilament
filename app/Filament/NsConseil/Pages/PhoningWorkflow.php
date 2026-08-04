@@ -10,8 +10,15 @@ use App\Filament\NsConseil\Resources\CampagnePhoningResource;
 use App\Models\Appel;
 use App\Models\CampagnePhoning;
 use App\Models\Prospect;
+use App\Models\RendezVous;
 use App\Models\StatutPhoning;
 use App\Models\User;
+use App\Mail\ConfirmationRdvProspectMail;
+use App\Mail\ContactSansCSEMail;
+use App\Mail\GenericProspectionMail;
+use App\Mail\PreviewableProspectionMail;
+use App\Mail\PriseContactBlocMail;
+use Illuminate\Mail\Mailable;
 use App\Services\Aopia\FicheGenerationService;
 use App\Services\Crm\CrmProfileService;
 use App\Services\Crm\CrmSettingsService;
@@ -71,6 +78,12 @@ class PhoningWorkflow extends Page
     public array $currentContactData = [];
 
     public string $commentaires = '';
+
+    public bool $showEmailPreview = false;
+    public bool $emailPreviewConfirmed = false;
+    public ?string $emailPreviewRecipient = null;
+    public ?string $emailPreviewSubject = null;
+    public ?string $emailPreviewBody = null;
 
     public string $statut_resultat = '';
 
@@ -606,6 +619,15 @@ class PhoningWorkflow extends Page
             'commentaires.required' => $this->messageCommentaireObligatoire(),
         ]);
 
+        if ($this->shouldPreviewEmail() && ! $this->emailPreviewConfirmed) {
+            $this->openEmailPreview();
+            return;
+        }
+
+        if ($this->showEmailPreview && $this->emailPreviewConfirmed) {
+            $this->showEmailPreview = false;
+        }
+
         match ($this->contactType) {
             'artisan' => $this->updateArtisan(),
             'partenaire' => $this->updatePartenaire(),
@@ -656,12 +678,198 @@ class PhoningWorkflow extends Page
             );
         }
 
+        $this->resetEmailPreviewState();
+
         array_shift($this->contactQueue);
         $this->completed++;
 
         $this->checkCampagneCompletion();
 
         $this->loadNextContact();
+    }
+
+    protected function shouldPreviewEmail(): bool
+    {
+        return $this->contactType === 'prospect'
+            && $this->currentContact instanceof Prospect
+            && $this->getEmailPreviewPayload() !== null;
+    }
+
+    protected function openEmailPreview(): void
+    {
+        $payload = $this->getEmailPreviewPayload();
+        if (! $payload) {
+            return;
+        }
+
+        $this->showEmailPreview = true;
+        $this->emailPreviewRecipient = $payload['recipient'];
+        $this->emailPreviewSubject = $payload['subject'];
+        $this->emailPreviewBody = $payload['body'];
+        $this->emailPreviewConfirmed = false;
+    }
+
+    public function confirmEmailPreview(): void
+    {
+        $this->emailPreviewConfirmed = true;
+        $this->showEmailPreview = false;
+
+        $this->submitResult();
+    }
+
+    public function cancelEmailPreview(): void
+    {
+        $this->resetEmailPreviewState();
+    }
+
+    protected function resetEmailPreviewState(): void
+    {
+        $this->showEmailPreview = false;
+        $this->emailPreviewConfirmed = false;
+        $this->emailPreviewRecipient = null;
+        $this->emailPreviewSubject = null;
+        $this->emailPreviewBody = null;
+    }
+
+    public function updatedStatutResultat(): void
+    {
+        $this->resetEmailPreviewState();
+    }
+
+    protected function getEmailPreviewPayload(): ?array
+    {
+        $mailable = $this->getPreviewMailableForStatut($this->statut_resultat);
+        if (! $mailable) {
+            return null;
+        }
+
+        $recipient = $this->resolvePreviewRecipient($this->statut_resultat);
+        if (! $recipient) {
+            return null;
+        }
+
+        return [
+            'recipient' => $recipient,
+            'subject' => $this->getMailableSubject($mailable),
+            'body' => $this->getMailableBody($mailable),
+        ];
+    }
+
+    protected function getPreviewMailableForStatut(string $statut): ?Mailable
+    {
+        if (! $this->currentContact instanceof Prospect) {
+            return null;
+        }
+
+        return match ($statut) {
+            'rdv' => $this->buildPreviewRdvMailable($this->currentContact),
+            'bloc' => new PriseContactBlocMail($this->currentContact, [
+                'nom' => $this->currentContact->interlocuteur_nom,
+                'fonction' => $this->currentContact->interlocuteur_fonction,
+                'email' => $this->currentContact->interlocuteur_email,
+                'telephone' => $this->currentContact->interlocuteur_telephone,
+            ]),
+            'ncse_50' => new ContactSansCSEMail($this->currentContact, [
+                'nom' => $this->currentContact->interlocuteur_nom,
+                'fonction' => $this->currentContact->interlocuteur_fonction,
+                'email' => $this->currentContact->interlocuteur_email,
+                'telephone' => $this->currentContact->interlocuteur_telephone,
+                'nb_salaries' => $this->currentContact->nb_salaries,
+            ]),
+            'cse_hz' => new GenericProspectionMail('interne.cse_hors_zone', [
+                'entreprise_nom' => $this->currentContact->nom,
+                'elu_nom' => $this->currentContact->interlocuteur_nom,
+                'elu_email' => $this->currentContact->interlocuteur_email,
+                'elu_telephone' => $this->currentContact->interlocuteur_telephone,
+                'departement' => $this->currentContact->departement,
+                'ville' => $this->currentContact->ville,
+            ]),
+            default => null,
+        };
+    }
+
+    protected function buildPreviewRdvMailable(Prospect $prospect): ?Mailable
+    {
+        if (! $this->rappel_date) {
+            return null;
+        }
+
+        $dateHeure = $this->rappel_date . ' ' . ($this->rappel_heure ?: '09:00');
+
+        $rdv = new RendezVous([
+            'rdvable_type' => Prospect::class,
+            'rdvable_id' => $prospect->id,
+            'date_heure' => $dateHeure,
+            'lieu' => $this->lieu_rdv ?: null,
+            'teleprospecteur_id' => Auth::id(),
+            'interlocuteur_nom' => $this->interlocuteur_nom ?: $prospect->fallback_interlocuteur_nom,
+            'interlocuteur_tel' => $this->interlocuteur_telephone ?: $prospect->fallback_interlocuteur_telephone,
+            'interlocuteur_email' => $this->interlocuteur_email ?: $prospect->fallback_interlocuteur_email,
+        ]);
+
+        $rdv->setRelation('commercial', $prospect->commercial);
+
+        return new ConfirmationRdvProspectMail($prospect, $rdv);
+    }
+
+    protected function resolvePreviewRecipient(string $statut): ?string
+    {
+        if (! $this->currentContact instanceof Prospect) {
+            return null;
+        }
+
+        return match ($statut) {
+            'rdv', 'bloc', 'ncse_50' => $this->currentContact->interlocuteur_email
+                ?: $this->currentContact->fallback_interlocuteur_email
+                ?: $this->localPreviewFallbackEmail(),
+            'cse_hz' => app()->environment('production')
+                ? 'bruno@ns-conseil.com'
+                : ($this->localPreviewFallbackEmail() ?: 'bruno@ns-conseil.com'),
+            default => null,
+        };
+    }
+
+    protected function buildProspectionMailContext(?RendezVous $rdv = null): array
+    {
+        $context = ['rdv' => $rdv];
+
+        if ($this->emailPreviewConfirmed && $this->emailPreviewSubject !== null && $this->emailPreviewBody !== null) {
+            $context['email_preview_subject'] = $this->emailPreviewSubject;
+            $context['email_preview_body'] = $this->emailPreviewBody;
+        }
+
+        return $context;
+    }
+
+    protected function localPreviewFallbackEmail(): ?string
+    {
+        return app()->environment('production') ? null : config('mail.redirect_all_to');
+    }
+
+    protected function getMailableSubject(Mailable $mailable): string
+    {
+        if (method_exists($mailable, 'getRenderedSubject')) {
+            return $this->invokeProtectedMethod($mailable, 'getRenderedSubject');
+        }
+
+        return $mailable->envelope()->subject;
+    }
+
+    protected function getMailableBody(Mailable $mailable): string
+    {
+        if (method_exists($mailable, 'getRenderedBody')) {
+            return $this->invokeProtectedMethod($mailable, 'getRenderedBody');
+        }
+
+        return $mailable->render();
+    }
+
+    protected function invokeProtectedMethod(object $object, string $method, array $parameters = []): mixed
+    {
+        $reflection = new \ReflectionMethod($object, $method);
+        $reflection->setAccessible(true);
+
+        return $reflection->invokeArgs($object, $parameters);
     }
 
     protected function checkCampagneCompletion(): void
@@ -786,6 +994,7 @@ class PhoningWorkflow extends Page
         if ($this->interlocuteur_email !== '') {
             $updateData['interlocuteur_email'] = $this->interlocuteur_email;
         }
+        $updateData = $this->getProspectInterlocuteurUpdateData();
         if (! empty($updateData)) {
             $prospect->update($updateData);
         }
@@ -803,7 +1012,6 @@ class PhoningWorkflow extends Page
         $this->persistProspectInterlocuteurFields($prospect);
 
         // ── Envoi du mail correspondant au statut ──────────────────────
-        // ── Envoi du mail correspondant au statut ──────────────────────
         $rdv = null; // déclarée en amont : nécessaire pour TOUS les statuts, pas seulement 'rdv'
 
         if ($this->statut_resultat === 'rdv') {
@@ -819,7 +1027,7 @@ class PhoningWorkflow extends Page
         app(ProspectionMailService::class)->envoyerPourStatut(
             $this->statut_resultat,
             $prospect,
-            ['rdv' => $rdv]
+            $this->buildProspectionMailContext($rdv)
         );
 
         // Planifier le rappel selon paramètres back-office
@@ -842,6 +1050,42 @@ class PhoningWorkflow extends Page
                 $prospect->programmerRappel(now()->addHours($heures));
             }
         }
+    }
+
+    protected function getProspectInterlocuteurUpdateData(): array
+    {
+        $updateData = [];
+
+        if ($this->nom_interlocuteur_standard !== '') {
+            $updateData['nom_interlocuteur_standard'] = $this->nom_interlocuteur_standard;
+        }
+        if ($this->creneaux_permanence_cse !== '') {
+            $updateData['creneaux_permanence_cse'] = $this->creneaux_permanence_cse;
+        }
+        if ($this->email_general_standard !== '') {
+            $updateData['email_general_standard'] = $this->email_general_standard;
+        }
+        if ($this->interlocuteur_nom !== '') {
+            [$prenom, $nom] = $this->splitFullName($this->interlocuteur_nom);
+
+            if ($prenom !== null) {
+                $updateData['interlocuteur_prenom'] = $prenom;
+            }
+            if ($nom !== null) {
+                $updateData['interlocuteur_nom'] = $nom;
+            }
+        }
+        if ($this->interlocuteur_fonction !== '') {
+            $updateData['interlocuteur_fonction'] = $this->interlocuteur_fonction;
+        }
+        if ($this->interlocuteur_telephone !== '') {
+            $updateData['interlocuteur_telephone'] = $this->interlocuteur_telephone;
+        }
+        if ($this->interlocuteur_email !== '') {
+            $updateData['interlocuteur_email'] = $this->interlocuteur_email;
+        }
+
+        return $updateData;
     }
 
     public function saveInterlocuteur(): void

@@ -6,6 +6,7 @@ use App\Mail\ContactSansCSEMail;
 use App\Mail\PriseContactBlocMail;
 use App\Mail\ConfirmationRdvProspectMail;
 use App\Mail\GenericProspectionMail;
+use App\Mail\PreviewableProspectionMail;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use Illuminate\Support\Facades\Auth;
@@ -64,8 +65,10 @@ class ProspectionMailService
         ]);
 
         if ($emailInterlocuteur) {
+            $mailable = $this->wrapPreviewableMailable(new ConfirmationRdvProspectMail($prospect, $rdv), $contexte);
+
             dispatch(new SendProspectionMailJob(
-                mailable: new ConfirmationRdvProspectMail($prospect, $rdv),
+                mailable: $mailable,
                 to: $emailInterlocuteur,
                 emailLabel: 'Confirmation RDV',
                 prospectId: $prospect->id,
@@ -93,13 +96,15 @@ class ProspectionMailService
             return;
         }
 
+        $mailable = $this->wrapPreviewableMailable(new PriseContactBlocMail($prospect, [
+            'nom' => $prospect->interlocuteur_nom,
+            'fonction' => $prospect->interlocuteur_fonction,
+            'email' => $prospect->interlocuteur_email,
+            'telephone' => $prospect->interlocuteur_telephone,
+        ]), $contexte);
+
         dispatch(new SendProspectionMailJob(
-            mailable: new PriseContactBlocMail($prospect, [
-                'nom' => $prospect->interlocuteur_nom,
-                'fonction' => $prospect->interlocuteur_fonction,
-                'email' => $prospect->interlocuteur_email,
-                'telephone' => $prospect->interlocuteur_telephone,
-            ]),
+            mailable: $mailable,
             to: $email,
             emailLabel: 'Prise de contact (bloc)',
             prospectId: $prospect->id,
@@ -121,14 +126,16 @@ class ProspectionMailService
             return;
         }
 
+        $mailable = $this->wrapPreviewableMailable(new ContactSansCSEMail($prospect, [
+            'nom' => $prospect->interlocuteur_nom,
+            'fonction' => $prospect->interlocuteur_fonction,
+            'email' => $prospect->interlocuteur_email,
+            'telephone' => $prospect->interlocuteur_telephone,
+            'nb_salaries' => $prospect->nb_salaries,
+        ]), $contexte);
+
         dispatch(new SendProspectionMailJob(
-            mailable: new ContactSansCSEMail($prospect, [
-                'nom' => $prospect->interlocuteur_nom,
-                'fonction' => $prospect->interlocuteur_fonction,
-                'email' => $prospect->interlocuteur_email,
-                'telephone' => $prospect->interlocuteur_telephone,
-                'nb_salaries' => $prospect->nb_salaries,
-            ]),
+            mailable: $mailable,
             to: $email,
             emailLabel: 'Contact sans CSE',
             prospectId: $prospect->id,
@@ -147,18 +154,20 @@ class ProspectionMailService
 
         Log::info("MAIL DEBUG: envoyerHorsZone", ['destinataire' => $destinataire]);
 
+        $mailable = $this->wrapPreviewableMailable(new GenericProspectionMail(
+            templateKey: 'interne.cse_hors_zone',
+            variables: [
+                'entreprise_nom' => $prospect->nom,
+                'elu_nom' => $prospect->interlocuteur_nom,
+                'elu_email' => $prospect->interlocuteur_email,
+                'elu_telephone' => $prospect->interlocuteur_telephone,
+                'departement' => $prospect->departement,
+                'ville' => $prospect->ville,
+            ],
+        ), $contexte);
+
         dispatch(new SendProspectionMailJob(
-            mailable: new GenericProspectionMail(
-                templateKey: 'interne.cse_hors_zone',
-                variables: [
-                    'entreprise_nom' => $prospect->nom,
-                    'elu_nom' => $prospect->interlocuteur_nom,
-                    'elu_email' => $prospect->interlocuteur_email,
-                    'elu_telephone' => $prospect->interlocuteur_telephone,
-                    'departement' => $prospect->departement,
-                    'ville' => $prospect->ville,
-                ],
-            ),
+            mailable: $mailable,
             to: $destinataire,
             emailLabel: 'CSE hors zone',
             prospectId: $prospect->id,
@@ -177,5 +186,22 @@ class ProspectionMailService
         }
 
         return config('mail.redirect_all_to');
+    }
+
+    protected function wrapPreviewableMailable(Mailable $mailable, array $contexte): Mailable
+    {
+        if (! array_key_exists('email_preview_subject', $contexte)
+            || ! array_key_exists('email_preview_body', $contexte)) {
+            return $mailable;
+        }
+
+        $subject = $contexte['email_preview_subject'];
+        $body = $contexte['email_preview_body'];
+
+        if ($subject === null || $body === null) {
+            return $mailable;
+        }
+
+        return new PreviewableProspectionMail($subject, $body);
     }
 }

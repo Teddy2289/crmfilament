@@ -65,10 +65,18 @@ class AppelResource extends Resource
                             ])
                             ->required(),
 
-                        Forms\Components\TextInput::make('duree')
+                        Forms\Components\TextInput::make('numero_appelant')
+                            ->label('Numéro appelé / entrant')
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('duree_secondes')
                             ->label('Durée (secondes)')
                             ->numeric()
                             ->nullable(),
+
+                        Forms\Components\TextInput::make('user.nom')
+                            ->label('Téléprospecteur')
+                            ->disabled(),
                     ])
                     ->columns(2),
 
@@ -82,8 +90,21 @@ class AppelResource extends Resource
                             ->label('Agent Ringover')
                             ->disabled(),
 
+                        Forms\Components\TextInput::make('ringover_department_tag')
+                            ->label('Tag département')
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('ringover_status_tag')
+                            ->label('Tag statut')
+                            ->disabled(),
+
                         Forms\Components\TagsInput::make('ringover_tags')
                             ->label('Tags Ringover')
+                            ->disabled(),
+
+                        Forms\Components\Textarea::make('ringover_payload')
+                            ->label('Payload Ringover')
+                            ->rows(5)
                             ->disabled(),
                     ])
                     ->columns(2),
@@ -99,17 +120,61 @@ class AppelResource extends Resource
                                 'supp' => 'Supprimé',
                                 'cse_hz' => 'Hors zone CSE',
                             ])
-                            ->nullable(),
+                            ->nullable()
+                            ->disabled(),
 
                         Forms\Components\Textarea::make('phoning_result')
                             ->label('Résultat Phoning')
                             ->rows(3)
-                            ->nullable(),
+                            ->nullable()
+                            ->disabled(),
+
+                        Forms\Components\Textarea::make('phoning_notes')
+                            ->label('Notes phoning')
+                            ->rows(4)
+                            ->nullable()
+                            ->disabled(),
 
                         Forms\Components\DateTimePicker::make('phoning_completed_at')
                             ->label('Complété le')
                             ->seconds(false)
-                            ->nullable(),
+                            ->nullable()
+                            ->disabled(),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Fiche récap')
+                    ->schema([
+                        Forms\Components\TextInput::make('fiche_type')
+                            ->label('Type de fiche')
+                            ->disabled(),
+
+                        Forms\Components\Textarea::make('fiche_data')
+                            ->label('Données fiche récap')
+                            ->rows(5)
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('fiche_word_path')
+                            ->label('Fichier Word généré')
+                            ->disabled(),
+
+                        Forms\Components\DateTimePicker::make('fiche_word_generated_at')
+                            ->label('Généré le')
+                            ->seconds(false)
+                            ->nullable()
+                            ->disabled(),
+
+                        Forms\Components\DateTimePicker::make('fiche_jaune_j7_envoye_at')
+                            ->label('Fiche jaune J+7 envoyée le')
+                            ->seconds(false)
+                            ->nullable()
+                            ->disabled(),
+
+                        Forms\Components\DateTimePicker::make('fiche_verte_envoyee_at')
+                            ->label('Fiche verte envoyée le')
+                            ->seconds(false)
+                            ->nullable()
+                            ->disabled(),
                     ])
                     ->columns(2),
 
