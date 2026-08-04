@@ -194,14 +194,14 @@ class EmailConfigurationResource extends Resource
                         ->label('Intervalle de synchronisation (minutes)')
                         ->numeric()
                         ->default(5)
-                        ->min(1)
+                        ->rules(['min:1'])
                         ->required(),
 
                     Forms\Components\TextInput::make('sync_limit')
                         ->label('Limite de synchronisation')
                         ->numeric()
                         ->default(50)
-                        ->min(1)
+                        ->rules(['min:1'])
                         ->required(),
                 ])
                 ->columns(2),

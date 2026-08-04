@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\CreateStatutPhoning;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\EditStatutPhoning;
 use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\ListStatutPhonings;
+use App\Filament\NsConseil\Resources\StatutPhoningResource\Pages\ViewStatutPhoning;
 use App\Models\PipelineStatut;
 use App\Models\StatutPhoning;
 use App\Models\WorkflowGroupe;
@@ -267,6 +268,7 @@ class StatutPhoningResource extends Resource
     {
         return [
             'index' => ListStatutPhonings::route('/'),
+            'view' => ViewStatutPhoning::route('/{record}'),
             'create' => CreateStatutPhoning::route('/create'),
             'edit' => EditStatutPhoning::route('/{record}/edit'),
         ];

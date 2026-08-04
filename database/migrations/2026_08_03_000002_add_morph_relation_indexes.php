@@ -46,12 +46,8 @@ return new class extends Migration
             }
         });
 
-        // Indexes pour la table historique_modifications (model)
-        Schema::table('historique_modifications', function (Blueprint $table) {
-            if (! Schema::hasIndex('historique_modifications', 'historique_modifications_model_type_id')) {
-                $table->index(['model_type', 'model_id'], 'historique_modifications_model_type_id');
-            }
-        });
+        // Aucune action supplémentaire pour historique_modifications : la colonne morphs('model')
+        // crée déjà l'index par défaut sur (model_type, model_id).
     }
 
     /**
@@ -79,8 +75,5 @@ return new class extends Migration
             $table->dropIndex('historique_interactions_interactable_type_id');
         });
 
-        Schema::table('historique_modifications', function (Blueprint $table) {
-            $table->dropIndex('historique_modifications_model_type_id');
-        });
     }
 };

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\RingoverApiException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -79,12 +80,94 @@ class RingoverService
         };
     }
 
+    private function shouldFilterForCurrentUser(): bool
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return ! $user->isAdmin() && ! $user->isSuperviseur() && ! $user->isSuperAdmin();
+    }
+
+    private function getCurrentUserRingoverIdentifiers(): array
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return [];
+        }
+
+        $ids = [];
+        $emails = [];
+
+        if (filled($user->ringover_user_id)) {
+            $ids[] = (string) $user->ringover_user_id;
+        }
+
+        if (filled($user->ringover_email)) {
+            $emails[] = strtolower((string) $user->ringover_email);
+        }
+
+        return [
+            'user_ids' => $ids,
+            'emails' => $emails,
+        ];
+    }
+
+    private function filterCallsForCurrentUser(array $calls): array
+    {
+        if (! $this->shouldFilterForCurrentUser()) {
+            return $calls;
+        }
+
+        $identifiers = $this->getCurrentUserRingoverIdentifiers();
+
+        if (empty($identifiers['user_ids']) && empty($identifiers['emails'])) {
+            return [];
+        }
+
+        return array_values(array_filter($calls, function (array $call) use ($identifiers): bool {
+            $callUser = data_get($call, 'user', []);
+            $callUserId = data_get($callUser, 'id');
+            $callUserEmail = data_get($callUser, 'email');
+
+            if (! empty($identifiers['user_ids']) && filled($callUserId)) {
+                foreach ($identifiers['user_ids'] as $userId) {
+                    if ((string) $callUserId === $userId) {
+                        return true;
+                    }
+                }
+            }
+
+            if (! empty($identifiers['emails']) && filled($callUserEmail)) {
+                foreach ($identifiers['emails'] as $email) {
+                    if (strtolower((string) $callUserEmail) === $email) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }));
+    }
+
+    private function buildCacheKey(string $prefix, array $filters = []): string
+    {
+        $userScope = $this->shouldFilterForCurrentUser() ? '-agent-'.(Auth::id() ?? 'guest') : '-all';
+
+        return $prefix.$userScope.md5(serialize($filters));
+    }
+
     public function getCalls(array $filters = []): array
     {
         return Cache::remember(
-            'ringover_calls_'.md5(serialize($filters)),
+            $this->buildCacheKey('ringover_calls_', $filters),
             now()->addMinutes(2),
-            fn () => $this->client()->get('/calls', $filters)->json('call_list', [])
+            fn () => $this->filterCallsForCurrentUser(
+                $this->client()->get('/calls', $filters)->json('call_list', [])
+            )
         );
     }
 
@@ -191,9 +274,11 @@ class RingoverService
             }
 
             $calls = Cache::remember(
-                'ringover_stats_p'.$iterations.'_'.md5(serialize($filters)),
+                $this->buildCacheKey('ringover_stats_p'.$iterations.'_', $filters),
                 now()->addMinutes(10),
-                fn () => $this->client()->get('/calls', $filters)->json('call_list', [])
+                fn () => $this->filterCallsForCurrentUser(
+                    $this->client()->get('/calls', $filters)->json('call_list', [])
+                )
             );
 
             $allCalls = array_merge($allCalls, $calls);

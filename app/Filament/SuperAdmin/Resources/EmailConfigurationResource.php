@@ -160,7 +160,7 @@ class EmailConfigurationResource extends Resource
                         ->label('Intervalle de synchronisation (minutes)')
                         ->numeric()
                         ->default(5)
-                        ->min(1)
+                        ->rules(['min:1'])
                         ->required()
                         ->helperText('Fréquence de synchronisation automatique'),
 
@@ -168,7 +168,7 @@ class EmailConfigurationResource extends Resource
                         ->label('Limite de synchronisation')
                         ->numeric()
                         ->default(50)
-                        ->min(1)
+                        ->rules(['min:1'])
                         ->required()
                         ->helperText('Nombre maximum d\'emails à synchroniser à chaque fois'),
                 ])
