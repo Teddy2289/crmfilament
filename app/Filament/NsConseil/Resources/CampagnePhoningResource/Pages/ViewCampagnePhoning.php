@@ -6,6 +6,8 @@ use App\Filament\NsConseil\Resources\ClientResource;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource;
 use App\Filament\NsConseil\Resources\ContactPartenaireResource;
 use App\Filament\NsConseil\Resources\ProspectResource;
+use App\Enums\EventResult;
+use App\Enums\EventType;
 use App\Models\CampagnePhoning;
 use App\Models\Client;
 use App\Models\ContactPartenaire;
@@ -272,11 +274,57 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                     ->color(fn(Model $record) => $record instanceof Prospect && $record->rappel_est_en_retard ? 'danger' : 'gray'),
             ])
             ->recordUrl(fn(Model $record) => $this->queueRecordUrl($record))
+            ->actions([
+                Actions\Action::make('retirer_de_campagne')
+                    ->label('Retirer de la campagne')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Retirer ce contact de la campagne ?')
+                    ->modalDescription('Le contact sera exclu de la file d\'attente de cette campagne. Cette action laisse la fiche intacte, mais le retire du phoning courant.')
+                    ->action(function (Model $record): void {
+                        $this->retirerContactDeCampagne($record);
+                    }),
+            ])
             ->defaultPaginationPageOption(25)
             ->paginated([10, 25, 50])
             ->emptyStateHeading('Aucun contact en file d\'attente')
             ->emptyStateDescription('La campagne ne contient aucun contact appelable avec les critères actuels.')
             ->emptyStateIcon('heroicon-o-phone-x-mark');
+    }
+
+    private function retirerContactDeCampagne(Model $record): void
+    {
+        $campagne = $this->getRecord();
+        $retireCode = StatutPhoning::query()
+            ->where('model_type', $campagne->queueContactType())
+            ->where('retire_de_file', true)
+            ->value('code');
+
+        if (! $retireCode) {
+            $retireCode = 'RETIRE';
+        }
+
+        $agentLabel = auth()->user()
+            ? trim((string) auth()->user()->prenom . ' ' . (string) auth()->user()->nom)
+            : 'un agent';
+
+        $commentaire = 'Retiré manuellement de la campagne par ' . $agentLabel . '.';
+
+        Appel::query()->updateOrCreate([
+            'campagne_id' => $campagne->id,
+            'appelable_type' => $record::class,
+            'appelable_id' => $record->getKey(),
+            'phoning_status' => $retireCode,
+        ], [
+            'user_id' => auth()->id(),
+            'type' => EventType::Appel,
+            'resultat' => EventResult::NonAbouti,
+            'date_heure' => now(),
+            'commentaire' => $commentaire,
+            'phoning_notes' => $commentaire,
+            'phoning_completed_at' => now(),
+        ]);
     }
 
     private function queueContactName(Model $record): string

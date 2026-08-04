@@ -18,6 +18,28 @@ class ViewRendezVous extends ViewRecord
         return [
             Actions\EditAction::make(),
 
+            Actions\Action::make('lancer_appel_phoning')
+                ->label('Lancer l\'appel')
+                ->icon('heroicon-o-phone-arrow-up-right')
+                ->color('primary')
+                ->url(fn (): ?string => match ($this->record->rdvable_type) {
+                    'App\Models\Prospect' => route('filament.ns-conseil.pages.phoning-workflow', [
+                        'contact_id' => $this->record->rdvable_id,
+                        'contact_type' => 'prospect',
+                    ]),
+                    'App\Models\Partenaire' => route('filament.ns-conseil.pages.phoning-workflow', [
+                        'contact_id' => $this->record->rdvable_id,
+                        'contact_type' => 'partenaire',
+                    ]),
+                    'App\Models\Client' => route('filament.ns-conseil.pages.phoning-workflow', [
+                        'contact_id' => $this->record->rdvable_id,
+                        'contact_type' => 'client',
+                    ]),
+                    default => null,
+                })
+                ->openUrlInNewTab()
+                ->visible(fn (): bool => $this->record->rdvable_type !== null && $this->record->rdvable_id !== null),
+
             Actions\Action::make('sync_google')
                 ->label('Sync Google Calendar')
                 ->icon('heroicon-o-arrow-path')

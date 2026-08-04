@@ -25,6 +25,73 @@ class CampagnePhoningResource extends Resource
 
     protected static ?string $model = CampagnePhoning::class;
 
+    public static function buildAudiencePreview(Get $get): string
+    {
+        $type = $get('type_entite') ?? 'prospects';
+        $payload = [
+            'type_entite' => $type,
+            'nom' => $get('nom') ?? 'Nouvelle campagne',
+            'statut' => $get('statut') ?? 'brouillon',
+            'description' => $get('description') ?? null,
+            'criteres' => [
+                'statuts' => $get('criteres.statuts') ?? [],
+                'departement' => $get('criteres.departement') ?? null,
+                'secteur_activite' => $get('criteres.secteur_activite') ?? null,
+                'nb_salaries_min' => $get('criteres.nb_salaries_min') ?? null,
+                'nb_salaries_max' => $get('criteres.nb_salaries_max') ?? null,
+                'type_pressenti' => $get('criteres.type_pressenti') ?? null,
+                'type' => $get('criteres.type') ?? null,
+                'etat' => $get('criteres.etat') ?? null,
+                'type_tiers' => $get('criteres.type_tiers') ?? null,
+                'rappel_date_debut' => $get('criteres.rappel_date_debut') ?? null,
+                'rappel_date_fin' => $get('criteres.rappel_date_fin') ?? null,
+                'rdv_date_debut' => $get('criteres.rdv_date_debut') ?? null,
+                'rdv_date_fin' => $get('criteres.rdv_date_fin') ?? null,
+            ],
+            'max_tentatives' => $get('max_tentatives') ?? 4,
+            'jours_refroidissement' => $get('jours_refroidissement') ?? 15,
+            'exclure_sans_telephone' => $get('exclure_sans_telephone') ?? true,
+            'exclure_autres_campagnes' => $get('exclure_autres_campagnes') ?? true,
+        ];
+
+        $campaign = new CampagnePhoning($payload);
+        $count = $campaign->countContacts();
+        $label = CampagnePhoning::TYPES_ENTITE[$type] ?? ucfirst($type);
+
+        return sprintf(
+            "<div class=\"space-y-1\"><div><strong>%s</strong> · <span class=\"text-gray-600\">%s contacts ciblés</span></div><div class=\"text-sm text-gray-600\">Aucune cible sélectionnée tant que le segment et les filtres ne sont pas renseignés.</div></div>",
+            $label,
+            number_format($count, 0, ',', ' ')
+        );
+    }
+
+    public static function buildCampaignPreview(Get $get): string
+    {
+        $type = $get('type_entite') ?? 'prospects';
+        $label = CampagnePhoning::TYPES_ENTITE[$type] ?? ucfirst($type);
+        $statuts = collect($get('criteres.statuts') ?? [])->map(fn ($code) => $code)->implode(', ') ?: 'Tous';
+        $entite = EntiteCommerciale::find($get('entite_id'))?->nom;
+        $groupe = GroupeTelepro::find($get('groupe_telepro_id'))?->nom;
+        $agent = User::find($get('user_id')) ? trim("{$get('user_id')}" ) : null;
+
+        $summary = [
+            'Nom' => $get('nom') ?: 'Campagne sans nom',
+            'Statut' => CampagnePhoning::STATUTS[$get('statut') ?? 'brouillon'] ?? ucfirst($get('statut') ?? 'brouillon'),
+            'Cible' => $label,
+            'Entité' => $entite ?? 'Toutes',
+            'Groupe' => $groupe ?? 'Tous',
+            'Agent spécifique' => $agent ?? 'Tous les télépros',
+            'Période' => trim(($get('date_debut') ? \Illuminate\Support\Str::of($get('date_debut'))->explode(' ')[0] : '—') . ' → ' . ($get('date_fin') ? \Illuminate\Support\Str::of($get('date_fin'))->explode(' ')[0] : '—')),
+            'Statuts ciblés' => $statuts,
+            'Tentation max' => (string) ($get('max_tentatives') ?? 4) . ' appel(s)',
+            'Refroidissement' => ($get('jours_refroidissement') ?? 15) . ' jour(s)',
+        ];
+
+        $lines = collect($summary)->map(fn ($value, $key) => sprintf('<div class="flex items-start justify-between gap-4 py-1"><span class="font-medium text-gray-700">%s</span><span class="text-right text-sm text-gray-900">%s</span></div>', $key, $value))->implode('');
+
+        return sprintf('<div class="space-y-2">%s</div>', $lines);
+    }
+
     protected static string $permissionPrefix = 'campagne_phonings';
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
@@ -313,6 +380,34 @@ class CampagnePhoningResource extends Resource
                                 'h2',
                                 'h3',
                                 'link',
+                            ])
+                            ->columnSpanFull(),
+                    ]),
+
+                // ── Étape 5 : Aperçu de validation ────────────────────────
+                Forms\Components\Wizard\Step::make('Aperçu &Validation')
+                    ->description('Synthèse avant création de la campagne')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->schema([
+                        Forms\Components\Section::make('Synthèse de campagne')
+                            ->description('Résumé lisible en une seule lecture avant de lancer la création.')
+                            ->icon('heroicon-o-archive-box')
+                            ->schema([
+                                Forms\Components\Placeholder::make('campaign_preview')
+                                    ->label('Résumé de la campagne')
+                                    ->content(fn (Get $get) => static::buildCampaignPreview($get))
+                                    ->columnSpanFull(),
+                            ])
+                            ->columnSpanFull(),
+
+                        Forms\Components\Section::make('Population estimée')
+                            ->description('Projection de la cible calculée à partir des filtres sélectionnés.')
+                            ->icon('heroicon-o-users')
+                            ->schema([
+                                Forms\Components\Placeholder::make('audience_preview')
+                                    ->label('Contacts ciblés')
+                                    ->content(fn (Get $get) => static::buildAudiencePreview($get))
+                                    ->columnSpanFull(),
                             ])
                             ->columnSpanFull(),
                     ]),

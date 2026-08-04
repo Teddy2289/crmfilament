@@ -836,6 +836,10 @@ class ProspectResource extends Resource
                                 ->label('Prénom interlocuteur')
                                 ->placeholder('—'),
 
+                            TextEntry::make('interlocuteur_fonction')
+                                ->label('Fonction interlocuteur')
+                                ->placeholder('—'),
+
                             TextEntry::make('interlocuteur_telephone')
                                 ->label('Téléphone interlocuteur')
                                 ->copyable()
@@ -850,6 +854,23 @@ class ProspectResource extends Resource
                                 ->placeholder('—')
                                 ->icon('heroicon-m-envelope'),
                         ])->label('Interlocuteur'),
+
+                        // Support standard / CSE
+                        Group::make([
+                            TextEntry::make('nom_interlocuteur_standard')
+                                ->label('Nom interlocuteur standard')
+                                ->placeholder('—'),
+
+                            TextEntry::make('creneaux_permanence_cse')
+                                ->label('Créneaux de permanence CSE')
+                                ->placeholder('—'),
+
+                            TextEntry::make('email_general_standard')
+                                ->label('Email général standard')
+                                ->copyable()
+                                ->placeholder('—')
+                                ->icon('heroicon-m-envelope'),
+                        ])->label('Standard / CSE'),
 
                     ]),
                 ]),

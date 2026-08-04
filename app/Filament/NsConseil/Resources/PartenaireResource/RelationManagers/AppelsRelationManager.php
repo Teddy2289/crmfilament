@@ -57,6 +57,25 @@ class AppelsRelationManager extends RelationManager
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('contact')
+                    ->label('Contact')
+                    ->getStateUsing(function ($record) {
+                        return $record->appelable?->nom
+                            ?? $record->appelable?->raison_sociale
+                            ?? $record->appelable?->nom_tiers
+                            ?? '—';
+                    })
+                    ->sortable(false),
+
+                Tables\Columns\TextColumn::make('interlocuteur')
+                    ->label('Interlocuteur')
+                    ->getStateUsing(function ($record) {
+                        return $record->appelable?->fonction
+                            ?? trim(($record->appelable?->prenom ?? '') . ' ' . ($record->appelable?->nom ?? ''))
+                            ?: '—';
+                    })
+                    ->sortable(false),
+
                 // ✅ TextColumn avec badge() au lieu de BadgeColumn
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')

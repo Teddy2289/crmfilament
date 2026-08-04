@@ -13,7 +13,7 @@ trait WithCommonEagerLoading
         return $query->with([
             'commercial:id,nom,prenom,email',
             'teleprospecteur:id,nom,prenom,email',
-            'valide_par:id,nom,prenom,email',
+            'validePar:id,nom,prenom,email',
         ]);
     }
 
