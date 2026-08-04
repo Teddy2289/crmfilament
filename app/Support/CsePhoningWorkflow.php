@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\StatutPhoning;
 use App\Models\WorkflowGroupe;
 use App\Services\Crm\CrmSettingsService;
+use App\Services\Crm\PipelineStatutService;
 
 /**
  * Parcours CSE — lecture 100 % base de données (statut_phonings + workflow_groupes).
@@ -35,6 +36,11 @@ class CsePhoningWorkflow
                 $grouped[$groupe] = ['label' => $label, 'statuts' => []];
             }
 
+            $pipelineCode = $statut->pipeline_statut;
+            $pipelineLabel = $pipelineCode
+                ? app(PipelineStatutService::class)->label('prospect', $pipelineCode)
+                : null;
+
             $grouped[$groupe]['statuts'][] = [
                 'value' => $statut->code,
                 'label' => $statut->label,
@@ -46,6 +52,8 @@ class CsePhoningWorkflow
                 'note_obligatoire' => $statut->note_obligatoire,
                 'prioritaire' => $statut->prioritaire,
                 'fiche_type' => $statut->fiche_type,
+                'pipeline_statut' => $pipelineCode,
+                'pipeline_label' => $pipelineLabel,
             ];
         }
 

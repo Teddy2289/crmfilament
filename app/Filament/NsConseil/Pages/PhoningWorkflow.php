@@ -9,6 +9,7 @@ use App\Enums\StatutCampagneProspection;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource;
 use App\Models\Appel;
 use App\Models\CampagnePhoning;
+use App\Models\PipelineStatut;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use App\Models\StatutPhoning;
@@ -22,6 +23,7 @@ use Illuminate\Mail\Mailable;
 use App\Services\Aopia\FicheGenerationService;
 use App\Services\Crm\CrmProfileService;
 use App\Services\Crm\CrmSettingsService;
+use App\Services\Crm\PipelineStatutService;
 use App\Services\Phoning\PhoningContactResolver;
 use App\Services\Phoning\PhoningContactSearchService;
 use App\Services\Phoning\PhoningQueueBuilder;
@@ -84,6 +86,8 @@ class PhoningWorkflow extends Page
     public ?string $emailPreviewRecipient = null;
     public ?string $emailPreviewSubject = null;
     public ?string $emailPreviewBody = null;
+    public ?string $emailPreviewOriginalSubject = null;
+    public ?string $emailPreviewOriginalBody = null;
 
     public string $statut_resultat = '';
 
@@ -106,6 +110,15 @@ class PhoningWorkflow extends Page
     public string $interlocuteur_telephone = '';
 
     public string $interlocuteur_email = '';
+
+    // ── Champs Interlocuteur supplémentaire (prospect) ───────────────
+    public string $interlocuteur_add_nom = '';
+
+    public string $interlocuteur_add_fonction = '';
+
+    public string $interlocuteur_add_telephone = '';
+
+    public string $interlocuteur_add_email = '';
 
     // ── Fiche Bleue (RDV confirmé) ───────────────────────────────────
     public string $lieu_rdv = '';
@@ -445,6 +458,10 @@ class PhoningWorkflow extends Page
             'interlocuteur_fonction',
             'interlocuteur_telephone',
             'interlocuteur_email',
+            'interlocuteur_add_nom',
+            'interlocuteur_add_fonction',
+            'interlocuteur_add_telephone',
+            'interlocuteur_add_email',
             'lieu_rdv',
             'invitation_agenda_envoyee',
             'enregistrement_appel_joint',
@@ -470,6 +487,10 @@ class PhoningWorkflow extends Page
         $this->interlocuteur_fonction = $model->interlocuteur_fonction ?? '';
         $this->interlocuteur_telephone = $model->interlocuteur_telephone ?? '';
         $this->interlocuteur_email = $model->interlocuteur_email ?? '';
+        $this->interlocuteur_add_nom = $model->interlocuteur_add_nom ?? '';
+        $this->interlocuteur_add_fonction = $model->interlocuteur_add_fonction ?? '';
+        $this->interlocuteur_add_telephone = $model->interlocuteur_add_telephone ?? '';
+        $this->interlocuteur_add_email = $model->interlocuteur_add_email ?? '';
     }
 
     // ── Appel ─────────────────────────────────────────────────────────
@@ -706,11 +727,33 @@ class PhoningWorkflow extends Page
         $this->emailPreviewRecipient = $payload['recipient'];
         $this->emailPreviewSubject = $payload['subject'];
         $this->emailPreviewBody = $payload['body'];
+        $this->emailPreviewOriginalSubject = $payload['subject'];
+        $this->emailPreviewOriginalBody = $payload['body'];
         $this->emailPreviewConfirmed = false;
+    }
+
+    public function syncEmailPreviewContent(string $subject, string $body, ?string $recipient = null): void
+    {
+        $this->emailPreviewSubject = trim($subject);
+        $this->emailPreviewBody = $body;
+
+        if ($recipient !== null && filter_var(trim($recipient), FILTER_VALIDATE_EMAIL)) {
+            $this->emailPreviewRecipient = trim($recipient);
+        }
     }
 
     public function confirmEmailPreview(): void
     {
+        if (blank($this->emailPreviewSubject) || blank(strip_tags((string) $this->emailPreviewBody))) {
+            Notification::make()
+                ->title('Mail incomplet')
+                ->body('Le sujet et le corps du message sont obligatoires avant envoi.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $this->emailPreviewConfirmed = true;
         $this->showEmailPreview = false;
 
@@ -729,6 +772,8 @@ class PhoningWorkflow extends Page
         $this->emailPreviewRecipient = null;
         $this->emailPreviewSubject = null;
         $this->emailPreviewBody = null;
+        $this->emailPreviewOriginalSubject = null;
+        $this->emailPreviewOriginalBody = null;
     }
 
     public function updatedStatutResultat(): void
@@ -836,6 +881,10 @@ class PhoningWorkflow extends Page
         if ($this->emailPreviewConfirmed && $this->emailPreviewSubject !== null && $this->emailPreviewBody !== null) {
             $context['email_preview_subject'] = $this->emailPreviewSubject;
             $context['email_preview_body'] = $this->emailPreviewBody;
+        }
+
+        if ($this->emailPreviewConfirmed && filled($this->emailPreviewRecipient)) {
+            $context['email_preview_to'] = $this->emailPreviewRecipient;
         }
 
         return $context;
@@ -994,6 +1043,18 @@ class PhoningWorkflow extends Page
         if ($this->interlocuteur_email !== '') {
             $updateData['interlocuteur_email'] = $this->interlocuteur_email;
         }
+        if ($this->interlocuteur_add_nom !== '') {
+            $updateData['interlocuteur_add_nom'] = $this->interlocuteur_add_nom;
+        }
+        if ($this->interlocuteur_add_fonction !== '') {
+            $updateData['interlocuteur_add_fonction'] = $this->interlocuteur_add_fonction;
+        }
+        if ($this->interlocuteur_add_telephone !== '') {
+            $updateData['interlocuteur_add_telephone'] = $this->interlocuteur_add_telephone;
+        }
+        if ($this->interlocuteur_add_email !== '') {
+            $updateData['interlocuteur_add_email'] = $this->interlocuteur_add_email;
+        }
         $updateData = $this->getProspectInterlocuteurUpdateData();
         if (! empty($updateData)) {
             $prospect->update($updateData);
@@ -1084,6 +1145,18 @@ class PhoningWorkflow extends Page
         if ($this->interlocuteur_email !== '') {
             $updateData['interlocuteur_email'] = $this->interlocuteur_email;
         }
+        if ($this->interlocuteur_add_nom !== '') {
+            $updateData['interlocuteur_add_nom'] = $this->interlocuteur_add_nom;
+        }
+        if ($this->interlocuteur_add_fonction !== '') {
+            $updateData['interlocuteur_add_fonction'] = $this->interlocuteur_add_fonction;
+        }
+        if ($this->interlocuteur_add_telephone !== '') {
+            $updateData['interlocuteur_add_telephone'] = $this->interlocuteur_add_telephone;
+        }
+        if ($this->interlocuteur_add_email !== '') {
+            $updateData['interlocuteur_add_email'] = $this->interlocuteur_add_email;
+        }
 
         return $updateData;
     }
@@ -1142,6 +1215,18 @@ class PhoningWorkflow extends Page
         }
         if ($this->interlocuteur_email !== '') {
             $updateData['interlocuteur_email'] = $this->interlocuteur_email;
+        }
+        if ($this->interlocuteur_add_nom !== '') {
+            $updateData['interlocuteur_add_nom'] = $this->interlocuteur_add_nom;
+        }
+        if ($this->interlocuteur_add_fonction !== '') {
+            $updateData['interlocuteur_add_fonction'] = $this->interlocuteur_add_fonction;
+        }
+        if ($this->interlocuteur_add_telephone !== '') {
+            $updateData['interlocuteur_add_telephone'] = $this->interlocuteur_add_telephone;
+        }
+        if ($this->interlocuteur_add_email !== '') {
+            $updateData['interlocuteur_add_email'] = $this->interlocuteur_add_email;
         }
 
         if (! empty($updateData)) {
@@ -1392,14 +1477,30 @@ class PhoningWorkflow extends Page
             ->orderBy('date_heure', 'desc')
             ->limit(15)
             ->get()
-            ->map(fn($a) => [
-                'date' => $a->date_heure->format('d/m/Y H:i'),
-                'agent' => $a->user ? trim("{$a->user->prenom} {$a->user->nom}") : 'Système',
-                'statut' => $a->phoning_status ?? $a->resultat?->value,
-                'statut_label' => $a->phoning_result ?? $a->resultat?->label() ?? '—',
-                'notes' => $a->phoning_notes ?? $a->commentaire,
-                'campagne' => $a->campagne?->nom,
-            ])
+            ->map(function ($a) {
+                $phoningStatut = filled($a->phoning_status)
+                    ? StatutPhoning::where('model_type', 'prospect')->where('code', $a->phoning_status)->first()
+                    : null;
+                $pipelineCode = $phoningStatut?->pipeline_statut;
+
+                return [
+                    'date' => $a->date_heure->format('d/m/Y H:i'),
+                    'agent' => $a->user ? trim("{$a->user->prenom} {$a->user->nom}") : 'Système',
+                    'statut' => $a->phoning_status ?? $a->resultat?->value,
+                    'statut_label' => $a->phoning_result ?? $a->resultat?->label() ?? '—',
+                    'statut_bar' => $phoningStatut?->couleur_css ?? 'background:rgb(156 163 175)',
+                    'pipeline_code' => $pipelineCode,
+                    'pipeline_label' => $pipelineCode
+                        ? app(PipelineStatutService::class)->label('prospect', $pipelineCode)
+                        : null,
+                    'pipeline_badge_style' => $pipelineCode
+                        ? (PipelineStatut::findFor('prospect', $pipelineCode)?->badge_style
+                            ?? 'background:rgb(243 244 246); color:rgb(55 65 81);')
+                        : null,
+                    'notes' => $a->phoning_notes ?? $a->commentaire,
+                    'campagne' => $a->campagne?->nom,
+                ];
+            })
             ->toArray();
     }
 
@@ -1482,7 +1583,7 @@ class PhoningWorkflow extends Page
         $type = $this->contactType ?: 'prospect';
 
         return StatutPhoning::forModelType($type)
-            ->map(fn($s) => [
+            ->map(fn ($s) => [
                 'value' => $s->code,
                 'label' => $s->label,
                 'sub' => $s->description,
@@ -1495,8 +1596,70 @@ class PhoningWorkflow extends Page
                 'fiche_type' => $s->fiche_type,
                 'groupe' => $s->groupe,
                 'groupe_label' => $s->groupe_label,
+                'pipeline_statut' => $s->pipeline_statut,
+                'pipeline_label' => $this->pipelineLabelFor($type, $s->pipeline_statut),
             ])
             ->toArray();
+    }
+
+    /**
+     * Prévisualise le lien statut d'appel → statut pipeline après enregistrement.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getPipelineTransitionPreview(): ?array
+    {
+        if (($this->contactType ?: 'prospect') !== 'prospect' || blank($this->statut_resultat)) {
+            return null;
+        }
+
+        $selected = $this->getSelectedStatus();
+        if (! $selected) {
+            return null;
+        }
+
+        $currentCode = $this->currentContactData['statut_code'] ?? null;
+        $nextCode = $selected->pipeline_statut;
+
+        return [
+            'current' => $this->pipelineStatutPayload('prospect', $currentCode),
+            'call_status' => [
+                'code' => $selected->code,
+                'label' => $selected->label,
+                'icon' => $selected->icone,
+                'bar' => $selected->couleur_css,
+            ],
+            'next' => $this->pipelineStatutPayload('prospect', $nextCode),
+            'unchanged' => filled($nextCode) && $nextCode === $currentCode,
+        ];
+    }
+
+    /**
+     * @return array{code: ?string, label: string, badge_style: string}|null
+     */
+    protected function pipelineStatutPayload(string $modelType, ?string $code): ?array
+    {
+        if (! $code) {
+            return null;
+        }
+
+        $statut = PipelineStatut::findFor($modelType, $code);
+
+        return [
+            'code' => $code,
+            'label' => $statut?->label ?? app(PipelineStatutService::class)->label($modelType, $code),
+            'badge_style' => $statut?->badge_style
+                ?? 'background:rgb(243 244 246); color:rgb(55 65 81); border:1px solid rgb(229 231 235);',
+        ];
+    }
+
+    protected function pipelineLabelFor(string $modelType, ?string $code): ?string
+    {
+        if (! $code) {
+            return null;
+        }
+
+        return app(PipelineStatutService::class)->label($modelType, $code);
     }
 
     /**
