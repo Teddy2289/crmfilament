@@ -6,7 +6,9 @@ use App\Models\ArtisanProspection;
 use App\Models\Client;
 use App\Models\ContactParticulier;
 use App\Models\ContactPartenaire;
+use App\Models\PipelineStatut;
 use App\Models\Prospect;
+use App\Services\Crm\PipelineStatutService;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -53,13 +55,22 @@ class PhoningContactResolver
                 'interlocuteur_fonction' => $model->interlocuteur_fonction,
                 'interlocuteur_telephone' => $model->interlocuteur_telephone,
                 'interlocuteur_email' => $model->interlocuteur_email,
+                'interlocuteur_add_nom' => $model->interlocuteur_add_nom,
+                'interlocuteur_add_fonction' => $model->interlocuteur_add_fonction,
+                'interlocuteur_add_telephone' => $model->interlocuteur_add_telephone,
+                'interlocuteur_add_email' => $model->interlocuteur_add_email,
                 'interlocuteur' => $model->interlocuteur_complet,
                 'nom_interlocuteur_standard' => $model->nom_interlocuteur_standard,
                 'creneaux_permanence_cse' => $model->creneaux_permanence_cse,
                 'email_general_standard' => $model->email_general_standard,
-                'statut' => $model->statut_label,
+                'statut_code' => $model->statut?->value,
+                'statut' => strtolower($model->statut?->value ?? 'ac'),
+                'statut_label' => $this->pipelineLabel('prospect', $model->statut?->value)
+                    ?: $model->statut_label,
                 'statut_color' => $model->statut_color,
-                'statut_description' => $model->statut_description,
+                'statut_description' => $this->pipelineDescription('prospect', $model->statut?->value)
+                    ?: $model->statut_description,
+                'statut_badge_style' => $this->pipelineBadgeStyle('prospect', $model->statut?->value),
                 'taux_engagement' => $model->taux_engagement,
                 'priorite' => $model->type_pressenti
                     ? ucfirst(str_replace('_', ' ', $model->type_pressenti))
@@ -155,5 +166,33 @@ class PhoningContactResolver
             ],
             default => [],
         };
+    }
+
+    protected function pipelineLabel(string $modelType, ?string $code): ?string
+    {
+        if (! $code) {
+            return null;
+        }
+
+        return app(PipelineStatutService::class)->label($modelType, $code);
+    }
+
+    protected function pipelineDescription(string $modelType, ?string $code): ?string
+    {
+        if (! $code) {
+            return null;
+        }
+
+        return PipelineStatut::findFor($modelType, $code)?->description;
+    }
+
+    protected function pipelineBadgeStyle(string $modelType, ?string $code): string
+    {
+        if (! $code) {
+            return 'background:rgb(243 244 246); color:rgb(55 65 81); border:1px solid rgb(229 231 235);';
+        }
+
+        return PipelineStatut::findFor($modelType, $code)?->badge_style
+            ?? 'background:rgb(243 244 246); color:rgb(55 65 81); border:1px solid rgb(229 231 235);';
     }
 }

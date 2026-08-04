@@ -325,9 +325,68 @@ $tentativesActuelles = $this->getTentativesAppel();
             color: rgb(30 64 175);
         }
 
-        .pw-badge-gray {
-            background: rgb(243 244 246);
-            color: rgb(55 65 81);
+        .pw-badge-qf {
+            background: rgb(220 252 231);
+            color: rgb(20 83 45);
+        }
+
+        .pw-pipeline-link {
+            margin: 0.875rem 0 0;
+            padding: 0.875rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgb(191 219 254);
+            background: rgb(239 246 255);
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .dark .pw-pipeline-link {
+            background: rgb(15 23 42);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-pipeline-link-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgb(30 64 175);
+        }
+
+        .pw-pipeline-link-flow {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            flex-wrap: wrap;
+        }
+
+        .pw-pipeline-link-step {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .pw-pipeline-link-arrow {
+            color: rgb(100 116 139);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .pw-pipeline-link-note {
+            font-size: 0.75rem;
+            color: rgb(75 85 99);
+        }
+
+        .pw-chip-pipeline {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            opacity: 0.85;
         }
 
         .pw-timer {
@@ -1142,7 +1201,7 @@ $tentativesActuelles = $this->getTentativesAppel();
         }
 
         .pw-email-preview-modal {
-            width: min(100%, 900px);
+            width: min(100%, 1100px);
             max-height: 95vh;
             background: white;
             border-radius: 1rem;
@@ -1162,6 +1221,35 @@ $tentativesActuelles = $this->getTentativesAppel();
             font-weight: 700;
             font-size: 1.05rem;
             border-bottom: 1px solid rgb(229 231 235);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .pw-email-preview-header-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgb(107 114 128);
+        }
+
+        .pw-email-preview-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            background: rgb(219 234 254);
+            color: rgb(29 78 216);
+            font-weight: 600;
+        }
+
+        .dark .pw-email-preview-badge {
+            background: rgb(30 58 138 / 0.45);
+            color: rgb(191 219 254);
         }
 
         .dark .pw-email-preview-header {
@@ -1178,8 +1266,68 @@ $tentativesActuelles = $this->getTentativesAppel();
 
         .pw-email-preview-split {
             display: grid;
-            gap: 1.5rem;
-            grid-template-rows: auto auto;
+            gap: 1rem;
+            grid-template-columns: 1fr;
+            min-height: 0;
+        }
+
+        @media (min-width: 900px) {
+            .pw-email-preview-split {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                align-items: stretch;
+            }
+
+            .pw-email-preview-tabs {
+                display: none !important;
+            }
+
+            .pw-email-preview-editor-pane,
+            .pw-email-preview-preview-pane {
+                display: flex !important;
+            }
+        }
+
+        @media (max-width: 899px) {
+            .pw-email-preview-editor-pane.is-hidden-mobile,
+            .pw-email-preview-preview-pane.is-hidden-mobile {
+                display: none !important;
+            }
+        }
+
+        .pw-email-preview-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.25rem;
+            background: rgb(243 244 246);
+            border-radius: 0.75rem;
+        }
+
+        .dark .pw-email-preview-tabs {
+            background: rgb(31 41 55);
+        }
+
+        .pw-email-preview-tab {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: rgb(75 85 99);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.55rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .pw-email-preview-tab.active {
+            background: white;
+            color: rgb(17 24 39);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        }
+
+        .dark .pw-email-preview-tab.active {
+            background: rgb(17 24 39);
+            color: white;
         }
 
         .pw-email-preview-preview-pane {
@@ -1188,6 +1336,11 @@ $tentativesActuelles = $this->getTentativesAppel();
             border-radius: 1rem;
             padding: 1.25rem;
             box-shadow: inset 0 0 0 1px rgb(226 232 240);
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow: hidden;
         }
 
         .pw-email-preview-editor-pane {
@@ -1195,6 +1348,11 @@ $tentativesActuelles = $this->getTentativesAppel();
             border: 1px solid rgb(216 229 242);
             border-radius: 1rem;
             padding: 1.25rem;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow: hidden;
         }
 
         .dark .pw-email-preview-preview-pane,
@@ -1218,8 +1376,80 @@ $tentativesActuelles = $this->getTentativesAppel();
 
         .pw-email-preview-preview-pane {
             min-height: 240px;
+        }
+
+        .pw-email-preview-preview-frame {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border: 1px solid rgb(209 213 219);
+            border-radius: 0.85rem;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .dark .pw-email-preview-preview-frame {
+            background: rgb(17 24 39);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-preview-frame-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.65rem 0.85rem;
+            background: rgb(248 250 252);
+            border-bottom: 1px solid rgb(229 231 235);
+        }
+
+        .dark .pw-email-preview-preview-frame-bar {
+            background: rgb(31 41 55);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-preview-dot {
+            width: 0.65rem;
+            height: 0.65rem;
+            border-radius: 9999px;
+            background: rgb(203 213 225);
+        }
+
+        .pw-email-preview-preview-dot:nth-child(1) { background: rgb(248 113 113); }
+        .pw-email-preview-preview-dot:nth-child(2) { background: rgb(251 191 36); }
+        .pw-email-preview-preview-dot:nth-child(3) { background: rgb(74 222 128); }
+
+        .pw-email-preview-preview-meta {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid rgb(241 245 249);
             display: grid;
-            gap: 0.75rem;
+            gap: 0.35rem;
+            font-size: 0.875rem;
+        }
+
+        .dark .pw-email-preview-preview-meta {
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-preview-meta-row {
+            display: grid;
+            grid-template-columns: 4.5rem 1fr;
+            gap: 0.5rem;
+            align-items: start;
+        }
+
+        .pw-email-preview-preview-meta-label {
+            color: rgb(107 114 128);
+            font-weight: 600;
+        }
+
+        .pw-email-preview-preview-meta-value {
+            color: rgb(17 24 39);
+            overflow-wrap: anywhere;
+        }
+
+        .dark .pw-email-preview-preview-meta-value {
+            color: rgb(226 232 240);
         }
 
         .pw-email-preview-preview-header {
@@ -1235,32 +1465,16 @@ $tentativesActuelles = $this->getTentativesAppel();
 
         .pw-email-preview-preview-subject,
         .pw-email-preview-preview-recipient {
-            display: block;
-            border-radius: 0.75rem;
-            background: white;
-            border: 1px solid rgb(229 231 235);
-            color: rgb(17 24 39);
-            padding: 0.75rem 1rem;
-            min-height: 3rem;
-            overflow-wrap: anywhere;
-        }
-
-        .dark .pw-email-preview-preview-subject,
-        .dark .pw-email-preview-preview-recipient {
-            background: rgb(17 24 39);
-            border-color: rgb(55 65 81);
-            color: rgb(226 232 240);
+            display: none;
         }
 
         .pw-email-preview-preview-body {
-            background: white;
-            border: 1px solid rgb(209 213 219);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            min-height: 180px;
+            flex: 1;
+            padding: 1rem 1.1rem 1.25rem;
             overflow: auto;
             color: rgb(17 24 39);
-            line-height: 1.6;
+            line-height: 1.65;
+            font-size: 0.9375rem;
         }
 
         .dark .pw-email-preview-preview-body {
@@ -1310,35 +1524,79 @@ $tentativesActuelles = $this->getTentativesAppel();
         .pw-email-preview-toolbar {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 0.35rem;
             margin-bottom: 0.75rem;
+            padding: 0.35rem;
+            background: white;
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.75rem;
+        }
+
+        .dark .pw-email-preview-toolbar {
+            background: rgb(17 24 39);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-toolbar-divider {
+            width: 1px;
+            align-self: stretch;
+            background: rgb(229 231 235);
+            margin: 0.25rem 0.15rem;
+        }
+
+        .dark .pw-email-preview-toolbar-divider {
+            background: rgb(55 65 81);
         }
 
         .pw-email-preview-toolbar-button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 2.5rem;
-            min-height: 2.5rem;
-            padding: 0 0.75rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgb(229 231 235);
-            background: rgb(249 250 251);
+            min-width: 2.25rem;
+            min-height: 2.25rem;
+            padding: 0 0.65rem;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+            background: transparent;
             color: rgb(31 41 55);
             font-weight: 700;
+            font-size: 0.8125rem;
             cursor: pointer;
-            transition: background 0.15s, border-color 0.15s;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
 
         .pw-email-preview-toolbar-button:hover,
         .pw-email-preview-toolbar-button:focus {
             background: rgb(241 245 249);
-            border-color: rgb(148 163 184);
+            border-color: rgb(226 232 240);
+        }
+
+        .pw-email-preview-toolbar-button.active {
+            background: rgb(219 234 254);
+            color: rgb(29 78 216);
+            border-color: rgb(191 219 254);
+        }
+
+        .dark .pw-email-preview-toolbar-button {
+            color: rgb(226 232 240);
+        }
+
+        .dark .pw-email-preview-toolbar-button:hover,
+        .dark .pw-email-preview-toolbar-button:focus {
+            background: rgb(31 41 55);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-toolbar-button.is-reset {
+            margin-left: auto;
+            color: rgb(107 114 128);
+            font-weight: 600;
         }
 
         .pw-email-preview-editor {
-            min-height: 220px;
-            max-height: 45vh;
+            flex: 1;
+            min-height: 200px;
+            max-height: none;
             overflow: auto;
             border: 1px solid rgb(229 231 235);
             border-radius: 0.75rem;
@@ -1360,9 +1618,28 @@ $tentativesActuelles = $this->getTentativesAppel();
         }
 
         .pw-email-preview-helper {
-            margin-top: 0.65rem;
+            margin-top: 0.35rem;
             font-size: 0.82rem;
             color: rgb(107 114 128);
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .pw-email-preview-stats {
+            color: rgb(107 114 128);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pw-email-preview-stats.is-dirty {
+            color: rgb(217 119 6);
+            font-weight: 600;
+        }
+
+        .pw-email-preview-input-recipient {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.875rem;
         }
 
         .pw-email-preview-field-label {
@@ -1439,54 +1716,127 @@ $tentativesActuelles = $this->getTentativesAppel();
 
         const pwRappelCodes = @json($rappelCodes);
 
-        function attachEmailPreviewEditor() {
-            const editor = document.getElementById('pw-email-preview-editor');
-            const hiddenInput = document.getElementById('email-preview-body-hidden');
-            const buttons = document.querySelectorAll('.pw-email-preview-toolbar-button');
+        function phoningEmailPreview(initial) {
+            return {
+                activeTab: 'edit',
+                subject: initial.subject || '',
+                recipient: initial.recipient || '',
+                body: initial.body || '',
+                originalSubject: initial.originalSubject || initial.subject || '',
+                originalBody: initial.originalBody || initial.body || '',
+                isDirty: false,
 
-            if (!editor || !hiddenInput) {
-                return;
-            }
+                init() {
+                    this.$nextTick(() => this.syncEditorFromState());
+                },
 
-            const syncBody = () => {
-                hiddenInput.value = editor.innerHTML;
-                hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
-            };
+                get plainTextLength() {
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = this.body || '';
+                    return (tmp.textContent || tmp.innerText || '').trim().length;
+                },
 
-            editor.addEventListener('input', syncBody);
+                markDirty() {
+                    this.isDirty = this.subject !== this.originalSubject
+                        || this.body !== this.originalBody
+                        || this.recipient !== initial.recipient;
+                },
 
-            buttons.forEach((button) => {
-                button.removeEventListener('click', handleToolbarClick);
-                button.addEventListener('click', handleToolbarClick);
-            });
+                syncEditorFromState() {
+                    const editor = this.$refs.editor;
+                    if (editor && editor.innerHTML !== this.body) {
+                        editor.innerHTML = this.body || '';
+                    }
+                    this.markDirty();
+                },
 
-            function handleToolbarClick(event) {
-                event.preventDefault();
-                const command = event.currentTarget.dataset.command;
-                if (!command) {
-                    return;
-                }
-
-                if (command === 'createLink') {
-                    const url = window.prompt('URL du lien', 'https://');
-                    if (!url) {
+                syncBodyFromEditor() {
+                    const editor = this.$refs.editor;
+                    if (!editor) {
                         return;
                     }
-                    document.execCommand(command, false, url);
-                } else {
-                    document.execCommand(command, false, null);
-                }
-                editor.focus();
-                syncBody();
-            }
+                    this.body = editor.innerHTML;
+                    this.markDirty();
+                },
+
+                format(command, value = null) {
+                    const editor = this.$refs.editor;
+                    if (!editor) {
+                        return;
+                    }
+                    editor.focus();
+                    if (command === 'createLink') {
+                        const url = window.prompt('URL du lien', 'https://');
+                        if (!url) {
+                            return;
+                        }
+                        document.execCommand(command, false, url);
+                    } else {
+                        document.execCommand(command, false, value);
+                    }
+                    this.syncBodyFromEditor();
+                },
+
+                resetTemplate() {
+                    if (this.isDirty && !window.confirm('Réinitialiser le message au modèle d’origine ?')) {
+                        return;
+                    }
+                    this.subject = this.originalSubject;
+                    this.body = this.originalBody;
+                    this.recipient = initial.recipient || '';
+                    this.syncEditorFromState();
+                },
+
+                switchTab(tab) {
+                    this.activeTab = tab;
+                    if (tab === 'edit') {
+                        this.$nextTick(() => this.syncEditorFromState());
+                    }
+                },
+
+                async confirmSend() {
+                    this.syncBodyFromEditor();
+                    if (!this.subject.trim() || this.plainTextLength === 0) {
+                        window.alert('Le sujet et le corps du message sont obligatoires.');
+                        return;
+                    }
+                    await this.$wire.syncEmailPreviewContent(this.subject, this.body, this.recipient);
+                    await this.$wire.confirmEmailPreview();
+                },
+
+                handleEditorInput() {
+                    this.syncBodyFromEditor();
+                },
+
+                handleEditorPaste(event) {
+                    event.preventDefault();
+                    const text = (event.clipboardData || window.clipboardData).getData('text/html')
+                        || (event.clipboardData || window.clipboardData).getData('text/plain');
+                    if (text) {
+                        document.execCommand('insertHTML', false, text);
+                    }
+                    this.syncBodyFromEditor();
+                },
+
+                handleEditorKeydown(event) {
+                    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+                        event.preventDefault();
+                        this.format('bold');
+                    }
+                    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') {
+                        event.preventDefault();
+                        this.format('italic');
+                    }
+                    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'u') {
+                        event.preventDefault();
+                        this.format('underline');
+                    }
+                },
+            };
         }
 
-        document.addEventListener('livewire:load', () => {
-            attachEmailPreviewEditor();
-        });
-
-        document.addEventListener('livewire:update', () => {
-            attachEmailPreviewEditor();
+        document.addEventListener('livewire:navigated', () => {
+            // noop — Alpine gère le modal email
         });
 
         function toggleRappel(val) {
@@ -1567,11 +1917,13 @@ $tentativesActuelles = $this->getTentativesAppel();
     $statutsGroupes = $this->getStatutsPhoningGroupes();
     $options = $this->getStatutsPhoning();
     $callHistory = $this->getCallHistory();
-    $statutCls = 'pw-badge-' . ($info['statut'] ?? 'ac');
-    if (!isset($info['statut'])) {
+    $statutCls = 'pw-badge-' . strtolower($info['statut_code'] ?? $info['statut'] ?? 'ac');
+    if (!isset($info['statut']) && !isset($info['statut_code'])) {
     $statutCls = 'pw-badge-gray';
     }
     $statutLabel = $info['statut_label'] ?? ($info['statut'] ?? 'AC');
+    $statutBadgeStyle = $info['statut_badge_style'] ?? null;
+    $pipelinePreview = $this->getPipelineTransitionPreview();
     $notes = $info['notes'] ?? null;
     $noteLines = [];
     if ($notes) {
@@ -1687,7 +2039,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                             <h2 class="pw-summary-name">
                                 {{ Str::upper(trim(($info['prenom'] ?? '') . ' ' . ($info['nom'] ?? ''))) ?: 'CONTACT SANS NOM' }}
                             </h2>
-                            <span class="pw-badge {{ $statutCls }}">{{ $statutLabel }}</span>
+                            <span class="pw-badge {{ $statutCls }}" @if($statutBadgeStyle) style="{{ $statutBadgeStyle }}" @endif>{{ $statutLabel }}</span>
                             @if (!empty($info['rappel_en_retard']) && $info['rappel_en_retard'])
                             <span class="pw-alert-badge pw-alert-badge-red">
                                 <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
@@ -1914,8 +2266,8 @@ $tentativesActuelles = $this->getTentativesAppel();
                         </div>
                         <div class="pw-info-grid">
                             <div>
-                                <div class="pw-field-label">Statut actuel</div>
-                                <span class="pw-badge {{ $statutCls }}" style="font-size:0.8125rem; padding:0.25rem 0.625rem;">
+                                <div class="pw-field-label">Statut pipeline actuel</div>
+                                <span class="pw-badge {{ $statutCls }}" style="font-size:0.8125rem; padding:0.25rem 0.625rem; {{ $statutBadgeStyle ?? '' }}">
                                     {{ $statutLabel }}
                                 </span>
                             </div>
@@ -1982,6 +2334,29 @@ $tentativesActuelles = $this->getTentativesAppel();
                                     <div class="pw-field-label">Email</div>
                                     <input type="email" wire:model="interlocuteur_email"
                                         class="pw-field-input" placeholder="cse@entreprise.fr">
+                                </div>
+                            </div>
+
+                            <div class="pw-info-grid" style="margin-bottom:1rem;">
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Interlocuteur supplémentaire</div>
+                                    <input type="text" wire:model="interlocuteur_add_nom"
+                                        class="pw-field-input" placeholder="Prénom Nom de l'autre interlocuteur">
+                                </div>
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Fonction supplémentaire</div>
+                                    <input type="text" wire:model="interlocuteur_add_fonction"
+                                        class="pw-field-input" placeholder="Fonction du contact complémentaire">
+                                </div>
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Téléphone supplémentaire</div>
+                                    <input type="tel" wire:model="interlocuteur_add_telephone"
+                                        class="pw-field-input" placeholder="06 XX XX XX XX">
+                                </div>
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Email supplémentaire</div>
+                                    <input type="email" wire:model="interlocuteur_add_email"
+                                        class="pw-field-input" placeholder="contact@entreprise.fr">
                                 </div>
                             </div>
 
@@ -2168,46 +2543,17 @@ $tentativesActuelles = $this->getTentativesAppel();
                         @else
                         <div style="display:flex; flex-direction:column; gap:0.625rem;">
                             @foreach ($callHistory as $appel)
-                            @php
-                            $jColor = match ($appel['statut'] ?? '') {
-                            'std_nr', 'cse_nr' => [
-                            'bg' => 'rgb(243 244 246)',
-                            'border' => 'rgb(209 213 219)',
-                            'badge' => 'rgb(107 114 128)',
-                            ],
-                            'std_joint' => [
-                            'bg' => 'rgb(239 246 255)',
-                            'border' => 'rgb(147 197 253)',
-                            'badge' => 'rgb(59 130 246)',
-                            ],
-                            'rp' => [
-                            'bg' => 'rgb(240 253 244)',
-                            'border' => 'rgb(134 239 172)',
-                            'badge' => 'rgb(22 163 74)',
-                            ],
-                            'rpc' => [
-                            'bg' => 'rgb(240 253 250)',
-                            'border' => 'rgb(94 234 212)',
-                            'badge' => 'rgb(13 148 136)',
-                            ],
-                            'ko' => [
-                            'bg' => 'rgb(255 241 242)',
-                            'border' => 'rgb(252 165 165)',
-                            'badge' => 'rgb(220 38 38)',
-                            ],
-                            default => [
-                            'bg' => 'rgb(248 250 252)',
-                            'border' => 'rgb(226 232 240)',
-                            'badge' => 'rgb(100 116 139)',
-                            ],
-                            };
-                            @endphp
-                            <div style="border-radius:0.625rem; border:1px solid {{ $jColor['border'] }}; background:{{ $jColor['bg'] }}; padding:0.625rem 0.75rem;">
+                            <div style="border-radius:0.625rem; border:1px solid rgb(226 232 240); background:rgb(248 250 252); padding:0.625rem 0.75rem;">
                                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.375rem;">
                                     <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                                        <span style="font-size:0.7rem; font-weight:700; padding:0.125rem 0.5rem; border-radius:9999px; background:{{ $jColor['badge'] }}; color:white; text-transform:uppercase; letter-spacing:0.05em;">
+                                        <span style="font-size:0.7rem; font-weight:700; padding:0.125rem 0.5rem; border-radius:9999px; color:white; text-transform:uppercase; letter-spacing:0.05em; {{ $appel['statut_bar'] ?? 'background:rgb(107 114 128)' }}">
                                             {{ $appel['statut_label'] }}
                                         </span>
+                                        @if ($appel['pipeline_label'] ?? null)
+                                        <span style="font-size:0.65rem; font-weight:600; padding:0.125rem 0.45rem; border-radius:9999px; {{ $appel['pipeline_badge_style'] ?? 'background:rgb(243 244 246); color:rgb(55 65 81);' }}">
+                                            Pipeline · {{ $appel['pipeline_label'] }}
+                                        </span>
+                                        @endif
                                         @if ($appel['campagne'] ?? null)
                                         <span style="font-size:0.7rem; padding:0.125rem 0.375rem; border-radius:9999px; background:rgb(238 242 255); color:rgb(79 70 229); border:1px solid rgb(199 210 254);">
                                             {{ $appel['campagne'] }}
@@ -2220,7 +2566,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                                     <span style="font-weight:600;">{{ $appel['agent'] }}</span>
                                 </div>
                                 @if ($appel['notes'])
-                                <div style="font-size:0.75rem; color:rgb(75 85 99); background:rgba(255,255,255,0.6); border-radius:0.375rem; padding:0.25rem 0.5rem; margin-top:0.25rem; border-left:2px solid {{ $jColor['badge'] }};">
+                                <div style="font-size:0.75rem; color:rgb(75 85 99); background:rgba(255,255,255,0.6); border-radius:0.375rem; padding:0.25rem 0.5rem; margin-top:0.25rem; border-left:2px solid rgb(148 163 184);">
                                     {{ $appel['notes'] }}
                                 </div>
                                 @endif
@@ -2335,6 +2681,11 @@ $tentativesActuelles = $this->getTentativesAppel();
                                         <span class="pw-chip-sub" style="{{ $isActive ? 'color:rgba(255,255,255,.85);' : '' }}">
                                             {{ $option['sub'] }}{{ $option['action'] ? ' → '.$option['action'] : '' }}
                                         </span>
+                                        @if (!empty($option['pipeline_label']))
+                                        <span class="pw-chip-pipeline" style="{{ $isActive ? 'color:rgba(255,255,255,.9);' : 'color:rgb(100 116 139);' }}">
+                                            Pipeline : {{ $option['pipeline_label'] }}
+                                        </span>
+                                        @endif
                                     </span>
                                     <input type="radio" wire:model="statut_resultat" value="{{ $option['value'] }}" style="display:none;">
                                 </label>
@@ -2343,6 +2694,36 @@ $tentativesActuelles = $this->getTentativesAppel();
                         </div>
                     </div>
                     @endforeach
+
+                    @if ($pipelinePreview)
+                    <div class="pw-pipeline-link" wire:key="pipeline-preview-{{ $statut_resultat }}">
+                        <div class="pw-pipeline-link-title">Lien statut d'appel → statut pipeline</div>
+                        <div class="pw-pipeline-link-flow">
+                            @if ($pipelinePreview['current'])
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['current']['badge_style'] }}">
+                                Pipeline actuel · {{ $pipelinePreview['current']['label'] }}
+                            </span>
+                            @endif
+                            <span class="pw-pipeline-link-arrow">→</span>
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['call_status']['bar'] ?? '' }}; color:white;">
+                                {{ $pipelinePreview['call_status']['icon'] ?? '•' }} Appel · {{ $pipelinePreview['call_status']['label'] }}
+                            </span>
+                            @if ($pipelinePreview['next'])
+                            <span class="pw-pipeline-link-arrow">→</span>
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['next']['badge_style'] }}">
+                                Pipeline après qualification · {{ $pipelinePreview['next']['label'] }}
+                            </span>
+                            @endif
+                        </div>
+                        <div class="pw-pipeline-link-note">
+                            @if ($pipelinePreview['unchanged'])
+                                Le statut pipeline reste inchangé après enregistrement de cet appel.
+                            @else
+                                Le statut pipeline du prospect passera automatiquement à « {{ $pipelinePreview['next']['label'] ?? '—' }} » lors de l'enregistrement.
+                            @endif
+                        </div>
+                    </div>
+                    @endif
 
                     <div id="pw-rappel-box"
                         class="pw-rappel-box {{ in_array($statut_resultat, $rappelCodes) ? 'visible' : '' }}">
@@ -2610,56 +2991,135 @@ $tentativesActuelles = $this->getTentativesAppel();
     @endif
 
     @if ($showEmailPreview)
-        <div class="pw-email-preview-overlay" wire:key="email-preview-modal">
-            <div class="pw-email-preview-modal">
+        <div
+            class="pw-email-preview-overlay"
+            wire:key="email-preview-modal"
+            x-data="phoningEmailPreview(@js([
+                'subject' => $emailPreviewSubject,
+                'recipient' => $emailPreviewRecipient,
+                'body' => $emailPreviewBody,
+                'originalSubject' => $emailPreviewOriginalSubject ?? $emailPreviewSubject,
+                'originalBody' => $emailPreviewOriginalBody ?? $emailPreviewBody,
+            ]))"
+            @keydown.escape.window="$wire.cancelEmailPreview()"
+        >
+            <div class="pw-email-preview-modal" @click.outside.stop>
                 <div class="pw-email-preview-header">
-                    <span>Aperçu du mail avant envoi</span>
+                    <div>
+                        <span>Aperçu du mail avant envoi</span>
+                        <div class="pw-email-preview-header-meta">
+                            <span class="pw-email-preview-badge" x-show="isDirty" x-cloak>Modifié</span>
+                            <span x-text="plainTextLength + ' caractères'"></span>
+                        </div>
+                    </div>
                     <button type="button" class="pw-email-preview-close" wire:click="cancelEmailPreview" aria-label="Fermer">
                         ×
                     </button>
                 </div>
                 <div class="pw-email-preview-content">
-                    <div class="pw-email-preview-split">
-                        <div class="pw-email-preview-preview-pane">
-                            <div class="pw-email-preview-preview-header">
-                                <div class="pw-email-preview-preview-title">Aperçu du message</div>
-                                <div class="pw-email-preview-preview-recipient">À : {{ $emailPreviewRecipient }}</div>
-                                <div class="pw-email-preview-preview-subject">Sujet : {{ $emailPreviewSubject }}</div>
-                            </div>
-                            <div class="pw-email-preview-preview-body">{!! $emailPreviewBody !!}</div>
-                        </div>
+                    <div class="pw-email-preview-tabs" role="tablist" aria-label="Mode d'affichage">
+                        <button type="button" class="pw-email-preview-tab" :class="{ 'active': activeTab === 'edit' }" @click="switchTab('edit')">Éditer</button>
+                        <button type="button" class="pw-email-preview-tab" :class="{ 'active': activeTab === 'preview' }" @click="switchTab('preview')">Aperçu live</button>
+                    </div>
 
-                        <div class="pw-email-preview-editor-pane">
+                    <div class="pw-email-preview-split">
+                        <div
+                            class="pw-email-preview-editor-pane"
+                            :class="{ 'is-hidden-mobile': activeTab !== 'edit' }"
+                        >
                             <div class="pw-email-preview-preview-header">
-                                <div class="pw-email-preview-preview-title">Édition du message</div>
-                                <div class="pw-email-preview-helper">Modifiez le sujet et le contenu ci-dessous avant d'envoyer.</div>
+                                <div class="pw-email-preview-preview-title">Composer le message</div>
+                                <div class="pw-email-preview-helper">Modifiez le destinataire, le sujet et le contenu. L’aperçu se met à jour en temps réel.</div>
                             </div>
+
+                            <div class="pw-email-preview-section">
+                                <label for="email-preview-recipient" class="pw-email-preview-label">Destinataire</label>
+                                <input
+                                    id="email-preview-recipient"
+                                    type="email"
+                                    x-model="recipient"
+                                    @input="markDirty()"
+                                    class="pw-email-preview-input pw-email-preview-input-recipient"
+                                    autocomplete="off"
+                                />
+                            </div>
+
                             <div class="pw-email-preview-section">
                                 <label for="email-preview-subject" class="pw-email-preview-label">Sujet</label>
-                                <input id="email-preview-subject" type="text" wire:model.defer="emailPreviewSubject" class="pw-email-preview-input" />
+                                <input
+                                    id="email-preview-subject"
+                                    type="text"
+                                    x-model="subject"
+                                    @input="markDirty()"
+                                    class="pw-email-preview-input"
+                                    autocomplete="off"
+                                />
                             </div>
 
-                            <div class="pw-email-preview-section">
+                            <div class="pw-email-preview-section" style="flex:1; display:flex; flex-direction:column; min-height:0;">
                                 <div class="pw-email-preview-label">Corps du message</div>
                                 <div class="pw-email-preview-toolbar" role="toolbar" aria-label="Barre d'outils de mise en forme">
-                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="bold">B</button>
-                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="italic">I</button>
-                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="underline">S</button>
-                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="insertUnorderedList">• Liste</button>
-                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="createLink">Lien</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Gras (Ctrl+B)" @click.prevent="format('bold')"><strong>B</strong></button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Italique (Ctrl+I)" @click.prevent="format('italic')"><em>I</em></button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Souligné (Ctrl+U)" @click.prevent="format('underline')"><span style="text-decoration:underline;">U</span></button>
+                                    <span class="pw-email-preview-toolbar-divider"></span>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Liste à puces" @click.prevent="format('insertUnorderedList')">• Liste</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Liste numérotée" @click.prevent="format('insertOrderedList')">1. Liste</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Insérer un lien" @click.prevent="format('createLink')">Lien</button>
+                                    <span class="pw-email-preview-toolbar-divider"></span>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Annuler" @click.prevent="format('undo')">↶</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Rétablir" @click.prevent="format('redo')">↷</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Effacer la mise en forme" @click.prevent="format('removeFormat')">Tx</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button is-reset" title="Réinitialiser le modèle" @click.prevent="resetTemplate()">Réinitialiser</button>
                                 </div>
-                                <div id="pw-email-preview-editor" class="pw-email-preview-editor" contenteditable="true" spellcheck="true">
-                                    {!! $emailPreviewBody !!}
+                                <div
+                                    x-ref="editor"
+                                    class="pw-email-preview-editor"
+                                    contenteditable="true"
+                                    spellcheck="true"
+                                    @input="handleEditorInput()"
+                                    @paste="handleEditorPaste($event)"
+                                    @keydown="handleEditorKeydown($event)"
+                                ></div>
+                                <div class="pw-email-preview-helper">
+                                    <span>Raccourcis : Ctrl+B, Ctrl+I, Ctrl+U · collage texte ou HTML supporté</span>
+                                    <span class="pw-email-preview-stats" :class="{ 'is-dirty': isDirty }" x-text="isDirty ? 'Modifications non enregistrées' : 'Modèle d’origine'"></span>
                                 </div>
-                                <textarea id="email-preview-body-hidden" wire:model="emailPreviewBody" class="pw-email-preview-hidden-input"></textarea>
-                                <div class="pw-email-preview-helper">Utilisez les commandes ci-dessus pour mettre en forme votre message. Collez directement du texte ou des images depuis le presse-papiers.</div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="pw-email-preview-preview-pane"
+                            :class="{ 'is-hidden-mobile': activeTab !== 'preview' }"
+                        >
+                            <div class="pw-email-preview-preview-header">
+                                <div class="pw-email-preview-preview-title">Aperçu destinataire</div>
+                                <div class="pw-email-preview-helper">Rendu approximatif du mail tel qu’il sera reçu.</div>
+                            </div>
+                            <div class="pw-email-preview-preview-frame">
+                                <div class="pw-email-preview-preview-frame-bar" aria-hidden="true">
+                                    <span class="pw-email-preview-preview-dot"></span>
+                                    <span class="pw-email-preview-preview-dot"></span>
+                                    <span class="pw-email-preview-preview-dot"></span>
+                                </div>
+                                <div class="pw-email-preview-preview-meta">
+                                    <div class="pw-email-preview-preview-meta-row">
+                                        <span class="pw-email-preview-preview-meta-label">À</span>
+                                        <span class="pw-email-preview-preview-meta-value" x-text="recipient || '—'"></span>
+                                    </div>
+                                    <div class="pw-email-preview-preview-meta-row">
+                                        <span class="pw-email-preview-preview-meta-label">Objet</span>
+                                        <span class="pw-email-preview-preview-meta-value" x-text="subject || '(sans sujet)'"></span>
+                                    </div>
+                                </div>
+                                <div class="pw-email-preview-preview-body" x-html="body || '<p style=&quot;color:#9ca3af&quot;>Le corps du message apparaîtra ici…</p>'"></div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="pw-email-preview-actions">
                     <button type="button" wire:click="cancelEmailPreview" class="pw-btn-secondary">Annuler</button>
-                    <button type="button" wire:click="confirmEmailPreview" class="pw-btn-primary">Confirmer et envoyer</button>
+                    <button type="button" @click="confirmSend()" class="pw-btn-primary">Confirmer et envoyer</button>
                 </div>
             </div>
         </div>

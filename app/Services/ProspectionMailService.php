@@ -9,6 +9,7 @@ use App\Mail\GenericProspectionMail;
 use App\Mail\PreviewableProspectionMail;
 use App\Models\Prospect;
 use App\Models\RendezVous;
+use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -69,7 +70,7 @@ class ProspectionMailService
 
             dispatch(new SendProspectionMailJob(
                 mailable: $mailable,
-                to: $emailInterlocuteur,
+                to: $this->resolveDestinataire($contexte, $emailInterlocuteur),
                 emailLabel: 'Confirmation RDV',
                 prospectId: $prospect->id,
                 notifyUserId: Auth::id(),
@@ -105,7 +106,7 @@ class ProspectionMailService
 
         dispatch(new SendProspectionMailJob(
             mailable: $mailable,
-            to: $email,
+            to: $this->resolveDestinataire($contexte, $email),
             emailLabel: 'Prise de contact (bloc)',
             prospectId: $prospect->id,
             notifyUserId: Auth::id(),
@@ -136,7 +137,7 @@ class ProspectionMailService
 
         dispatch(new SendProspectionMailJob(
             mailable: $mailable,
-            to: $email,
+            to: $this->resolveDestinataire($contexte, $email),
             emailLabel: 'Contact sans CSE',
             prospectId: $prospect->id,
             notifyUserId: Auth::id(),
@@ -168,7 +169,7 @@ class ProspectionMailService
 
         dispatch(new SendProspectionMailJob(
             mailable: $mailable,
-            to: $destinataire,
+            to: $this->resolveDestinataire($contexte, $destinataire),
             emailLabel: 'CSE hors zone',
             prospectId: $prospect->id,
             notifyUserId: Auth::id(),
@@ -186,6 +187,17 @@ class ProspectionMailService
         }
 
         return config('mail.redirect_all_to');
+    }
+
+    protected function resolveDestinataire(array $contexte, string $default): string
+    {
+        $override = $contexte['email_preview_to'] ?? null;
+
+        if (is_string($override) && filter_var($override, FILTER_VALIDATE_EMAIL)) {
+            return $override;
+        }
+
+        return $default;
     }
 
     protected function wrapPreviewableMailable(Mailable $mailable, array $contexte): Mailable
