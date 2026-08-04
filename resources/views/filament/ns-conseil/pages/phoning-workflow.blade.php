@@ -1330,39 +1330,6 @@ $tentativesActuelles = $this->getTentativesAppel();
             <div style="font-size:0.875rem;">Aucun contact trouvé pour "{{ $searchQuery }}"</div>
         </div>
         @endif
-        @if ($incomingCallPhone || $incomingCallMatches)
-        <div style="margin:1rem 1.25rem 0; background:rgb(239 246 255); border:1px solid rgb(191 219 254); border-radius:0.75rem; padding:0.875rem 1rem;">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
-                <div>
-                    <div style="font-size:0.625rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(30 64 175); font-weight:700;">Appel entrant détecté</div>
-                    <div style="font-size:1rem; font-weight:700; color:rgb(30 41 59); margin-top:0.25rem;">{{ $incomingCallPhone ?? 'Numéro inconnu' }}</div>
-                </div>
-                @if ($incomingCallMatches)
-                <button type="button" onclick="rechercherAppelEntrant('{{ $incomingCallPhone }}')" style="padding:0.5rem 0.875rem; border:none; border-radius:0.5rem; background:rgb(37 99 235); color:white; font-weight:600; cursor:pointer;">
-                    Rechercher la fiche
-                </button>
-                @endif
-            </div>
-
-            @if ($incomingCallMatches)
-            <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
-                @foreach ($incomingCallMatches as $match)
-                <button type="button" wire:click="selectSearchResult({{ $match['id'] }}, '{{ $match['type'] }}')" style="text-align:left; padding:0.625rem 0.75rem; border:1px solid rgb(191 219 254); border-radius:0.625rem; background:white; cursor:pointer;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
-                        <div>
-                            <div style="font-weight:700; color:rgb(17 24 39);">{{ $match['nom'] }}</div>
-                            <div style="font-size:0.75rem; color:rgb(75 85 99); margin-top:0.125rem;">{{ $match['type_entite'] }} · {{ $match['telephone'] ?? '—' }}</div>
-                        </div>
-                        @if ($match['statut'])
-                        <span style="font-size:0.625rem; padding:0.15rem 0.45rem; border-radius:9999px; background:rgb(243 244 246); color:rgb(55 65 81); font-weight:600;">{{ $match['statut'] }}</span>
-                        @endif
-                    </div>
-                </button>
-                @endforeach
-            </div>
-            @endif
-        </div>
-        @endif
 
         @if ($currentContact)
 
@@ -1510,7 +1477,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                             Contact
                         </button>
-                        @if (!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur']))
+                        @if (($info['type'] ?? '') === 'prospect')
                         <button class="pw-info-tab" data-tab="interlocuteur" onclick="switchInfoTab('interlocuteur')">
                             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             Interlocuteur
@@ -1835,6 +1802,40 @@ $tentativesActuelles = $this->getTentativesAppel();
                         @endif
                     </div>
 
+                    @if ($incomingCallPhone || $incomingCallMatches)
+                    <div style="margin:1rem 0 0; background:rgb(239 246 255); border:1px solid rgb(191 219 254); border-radius:0.75rem; padding:0.875rem 1rem;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                            <div>
+                                <div style="font-size:0.625rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(30 64 175); font-weight:700;">Appel entrant détecté</div>
+                                <div style="font-size:1rem; font-weight:700; color:rgb(30 41 59); margin-top:0.25rem;">{{ $incomingCallPhone ?? 'Numéro inconnu' }}</div>
+                            </div>
+                            @if ($incomingCallMatches)
+                            <button type="button" onclick="rechercherAppelEntrant('{{ $incomingCallPhone }}')" style="padding:0.5rem 0.875rem; border:none; border-radius:0.5rem; background:rgb(37 99 235); color:white; font-weight:600; cursor:pointer;">
+                                Rechercher la fiche
+                            </button>
+                            @endif
+                        </div>
+
+                        @if ($incomingCallMatches)
+                        <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
+                            @foreach ($incomingCallMatches as $match)
+                            <button type="button" wire:click="selectSearchResult({{ $match['id'] }}, '{{ $match['type'] }}')" style="text-align:left; padding:0.625rem 0.75rem; border:1px solid rgb(191 219 254); border-radius:0.625rem; background:white; cursor:pointer;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+                                    <div>
+                                        <div style="font-weight:700; color:rgb(17 24 39);">{{ $match['nom'] }}</div>
+                                        <div style="font-size:0.75rem; color:rgb(75 85 99); margin-top:0.125rem;">{{ $match['type_entite'] }} · {{ $match['telephone'] ?? '—' }}</div>
+                                    </div>
+                                    @if ($match['statut'])
+                                    <span style="font-size:0.625rem; padding:0.15rem 0.45rem; border-radius:9999px; background:rgb(243 244 246); color:rgb(55 65 81); font-weight:600;">{{ $match['statut'] }}</span>
+                                    @endif
+                                </div>
+                            </button>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+
                     <div class="pw-info-panel" data-tab="rdv" style="display:none;">
                         <div class="pw-info-grid">
                             <div>
@@ -2049,8 +2050,14 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </div>
                     @endif
 
+                    @error('commentaires')
+                    <div style="font-size:0.75rem; color:rgb(190 35 50); margin-top:0.5rem;">
+                        {{ $message }}
+                    </div>
+                    @enderror
+
                     <div class="pw-actions">
-                        <button wire:click="submitResult" class="pw-btn-primary"
+                        <button wire:click="submitResult" wire:loading.attr="disabled" class="pw-btn-primary"
                             {{ !$statut_resultat ? 'disabled style=opacity:.5;cursor:not-allowed' : '' }}>
                             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                             Enregistrer &amp; suivant
@@ -2060,6 +2067,15 @@ $tentativesActuelles = $this->getTentativesAppel();
                             Passer
                         </button>
                     </div>
+                    @if (!$statut_resultat || ($statut_resultat && $this->commentaireRequis() && !$commentaires))
+                    <div style="margin-top:0.75rem; color:rgb(190 35 50); font-size:.875rem;">
+                        @if (!$statut_resultat)
+                            Sélectionnez un statut dans le résultat d'appel pour activer l'enregistrement.
+                        @elseif ($this->commentaireRequis() && !$commentaires)
+                            Un commentaire est requis pour ce statut avant de pouvoir enregistrer.
+                        @endif
+                    </div>
+                    @endif
                 </div>
             </div>
 
