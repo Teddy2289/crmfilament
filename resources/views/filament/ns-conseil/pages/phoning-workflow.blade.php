@@ -1170,8 +1170,103 @@ $tentativesActuelles = $this->getTentativesAppel();
 
         .pw-email-preview-content {
             padding: 1rem 1.25rem;
-            overflow: auto;
+            overflow: hidden;
             flex: 1;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .pw-email-preview-split {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-rows: auto auto;
+        }
+
+        .pw-email-preview-preview-pane {
+            background: rgb(248 250 252);
+            border: 1px solid rgb(203 213 225);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            box-shadow: inset 0 0 0 1px rgb(226 232 240);
+        }
+
+        .pw-email-preview-editor-pane {
+            background: rgb(241 245 249);
+            border: 1px solid rgb(216 229 242);
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+
+        .dark .pw-email-preview-preview-pane,
+        .dark .pw-email-preview-editor-pane {
+            border-color: rgb(55 65 81);
+        }
+
+        .dark .pw-email-preview-preview-pane {
+            background: rgb(17 24 39);
+        }
+
+        .dark .pw-email-preview-editor-pane {
+            background: rgb(15 23 42);
+        }
+
+        .dark .pw-email-preview-preview-pane,
+        .dark .pw-email-preview-editor-pane {
+            background: rgb(15 23 42);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-preview-pane {
+            min-height: 240px;
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .pw-email-preview-preview-header {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .pw-email-preview-preview-title {
+            font-size: 0.95rem;
+            color: rgb(17 24 39);
+            font-weight: 700;
+        }
+
+        .pw-email-preview-preview-subject,
+        .pw-email-preview-preview-recipient {
+            display: block;
+            border-radius: 0.75rem;
+            background: white;
+            border: 1px solid rgb(229 231 235);
+            color: rgb(17 24 39);
+            padding: 0.75rem 1rem;
+            min-height: 3rem;
+            overflow-wrap: anywhere;
+        }
+
+        .dark .pw-email-preview-preview-subject,
+        .dark .pw-email-preview-preview-recipient {
+            background: rgb(17 24 39);
+            border-color: rgb(55 65 81);
+            color: rgb(226 232 240);
+        }
+
+        .pw-email-preview-preview-body {
+            background: white;
+            border: 1px solid rgb(209 213 219);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            min-height: 180px;
+            overflow: auto;
+            color: rgb(17 24 39);
+            line-height: 1.6;
+        }
+
+        .dark .pw-email-preview-preview-body {
+            background: rgb(17 24 39);
+            border-color: rgb(55 65 81);
+            color: rgb(226 232 240);
         }
 
         .pw-email-preview-section {
@@ -1242,8 +1337,8 @@ $tentativesActuelles = $this->getTentativesAppel();
         }
 
         .pw-email-preview-editor {
-            min-height: 280px;
-            max-height: 55vh;
+            min-height: 220px;
+            max-height: 45vh;
             overflow: auto;
             border: 1px solid rgb(229 231 235);
             border-radius: 0.75rem;
@@ -2524,30 +2619,42 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </button>
                 </div>
                 <div class="pw-email-preview-content">
-                    <div class="pw-email-preview-section">
-                        <div class="pw-email-preview-field-label">À :</div>
-                        <div class="pw-email-preview-field-value">{{ $emailPreviewRecipient }}</div>
-                    </div>
-
-                    <div class="pw-email-preview-section">
-                        <label for="email-preview-subject" class="pw-email-preview-label">Sujet</label>
-                        <input id="email-preview-subject" type="text" wire:model.defer="emailPreviewSubject" class="pw-email-preview-input" />
-                    </div>
-
-                    <div class="pw-email-preview-section">
-                        <div class="pw-email-preview-label">Corps du message</div>
-                        <div class="pw-email-preview-toolbar" role="toolbar" aria-label="Barre d'outils de mise en forme">
-                            <button type="button" class="pw-email-preview-toolbar-button" data-command="bold">B</button>
-                            <button type="button" class="pw-email-preview-toolbar-button" data-command="italic">I</button>
-                            <button type="button" class="pw-email-preview-toolbar-button" data-command="underline">S</button>
-                            <button type="button" class="pw-email-preview-toolbar-button" data-command="insertUnorderedList">• Liste</button>
-                            <button type="button" class="pw-email-preview-toolbar-button" data-command="createLink">Lien</button>
+                    <div class="pw-email-preview-split">
+                        <div class="pw-email-preview-preview-pane">
+                            <div class="pw-email-preview-preview-header">
+                                <div class="pw-email-preview-preview-title">Aperçu du message</div>
+                                <div class="pw-email-preview-preview-recipient">À : {{ $emailPreviewRecipient }}</div>
+                                <div class="pw-email-preview-preview-subject">Sujet : {{ $emailPreviewSubject }}</div>
+                            </div>
+                            <div class="pw-email-preview-preview-body">{!! $emailPreviewBody !!}</div>
                         </div>
-                        <div id="pw-email-preview-editor" class="pw-email-preview-editor" contenteditable="true" spellcheck="true">
-                            {!! $emailPreviewBody !!}
+
+                        <div class="pw-email-preview-editor-pane">
+                            <div class="pw-email-preview-preview-header">
+                                <div class="pw-email-preview-preview-title">Édition du message</div>
+                                <div class="pw-email-preview-helper">Modifiez le sujet et le contenu ci-dessous avant d'envoyer.</div>
+                            </div>
+                            <div class="pw-email-preview-section">
+                                <label for="email-preview-subject" class="pw-email-preview-label">Sujet</label>
+                                <input id="email-preview-subject" type="text" wire:model.defer="emailPreviewSubject" class="pw-email-preview-input" />
+                            </div>
+
+                            <div class="pw-email-preview-section">
+                                <div class="pw-email-preview-label">Corps du message</div>
+                                <div class="pw-email-preview-toolbar" role="toolbar" aria-label="Barre d'outils de mise en forme">
+                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="bold">B</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="italic">I</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="underline">S</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="insertUnorderedList">• Liste</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" data-command="createLink">Lien</button>
+                                </div>
+                                <div id="pw-email-preview-editor" class="pw-email-preview-editor" contenteditable="true" spellcheck="true">
+                                    {!! $emailPreviewBody !!}
+                                </div>
+                                <textarea id="email-preview-body-hidden" wire:model="emailPreviewBody" class="pw-email-preview-hidden-input"></textarea>
+                                <div class="pw-email-preview-helper">Utilisez les commandes ci-dessus pour mettre en forme votre message. Collez directement du texte ou des images depuis le presse-papiers.</div>
+                            </div>
                         </div>
-                        <textarea id="email-preview-body-hidden" wire:model="emailPreviewBody" class="pw-email-preview-hidden-input"></textarea>
-                        <div class="pw-email-preview-helper">Utilisez les commandes ci-dessus pour mettre en forme votre message. Collez directement du texte ou des images depuis le presse-papiers.</div>
                     </div>
                 </div>
                 <div class="pw-email-preview-actions">
