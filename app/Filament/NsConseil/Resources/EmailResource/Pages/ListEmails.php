@@ -60,7 +60,7 @@ class ListEmails extends ListRecords
                 ->success()
                 ->body("{$stats['synced']} email(s) synchronisé(s).")
                 ->send();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Notification::make()
                 ->title('Erreur de synchronisation')
                 ->danger()

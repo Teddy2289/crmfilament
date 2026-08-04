@@ -136,6 +136,13 @@ class EmailConfiguration extends Model
 
     public function testConnection(): array
     {
+        if (! class_exists(\Webklex\PHPIMAP\Client::class)) {
+            return [
+                'success' => false,
+                'message' => 'Le paquet webklex/php-imap est requis pour tester la connexion IMAP.',
+            ];
+        }
+
         try {
             $client = new \Webklex\PHPIMAP\Client($this->imap_connection_array);
             $client->connect();

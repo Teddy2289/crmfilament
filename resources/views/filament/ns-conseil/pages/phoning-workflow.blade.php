@@ -1129,6 +1129,199 @@ $tentativesActuelles = $this->getTentativesAppel();
             background: rgb(55 65 81);
             color: rgb(209 213 219);
         }
+
+        .pw-email-preview-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .pw-email-preview-modal {
+            width: min(100%, 900px);
+            max-height: 95vh;
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 30px 70px rgba(15, 23, 42, 0.35);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark .pw-email-preview-modal {
+            background: rgb(17 24 39);
+            color: white;
+        }
+
+        .pw-email-preview-header {
+            padding: 1rem 1.25rem;
+            font-weight: 700;
+            font-size: 1.05rem;
+            border-bottom: 1px solid rgb(229 231 235);
+        }
+
+        .dark .pw-email-preview-header {
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-content {
+            padding: 1rem 1.25rem;
+            overflow: auto;
+            flex: 1;
+        }
+
+        .pw-email-preview-section {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .pw-email-preview-label {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-weight: 700;
+            color: rgb(31 41 55);
+        }
+
+        .pw-email-preview-input,
+        .pw-email-preview-textarea {
+            width: 100%;
+            min-height: 3rem;
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.75rem;
+            padding: 0.85rem 1rem;
+            font-size: 0.9375rem;
+            color: rgb(17 24 39);
+            background: white;
+        }
+
+        .pw-email-preview-input:focus,
+        .pw-email-preview-textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgb(59 130 246 / 0.25);
+            border-color: rgb(59 130 246);
+        }
+
+        .dark .pw-email-preview-input,
+        .dark .pw-email-preview-textarea {
+            background: rgb(17 24 39);
+            color: rgb(226 232 240);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .pw-email-preview-toolbar-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.5rem;
+            min-height: 2.5rem;
+            padding: 0 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgb(229 231 235);
+            background: rgb(249 250 251);
+            color: rgb(31 41 55);
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .pw-email-preview-toolbar-button:hover,
+        .pw-email-preview-toolbar-button:focus {
+            background: rgb(241 245 249);
+            border-color: rgb(148 163 184);
+        }
+
+        .pw-email-preview-editor {
+            min-height: 280px;
+            max-height: 55vh;
+            overflow: auto;
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            background: rgb(255 255 255);
+            color: rgb(17 24 39);
+            font-size: 0.95rem;
+            line-height: 1.65;
+            outline: none;
+        }
+
+        .pw-email-preview-editor:focus {
+            border-color: rgb(59 130 246);
+            box-shadow: 0 0 0 2px rgb(59 130 246 / 0.18);
+        }
+
+        .pw-email-preview-hidden-input {
+            display: none;
+        }
+
+        .pw-email-preview-helper {
+            margin-top: 0.65rem;
+            font-size: 0.82rem;
+            color: rgb(107 114 128);
+        }
+
+        .pw-email-preview-field-label {
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+            color: rgb(31 41 55);
+        }
+
+        .pw-email-preview-field-value {
+            padding: 0.75rem 1rem;
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.75rem;
+            background: rgb(249 250 251);
+            color: rgb(17 24 39);
+        }
+
+        .dark .pw-email-preview-editor,
+        .dark .pw-email-preview-field-value {
+            background: rgb(17 24 39);
+            color: rgb(226 232 240);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            padding: 1rem 1.25rem 1.25rem;
+            border-top: 1px solid rgb(229 231 235);
+        }
+
+        .pw-email-preview-close {
+            border: none;
+            background: transparent;
+            color: rgb(75 85 99);
+            font-size: 1.35rem;
+            line-height: 1;
+            padding: 0.5rem;
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+
+        .pw-email-preview-close:hover {
+            background: rgb(243 244 246);
+            color: rgb(17 24 39);
+        }
+
+        .dark .pw-email-preview-close:hover {
+            background: rgb(55 65 81);
+        }
+
+        .dark .pw-email-preview-actions {
+            border-color: rgb(55 65 81);
+        }
     </style>
 
     <script>
@@ -1150,6 +1343,56 @@ $tentativesActuelles = $this->getTentativesAppel();
         }
 
         const pwRappelCodes = @json($rappelCodes);
+
+        function attachEmailPreviewEditor() {
+            const editor = document.getElementById('pw-email-preview-editor');
+            const hiddenInput = document.getElementById('email-preview-body-hidden');
+            const buttons = document.querySelectorAll('.pw-email-preview-toolbar-button');
+
+            if (!editor || !hiddenInput) {
+                return;
+            }
+
+            const syncBody = () => {
+                hiddenInput.value = editor.innerHTML;
+                hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+
+            editor.addEventListener('input', syncBody);
+
+            buttons.forEach((button) => {
+                button.removeEventListener('click', handleToolbarClick);
+                button.addEventListener('click', handleToolbarClick);
+            });
+
+            function handleToolbarClick(event) {
+                event.preventDefault();
+                const command = event.currentTarget.dataset.command;
+                if (!command) {
+                    return;
+                }
+
+                if (command === 'createLink') {
+                    const url = window.prompt('URL du lien', 'https://');
+                    if (!url) {
+                        return;
+                    }
+                    document.execCommand(command, false, url);
+                } else {
+                    document.execCommand(command, false, null);
+                }
+                editor.focus();
+                syncBody();
+            }
+        }
+
+        document.addEventListener('livewire:load', () => {
+            attachEmailPreviewEditor();
+        });
+
+        document.addEventListener('livewire:update', () => {
+            attachEmailPreviewEditor();
+        });
 
         function toggleRappel(val) {
             const box = document.getElementById('pw-rappel-box');
@@ -2270,7 +2513,50 @@ $tentativesActuelles = $this->getTentativesAppel();
         </div>
     </div>
     @endif
-    </div>
+
+    @if ($showEmailPreview)
+        <div class="pw-email-preview-overlay" wire:key="email-preview-modal">
+            <div class="pw-email-preview-modal">
+                <div class="pw-email-preview-header">
+                    <span>Aperçu du mail avant envoi</span>
+                    <button type="button" class="pw-email-preview-close" wire:click="cancelEmailPreview" aria-label="Fermer">
+                        ×
+                    </button>
+                </div>
+                <div class="pw-email-preview-content">
+                    <div class="pw-email-preview-section">
+                        <div class="pw-email-preview-field-label">À :</div>
+                        <div class="pw-email-preview-field-value">{{ $emailPreviewRecipient }}</div>
+                    </div>
+
+                    <div class="pw-email-preview-section">
+                        <label for="email-preview-subject" class="pw-email-preview-label">Sujet</label>
+                        <input id="email-preview-subject" type="text" wire:model.defer="emailPreviewSubject" class="pw-email-preview-input" />
+                    </div>
+
+                    <div class="pw-email-preview-section">
+                        <div class="pw-email-preview-label">Corps du message</div>
+                        <div class="pw-email-preview-toolbar" role="toolbar" aria-label="Barre d'outils de mise en forme">
+                            <button type="button" class="pw-email-preview-toolbar-button" data-command="bold">B</button>
+                            <button type="button" class="pw-email-preview-toolbar-button" data-command="italic">I</button>
+                            <button type="button" class="pw-email-preview-toolbar-button" data-command="underline">S</button>
+                            <button type="button" class="pw-email-preview-toolbar-button" data-command="insertUnorderedList">• Liste</button>
+                            <button type="button" class="pw-email-preview-toolbar-button" data-command="createLink">Lien</button>
+                        </div>
+                        <div id="pw-email-preview-editor" class="pw-email-preview-editor" contenteditable="true" spellcheck="true">
+                            {!! $emailPreviewBody !!}
+                        </div>
+                        <textarea id="email-preview-body-hidden" wire:model="emailPreviewBody" class="pw-email-preview-hidden-input"></textarea>
+                        <div class="pw-email-preview-helper">Utilisez les commandes ci-dessus pour mettre en forme votre message. Collez directement du texte ou des images depuis le presse-papiers.</div>
+                    </div>
+                </div>
+                <div class="pw-email-preview-actions">
+                    <button type="button" wire:click="cancelEmailPreview" class="pw-btn-secondary">Annuler</button>
+                    <button type="button" wire:click="confirmEmailPreview" class="pw-btn-primary">Confirmer et envoyer</button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @push('scripts')
     <script>
