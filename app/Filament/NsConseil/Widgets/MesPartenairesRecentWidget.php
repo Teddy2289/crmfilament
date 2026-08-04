@@ -15,13 +15,7 @@ class MesPartenairesRecentWidget extends BaseWidget
 
     protected static ?int $sort = 4;
 
-    protected int|string|array $columnSpan = [
-        'sm' => 12,
-        'md' => 6,
-        'lg' => 4,
-        'xl' => 4,
-        '2xl' => 4,
-    ];
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {

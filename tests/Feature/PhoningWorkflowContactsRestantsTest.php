@@ -85,6 +85,24 @@ class PhoningWorkflowContactsRestantsTest extends TestCase
     }
 
     #[Test]
+    public function opening_phoning_workflow_with_contact_id_displays_the_requested_contact(): void
+    {
+        $user = $this->userWithFullAccess();
+        $prospect = Prospect::factory()->create([
+            'nom' => 'Prospect prioritaire',
+            'statut' => 'AC',
+            'commercial_id' => null,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get('/ns-conseil/phoning-workflow?contact_id=' . $prospect->id . '&contact_type=prospect');
+
+        $response->assertStatus(200);
+        $response->assertSee('Flux de travail téléphonique');
+        $response->assertSee('Prospect prioritaire');
+    }
+
+    #[Test]
     public function a_no_answer_result_does_not_lower_the_remaining_count_but_advancing_the_working_queue_does(): void
     {
         $user = $this->userWithFullAccess();
