@@ -404,7 +404,6 @@ class PhoningWorkflow extends Page
         $this->reset([
             'selectedContactId',
             'selectedContactType',
-            'currentContactData',
             'commentaires',
             'statut_resultat',
             'rappel_date',
