@@ -385,6 +385,22 @@ class PhoningWorkflow extends Page
         $this->currentCampagneId = $next['campagne_id'] ?? null;
         $this->currentContactData = $this->buildContactData($model, $next['type']);
 
+        $this->resetContactFormFields();
+        $this->populateContactFormFields($model, $next['type']);
+    }
+
+    protected function resolveModel(string $type, int $id): ?Model
+    {
+        return app(PhoningContactResolver::class)->resolveModel($type, $id);
+    }
+
+    protected function buildContactData(Model $model, string $type): array
+    {
+        return app(PhoningContactResolver::class)->buildContactData($model, $type);
+    }
+
+    protected function resetContactFormFields(): void
+    {
         $this->reset([
             'commentaires',
             'statut_resultat',
@@ -397,7 +413,6 @@ class PhoningWorkflow extends Page
             'interlocuteur_fonction',
             'interlocuteur_telephone',
             'interlocuteur_email',
-            // Fiche Bleue
             'lieu_rdv',
             'invitation_agenda_envoyee',
             'enregistrement_appel_joint',
@@ -405,31 +420,24 @@ class PhoningWorkflow extends Page
             'besoins_exprimes',
             'objections_soulevees',
             'points_attention_rdv',
-            // Fiche Verte
             'presence_cse',
             'jour_dispo_appel',
         ]);
+    }
 
-        // Pre-fill prospect interlocutor fields from the loaded model
-        if ($next['type'] === 'prospect' && $model instanceof Prospect) {
-            $this->nom_interlocuteur_standard = $model->nom_interlocuteur_standard ?? '';
-            $this->creneaux_permanence_cse = $model->creneaux_permanence_cse ?? '';
-            $this->email_general_standard = $model->email_general_standard ?? '';
-            $this->interlocuteur_nom = trim((string) ($model->interlocuteur_prenom ? $model->interlocuteur_prenom.' ' : '') . ($model->interlocuteur_nom ?? ''));
-            $this->interlocuteur_fonction = $model->interlocuteur_fonction ?? '';
-            $this->interlocuteur_telephone = $model->interlocuteur_telephone ?? '';
-            $this->interlocuteur_email = $model->interlocuteur_email ?? '';
+    protected function populateContactFormFields(Model $model, string $type): void
+    {
+        if ($type !== 'prospect' || ! $model instanceof Prospect) {
+            return;
         }
-    }
 
-    protected function resolveModel(string $type, int $id): ?Model
-    {
-        return app(PhoningContactResolver::class)->resolveModel($type, $id);
-    }
-
-    protected function buildContactData(Model $model, string $type): array
-    {
-        return app(PhoningContactResolver::class)->buildContactData($model, $type);
+        $this->nom_interlocuteur_standard = $model->nom_interlocuteur_standard ?? '';
+        $this->creneaux_permanence_cse = $model->creneaux_permanence_cse ?? '';
+        $this->email_general_standard = $model->email_general_standard ?? '';
+        $this->interlocuteur_nom = trim((string) ($model->interlocuteur_prenom ? $model->interlocuteur_prenom.' ' : '') . ($model->interlocuteur_nom ?? ''));
+        $this->interlocuteur_fonction = $model->interlocuteur_fonction ?? '';
+        $this->interlocuteur_telephone = $model->interlocuteur_telephone ?? '';
+        $this->interlocuteur_email = $model->interlocuteur_email ?? '';
     }
 
     // ── Appel ─────────────────────────────────────────────────────────
@@ -496,12 +504,8 @@ class PhoningWorkflow extends Page
                         'type_entite' => ucfirst($resolvedType),
                     ]];
 
-                    $this->reset([
-                        'commentaires',
-                        'statut_resultat',
-                        'rappel_date',
-                        'rappel_heure',
-                    ]);
+                    $this->resetContactFormFields();
+                    $this->populateContactFormFields($model, $resolvedType);
 
                     Notification::make()
                         ->title('Fiche CRM retrouvée')
@@ -537,16 +541,6 @@ class PhoningWorkflow extends Page
         $this->selectedContactType = $first['type'];
         $this->showSearchResults = false;
         $this->searchQuery = $first['nom'];
-        $this->currentContact = $model;
-        $this->contactType = $first['type'];
-        $this->currentContactData = $this->buildContactData($model, $first['type']);
-
-        $this->reset([
-            'commentaires',
-            'statut_resultat',
-            'rappel_date',
-            'rappel_heure',
-        ]);
 
         Notification::make()
             ->title('Fiche CRM retrouvée')
