@@ -1,19 +1,54 @@
 <x-filament-widgets::widget>
     <x-filament::section heading="Historique des appels Ringover">
 
-        <div class="flex gap-2 mb-4">
-            <button wire:click="setDirection('')"
-                class="px-3 py-1 text-sm rounded-md {{ $filterDirection === '' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
-                Tous
-            </button>
-            <button wire:click="setDirection('in')"
-                class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'in' ? 'bg-success-600 text-white' : 'bg-gray-100 text-gray-700' }}">
-                Entrants
-            </button>
-            <button wire:click="setDirection('out')"
-                class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'out' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
-                Sortants
-            </button>
+        <div class="grid gap-3 mb-4 lg:grid-cols-[repeat(4,minmax(0,1fr))]">
+            <div class="flex items-center gap-2">
+                <button wire:click="setDirection('')"
+                    class="px-3 py-1 text-sm rounded-md {{ $filterDirection === '' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
+                    Tous
+                </button>
+                <button wire:click="setDirection('in')"
+                    class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'in' ? 'bg-success-600 text-white' : 'bg-gray-100 text-gray-700' }}">
+                    Entrants
+                </button>
+                <button wire:click="setDirection('out')"
+                    class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'out' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
+                    Sortants
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700">Agent</label>
+                <select wire:model="filterAgent" class="pw-field-input">
+                    <option value="">Tous</option>
+                    @foreach ($agents as $agent)
+                        <option value="{{ $agent['id'] }}">{{ $agent['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700">Numero</label>
+                <input type="text" wire:model.debounce.500ms="filterNumber" placeholder="Recherche numéro"
+                    class="pw-field-input" />
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <label class="text-sm font-medium text-gray-700 w-full">Autres filtres</label>
+                <select wire:model="filterAnswered" class="pw-field-input">
+                    <option value="">Tous statuts</option>
+                    <option value="answered">Répondu</option>
+                    <option value="missed">Manqué</option>
+                </select>
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input type="checkbox" wire:model="filterHasRecording" class="form-checkbox" />
+                    Avec enregistrement
+                </label>
+                <button wire:click="clearFilters"
+                    class="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    Réinitialiser
+                </button>
+            </div>
         </div>
 
         <div class="overflow-x-auto">

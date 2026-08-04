@@ -339,11 +339,7 @@ class ProspectResource extends Resource
                     ->formatStateUsing(fn($record) => $record->commercial
                         ? "{$record->commercial->prenom} {$record->commercial->nom}"
                         : '—')
-                    ->searchable(query: fn(Builder $q, string $search) => $q->whereHas(
-                        'commercial',
-                        fn(Builder $q2) => $q2->where('nom', 'like', "%{$search}%")
-                            ->orWhere('prenom', 'like', "%{$search}%")
-                    ))
+                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('departement')

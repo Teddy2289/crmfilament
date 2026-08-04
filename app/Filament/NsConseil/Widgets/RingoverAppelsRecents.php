@@ -25,22 +25,101 @@ class RingoverAppelsRecents extends Widget
 
     public string $filterDirection = '';
 
+    public string $filterNumber = '';
+
+    public string $filterAgent = '';
+
+    public string $filterAnswered = '';
+
+    public bool $filterHasRecording = false;
+
+    public array $agents = [];
+
+    public bool $hasMore = false;
+
     public function mount(): void
     {
+        $this->agents = $this->loadAgents();
         $this->loadCalls();
+    }
+
+    protected function loadAgents(): array
+    {
+        $users = app(RingoverService::class)->getUsers();
+
+        return collect($users)
+            ->map(function (array $user): array {
+                $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: ($user['name'] ?? ($user['email'] ?? ''));
+
+                return [
+                    'id' => (string) ($user['id'] ?? $user['user_id'] ?? ''),
+                    'name' => $name,
+                ];
+            })
+            ->where('id')
+            ->sortBy('name')
+            ->values()
+            ->all();
     }
 
     public function loadCalls(): void
     {
         $filters = [
-            'limit_count' => $this->perPage,
-            'limit_offset' => ($this->page - 1) * $this->perPage,
+            'limit_count' => max($this->perPage * 4, 100),
+            'limit_offset' => 0,
         ];
+
         if ($this->filterDirection) {
             $filters['direction'] = $this->filterDirection;
         }
 
-        $this->calls = app(RingoverService::class)->getCalls($filters);
+        $rawCalls = app(RingoverService::class)->getCalls($filters);
+        $filteredCalls = array_values(array_filter($rawCalls, fn (array $call): bool => $this->passesFilters($call)));
+
+        $this->hasMore = count($filteredCalls) > $this->page * $this->perPage;
+        $this->calls = array_slice($filteredCalls, ($this->page - 1) * $this->perPage, $this->perPage);
+    }
+
+    protected function passesFilters(array $call): bool
+    {
+        if ($this->filterNumber && ! $this->matchesNumber($call)) {
+            return false;
+        }
+
+        if ($this->filterAgent && ((string) data_get($call, 'user.id') !== $this->filterAgent)) {
+            return false;
+        }
+
+        if ($this->filterAnswered === 'answered' && ! data_get($call, 'is_answered')) {
+            return false;
+        }
+
+        if ($this->filterAnswered === 'missed' && data_get($call, 'is_answered')) {
+            return false;
+        }
+
+        if ($this->filterHasRecording && empty(data_get($call, 'record'))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function matchesNumber(array $call): bool
+    {
+        $needle = preg_replace('/\D+/', '', $this->filterNumber);
+        if ($needle === '') {
+            return true;
+        }
+
+        foreach (['contact_number', 'from_number', 'to_number'] as $field) {
+            $value = data_get($call, $field);
+            if (! empty($value) && str_contains(preg_replace('/\D+/', '', (string) $value), $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function setDirection(string $direction): void
@@ -50,10 +129,47 @@ class RingoverAppelsRecents extends Widget
         $this->loadCalls();
     }
 
+    public function updatedFilterNumber(): void
+    {
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
+    public function updatedFilterAgent(): void
+    {
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
+    public function updatedFilterAnswered(): void
+    {
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
+    public function updatedFilterHasRecording(): void
+    {
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->filterDirection = '';
+        $this->filterNumber = '';
+        $this->filterAgent = '';
+        $this->filterAnswered = '';
+        $this->filterHasRecording = false;
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
     public function nextPage(): void
     {
-        $this->page++;
-        $this->loadCalls();
+        if ($this->hasMore) {
+            $this->page++;
+            $this->loadCalls();
+        }
     }
 
     public function prevPage(): void
