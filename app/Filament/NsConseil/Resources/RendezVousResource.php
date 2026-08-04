@@ -91,7 +91,7 @@ class RendezVousResource extends Resource
                         ->live(),
 
                     Forms\Components\Select::make('creneaux_proposes')
-                        ->label('Ou utiliser une proposition')
+                        ->label('Ou utiliser un créneau proposé')
                         ->placeholder('Sélectionner un créneau proposé')
                         ->options(function () {
                             $user = auth()->user();

@@ -33,7 +33,17 @@ class RingoverDashboard extends Page
 
     public static function canAccess(): bool
     {
-        return static::userHasAnyRole(['admin', 'superviseur']);
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if (static::userHasAnyRole(['admin', 'superviseur'])) {
+            return true;
+        }
+
+        return filled($user->ringover_user_id) || filled($user->ringover_email);
     }
 
     public function mount(): void

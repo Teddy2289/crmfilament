@@ -1483,13 +1483,33 @@ $tentativesActuelles = $this->getTentativesAppel();
                             </span>
                             Dossier Prospect
                         </span>
-                        @if (!empty($info['id']) && $info['type'] === 'prospect')
-                        <a href="{{ route('filament.ns-conseil.resources.prospects.view', $info['id']) }}"
-                            target="_blank"
-                            style="font-size:0.75rem; color:rgb(37 99 235); text-decoration:underline;">
-                            Ouvrir le dossier complet →
-                        </a>
-                        @endif
+                        @php
+                            $editActionRoute = null;
+                            if (!empty($info['id'])) {
+                                match ($info['type'] ?? '') {
+                                    'prospect' => $editActionRoute = \App\Filament\NsConseil\Resources\ProspectResource::getUrl('edit', ['record' => $info['id']]),
+                                    'partenaire' => $editActionRoute = \App\Filament\NsConseil\Resources\PartenaireResource::getUrl('edit', ['record' => $info['id']]),
+                                    'client' => $editActionRoute = \App\Filament\NsConseil\Resources\ClientResource::getUrl('edit', ['record' => $info['id']]),
+                                    default => null,
+                                };
+                            }
+                        @endphp
+                        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                            @if (!empty($info['id']) && $info['type'] === 'prospect')
+                            <a href="{{ route('filament.ns-conseil.resources.prospects.view', $info['id']) }}"
+                                target="_blank"
+                                style="font-size:0.75rem; color:rgb(37 99 235); text-decoration:underline;">
+                                Ouvrir le dossier complet →
+                            </a>
+                            @endif
+                            @if ($editActionRoute)
+                            <a href="{{ $editActionRoute }}"
+                                target="_blank"
+                                style="font-size:0.75rem; color:rgb(14 116 144); text-decoration:underline;">
+                                Modifier la fiche →
+                            </a>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="pw-info-tabs">

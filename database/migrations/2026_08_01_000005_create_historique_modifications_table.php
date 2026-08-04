@@ -25,7 +25,6 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->index(['model_type', 'model_id']);
             $table->index('user_id');
             $table->index('type_modification');
             $table->index('champ');

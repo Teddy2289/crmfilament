@@ -127,6 +127,17 @@ class HistoriqueModification extends Model
 
     // ── Méthodes statiques ───────────────────────────────────────────
 
+    protected static function resolveUserId(): ?int
+    {
+        $currentUserId = auth()->id();
+
+        if ($currentUserId !== null) {
+            return $currentUserId;
+        }
+
+        return User::query()->value('id');
+    }
+
     public static function enregistrerModification(
         Model $model,
         string $champ,
@@ -137,7 +148,7 @@ class HistoriqueModification extends Model
         return self::create([
             'model_type' => get_class($model),
             'model_id' => $model->id,
-            'user_id' => auth()->id(),
+            'user_id' => self::resolveUserId(),
             'champ' => $champ,
             'ancienne_valeur' => $ancienneValeur,
             'nouvelle_valeur' => $nouvelleValeur,
@@ -151,7 +162,7 @@ class HistoriqueModification extends Model
         return self::create([
             'model_type' => get_class($model),
             'model_id' => $model->id,
-            'user_id' => auth()->id(),
+            'user_id' => self::resolveUserId(),
             'champ' => null,
             'ancienne_valeur' => null,
             'nouvelle_valeur' => $model->toArray(),
@@ -165,7 +176,7 @@ class HistoriqueModification extends Model
         return self::create([
             'model_type' => get_class($model),
             'model_id' => $model->id,
-            'user_id' => auth()->id(),
+            'user_id' => self::resolveUserId(),
             'champ' => null,
             'ancienne_valeur' => $model->toArray(),
             'nouvelle_valeur' => null,
