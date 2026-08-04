@@ -8,15 +8,18 @@ use Illuminate\Mail\Mailables\Envelope;
 
 class PreviewableProspectionMail extends Mailable
 {
-    public function __construct(
-        public string $subject,
-        public string $bodyHtml,
-    ) {
+    protected string $subjectText;
+    protected string $bodyHtml;
+
+    public function __construct(string $subject, string $bodyHtml)
+    {
+        $this->subjectText = $subject;
+        $this->bodyHtml = $bodyHtml;
     }
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: $this->subject);
+        return new Envelope(subject: $this->subjectText);
     }
 
     public function content(): Content
