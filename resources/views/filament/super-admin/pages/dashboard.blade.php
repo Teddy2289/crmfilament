@@ -52,8 +52,8 @@
         </div>
     </div>
 
-    <!-- KPIs - Horizontal sur grand écran -->
-    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+    <!-- KPIs - Horizontal sur grand écran (max 4 cards par ligne) -->
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         @foreach ($kpis as $kpi)
             <a href="{{ $kpi['href'] }}" 
                class="group relative overflow-hidden rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200/50 transition-all hover:shadow-md hover:ring-gray-300/50 dark:bg-gray-800/50 dark:ring-gray-700/50 dark:hover:ring-gray-600/50">

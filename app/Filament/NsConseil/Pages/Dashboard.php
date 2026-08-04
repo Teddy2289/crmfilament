@@ -56,6 +56,8 @@ class Dashboard extends BaseDashboard
             $widgets[] = StatsOverviewWidget::class;
             $widgets[] = DirectionDerniersPartenairesWidget::class;
             $widgets[] = DirectionRdvParDepartementChart::class;
+            $widgets[] = CommercialAgendaWidget::class;
+            $widgets[] = MesPartenairesRecentWidget::class;
             $widgets[] = PipelinePartenairesWidget::class;
             $widgets[] = FichesWordRecentesWidget::class;
         }
@@ -78,6 +80,7 @@ class Dashboard extends BaseDashboard
         // Commercial
         if ($user->hasRoleCache('commercial') || $user->hasRoleCache('superviseur') || $user->hasRoleCache('admin') || $user->isSuperAdmin()) {
             $widgets[] = CommercialKpiWidget::class;
+            $widgets[] = DirectionRdvParDepartementChart::class;
             $widgets[] = CommercialAgendaWidget::class;
             $widgets[] = MesPartenairesRecentWidget::class;
             $widgets[] = FichesWordRecentesWidget::class;

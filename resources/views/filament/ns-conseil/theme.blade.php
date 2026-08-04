@@ -193,6 +193,32 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
     transition: box-shadow 0.2s ease !important;
 }
 
+/* ── Dashboard Grid & Stats Minimum Dimensions ── */
+.fi-wi-stats-overview-stat {
+    min-height: 105px !important;
+    min-width: 170px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+.fi-wi-stats-overview-stat-label {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.fi-wi-stats-overview-stat-value {
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+}
+
+.fi-wi-stats-overview-stat-description {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
 .fi-section:hover,
 .fi-wi-widget:hover {
     box-shadow: var(--ns-shadow-md) !important;

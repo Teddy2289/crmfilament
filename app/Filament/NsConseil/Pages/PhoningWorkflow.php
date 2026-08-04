@@ -51,6 +51,10 @@ class PhoningWorkflow extends Page
     public ?int $selectedContactId = null;
 
     public string $selectedContactType = '';
+
+    public ?int $requestedContactId = null;
+
+    public string $requestedContactType = '';
     
 
     // protected static ?int    $navigationSort    = 2;
@@ -163,19 +167,11 @@ class PhoningWorkflow extends Page
         $this->loadQueue();
 
         if ($contactId = request()->query('contact_id')) {
-            $contactType = request()->query('contact_type', 'prospect');
-            $contactQueueItem = [
-                'id' => (int) $contactId,
-                'type' => (string) $contactType,
-                'campagne_id' => $this->currentCampagneId,
-            ];
-
-            $exists = collect($this->contactQueue)->contains(fn ($item) => $item['id'] === (int) $contactId && ($item['type'] ?? '') === (string) $contactType);
-            if (! $exists) {
-                array_unshift($this->contactQueue, $contactQueueItem);
-            }
+            $this->requestedContactId = (int) $contactId;
+            $this->requestedContactType = request()->query('contact_type', 'prospect');
         }
 
+        $this->ensureRequestedContactPriority();
         $this->loadNextContact();
     }
     public function updatedSearchQuery(): void
@@ -331,7 +327,28 @@ class PhoningWorkflow extends Page
     public function refreshQueue(): void
     {
         $this->loadQueue();
+        $this->ensureRequestedContactPriority();
         $this->loadNextContact();
+    }
+
+    public function ensureRequestedContactPriority(): void
+    {
+        if (! $this->requestedContactId) {
+            return;
+        }
+
+        $contactQueueItem = [
+            'id' => $this->requestedContactId,
+            'type' => $this->requestedContactType ?: 'prospect',
+            'campagne_id' => $this->currentCampagneId,
+        ];
+
+        $this->contactQueue = collect($this->contactQueue)
+            ->reject(fn ($item) => (int) ($item['id'] ?? 0) === $this->requestedContactId && ($item['type'] ?? '') === $this->requestedContactType)
+            ->values()
+            ->all();
+
+        array_unshift($this->contactQueue, $contactQueueItem);
     }
 
     protected function buildDefaultQueue(int $userId): array

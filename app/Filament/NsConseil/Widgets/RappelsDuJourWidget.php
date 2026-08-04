@@ -19,11 +19,8 @@ class RappelsDuJourWidget extends BaseWidget
     protected static ?int $sort = 3;
 
     protected int|string|array $columnSpan = [
-        'sm' => 12,
-        'md' => 12,
-        'lg' => 6,
-        'xl' => 6,
-        '2xl' => 4,
+        'default' => 4,
+        'lg' => 2,
     ];
 
     public function table(Table $table): Table
