@@ -7,13 +7,17 @@ use App\Models\Appel;
 use App\Models\Prospect;
 use App\Models\User;
 use App\Services\Crm\CrmSettingsService;
+use Carbon\Carbon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\TableWidget as BaseWidget;
 
 class TeamLeaderPerformanceWidget extends BaseWidget
 {
-    protected static ?string $heading = '📊 Performance téléprospecteurs — Semaine en cours';
+    use InteractsWithPageFilters;
+
+    protected static ?string $heading = '📊 Statistiques & Performance des utilisateurs (Jour / Semaine / Mois / Filtre Date)';
 
     protected static ?int $sort = 2;
 
@@ -33,10 +37,15 @@ class TeamLeaderPerformanceWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
-        $roles = app(CrmSettingsService::class)->get('roles.teleprospecteur_roles', ['teleprospecteur']);
+        $roles = app(CrmSettingsService::class)->get('roles.teleprospecteur_roles', ['teleprospecteur', 'commercial']);
 
-        $debutSemaine = now()->startOfWeek();
-        $finSemaine = now()->endOfWeek();
+        $startDate = ! empty($this->filters['startDate'])
+            ? Carbon::parse($this->filters['startDate'])->startOfDay()
+            : now()->startOfMonth();
+
+        $endDate = ! empty($this->filters['endDate'])
+            ? Carbon::parse($this->filters['endDate'])->endOfDay()
+            : now()->endOfMonth();
 
         return $table
             ->query(
@@ -52,43 +61,125 @@ class TeamLeaderPerformanceWidget extends BaseWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make('nom_complet')
-                    ->label('Téléprospecteur')
+                    ->label('Utilisateur')
                     ->state(fn (User $record) => trim("{$record->prenom} {$record->nom}"))
-                    ->weight('bold'),
+                    ->description(fn (User $record) => $record->role_cache ?? 'Téléprospecteur')
+                    ->weight('bold')
+                    ->searchable(),
 
-                Tables\Columns\TextColumn::make('appels_semaine')
-                    ->label('Appels')
-                    ->state(fn (User $record) => Appel::where('user_id', $record->id)
-                        ->where('appelable_type', Prospect::class)
-                        ->whereBetween('date_heure', [now()->startOfWeek(), now()->endOfWeek()])
-                        ->count())
-                    ->alignCenter()
-                    ->color(fn ($state) => $state === 0 ? 'danger' : null),
-
-                Tables\Columns\TextColumn::make('cse_joints')
-                    ->label('CSE joints')
-                    ->state(fn (User $record) => Appel::where('user_id', $record->id)
-                        ->where('appelable_type', Prospect::class)
-                        ->whereBetween('date_heure', [now()->startOfWeek(), now()->endOfWeek()])
-                        ->whereIn('phoning_status', ['std_joint', 'cse_ni', 'rdv', 'rapl_elu', 'rp', 'rpc'])
-                        ->count())
-                    ->alignCenter(),
-
-                Tables\Columns\TextColumn::make('qf_semaine')
-                    ->label('QF')
-                    ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
-                        ->where('statut', ProspectStatut::QF->value)
-                        ->whereBetween('qf_valide_at', [now()->startOfWeek(), now()->endOfWeek()])
-                        ->count())
-                    ->alignCenter()
-                    ->color('success'),
-
-                Tables\Columns\TextColumn::make('taux_conversion')
-                    ->label('Taux')
-                    ->state(function (User $record) use ($debutSemaine, $finSemaine) {
+                Tables\Columns\TextColumn::make('stats_jour')
+                    ->label('Aujourd\'hui')
+                    ->state(function (User $record) {
                         $appels = Appel::where('user_id', $record->id)
                             ->where('appelable_type', Prospect::class)
-                            ->whereBetween('date_heure', [$debutSemaine, $finSemaine])
+                            ->whereDate('date_heure', today())
+                            ->count();
+
+                        $joints = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereDate('date_heure', today())
+                            ->whereIn('phoning_status', ['std_joint', 'cse_ni', 'rdv', 'rapl_elu', 'rp', 'rpc'])
+                            ->count();
+
+                        $qf = Prospect::where('teleprospecteur_id', $record->id)
+                            ->where('statut', ProspectStatut::QF->value)
+                            ->whereDate('qf_valide_at', today())
+                            ->count();
+
+                        return "{$appels} app. · {$joints} CSE · {$qf} QF";
+                    })
+                    ->alignCenter()
+                    ->badge()
+                    ->color('info'),
+
+                Tables\Columns\TextColumn::make('stats_semaine')
+                    ->label('Cette Semaine')
+                    ->state(function (User $record) {
+                        $debut = now()->startOfWeek();
+                        $fin = now()->endOfWeek();
+
+                        $appels = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereBetween('date_heure', [$debut, $fin])
+                            ->count();
+
+                        $joints = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereBetween('date_heure', [$debut, $fin])
+                            ->whereIn('phoning_status', ['std_joint', 'cse_ni', 'rdv', 'rapl_elu', 'rp', 'rpc'])
+                            ->count();
+
+                        $qf = Prospect::where('teleprospecteur_id', $record->id)
+                            ->where('statut', ProspectStatut::QF->value)
+                            ->whereBetween('qf_valide_at', [$debut, $fin])
+                            ->count();
+
+                        return "{$appels} app. · {$joints} CSE · {$qf} QF";
+                    })
+                    ->alignCenter()
+                    ->badge()
+                    ->color('primary'),
+
+                Tables\Columns\TextColumn::make('stats_mois')
+                    ->label('Ce Mois')
+                    ->state(function (User $record) {
+                        $debut = now()->startOfMonth();
+                        $fin = now()->endOfMonth();
+
+                        $appels = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereBetween('date_heure', [$debut, $fin])
+                            ->count();
+
+                        $joints = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereBetween('date_heure', [$debut, $fin])
+                            ->whereIn('phoning_status', ['std_joint', 'cse_ni', 'rdv', 'rapl_elu', 'rp', 'rpc'])
+                            ->count();
+
+                        $qf = Prospect::where('teleprospecteur_id', $record->id)
+                            ->where('statut', ProspectStatut::QF->value)
+                            ->whereBetween('qf_valide_at', [$debut, $fin])
+                            ->count();
+
+                        return "{$appels} app. · {$joints} CSE · {$qf} QF";
+                    })
+                    ->alignCenter()
+                    ->badge()
+                    ->color('success'),
+
+                Tables\Columns\TextColumn::make('stats_periode_filtre')
+                    ->label('Période (Filtre Date)')
+                    ->state(function (User $record) use ($startDate, $endDate) {
+                        $appels = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereBetween('date_heure', [$startDate, $endDate])
+                            ->count();
+
+                        $joints = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereBetween('date_heure', [$startDate, $endDate])
+                            ->whereIn('phoning_status', ['std_joint', 'cse_ni', 'rdv', 'rapl_elu', 'rp', 'rpc'])
+                            ->count();
+
+                        $qf = Prospect::where('teleprospecteur_id', $record->id)
+                            ->where('statut', ProspectStatut::QF->value)
+                            ->whereBetween('qf_valide_at', [$startDate, $endDate])
+                            ->count();
+
+                        return "{$appels} app. · {$joints} CSE · {$qf} QF";
+                    })
+                    ->description(fn () => $startDate->format('d/m/Y') . ' - ' . $endDate->format('d/m/Y'))
+                    ->alignCenter()
+                    ->badge()
+                    ->color('warning'),
+
+                Tables\Columns\TextColumn::make('taux_conversion')
+                    ->label('Taux (Filtre)')
+                    ->state(function (User $record) use ($startDate, $endDate) {
+                        $appels = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereBetween('date_heure', [$startDate, $endDate])
                             ->count();
 
                         if ($appels === 0) {
@@ -97,28 +188,88 @@ class TeamLeaderPerformanceWidget extends BaseWidget
 
                         $joints = Appel::where('user_id', $record->id)
                             ->where('appelable_type', Prospect::class)
-                            ->whereBetween('date_heure', [$debutSemaine, $finSemaine])
+                            ->whereBetween('date_heure', [$startDate, $endDate])
                             ->whereIn('phoning_status', ['std_joint', 'cse_ni', 'rdv', 'rapl_elu', 'rp', 'rpc'])
                             ->count();
 
                         return round(($joints / $appels) * 100, 1).'%';
                     })
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('base_restante')
-                    ->label('Base AC')
+                // ── Prospects par statut (valeurs actuelles) ──
+                Tables\Columns\TextColumn::make('statut_ac')
+                    ->label('AC')
                     ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
                         ->where('statut', ProspectStatut::AC->value)
                         ->count())
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->badge()
+                    ->color('gray'),
 
-                Tables\Columns\TextColumn::make('rp_en_attente')
-                    ->label('RP/RPC')
+                Tables\Columns\TextColumn::make('statut_std_nr')
+                    ->label('STD NR')
                     ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
-                        ->whereIn('statut', [ProspectStatut::RP->value, ProspectStatut::RPC->value])
+                        ->where('statut', ProspectStatut::STD_NR->value)
                         ->count())
                     ->alignCenter()
-                    ->color(fn ($state) => $state > 10 ? 'warning' : null),
+                    ->badge()
+                    ->color('orange'),
+
+                Tables\Columns\TextColumn::make('statut_std_joint')
+                    ->label('STD Joint')
+                    ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
+                        ->where('statut', ProspectStatut::STD_Joint->value)
+                        ->count())
+                    ->alignCenter()
+                    ->badge()
+                    ->color('blue'),
+
+                Tables\Columns\TextColumn::make('statut_cse_nr')
+                    ->label('CSE NR')
+                    ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
+                        ->where('statut', ProspectStatut::CSE_NR->value)
+                        ->count())
+                    ->alignCenter()
+                    ->badge()
+                    ->color('amber'),
+
+                Tables\Columns\TextColumn::make('statut_rp')
+                    ->label('RP')
+                    ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
+                        ->where('statut', ProspectStatut::RP->value)
+                        ->count())
+                    ->alignCenter()
+                    ->badge()
+                    ->color('indigo'),
+
+                Tables\Columns\TextColumn::make('statut_rpc')
+                    ->label('RPC')
+                    ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
+                        ->where('statut', ProspectStatut::RPC->value)
+                        ->count())
+                    ->alignCenter()
+                    ->badge()
+                    ->color('teal')
+                    ->color(fn ($state) => $state > 10 ? 'danger' : 'teal'),
+
+                Tables\Columns\TextColumn::make('statut_ko')
+                    ->label('KO')
+                    ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
+                        ->where('statut', ProspectStatut::KO->value)
+                        ->count())
+                    ->alignCenter()
+                    ->badge()
+                    ->color('red'),
+
+                Tables\Columns\TextColumn::make('statut_qf')
+                    ->label('QF')
+                    ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
+                        ->where('statut', ProspectStatut::QF->value)
+                        ->count())
+                    ->alignCenter()
+                    ->badge()
+                    ->color('green'),
 
                 Tables\Columns\TextColumn::make('alerte')
                     ->label('Alerte')
@@ -147,6 +298,6 @@ class TeamLeaderPerformanceWidget extends BaseWidget
                     })
                     ->color(fn ($state) => $state !== '—' ? 'danger' : 'gray'),
             ])
-            ->emptyStateHeading('Aucun téléprospecteur actif');
+            ->emptyStateHeading('Aucun utilisateur actif');
     }
 }
