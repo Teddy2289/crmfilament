@@ -4,10 +4,14 @@ namespace App\Filament\NsConseil\Resources\EmailResource\Pages;
 
 use App\Filament\NsConseil\Resources\EmailResource;
 use App\Models\Email;
+use App\Models\EmailConfiguration;
+use App\Services\Email\ImapService;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ListEmails extends ListRecords
 {
@@ -16,8 +20,53 @@ class ListEmails extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('sync_mailbox')
+                ->label('Synchroniser la boîte mail')
+                ->icon('heroicon-o-arrow-path')
+                ->color('warning')
+                ->outlined()
+                ->action('syncMailbox'),
+
             Actions\CreateAction::make()->label('Nouvel email'),
         ];
+    }
+
+    /**
+     * Synchronise manuellement la boîte mail de l'utilisateur connecté.
+     */
+    public function syncMailbox(): void
+    {
+        $user = Auth::user();
+        $config = EmailConfiguration::query()
+            ->forUser($user->id)
+            ->active()
+            ->first();
+
+        if (! $config) {
+            Notification::make()
+                ->title('Aucune configuration email active')
+                ->warning()
+                ->body('Aucune configuration de boîte mail active n’a été trouvée pour cet utilisateur.')
+                ->send();
+
+            return;
+        }
+
+        try {
+            $stats = (new ImapService($user, $config))->syncEmails();
+
+            Notification::make()
+                ->title('Synchronisation terminée')
+                ->success()
+                ->body("{$stats['synced']} email(s) synchronisé(s).")
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Erreur de synchronisation')
+                ->danger()
+                ->body($e->getMessage())
+                ->send();
+        }
     }
 
     /**

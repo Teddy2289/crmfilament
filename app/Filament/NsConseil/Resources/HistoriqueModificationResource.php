@@ -155,16 +155,31 @@ class HistoriqueModificationResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('model_type')
                     ->label('Type de modèle')
-                    ->options([
-                        'App\Models\Prospect' => 'Prospect',
-                        'App\Models\Partenaire' => 'Partenaire',
-                        'App\Models\Client' => 'Client',
-                        'App\Models\ContactPartenaire' => 'Contact Partenaire',
-                    ]),
+                    ->options(fn (): array => HistoriqueModification::query()
+                        ->distinct()
+                        ->orderBy('model_type')
+                        ->pluck('model_type', 'model_type')
+                        ->mapWithKeys(fn (string $value): array => [
+                            $value => match ($value) {
+                                'App\Models\Prospect' => 'Prospect',
+                                'App\Models\Partenaire' => 'Partenaire',
+                                'App\Models\Client' => 'Client',
+                                'App\Models\ContactPartenaire' => 'Contact Partenaire',
+                                default => $value,
+                            },
+                        ])
+                        ->toArray()),
 
                 Tables\Filters\SelectFilter::make('type_modification')
                     ->label('Type de modification')
-                    ->options(HistoriqueModification::TYPES_MODIFICATION),
+                    ->options(fn (): array => HistoriqueModification::query()
+                        ->distinct()
+                        ->orderBy('type_modification')
+                        ->pluck('type_modification', 'type_modification')
+                        ->mapWithKeys(fn (string $value): array => [
+                            $value => HistoriqueModification::TYPES_MODIFICATION[$value] ?? $value,
+                        ])
+                        ->toArray()),
 
                 Tables\Filters\SelectFilter::make('user_id')
                     ->label('Utilisateur')

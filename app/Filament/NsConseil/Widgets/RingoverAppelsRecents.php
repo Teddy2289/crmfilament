@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Widgets;
 
 use App\Services\RingoverService;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Log;
 
 class RingoverAppelsRecents extends Widget
 {
@@ -16,6 +17,8 @@ class RingoverAppelsRecents extends Widget
     protected static string $view = 'filament.ns-conseil.widgets.ringover-appels-recents';
 
     protected static bool $isLazy = true;
+
+    public ?string $errorMessage = null;
 
     public array $calls = [];
 
@@ -45,7 +48,31 @@ class RingoverAppelsRecents extends Widget
 
     protected function loadAgents(): array
     {
-        $users = app(RingoverService::class)->getUsers();
+        try {
+            $users = app(RingoverService::class)->getUsers();
+        } catch (\Exception $exception) {
+            Log::error('RingoverAppelsRecents loadAgents failed', [
+                'message' => $exception->getMessage(),
+                'exception' => $exception,
+            ]);
+            $this->errorMessage = 'Impossible de charger les utilisateurs Ringover.';
+
+            return [];
+        }
+
+        return collect($users)
+            ->map(function (array $user): array {
+                $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: ($user['name'] ?? ($user['email'] ?? ''));
+
+                return [
+                    'id' => (string) ($user['id'] ?? $user['user_id'] ?? ''),
+                    'name' => $name,
+                ];
+            })
+            ->where('id')
+            ->sortBy('name')
+            ->values()
+            ->all();
 
         return collect($users)
             ->map(function (array $user): array {
@@ -73,7 +100,21 @@ class RingoverAppelsRecents extends Widget
             $filters['direction'] = $this->filterDirection;
         }
 
-        $rawCalls = app(RingoverService::class)->getCalls($filters);
+        try {
+            $rawCalls = app(RingoverService::class)->getCalls($filters);
+        } catch (\Exception $exception) {
+            Log::error('RingoverAppelsRecents loadCalls failed', [
+                'filters' => $filters,
+                'message' => $exception->getMessage(),
+                'exception' => $exception,
+            ]);
+            $this->errorMessage = 'Impossible de charger les appels Ringover.';
+            $this->calls = [];
+            $this->hasMore = false;
+
+            return;
+        }
+
         $filteredCalls = array_values(array_filter($rawCalls, fn (array $call): bool => $this->passesFilters($call)));
 
         $this->hasMore = count($filteredCalls) > $this->page * $this->perPage;

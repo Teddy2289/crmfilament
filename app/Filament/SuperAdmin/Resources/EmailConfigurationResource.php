@@ -4,6 +4,7 @@ namespace App\Filament\SuperAdmin\Resources;
 
 use App\Filament\SuperAdmin\Resources\EmailConfigurationResource\Pages;
 use App\Models\EmailConfiguration;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -50,7 +51,17 @@ class EmailConfigurationResource extends Resource
 
                     Forms\Components\Select::make('user_id')
                         ->label('Utilisateur')
-                        ->relationship('user', 'nom_complet')
+                        ->options(fn () => User::query()
+                            ->select(['id', 'prenom', 'nom'])
+                            ->whereNull('deleted_at')
+                            ->orderBy('prenom')
+                            ->orderBy('nom')
+                            ->get()
+                            ->mapWithKeys(fn (User $record) => [
+                                $record->id => $record->nom_complet,
+                            ])
+                            ->toArray(),
+                        )
                         ->searchable()
                         ->preload()
                         ->nullable()
@@ -144,8 +155,9 @@ class EmailConfigurationResource extends Resource
                     Forms\Components\TextInput::make('password')
                         ->label('Mot de passe')
                         ->password()
-                        ->required()
-                        ->helperText('Mot de passe de l\'email ou mot de passe d\'application')
+                        ->required(fn (?EmailConfiguration $record) => ! $record)
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->helperText('Mot de passe de l\'email ou mot de passe d\'application (laisser vide pour conserver le mot de passe actuel en édition)')
                         ->revealable(),
 
                     Forms\Components\TextInput::make('from_name')
@@ -189,8 +201,9 @@ class EmailConfigurationResource extends Resource
                     ->trueIcon('heroicon-o-globe-alt')
                     ->falseIcon('heroicon-o-user'),
 
-                Tables\Columns\TextColumn::make('user.nom_complet')
+                Tables\Columns\TextColumn::make('user.email')
                     ->label('Utilisateur')
+                    ->formatStateUsing(fn ($state, $record) => $record->user?->nom_complet ?? $state)
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

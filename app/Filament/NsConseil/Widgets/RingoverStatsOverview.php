@@ -18,7 +18,18 @@ class RingoverStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $stats = app(RingoverService::class)->getStats();
+        try {
+            $stats = app(RingoverService::class)->getStats();
+        } catch (\Throwable $exception) {
+            \Log::error('RingoverStatsOverview error', ['error' => $exception->getMessage()]);
+
+            return [
+                Stat::make('Statut', 'Indisponible')
+                    ->description('Impossible de récupérer les statistiques Ringover')
+                    ->color('danger')
+                    ->icon('heroicon-o-exclamation-triangle'),
+            ];
+        }
 
         $dureeMin = floor($stats['duree_moyenne'] / 60);
         $dureeSec = $stats['duree_moyenne'] % 60;
