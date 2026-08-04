@@ -2172,13 +2172,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                         @if (($info['type'] ?? '') === 'prospect')
                         <button class="pw-info-tab active" data-tab="interlocuteur" onclick="switchInfoTab('interlocuteur')">
                             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            Interlocuteur
-                        </button>
-                        @endif
-                        @if (($info['type'] ?? '') === 'prospect')
-                        <button class="pw-info-tab" data-tab="standard-cse" onclick="switchInfoTab('standard-cse')">
-                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
-                            Standard / CSE
+                            Interlocuteurs
                         </button>
                         @endif
                         @if (($info['type'] ?? '') === 'prospect' && !empty($info['notes']))
@@ -2312,73 +2306,87 @@ $tentativesActuelles = $this->getTentativesAppel();
                     @if (($info['type'] ?? '') === 'prospect')
                     <div class="pw-info-panel" data-tab="interlocuteur" style="display:none;">
                         <div>
-                            <div class="pw-field-label" style="margin-bottom:0.5rem;">Nouveau contact identifié à l'appel</div>
+                            <div class="pw-field-label" style="margin-bottom:0.75rem;">Nouveau contact identifié à l'appel</div>
 
-                            <div class="pw-info-grid" style="margin-bottom:1rem;">
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Prénom / Nom</div>
-                                    <input type="text" wire:model="interlocuteur_nom"
-                                        class="pw-field-input" placeholder="Prénom Nom du responsable CSE">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Fonction</div>
-                                    <input type="text" wire:model="interlocuteur_fonction"
-                                        class="pw-field-input" placeholder="Fonction du contact">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Téléphone</div>
-                                    <input type="tel" wire:model="interlocuteur_telephone"
-                                        class="pw-field-input" placeholder="06 XX XX XX XX">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Email</div>
-                                    <input type="email" wire:model="interlocuteur_email"
-                                        class="pw-field-input" placeholder="cse@entreprise.fr">
+                            <div style="margin-bottom:1rem; padding:0.875rem; background:rgb(248 250 252); border:1px solid rgb(226 232 240); border-radius:0.75rem;">
+                                <div style="font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:rgb(100 116 139); font-weight:700; margin-bottom:0.5rem;">Interlocuteur principal</div>
+                                <div class="pw-info-grid">
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Prénom / Nom</div>
+                                        <input type="text" wire:model="interlocuteur_nom"
+                                            class="pw-field-input" placeholder="Prénom Nom du responsable CSE">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Fonction</div>
+                                        <input type="text" wire:model="interlocuteur_fonction"
+                                            class="pw-field-input" placeholder="Fonction du contact">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Téléphone</div>
+                                        <input type="tel" wire:model="interlocuteur_telephone"
+                                            class="pw-field-input" placeholder="06 XX XX XX XX">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Email</div>
+                                        <input type="email" wire:model="interlocuteur_email"
+                                            class="pw-field-input" placeholder="cse@entreprise.fr">
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="pw-info-grid" style="margin-bottom:1rem;">
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Interlocuteur supplémentaire</div>
-                                    <input type="text" wire:model="interlocuteur_add_nom"
-                                        class="pw-field-input" placeholder="Prénom Nom de l'autre interlocuteur">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Fonction supplémentaire</div>
-                                    <input type="text" wire:model="interlocuteur_add_fonction"
-                                        class="pw-field-input" placeholder="Fonction du contact complémentaire">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Téléphone supplémentaire</div>
-                                    <input type="tel" wire:model="interlocuteur_add_telephone"
-                                        class="pw-field-input" placeholder="06 XX XX XX XX">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Email supplémentaire</div>
-                                    <input type="email" wire:model="interlocuteur_add_email"
-                                        class="pw-field-input" placeholder="contact@entreprise.fr">
+                            <div style="margin-bottom:1rem; padding:0.875rem; background:rgb(249 250 251); border:1px solid rgb(209 213 219); border-radius:0.75rem;">
+                                <div style="font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:rgb(100 116 139); font-weight:700; margin-bottom:0.5rem;">Interlocuteur supplémentaire</div>
+                                <div class="pw-info-grid">
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Prénom / Nom</div>
+                                        <input type="text" wire:model="interlocuteur_add_nom"
+                                            class="pw-field-input" placeholder="Prénom Nom de l'autre interlocuteur">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Fonction</div>
+                                        <input type="text" wire:model="interlocuteur_add_fonction"
+                                            class="pw-field-input" placeholder="Fonction du contact complémentaire">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Téléphone</div>
+                                        <input type="tel" wire:model="interlocuteur_add_telephone"
+                                            class="pw-field-input" placeholder="06 XX XX XX XX">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Email</div>
+                                        <input type="email" wire:model="interlocuteur_add_email"
+                                            class="pw-field-input" placeholder="contact@entreprise.fr">
+                                    </div>
                                 </div>
                             </div>
 
                             <div style="margin-bottom:1rem; padding:0.75rem; background:rgb(249 250 251); border:1px solid rgb(209 213 219); border-radius:0.75rem;">
-                                <div style="font-weight:700; margin-bottom:0.5rem;">Historique des interlocuteurs déjà enregistrés</div>
-                                @if (!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur_fonction']) || !empty($info['interlocuteur_telephone']) || !empty($info['interlocuteur_email']))
-                                <div style="display:grid; gap:0.5rem; font-size:0.9rem;">
-                                    @if (!empty($info['interlocuteur_nom']))
-                                    <div><strong>Nom :</strong> {{ $info['interlocuteur_nom'] }}</div>
-                                    @endif
-                                    @if (!empty($info['interlocuteur_fonction']))
-                                    <div><strong>Fonction :</strong> {{ $info['interlocuteur_fonction'] }}</div>
-                                    @endif
-                                    @if (!empty($info['interlocuteur_telephone']))
-                                    <div><strong>Téléphone :</strong> {{ $info['interlocuteur_telephone'] }}</div>
-                                    @endif
-                                    @if (!empty($info['interlocuteur_email']))
-                                    <div><strong>Email :</strong> {{ $info['interlocuteur_email'] }}</div>
-                                    @endif
+                                <div style="font-weight:700; margin-bottom:0.5rem;">Données déjà enregistrées</div>
+                                @php
+                                    $existingContacts = [];
+                                    if (!empty($info['interlocuteur_nom'])) { $existingContacts[] = ['label' => 'Principal', 'value' => $info['interlocuteur_nom']]; }
+                                    if (!empty($info['interlocuteur_fonction'])) { $existingContacts[] = ['label' => 'Fonction', 'value' => $info['interlocuteur_fonction']]; }
+                                    if (!empty($info['interlocuteur_telephone'])) { $existingContacts[] = ['label' => 'Téléphone', 'value' => $info['interlocuteur_telephone']]; }
+                                    if (!empty($info['interlocuteur_email'])) { $existingContacts[] = ['label' => 'Email', 'value' => $info['interlocuteur_email']]; }
+                                    if (!empty($info['interlocuteur_add_nom'])) { $existingContacts[] = ['label' => 'Suppl.', 'value' => $info['interlocuteur_add_nom']]; }
+                                    if (!empty($info['interlocuteur_add_fonction'])) { $existingContacts[] = ['label' => 'Fonction suppl.', 'value' => $info['interlocuteur_add_fonction']]; }
+                                    if (!empty($info['interlocuteur_add_telephone'])) { $existingContacts[] = ['label' => 'Téléphone suppl.', 'value' => $info['interlocuteur_add_telephone']]; }
+                                    if (!empty($info['interlocuteur_add_email'])) { $existingContacts[] = ['label' => 'Email suppl.', 'value' => $info['interlocuteur_add_email']]; }
+                                    if (!empty($info['nom_interlocuteur_standard'])) { $existingContacts[] = ['label' => 'Standard', 'value' => $info['nom_interlocuteur_standard']]; }
+                                    if (!empty($info['creneaux_permanence_cse'])) { $existingContacts[] = ['label' => 'Créneaux', 'value' => $info['creneaux_permanence_cse']]; }
+                                    if (!empty($info['email_general_standard'])) { $existingContacts[] = ['label' => 'Email standard', 'value' => $info['email_general_standard']]; }
+                                @endphp
+                                @if (!empty($existingContacts))
+                                <div style="display:grid; gap:0.35rem; font-size:0.875rem;">
+                                    @foreach ($existingContacts as $entry)
+                                    <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+                                        <span style="font-weight:700; color:rgb(71 85 105); min-width:5rem;">{{ $entry['label'] }} :</span>
+                                        <span style="color:rgb(15 23 42);">{{ $entry['value'] }}</span>
+                                    </div>
+                                    @endforeach
                                 </div>
                                 @else
-                                <div style="color:rgb(107 114 128);">Aucun interlocuteur CSE enregistré précédemment pour ce prospect.</div>
+                                <div style="color:rgb(107 114 128);">Aucune donnée d’interlocuteur enregistrée précédemment.</div>
                                 @endif
                             </div>
 
@@ -2410,114 +2418,6 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </div>
                     @endif
 
-                    @if (($info['type'] ?? '') === 'prospect')
-                    <div class="pw-info-panel" data-tab="standard-cse" style="display:none;">
-                        <div style="margin-bottom:1rem;">
-                            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgb(100 116 139); margin-bottom:0.625rem; padding-bottom:0.375rem; border-bottom:1px solid rgb(241 245 249); display:flex; align-items:center; gap:0.375rem;">
-                                <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                                Interlocuteur Standard
-                            </div>
-                            <div style="margin-bottom:1rem; padding:0.75rem; background:rgb(249 250 251); border:1px solid rgb(209 213 219); border-radius:0.75rem;">
-                                <div style="font-weight:700; margin-bottom:0.5rem;">Données Standard / CSE déjà enregistrées</div>
-                                @if (!empty($info['nom_interlocuteur_standard']) || !empty($info['creneaux_permanence_cse']) || !empty($info['email_general_standard']))
-                                <div style="display:grid; gap:0.5rem; font-size:0.9rem;">
-                                    @if (!empty($info['nom_interlocuteur_standard']))
-                                    <div><strong>Standard :</strong> {{ $info['nom_interlocuteur_standard'] }}</div>
-                                    @endif
-                                    @if (!empty($info['creneaux_permanence_cse']))
-                                    <div><strong>Créneaux CSE :</strong> {{ $info['creneaux_permanence_cse'] }}</div>
-                                    @endif
-                                    @if (!empty($info['email_general_standard']))
-                                    <div><strong>Email standard :</strong> {{ $info['email_general_standard'] }}</div>
-                                    @endif
-                                </div>
-                                @else
-                                <div style="color:rgb(107 114 128);">Aucun contact standard/CSE enregistré précédemment pour ce prospect.</div>
-                                @endif
-                            </div>
-
-                            <div class="pw-info-grid">
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Nom interlocuteur standard</div>
-                                    <input type="text" wire:model="nom_interlocuteur_standard"
-                                        class="pw-field-input" placeholder="Nom obtenu au standard">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Créneaux de permanence CSE</div>
-                                    <input type="text" wire:model="creneaux_permanence_cse"
-                                        class="pw-field-input" placeholder="ex : Lundi 14h-16h">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Email général (si obtenu au standard)</div>
-                                    <input type="email" wire:model="email_general_standard"
-                                        class="pw-field-input" placeholder="contact@entreprise.fr">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgb(100 116 139); margin-bottom:0.625rem; padding-bottom:0.375rem; border-bottom:1px solid rgb(241 245 249); display:flex; align-items:center; gap:0.375rem;">
-                                <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
-                                Interlocuteur CSE
-                                <span style="font-size:0.6rem; color:rgb(239 68 68); font-weight:700;">* Obligatoire QF</span>
-                            </div>
-                            <div style="margin-bottom:1rem; padding:0.75rem; background:rgb(249 250 251); border:1px solid rgb(209 213 219); border-radius:0.75rem;">
-                                <div style="font-weight:700; margin-bottom:0.5rem;">Interlocuteur CSE déjà enregistré</div>
-                                @if (!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur_fonction']) || !empty($info['interlocuteur_telephone']) || !empty($info['interlocuteur_email']))
-                                <div style="display:grid; gap:0.5rem; font-size:0.9rem;">
-                                    @if (!empty($info['interlocuteur_nom']))
-                                    <div><strong>Nom :</strong> {{ $info['interlocuteur_nom'] }}</div>
-                                    @endif
-                                    @if (!empty($info['interlocuteur_fonction']))
-                                    <div><strong>Fonction :</strong> {{ $info['interlocuteur_fonction'] }}</div>
-                                    @endif
-                                    @if (!empty($info['interlocuteur_telephone']))
-                                    <div><strong>Téléphone :</strong> {{ $info['interlocuteur_telephone'] }}</div>
-                                    @endif
-                                    @if (!empty($info['interlocuteur_email']))
-                                    <div><strong>Email :</strong> {{ $info['interlocuteur_email'] }}</div>
-                                    @endif
-                                </div>
-                                @else
-                                <div style="color:rgb(107 114 128);">Aucun interlocuteur CSE enregistré précédemment pour ce prospect.</div>
-                                @endif
-                            </div>
-                            <div class="pw-info-grid">
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">
-                                        Prénom / Nom du CSE
-                                        <span style="color:rgb(239 68 68);">*</span>
-                                    </div>
-                                    <input type="text" wire:model="interlocuteur_nom"
-                                        class="pw-field-input" placeholder="Prénom Nom du responsable CSE">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Fonction du CSE</div>
-                                    <select wire:model="interlocuteur_fonction" class="pw-field-input">
-                                        <option value="">— Sélectionner —</option>
-                                        <option value="Secrétaire">Secrétaire</option>
-                                        <option value="Trésorier">Trésorier</option>
-                                        <option value="Président">Président</option>
-                                        <option value="Élu">Élu</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <div class="pw-field-label">Téléphone direct CSE</div>
-                                    <input type="tel" wire:model="interlocuteur_telephone"
-                                        class="pw-field-input" placeholder="06 XX XX XX XX">
-                                </div>
-                                <div>
-                                    <div class="pw-field-label">
-                                        Email CSE
-                                        <span style="font-size:0.6rem; color:rgb(100 116 139);">Déclenche Mail 1</span>
-                                    </div>
-                                    <input type="email" wire:model="interlocuteur_email"
-                                        class="pw-field-input" placeholder="cse@entreprise.fr">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
 
                     @if (!empty($noteLines))
                     <div class="pw-info-panel" data-tab="notes" style="display:none;">
