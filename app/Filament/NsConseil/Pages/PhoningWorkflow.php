@@ -415,7 +415,7 @@ class PhoningWorkflow extends Page
             $this->nom_interlocuteur_standard = $model->nom_interlocuteur_standard ?? '';
             $this->creneaux_permanence_cse = $model->creneaux_permanence_cse ?? '';
             $this->email_general_standard = $model->email_general_standard ?? '';
-            $this->interlocuteur_nom = $model->interlocuteur_nom ?? '';
+            $this->interlocuteur_nom = trim((string) ($model->interlocuteur_prenom ? $model->interlocuteur_prenom.' ' : '') . ($model->interlocuteur_nom ?? ''));
             $this->interlocuteur_fonction = $model->interlocuteur_fonction ?? '';
             $this->interlocuteur_telephone = $model->interlocuteur_telephone ?? '';
             $this->interlocuteur_email = $model->interlocuteur_email ?? '';
@@ -755,7 +755,14 @@ class PhoningWorkflow extends Page
             $updateData['email_general_standard'] = $this->email_general_standard;
         }
         if ($this->interlocuteur_nom !== '') {
-            $updateData['interlocuteur_nom'] = $this->interlocuteur_nom;
+            [$prenom, $nom] = $this->splitFullName($this->interlocuteur_nom);
+
+            if ($prenom !== null) {
+                $updateData['interlocuteur_prenom'] = $prenom;
+            }
+            if ($nom !== null) {
+                $updateData['interlocuteur_nom'] = $nom;
+            }
         }
         if ($this->interlocuteur_fonction !== '') {
             $updateData['interlocuteur_fonction'] = $this->interlocuteur_fonction;
@@ -837,9 +844,9 @@ class PhoningWorkflow extends Page
             'statut' => \App\Enums\RendezVousStatut::Planifie,
             'commercial_id' => $prospect->commercial_id,
             'teleprospecteur_id' => Auth::id(),
-            'interlocuteur_nom' => $prospect->fallback_interlocuteur_nom,
-            'interlocuteur_tel' => $prospect->fallback_interlocuteur_telephone,
-            'interlocuteur_email' => $prospect->fallback_interlocuteur_email,
+            'interlocuteur_nom' => $this->interlocuteur_nom ?: $prospect->fallback_interlocuteur_nom,
+            'interlocuteur_tel' => $this->interlocuteur_telephone ?: $prospect->fallback_interlocuteur_telephone,
+            'interlocuteur_email' => $this->interlocuteur_email ?: $prospect->fallback_interlocuteur_email,
         ]);
     }
     protected function appliquerRappelProspect(Prospect $prospect): void
@@ -1119,7 +1126,34 @@ class PhoningWorkflow extends Page
 
     public function getContactInfo(): array
     {
-        return $this->currentContactData;
+        return array_merge($this->currentContactData, [
+            'nom_interlocuteur_standard' => $this->nom_interlocuteur_standard ?: ($this->currentContactData['nom_interlocuteur_standard'] ?? null),
+            'creneaux_permanence_cse' => $this->creneaux_permanence_cse ?: ($this->currentContactData['creneaux_permanence_cse'] ?? null),
+            'email_general_standard' => $this->email_general_standard ?: ($this->currentContactData['email_general_standard'] ?? null),
+            'interlocuteur_nom' => $this->interlocuteur_nom ?: ($this->currentContactData['interlocuteur_nom'] ?? null),
+            'interlocuteur_fonction' => $this->interlocuteur_fonction ?: ($this->currentContactData['interlocuteur_fonction'] ?? null),
+            'interlocuteur_telephone' => $this->interlocuteur_telephone ?: ($this->currentContactData['interlocuteur_telephone'] ?? null),
+            'interlocuteur_email' => $this->interlocuteur_email ?: ($this->currentContactData['interlocuteur_email'] ?? null),
+        ]);
+    }
+
+    private function splitFullName(string $fullName): array
+    {
+        $fullName = trim($fullName);
+        if ($fullName === '') {
+            return [null, null];
+        }
+
+        $parts = preg_split('/\s+/', $fullName);
+
+        if (count($parts) === 1) {
+            return [null, $parts[0]];
+        }
+
+        $prenom = array_shift($parts);
+        $nom = implode(' ', $parts);
+
+        return [$prenom, $nom];
     }
 
     public function getStatutsPhoning(): array

@@ -132,9 +132,18 @@ class PhoningQueueBuilder
             }
 
             $cacheKey = "phoning_queue_reservation_{$type}_{$id}";
+            $existingOwner = Cache::get($cacheKey);
 
-            if (Cache::add($cacheKey, $userId, now()->addMinutes(15))) {
+            if ($existingOwner === null) {
+                if (Cache::add($cacheKey, $userId, now()->addMinutes(15))) {
+                    $available[] = $item;
+                }
+                continue;
+            }
+
+            if ((int) $existingOwner === $userId) {
                 $available[] = $item;
+                Cache::put($cacheKey, $userId, now()->addMinutes(15));
             }
         }
 

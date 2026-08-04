@@ -14,7 +14,8 @@ use App\Models\ContactPartenaire;
 use App\Models\Prospect;
 use App\Models\Appel;
 use App\Models\StatutPhoning;
-use Filament\Actions;
+use Filament\Actions as PageActions;
+use Filament\Tables\Actions as TableActions;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Tabs;
@@ -41,14 +42,14 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
         $record = $this->getRecord();
 
         return [
-            Actions\Action::make('lancer_phoning')
+            PageActions\Action::make('lancer_phoning')
                 ->label('Lancer le phoning')
                 ->icon('heroicon-o-phone-arrow-up-right')
                 ->color('primary')
                 ->visible(fn() => CampagnePhoningResource::canView($record) && $record->statut === 'active')
                 ->url(fn() => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
 
-            Actions\EditAction::make(),
+            PageActions\EditAction::make(),
         ];
     }
 
@@ -275,7 +276,7 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
             ])
             ->recordUrl(fn(Model $record) => $this->queueRecordUrl($record))
             ->actions([
-                Actions\Action::make('retirer_de_campagne')
+                TableActions\Action::make('retirer_de_campagne')
                     ->label('Retirer de la campagne')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
