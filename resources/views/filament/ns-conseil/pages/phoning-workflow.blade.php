@@ -2050,6 +2050,18 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </div>
                     @endif
 
+                    @if ($errors->has('statut_resultat') || $errors->has('commentaires'))
+                    <div style="font-size:0.875rem; color:rgb(190 35 50); margin-top:0.75rem; background:rgb(254 226 226); border:1px solid rgb(248 113 113); border-radius:0.75rem; padding:0.75rem;">
+                        <div style="font-weight:700; margin-bottom:0.5rem;">Erreur de validation</div>
+                        @error('statut_resultat')
+                        <div>Statut : {{ $message }}</div>
+                        @enderror
+                        @error('commentaires')
+                        <div>Commentaires : {{ $message }}</div>
+                        @enderror
+                    </div>
+                    @endif
+
                     @error('commentaires')
                     <div style="font-size:0.75rem; color:rgb(190 35 50); margin-top:0.5rem;">
                         {{ $message }}
