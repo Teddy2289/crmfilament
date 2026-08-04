@@ -781,6 +781,7 @@ class PhoningWorkflow extends Page
         $prospect->marquerContact();
         $prospect->assignerTeleprospecteur(Auth::id());
 
+        $this->persistProspectInterlocuteurFields($prospect);
 
         // ── Envoi du mail correspondant au statut ──────────────────────
         // ── Envoi du mail correspondant au statut ──────────────────────
@@ -821,6 +822,67 @@ class PhoningWorkflow extends Page
                 $heures = (int) app(CrmSettingsService::class)->get('prospection.retry_reminder_hours', 3);
                 $prospect->programmerRappel(now()->addHours($heures));
             }
+        }
+    }
+
+    public function saveInterlocuteur(): void
+    {
+        if (! $this->currentContact || $this->contactType !== 'prospect' || ! $this->currentContact instanceof Prospect) {
+            return;
+        }
+
+        $this->validate([
+            'interlocuteur_email' => 'nullable|email',
+            'email_general_standard' => 'nullable|email',
+        ]);
+
+        $this->persistProspectInterlocuteurFields($this->currentContact);
+
+        $this->currentContact = $this->resolveModel($this->contactType, $this->currentContact->id);
+        $this->currentContactData = $this->buildContactData($this->currentContact, $this->contactType);
+        $this->populateContactFormFields($this->currentContact, $this->contactType);
+
+        Notification::make()
+            ->title('Interlocuteur enregistré')
+            ->body('Les informations ont bien été sauvegardées.')
+            ->success()
+            ->send();
+    }
+
+    protected function persistProspectInterlocuteurFields(Prospect $prospect): void
+    {
+        $updateData = [];
+        if ($this->nom_interlocuteur_standard !== '') {
+            $updateData['nom_interlocuteur_standard'] = $this->nom_interlocuteur_standard;
+        }
+        if ($this->creneaux_permanence_cse !== '') {
+            $updateData['creneaux_permanence_cse'] = $this->creneaux_permanence_cse;
+        }
+        if ($this->email_general_standard !== '') {
+            $updateData['email_general_standard'] = $this->email_general_standard;
+        }
+        if ($this->interlocuteur_nom !== '') {
+            [$prenom, $nom] = $this->splitFullName($this->interlocuteur_nom);
+
+            if ($prenom !== null) {
+                $updateData['interlocuteur_prenom'] = $prenom;
+            }
+            if ($nom !== null) {
+                $updateData['interlocuteur_nom'] = $nom;
+            }
+        }
+        if ($this->interlocuteur_fonction !== '') {
+            $updateData['interlocuteur_fonction'] = $this->interlocuteur_fonction;
+        }
+        if ($this->interlocuteur_telephone !== '') {
+            $updateData['interlocuteur_telephone'] = $this->interlocuteur_telephone;
+        }
+        if ($this->interlocuteur_email !== '') {
+            $updateData['interlocuteur_email'] = $this->interlocuteur_email;
+        }
+
+        if (! empty($updateData)) {
+            $prospect->update($updateData);
         }
     }
 
