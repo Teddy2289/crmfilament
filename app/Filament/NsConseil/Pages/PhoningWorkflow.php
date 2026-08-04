@@ -402,6 +402,9 @@ class PhoningWorkflow extends Page
     protected function resetContactFormFields(): void
     {
         $this->reset([
+            'selectedContactId',
+            'selectedContactType',
+            'currentContactData',
             'commentaires',
             'statut_resultat',
             'rappel_date',
