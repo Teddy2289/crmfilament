@@ -59,6 +59,10 @@ class AppelsRelationManager extends RelationManager
                             ?? '—';
                     })
                     ->sortable(false),
+                Tables\Columns\TextColumn::make('numero_appelant')
+                    ->label('Contact récupéré')
+                    ->getStateUsing(fn ($record) => $record->numero_appelant ?: '—')
+                    ->sortable(false),
                 Tables\Columns\TextColumn::make('interlocuteur')
                     ->label('Interlocuteur')
                     ->getStateUsing(function ($record) {
@@ -73,6 +77,14 @@ class AppelsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('resultat')
                     ->label('Résultat')
                     ->badge(),
+                Tables\Columns\TextColumn::make('date_heure')
+                    ->label('Heure')
+                    ->dateTime('H:i')
+                    ->sortable(false),
+                Tables\Columns\TextColumn::make('duree_formatee')
+                    ->label('Durée')
+                    ->getStateUsing(fn ($record) => $record->duree_formatee)
+                    ->sortable(false),
                 Tables\Columns\TextColumn::make('user.nom')
                     ->label('Par')
                     ->formatStateUsing(function ($state, $record) {
@@ -81,7 +93,8 @@ class AppelsRelationManager extends RelationManager
                             : '—';
                     }),
                 Tables\Columns\TextColumn::make('commentaire')
-                    ->limit(60),
+                    ->label('Notes')
+                    ->limit(120),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
