@@ -298,7 +298,40 @@ class Prospect extends Model
                 ($this->interlocuteur_fonction ? ' - '.$this->interlocuteur_fonction : '')
         );
     }
+    public function getFallbackInterlocuteurNomAttribute(): ?string
+    {
+        if ($this->interlocuteur_nom) {
+            return $this->interlocuteur_nom;
+        }
 
+        $secretaire = trim(($this->cse_secretaire_prenom ?? '') . ' ' . ($this->cse_secretaire_nom ?? ''));
+        if ($secretaire) {
+            return $secretaire;
+        }
+
+        $tresorier = trim(($this->cse_tresorier_prenom ?? '') . ' ' . ($this->cse_tresorier_nom ?? ''));
+        return $tresorier ?: null;
+    }
+
+    public function getFallbackInterlocuteurTelephoneAttribute(): ?string
+    {
+        return $this->interlocuteur_telephone
+            ?: $this->cse_secretaire_tel_direct
+            ?: $this->cse_secretaire_tel_perso
+            ?: $this->cse_tresorier_tel_direct
+            ?: $this->cse_tresorier_tel_perso
+            ?: null;
+    }
+
+    public function getFallbackInterlocuteurEmailAttribute(): ?string
+    {
+        return $this->interlocuteur_email
+            ?: $this->cse_secretaire_email_pro
+            ?: $this->cse_secretaire_email_perso
+            ?: $this->cse_tresorier_email_pro
+            ?: $this->cse_tresorier_email_perso
+            ?: null;
+    }
     public function getDernierContactAttribute(): ?string
     {
         return $this->date_premier_contact?->diffForHumans();

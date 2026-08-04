@@ -157,6 +157,37 @@ class ProspectTest extends TestCase
     }
 
     #[Test]
+    public function fallback_interlocuteur_nom_uses_cse_when_empty(): void
+    {
+        $prospect = new Prospect;
+        $prospect->interlocuteur_nom = null;
+        $prospect->cse_secretaire_prenom = 'Sophie';
+        $prospect->cse_secretaire_nom = 'Leroy';
+
+        $this->assertSame('Sophie Leroy', $prospect->fallback_interlocuteur_nom);
+    }
+
+    #[Test]
+    public function fallback_interlocuteur_email_uses_cse_when_empty(): void
+    {
+        $prospect = new Prospect;
+        $prospect->interlocuteur_email = null;
+        $prospect->cse_secretaire_email_pro = 'secretaire@example.com';
+
+        $this->assertSame('secretaire@example.com', $prospect->fallback_interlocuteur_email);
+    }
+
+    #[Test]
+    public function fallback_interlocuteur_telephone_uses_cse_when_empty(): void
+    {
+        $prospect = new Prospect;
+        $prospect->interlocuteur_telephone = null;
+        $prospect->cse_secretaire_tel_direct = '0102030405';
+
+        $this->assertSame('0102030405', $prospect->fallback_interlocuteur_telephone);
+    }
+
+    #[Test]
     public function taux_engagement_attribute(): void
     {
         $prospect = new Prospect;

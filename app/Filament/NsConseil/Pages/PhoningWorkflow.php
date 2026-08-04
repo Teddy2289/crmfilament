@@ -837,6 +837,9 @@ class PhoningWorkflow extends Page
             'statut' => \App\Enums\RendezVousStatut::Planifie,
             'commercial_id' => $prospect->commercial_id,
             'teleprospecteur_id' => Auth::id(),
+            'interlocuteur_nom' => $prospect->fallback_interlocuteur_nom,
+            'interlocuteur_tel' => $prospect->fallback_interlocuteur_telephone,
+            'interlocuteur_email' => $prospect->fallback_interlocuteur_email,
         ]);
     }
     protected function appliquerRappelProspect(Prospect $prospect): void

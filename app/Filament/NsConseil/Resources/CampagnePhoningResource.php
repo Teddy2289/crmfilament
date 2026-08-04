@@ -444,10 +444,10 @@ class CampagnePhoningResource extends Resource
                     ->label('Active')
                     ->getStateUsing(fn ($record) => $record->statut === 'active')
                     ->updateStateUsing(function ($record, $state) {
-                        $record->update(['statut' => $state ? 'active' : 'terminee']);
+                        $record->update(['statut' => $state ? 'active' : 'en_pause']);
 
                         Notification::make()
-                            ->title($state ? 'Campagne activée' : 'Campagne désactivée')
+                            ->title($state ? 'Campagne activée' : 'Campagne mise en pause')
                             ->success()
                             ->send();
                     })
