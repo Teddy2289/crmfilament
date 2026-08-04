@@ -51,6 +51,12 @@
             </div>
         </div>
 
+        @if ($errorMessage)
+            <div class="rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700 mb-4">
+                {{ $errorMessage }}
+            </div>
+        @endif
+
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>

@@ -8,7 +8,7 @@ use App\Models\Prospect;
 use App\Models\User;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Queueable;
+use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Log;
 
 class SendRappelDuJourJob implements ShouldQueue

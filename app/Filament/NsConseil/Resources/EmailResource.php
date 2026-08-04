@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\EmailResource\Pages;
 use App\Models\Email;
+use App\Models\EmailConfiguration;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -122,6 +123,18 @@ class EmailResource extends Resource
                     ->trueIcon('heroicon-o-envelope-open')
                     ->falseIcon('heroicon-o-envelope')
                     ->color(fn ($record) => $record->is_read ? 'gray' : 'primary'),
+
+                Tables\Columns\TextColumn::make('mailbox')
+                    ->label('Boîte mail')
+                    ->getStateUsing(fn ($record) => EmailConfiguration::query()
+                        ->forUser(Auth::id())
+                        ->active()
+                        ->value('from_name')
+                        ?: EmailConfiguration::query()
+                            ->forUser(Auth::id())
+                            ->active()
+                            ->value('email'))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('from')
                     ->label('De')

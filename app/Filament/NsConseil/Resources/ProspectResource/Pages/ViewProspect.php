@@ -20,7 +20,7 @@ class ViewProspect extends ViewRecord
 {
     protected static string $resource = ProspectResource::class;
 
-    protected function getHeaderWidgets(): array
+    protected function getFooterWidgets(): array
     {
         return [
             HistoriqueModificationsWidget::make([

@@ -4,6 +4,8 @@ namespace App\Filament\NsConseil\Pages;
 
 use App\Filament\NsConseil\Widgets\RingoverAppelsRecents;
 use App\Filament\NsConseil\Widgets\RingoverStatsOverview;
+use App\Models\EnvSetting;
+use App\Services\EnvSettingsService;
 use App\Services\RingoverTagService;
 use App\Services\RingoverService;
 use App\Services\RingoverUserMapper;
@@ -31,6 +33,10 @@ class RingoverDashboard extends Page
 
     public array $diagnostic = [];
 
+    public ?EnvSetting $ringoverTimeoutSetting = null;
+
+    public int $ringoverTimeout = 10;
+
     public static function canAccess(): bool
     {
         $user = auth()->user();
@@ -50,6 +56,7 @@ class RingoverDashboard extends Page
     {
         $this->connexionOk = app(RingoverService::class)->testConnection();
         $this->refreshDiagnostic();
+        $this->loadRingoverTimeout();
     }
 
     protected function getHeaderActions(): array
@@ -95,6 +102,39 @@ class RingoverDashboard extends Page
     public function refreshDiagnostic(): void
     {
         $this->diagnostic = app(RingoverTagService::class)->diagnostic();
+    }
+
+    protected function loadRingoverTimeout(): void
+    {
+        $this->ringoverTimeoutSetting = EnvSetting::firstWhere('key', 'RINGOVER_TIMEOUT');
+        $this->ringoverTimeout = $this->ringoverTimeoutSetting ? (int) $this->ringoverTimeoutSetting->value : config('ringover.timeout', 10);
+    }
+
+    public function saveRingoverTimeout(): void
+    {
+        if (! $this->ringoverTimeoutSetting) {
+            $this->ringoverTimeoutSetting = EnvSetting::create([
+                'key' => 'RINGOVER_TIMEOUT',
+                'label' => 'Timeout API Ringover',
+                'group' => 'third_party',
+                'description' => 'Délai d’attente maximum pour les requêtes API Ringover (secondes)',
+                'type' => 'int',
+                'value' => (string) $this->ringoverTimeout,
+                'is_sensitive' => false,
+                'is_editable' => true,
+                'sort_order' => 64,
+            ]);
+        } else {
+            $this->ringoverTimeoutSetting->update(['value' => (string) $this->ringoverTimeout]);
+        }
+
+        app(EnvSettingsService::class)->syncToEnv();
+
+        Notification::make()
+            ->title('Timeout Ringover mis à jour')
+            ->body('La nouvelle valeur a été enregistrée et synchronisée.')
+            ->success()
+            ->send();
     }
 
     protected function getHeaderWidgets(): array
