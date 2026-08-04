@@ -106,6 +106,65 @@ class CampagnePhoningQueueTest extends TestCase
     }
 
     #[Test]
+    public function paused_campaigns_are_excluded_from_active_campaigns(): void
+    {
+        $active = CampagnePhoning::create([
+            'nom' => 'Campagne active',
+            'statut' => 'active',
+            'type_entite' => 'prospects',
+        ]);
+
+        $paused = CampagnePhoning::create([
+            'nom' => 'Campagne en pause',
+            'statut' => 'en_pause',
+            'type_entite' => 'prospects',
+        ]);
+
+        $this->assertTrue(CampagnePhoning::active()->whereKey($active->id)->exists());
+        $this->assertFalse(CampagnePhoning::active()->whereKey($paused->id)->exists());
+    }
+
+    #[Test]
+    public function paused_campaigns_are_excluded_from_the_default_phoning_queue(): void
+    {
+        $groupe = GroupeTelepro::create(['nom' => 'Groupe pause', 'actif' => true]);
+        $telepro = User::factory()->create();
+        $telepro->groupesTelepro()->attach($groupe->id);
+
+        $active = CampagnePhoning::create([
+            'nom' => 'Campagne active',
+            'statut' => 'active',
+            'type_entite' => 'prospects',
+            'groupe_telepro_id' => $groupe->id,
+            'criteres' => ['statuts' => ['AC']],
+        ]);
+
+        $paused = CampagnePhoning::create([
+            'nom' => 'Campagne en pause',
+            'statut' => 'en_pause',
+            'type_entite' => 'prospects',
+            'groupe_telepro_id' => $groupe->id,
+            'criteres' => ['statuts' => ['AC']],
+        ]);
+
+        $prospectActive = Prospect::factory()->create([
+            'statut' => 'AC',
+            'commercial_id' => null,
+        ]);
+
+        $prospectPaused = Prospect::factory()->create([
+            'statut' => 'AC',
+            'commercial_id' => null,
+        ]);
+
+        $queue = app(\App\Services\Phoning\PhoningQueueBuilder::class)->buildDefaultQueue($telepro->id, null);
+
+        $this->assertNotEmpty($queue);
+        $this->assertContains(['type' => 'prospect', 'id' => $prospectActive->id, 'campagne_id' => $active->id], $queue);
+        $this->assertFalse(collect($queue)->contains(fn ($item) => $item['id'] === $prospectPaused->id));
+    }
+
+    #[Test]
     public function campaign_assigned_to_a_group_is_only_visible_to_its_members(): void
     {
         $groupeA = GroupeTelepro::create(['nom' => 'Groupe 44-45-75', 'actif' => true]);

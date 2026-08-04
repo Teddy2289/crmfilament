@@ -56,11 +56,11 @@ class ProspectionMailService
             return;
         }
 
-        $emailInterlocuteur = $prospect->interlocuteur_email ?: $this->fallbackEmail();
+        $emailInterlocuteur = $prospect->interlocuteur_email ?: $prospect->fallback_interlocuteur_email ?: $this->fallbackEmail();
 
         Log::info("MAIL DEBUG: envoyerRdv", [
             'email_interlocuteur_utilise' => $emailInterlocuteur,
-            'via_fallback_interlocuteur' => ! $prospect->interlocuteur_email,
+            'via_fallback_interlocuteur' => ! $prospect->interlocuteur_email && (bool) $prospect->fallback_interlocuteur_email,
         ]);
 
         if ($emailInterlocuteur) {
@@ -81,11 +81,11 @@ class ProspectionMailService
 
     protected function envoyerBloc(Prospect $prospect, array $contexte): void
     {
-        $email = $prospect->interlocuteur_email ?: $this->fallbackEmail();
+        $email = $prospect->interlocuteur_email ?: $prospect->fallback_interlocuteur_email ?: $this->fallbackEmail();
 
         Log::info("MAIL DEBUG: envoyerBloc", [
             'email_utilise' => $email,
-            'via_fallback' => ! $prospect->interlocuteur_email,
+            'via_fallback' => ! $prospect->interlocuteur_email && (bool) $prospect->fallback_interlocuteur_email,
         ]);
 
         if (! $email) {
@@ -109,11 +109,11 @@ class ProspectionMailService
 
     protected function envoyerNcse50(Prospect $prospect, array $contexte): void
     {
-        $email = $prospect->interlocuteur_email ?: $this->fallbackEmail();
+        $email = $prospect->interlocuteur_email ?: $prospect->fallback_interlocuteur_email ?: $this->fallbackEmail();
 
         Log::info("MAIL DEBUG: envoyerNcse50", [
             'email_utilise' => $email,
-            'via_fallback' => ! $prospect->interlocuteur_email,
+            'via_fallback' => ! $prospect->interlocuteur_email && (bool) $prospect->fallback_interlocuteur_email,
         ]);
 
         if (! $email) {
