@@ -49,6 +49,24 @@ class AppelsRelationManager extends RelationManager
                     ->label('Date')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('contact')
+                    ->label('Contact')
+                    ->getStateUsing(function ($record) {
+                        return $record->appelable?->nom
+                            ?? $record->appelable?->nom_tiers
+                            ?? $record->appelable?->raison_sociale
+                            ?? $record->appelable?->prenom
+                            ?? '—';
+                    })
+                    ->sortable(false),
+                Tables\Columns\TextColumn::make('interlocuteur')
+                    ->label('Interlocuteur')
+                    ->getStateUsing(function ($record) {
+                        return $record->appelable?->interlocuteur_complet
+                            ?? trim(($record->appelable?->interlocuteur_prenom ?? '') . ' ' . ($record->appelable?->interlocuteur_nom ?? ''))
+                            ?: '—';
+                    })
+                    ->sortable(false),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')
                     ->badge(),

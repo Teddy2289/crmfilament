@@ -61,6 +61,16 @@ class RendezVousRelationManager extends RelationManager
                     ->label('Date')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('contact')
+                    ->label('Contact')
+                    ->getStateUsing(function ($record) {
+                        return $record->rdvable?->nom
+                            ?? $record->rdvable?->nom_tiers
+                            ?? $record->rdvable?->raison_sociale
+                            ?? $record->rdvable?->prenom
+                            ?? '—';
+                    })
+                    ->sortable(false),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Type')
                     ->badge(),

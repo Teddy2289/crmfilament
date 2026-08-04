@@ -27,6 +27,16 @@ class ViewClient extends ViewRecord
         return [
             Actions\EditAction::make(),
 
+            Actions\Action::make('lancer_appel_phoning')
+                ->label('Lancer l\'appel')
+                ->icon('heroicon-o-phone-arrow-up-right')
+                ->color('primary')
+                ->url(fn () => route('filament.ns-conseil.pages.phoning-workflow', [
+                    'contact_id' => $this->record->id,
+                    'contact_type' => 'client',
+                ]))
+                ->openUrlInNewTab(),
+
             Actions\Action::make('toggle_contact')
                 ->label(fn () => $this->record->ne_plus_contacter ? 'Réactiver' : 'Bloquer')
                 ->icon(fn () => $this->record->ne_plus_contacter ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')

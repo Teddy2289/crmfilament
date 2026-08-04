@@ -296,7 +296,22 @@ class CampagnePhoning extends Model
      */
     public function buildQueueQuery(): Builder
     {
+        $retireCodes = StatutPhoning::query()
+            ->where('model_type', $this->queueContactType())
+            ->where('retire_de_file', true)
+            ->pluck('code')
+            ->all();
+
         $query = $this->buildQuery();
+
+        if ($retireCodes !== []) {
+            $query->whereDoesntHave(
+                'appels',
+                fn (Builder $appelQuery) => $appelQuery
+                    ->where('campagne_id', $this->id)
+                    ->whereIn('phoning_status', $retireCodes)
+            );
+        }
 
         return match ($this->type_entite) {
             'prospects' => $this->applyProspectQueueFilters($query)
@@ -325,7 +340,9 @@ class CampagnePhoning extends Model
         if ($retireCodes !== []) {
             $query->whereDoesntHave(
                 'appels',
-                fn (Builder $appelQuery) => $appelQuery->whereIn('phoning_status', $retireCodes)
+                fn (Builder $appelQuery) => $appelQuery
+                    ->where('campagne_id', $this->id)
+                    ->whereIn('phoning_status', $retireCodes)
             );
         }
 
@@ -431,6 +448,12 @@ class CampagnePhoning extends Model
 
     protected function buildClientsQuery(array $c): Builder
     {
+        $retireCodes = StatutPhoning::query()
+            ->where('model_type', 'client')
+            ->where('retire_de_file', true)
+            ->pluck('code')
+            ->all();
+
         $q = Client::query()->whereNull('deleted_at');
 
         if (! empty($c['etat'])) {
@@ -444,6 +467,15 @@ class CampagnePhoning extends Model
         }
         // Toujours exclure les clients "ne plus contacter"
         $q->where(fn ($sub) => $sub->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false));
+
+        if ($retireCodes !== []) {
+            $q->whereDoesntHave(
+                'appels',
+                fn (Builder $appelQuery) => $appelQuery
+                    ->where('campagne_id', $this->id)
+                    ->whereIn('phoning_status', $retireCodes)
+            );
+        }
 
         return $q;
     }

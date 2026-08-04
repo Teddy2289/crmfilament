@@ -161,6 +161,21 @@ class PhoningWorkflow extends Page
         }
 
         $this->loadQueue();
+
+        if ($contactId = request()->query('contact_id')) {
+            $contactType = request()->query('contact_type', 'prospect');
+            $contactQueueItem = [
+                'id' => (int) $contactId,
+                'type' => (string) $contactType,
+                'campagne_id' => $this->currentCampagneId,
+            ];
+
+            $exists = collect($this->contactQueue)->contains(fn ($item) => $item['id'] === (int) $contactId && ($item['type'] ?? '') === (string) $contactType);
+            if (! $exists) {
+                array_unshift($this->contactQueue, $contactQueueItem);
+            }
+        }
+
         $this->loadNextContact();
     }
     public function updatedSearchQuery(): void

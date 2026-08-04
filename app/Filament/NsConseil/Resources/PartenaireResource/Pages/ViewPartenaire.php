@@ -28,6 +28,16 @@ class ViewPartenaire extends ViewRecord
         return [
             Actions\EditAction::make(),
 
+            Actions\Action::make('lancer_appel_phoning')
+                ->label('Lancer l\'appel')
+                ->icon('heroicon-o-phone-arrow-up-right')
+                ->color('primary')
+                ->url(fn () => route('filament.ns-conseil.pages.phoning-workflow', [
+                    'contact_id' => $this->record->id,
+                    'contact_type' => 'partenaire',
+                ]))
+                ->openUrlInNewTab(),
+
             Actions\Action::make('changer_statut')
                 ->label('Changer le statut')
                 ->icon('heroicon-o-arrow-path')

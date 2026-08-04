@@ -37,6 +37,16 @@ class ViewProspect extends ViewRecord
                 ->label('Modifier')
                 ->icon('heroicon-o-pencil-square'),
 
+            Action::make('lancer_appel_phoning')
+                ->label('Lancer l\'appel')
+                ->icon('heroicon-o-phone-arrow-up-right')
+                ->color('primary')
+                ->url(fn () => route('filament.ns-conseil.pages.phoning-workflow', [
+                    'contact_id' => $this->record->id,
+                    'contact_type' => 'prospect',
+                ]))
+                ->openUrlInNewTab(),
+
             Action::make('qualifier_qf')
                 ->label('Qualifier QF')
                 ->icon('heroicon-o-check-badge')
