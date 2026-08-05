@@ -8,6 +8,14 @@ use App\Mail\PreviewableProspectionMail;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Auth;
 
+$activeConfig = null;
+
+if (Auth::check()) {
+    $activeConfig = App\Models\EmailConfiguration::forUser(Auth::id())
+        ->active()
+        ->first();
+}
+
 $to = Config::get('mail.from.address', 'admin@ns-conseil.com');
 $subject = 'Test SendProspectionMailJob';
 $body = '<p>Ceci est un test HTML de <strong>SendProspectionMailJob</strong>.</p>';
@@ -20,7 +28,9 @@ $job = new SendProspectionMailJob(
     to: $to,
     emailLabel: 'Test envoi',
     prospectId: null,
-    notifyUserId: null,
+    notifyUserId: Auth::id(),
+    sourceEmail: $activeConfig?->email ?: $to,
+    emailConfigurationId: $activeConfig?->id,
 );
 
 dispatch($job);

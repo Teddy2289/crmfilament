@@ -75,6 +75,8 @@ class ProspectionMailService
                 emailLabel: 'Confirmation RDV',
                 prospectId: $prospect->id,
                 notifyUserId: Auth::id(),
+                sourceEmail: $this->resolveSourceEmail(),
+                emailConfigurationId: $this->resolveEmailConfigurationId(),
             ));
             $rdv->confirmer();
         }
@@ -111,6 +113,8 @@ class ProspectionMailService
             emailLabel: 'Prise de contact (bloc)',
             prospectId: $prospect->id,
             notifyUserId: Auth::id(),
+            sourceEmail: $this->resolveSourceEmail(),
+            emailConfigurationId: $this->resolveEmailConfigurationId(),
         ));
     }
 
@@ -142,6 +146,8 @@ class ProspectionMailService
             emailLabel: 'Contact sans CSE',
             prospectId: $prospect->id,
             notifyUserId: Auth::id(),
+            sourceEmail: $this->resolveSourceEmail(),
+            emailConfigurationId: $this->resolveEmailConfigurationId(),
         ));
     }
 
@@ -174,6 +180,8 @@ class ProspectionMailService
             emailLabel: 'CSE hors zone',
             prospectId: $prospect->id,
             notifyUserId: Auth::id(),
+            sourceEmail: $this->resolveSourceEmail(),
+            emailConfigurationId: $this->resolveEmailConfigurationId(),
         ));
     }
 
@@ -220,6 +228,29 @@ class ProspectionMailService
         }
 
         return $default;
+    }
+
+    protected function resolveSourceEmail(): ?string
+    {
+        return $this->resolveActiveEmailConfiguration()?->email ?: $this->fallbackEmail();
+    }
+
+    protected function resolveEmailConfigurationId(): ?int
+    {
+        return $this->resolveActiveEmailConfiguration()?->id;
+    }
+
+    protected function resolveActiveEmailConfiguration(): ?EmailConfiguration
+    {
+        $userId = Auth::id();
+
+        if (! $userId) {
+            return null;
+        }
+
+        return EmailConfiguration::forUser($userId)
+            ->active()
+            ->first();
     }
 
     protected function wrapPreviewableMailable(Mailable $mailable, array $contexte): Mailable
