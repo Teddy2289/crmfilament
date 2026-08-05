@@ -28,6 +28,9 @@ Tu trouveras ci-dessous tous les éléments pour ton rendez-vous. Merci d'accept
 Le RDV a été confirmé par email au CSE. Les pièces jointes incluent la fiche récap et l'enregistrement audio (si disponibles).
 
 Cordialement,<br>
-{{ $teleprospecteur->prenom }} {{ $teleprospecteur->nom }}<br>
+{{ $signature_name ?? ($teleprospecteur->prenom . ' ' . $teleprospecteur->nom) }}<br>
+@if(!empty($signature_phone))
+Tél. {{ $signature_phone }}<br>
+@endif
 {{ config('app.name') }}
 </x-mail::message>

@@ -14,6 +14,14 @@ Un contact nécessite une relance de votre part suite à un appel de prospection
 ## Action requise
 Selon la procédure CSE, ce contact doit être repris par vos soins (élu toujours injoignable après blocage standard, ou entreprise sans CSE). La fiche détaillée est jointe à cet email en format Word (.docx) avec toutes les coordonnées collectées par le téléprospecteur.
 
-Cordialement,
+@if(!empty($signature_name))
+Cordialement,  
+{{ $signature_name }}  
+@if(!empty($signature_phone))
+Tél. {{ $signature_phone }}  
+@endif
+@else
+Cordialement,  
 Votre système CRM
+@endif
 @endcomponent

@@ -17,6 +17,14 @@ En tant que Responsable de Secteur assigné à ce dossier, il vous revient de re
 
 La fiche détaillée est jointe à cet email en format Word (.docx). Vous y trouverez toutes les informations nécessaires pour préparer votre rappel.
 
-Cordialement,
+@if(!empty($signature_name))
+Cordialement,  
+{{ $signature_name }}  
+@if(!empty($signature_phone))
+Tél. {{ $signature_phone }}  
+@endif
+@else
+Cordialement,  
 Votre système CRM
+@endif
 @endcomponent

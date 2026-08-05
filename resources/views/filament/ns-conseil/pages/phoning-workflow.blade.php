@@ -1886,6 +1886,11 @@ $tentativesActuelles = $this->getTentativesAppel();
             if (!phoneNumber) return;
 
             const cleanedPhone = phoneNumber.replace(/[^0-9+]/g, '');
+            if (!cleanedPhone) {
+                return;
+            }
+
+            Livewire.dispatch('ringover-call', { phone: cleanedPhone });
 
             if (window.ringoverPhone && typeof window.ringoverPhone.dial === 'function') {
                 window.ringoverPhone.show();
@@ -3155,6 +3160,7 @@ $tentativesActuelles = $this->getTentativesAppel();
             window.appelerAvecRingover = function(numero) {
                 if (!numero) return;
                 const e164 = toE164Fr(numero);
+                Livewire.dispatch('ringover-call', { phone: e164 });
                 const nowIso = new Date().toISOString();
                 const lifecycle = {
                     callId: null,
@@ -3162,7 +3168,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                     endedAt: null,
                 };
 
-                const captureLifecycle = (payload = null, type = 'generic') => {
+                const captureLifecycle = (payload = null, type = 'generic', phone = null) => {
                     const rawStarted = payload && (payload.started_at || payload.startedAt || payload.start_time || payload.startTime || payload.started || payload.begin_at || payload.beginAt);
                     const rawEnded = payload && (payload.ended_at || payload.endedAt || payload.end_time || payload.endTime || payload.ended || payload.end_at || payload.endAt);
 
@@ -3179,11 +3185,15 @@ $tentativesActuelles = $this->getTentativesAppel();
                         lifecycle.callId = String(payloadCallId);
                     }
 
+                    const normalizedPhone = phone
+                        || (payload && (payload.from_number || payload.fromNumber || payload.caller_number || payload.callerNumber || payload.from || payload.caller || payload.to_number || payload.toNumber || payload.callee_number || payload.calleeNumber || payload.to || payload.callee));
+
                     Livewire.dispatch('ringover-call-lifecycle', {
                         callId: lifecycle.callId,
                         startedAt: lifecycle.startedAt,
                         endedAt: lifecycle.endedAt,
                         type,
+                        phone: normalizedPhone ? String(normalizedPhone).replace(/[^0-9+]/g, '') : null,
                     });
                 };
 
@@ -3199,13 +3209,10 @@ $tentativesActuelles = $this->getTentativesAppel();
                                 window.ringoverPhone.on(eventName, (payload) => {
                                     const direction = payload && (payload.direction || payload.type || payload.call_direction || payload.callDirection);
                                     const caller = payload && (payload.from_number || payload.fromNumber || payload.caller_number || payload.callerNumber || payload.from || payload.caller);
-                                    const isInbound = direction === 'inbound' || String(direction).toLowerCase().includes('inbound') || String(direction).toLowerCase().includes('incoming');
-                                    captureLifecycle(payload, eventName);
-                                    if (isInbound && caller) {
-                                        rechercherAppelEntrant(caller);
-                                    }
-                                });
-                            } catch (e) {}
+                                            const called = payload && (payload.to_number || payload.toNumber || payload.callee_number || payload.calleeNumber || payload.to || payload.callee);
+                                            const isInbound = direction === 'inbound' || String(direction).toLowerCase().includes('inbound') || String(direction).toLowerCase().includes('incoming');
+                                            const phone = isInbound ? caller : called || caller;
+                                            captureLifecycle(payload, eventName, phone);
                         });
 
                         ['callEnded', 'call:ended', 'ended', 'call.ended', 'hangup'].forEach((eventName) => {
