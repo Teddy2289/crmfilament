@@ -4,6 +4,7 @@ namespace App\Services\Crm;
 
 use App\Models\CrmSetting;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class CrmSettingsService
 {
@@ -12,6 +13,10 @@ class CrmSettingsService
     public function all(): array
     {
         return Cache::remember(self::CACHE_KEY, 300, function () {
+            if (! Schema::hasTable('crm_settings')) {
+                return [];
+            }
+
             return CrmSetting::query()
                 ->orderBy('groupe')
                 ->orderBy('ordre')
