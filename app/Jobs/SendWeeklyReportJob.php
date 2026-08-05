@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\WeeklyReportMail;
 use App\Models\User;
+use App\Services\Crm\CrmSettingsService;
 use App\Services\Crm\WeeklyReportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,18 +24,21 @@ class SendWeeklyReportJob implements ShouldQueue
     /**
      * @param  array<int, string>  $roles
      */
-    public function __construct(public array $roles = [
-        User::ROLE_TELEPROSPECTEUR,
-        User::ROLE_COMMERCIAL,
-        User::ROLE_SUPERVISEUR,
-        WeeklyReportService::ROLE_TEAM_LEADER,
-    ]) {}
+    public function __construct(public array $roles = []) {}
 
-    public function handle(WeeklyReportService $service): int
+    public function handle(WeeklyReportService $service, ?CrmSettingsService $settings = null): int
     {
+        $settings = $settings ?? app(CrmSettingsService::class);
         $envoyes = 0;
 
-        foreach ($service->destinatairesPourRoles($this->roles) as $user) {
+        $roles = $this->roles ?: $settings->get('roles.weekly_report_roles', [
+            User::ROLE_TELEPROSPECTEUR,
+            User::ROLE_COMMERCIAL,
+            User::ROLE_SUPERVISEUR,
+            WeeklyReportService::ROLE_TEAM_LEADER,
+        ]);
+
+        foreach ($service->destinatairesPourRoles($roles) as $user) {
             $rapport = match ($user->role_cache) {
                 User::ROLE_TELEPROSPECTEUR => $service->pourTeleprospecteur($user),
                 User::ROLE_COMMERCIAL => $service->pourCommercial($user),

@@ -373,11 +373,14 @@ class CampagnePhoning extends Model
         }
 
         // Règle 4: Nombre maximal de tentatives d'appel non abouties
+        // Utilise une sous-requête WHERE plutôt que HAVING sur un alias pour
+        // assurer la compatibilité SQLite (tests) et MySQL (production).
         if (! empty($this->max_tentatives) && $this->max_tentatives > 0) {
             $max = (int) $this->max_tentatives;
-            $q->withCount(['appels' => function ($aQuery) {
-                $aQuery->where('compte_comme_tentative', true);
-            }])->having('appels_count', '<', $max);
+            $q->whereRaw(
+                '(SELECT COUNT(*) FROM appels WHERE appels.appelable_id = prospects.id AND appels.appelable_type = ? AND appels.compte_comme_tentative = 1) < ?',
+                [Prospect::class, $max]
+            );
         }
 
         if (is_array($c['statuts'] ?? null) && count($c['statuts']) > 0) {

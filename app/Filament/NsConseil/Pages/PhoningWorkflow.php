@@ -6,6 +6,8 @@ use App\Enums\EventResult;
 use App\Enums\EventType;
 use App\Enums\ProspectStatut;
 use App\Enums\StatutCampagneProspection;
+use App\Filament\NsConseil\Concerns\HasCallSession;
+use App\Filament\NsConseil\Concerns\HasContactQueue;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource;
 use App\Models\Appel;
 use App\Models\CampagnePhoning;
@@ -42,6 +44,9 @@ use Illuminate\Support\Facades\Log;
 
 class PhoningWorkflow extends Page
 {
+    use HasContactQueue;
+    use HasCallSession;
+
     // protected static ?string $navigationIcon    = 'heroicon-o-phone-arrow-up-right';
     protected static ?string $navigationLabel = 'Flux de travail téléphonique';
 
@@ -51,29 +56,12 @@ class PhoningWorkflow extends Page
 
     protected static ?int $navigationSort = 3;
 
-    public string $searchQuery = '';
-
-    public array $searchResults = [];
-
-    public bool $showSearchResults = false;
-
-    public ?int $selectedContactId = null;
-
-    public string $selectedContactType = '';
-
-    public ?int $requestedContactId = null;
-
-    public string $requestedContactType = '';
-    
-
     // protected static ?int    $navigationSort    = 2;
     protected static string  $view              = 'filament.ns-conseil.pages.phoning-workflow';
     public static function shouldRegisterNavigation(): bool
     {
         return false; // Page accessible via URL pour les boutons de lancement d'appels
     }
-
-    public ?Model $currentContact = null;
 
     public string $contactType = '';
 
@@ -140,41 +128,9 @@ class PhoningWorkflow extends Page
 
     public string $jour_dispo_appel = '';
 
-    public int $progress = 0;
-
-    public int $total = 0;
-
-    public int $completed = 0;
-
-    public ?int $supervisedUserId = null;
-
-    public bool $isSupervisorMode = false;
-
     public ?int $lastAppelId = null;
 
-    public array $contactQueue = [];
-
-    public ?int $currentCampagneId = null;
-
-    public ?string $ringoverCallId = null;
-
-    public ?string $ringoverCallStartedAt = null;
-
-    public ?string $ringoverCallEndedAt = null;
-
     public ?string $ringoverDialedPhone = null;
-
-    public array $incomingCallMatches = [];
-
-    public ?string $incomingCallPhone = null;
-
-    /**
-     * Filtre de campagne explicitement choisi par l'utilisateur (via "Choisir
-     * une campagne" ou le paramètre d'URL), distinct de $currentCampagneId qui
-     * lui reflète la campagne d'origine du contact affiché à l'instant (et
-     * change à chaque appel en mode "toutes les campagnes" mélangées).
-     */
-    public ?int $campagneFiltreId = null;
 
     // ── Mount ────────────────────────────────────────────────────────
     public function mount(): void
@@ -202,10 +158,6 @@ class PhoningWorkflow extends Page
         $this->ensureRequestedContactPriority();
         $this->loadNextContact();
     }
-    public function updatedSearchQuery(): void
-    {
-        $this->searchContacts();
-    }
     // ── Requête centrale téléprospecteurs ────────────────────────────
     // Double critère : rôle Spatie OU role_cache pour couvrir les deux cas
     protected function queryTeleprospecteurs()
@@ -223,227 +175,7 @@ class PhoningWorkflow extends Page
             ->orderBy('prenom');
     }
 
-    /**
-     * Recherche des contacts par nom, téléphone, SIRET, etc.
-     */
-    /**
-     * Recherche des contacts par nom, téléphone, SIRET, etc.
-     */
-    public function searchContacts(): void
-    {
-        if (strlen($this->searchQuery) < 2) {
-            $this->searchResults = [];
-            $this->showSearchResults = false;
-            return;
-        }
-
-        $this->searchResults = app(PhoningContactSearchService::class)->search($this->searchQuery);
-        $this->showSearchResults = true;
-    }
-
-    /**
-     * Sélectionne un contact trouvé par la recherche
-     */
-    public function selectSearchResult(int $id, string $type): void
-    {
-        $this->selectedContactId = $id;
-        $this->selectedContactType = $type;
-        $this->showSearchResults = false;
-        $this->searchQuery = '';
-
-        // Charger le contact sélectionné
-        $model = $this->resolveModel($type, $id);
-        if (!$model) {
-            Notification::make()
-                ->title('Contact introuvable')
-                ->danger()
-                ->send();
-            return;
-        }
-
-        // Ajouter le contact en tête de file
-        $contactItem = [
-            'id' => $id,
-            'type' => $type,
-            'campagne_id' => $this->currentCampagneId,
-        ];
-
-        // Vérifier si le contact est déjà dans la file
-        $exists = collect($this->contactQueue)->contains(function ($item) use ($id, $type) {
-            return $item['id'] === $id && $item['type'] === $type;
-        });
-
-        if ($exists) {
-            // Déplacer en tête de file
-            $this->contactQueue = collect($this->contactQueue)
-                ->reject(fn($item) => $item['id'] === $id && $item['type'] === $type)
-                ->prepend($contactItem)
-                ->values()
-                ->toArray();
-        } else {
-            // Ajouter en tête de file
-            array_unshift($this->contactQueue, $contactItem);
-        }
-
-        Notification::make()
-            ->title('Contact sélectionné')
-            ->body("{$model->nom} ajouté en tête de file")
-            ->success()
-            ->send();
-
-        $this->loadNextContact();
-    }
-
-    /**
-     * Réinitialise la recherche
-     */
-    public function clearSearch(): void
-    {
-        $this->searchQuery = '';
-        $this->searchResults = [];
-        $this->showSearchResults = false;
-        $this->selectedContactId = null;
-        $this->selectedContactType = '';
-    }
-
-    // ── Supervision ───────────────────────────────────────────────────
-    public function selectSupervisedUser(int $userId): void
-    {
-        $this->supervisedUserId = $userId;
-        $this->completed = 0;
-        $this->loadQueue();
-        $this->loadNextContact();
-    }
-
-    public function resetToSelf(): void
-    {
-        $this->supervisedUserId = Auth::id();
-        $this->completed = 0;
-        $this->loadQueue();
-        $this->loadNextContact();
-    }
-
-    // ── File d'appels ─────────────────────────────────────────────────
-    public function loadQueue(): void
-    {
-        $userId = $this->supervisedUserId ?? Auth::id();
-        $cacheKey = "phoning_queue_user_{$userId}";
-        $ordered = Cache::get($cacheKey);
-
-        if ($ordered) {
-            $this->contactQueue = $this->prioriserFile($this->filterValidQueue($ordered));
-            $this->contactQueue = app(PhoningQueueBuilder::class)->reserveQueueForUser($userId, $this->contactQueue);
-
-            return;
-        }
-
-        $this->contactQueue = $this->buildDefaultQueue($userId);
-        $this->contactQueue = $this->prioriserFile($this->contactQueue);
-        $this->contactQueue = app(PhoningQueueBuilder::class)->reserveQueueForUser($userId, $this->contactQueue);
-    }
-
-    protected function filterValidQueue(array $queue): array
-    {
-        return app(PhoningQueueBuilder::class)->filterValidQueue($queue);
-    }
-
-    /**
-     * Action déclenchée par les boutons "Rafraîchir" de la vue (barre de
-     * recherche et écran "File vide") : recharge la file puis recalcule le
-     * prochain contact en un seul aller-retour Livewire.
-     */
-    public function refreshQueue(): void
-    {
-        $this->loadQueue();
-        $this->ensureRequestedContactPriority();
-        $this->loadNextContact();
-    }
-
-    public function ensureRequestedContactPriority(): void
-    {
-        if (! $this->requestedContactId) {
-            return;
-        }
-
-        $contactQueueItem = [
-            'id' => $this->requestedContactId,
-            'type' => $this->requestedContactType ?: 'prospect',
-            'campagne_id' => $this->currentCampagneId,
-        ];
-
-        $this->contactQueue = collect($this->contactQueue)
-            ->reject(fn ($item) => (int) ($item['id'] ?? 0) === $this->requestedContactId && ($item['type'] ?? '') === $this->requestedContactType)
-            ->values()
-            ->all();
-
-        array_unshift($this->contactQueue, $contactQueueItem);
-    }
-
-    protected function buildDefaultQueue(int $userId): array
-    {
-        return app(PhoningQueueBuilder::class)->buildDefaultQueue($userId, $this->campagneFiltreId);
-    }
-
-    /**
-     * RAPL-ELU et rappels en retard passent en tête de file (workflow v2).
-     */
-    protected function prioriserFile(array $queue): array
-    {
-        return app(PhoningQueueBuilder::class)->prioriserFile($queue);
-    }
-
     // ── Prochain contact ──────────────────────────────────────────────
-    public function loadNextContact(): void
-    {
-        if (empty($this->contactQueue)) {
-            $this->currentContact = null;
-            $this->currentContactData = [];
-            $this->total = 0;
-            $this->progress = 0;
-
-            Notification::make()
-                ->title('🎉 File vide !')
-                ->body('Aucun contact à appeler pour le moment.')
-                ->success()
-                ->send();
-
-            return;
-        }
-
-        $this->total = count($this->contactQueue);
-        $this->progress = $this->total > 0
-            ? round(($this->completed / $this->total) * 100)
-            : 0;
-
-        $next = $this->contactQueue[0];
-        $model = $this->resolveModel($next['type'], $next['id']);
-
-        if (! $model) {
-            array_shift($this->contactQueue);
-            $this->loadNextContact();
-
-            return;
-        }
-
-        $this->currentContact = $model;
-        $this->contactType = $next['type'];
-        $this->currentCampagneId = $next['campagne_id'] ?? null;
-        $this->currentContactData = $this->buildContactData($model, $next['type']);
-
-        $this->resetContactFormFields();
-        $this->populateContactFormFields($model, $next['type']);
-    }
-
-    protected function resolveModel(string $type, int $id): ?Model
-    {
-        return app(PhoningContactResolver::class)->resolveModel($type, $id);
-    }
-
-    protected function buildContactData(Model $model, string $type): array
-    {
-        return app(PhoningContactResolver::class)->buildContactData($model, $type);
-    }
-
     protected function resetContactFormFields(): void
     {
         $this->reset([
@@ -496,28 +228,6 @@ class PhoningWorkflow extends Page
     }
 
     // ── Appel ─────────────────────────────────────────────────────────
-    // ── Appel ─────────────────────────────────────────────────────────
-    public function callNow(): void
-    {
-        $phoneNumber = $this->currentContactData['telephone'] ?? null;
-        if (! $phoneNumber) {
-            Notification::make()->title('Numéro manquant')->danger()->send();
-
-            return;
-        }
-        $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
-
-        $this->ringoverCallId = null;
-        $this->ringoverCallStartedAt = now()->toIso8601String();
-        $this->ringoverCallEndedAt = null;
-        $this->ringoverDialedPhone = $phoneNumber;
-        $this->incomingCallPhone = $this->incomingCallPhone ?: $phoneNumber;
-
-        // On ne redirige plus toute la page : on envoie le numéro au badge
-        // Ringover flottant (déjà persistant sur tout le site) via un événement
-        // browser, écouté dans phoning-workflow.blade.php.
-        $this->dispatch('ringover-call', phone: $phoneNumber);
-    }
 
     #[\Livewire\Attributes\On('ringover-call')]
     public function captureRingoverDialedPhone(?string $phone = null): void
@@ -529,119 +239,6 @@ class PhoningWorkflow extends Page
 
         $this->ringoverDialedPhone = $phone;
         $this->incomingCallPhone = $this->incomingCallPhone ?: $phone;
-    }
-
-    #[\Livewire\Attributes\On('search-incoming-call')]
-    public function searchIncomingCallMatch(string $phone, ?string $targetType = null, ?int $targetId = null): void
-    {
-        $phone = preg_replace('/[^0-9+]/', '', (string) $phone) ?: null;
-
-        if (! $phone) {
-            Notification::make()
-                ->title('Numéro d’appel entrant invalide')
-                ->danger()
-                ->send();
-
-            return;
-        }
-
-        $this->incomingCallPhone = $phone;
-
-        if ($targetType && $targetId) {
-            $typeMap = [
-                Prospect::class => 'prospect',
-                \App\Models\Client::class => 'client',
-                \App\Models\Partenaire::class => 'partenaire',
-                \App\Models\ContactPartenaire::class => 'partenaire',
-                \App\Models\ContactParticulier::class => 'particulier',
-            ];
-
-            $resolvedType = $typeMap[$targetType] ?? null;
-            if ($resolvedType) {
-                $model = $this->resolveModel($resolvedType, $targetId);
-                if ($model) {
-                    $this->currentContact = $model;
-                    $this->contactType = $resolvedType;
-                    $this->currentContactData = $this->buildContactData($model, $resolvedType);
-                    $this->incomingCallMatches = [[
-                        'id' => $targetId,
-                        'type' => $resolvedType,
-                        'nom' => $this->currentContactData['nom'] ?? 'Contact',
-                        'telephone' => $this->currentContactData['telephone'] ?? $phone,
-                        'ville' => $this->currentContactData['ville'] ?? null,
-                        'statut' => $this->currentContactData['statut'] ?? null,
-                        'type_entite' => ucfirst($resolvedType),
-                    ]];
-
-                    $this->resetContactFormFields();
-                    $this->populateContactFormFields($model, $resolvedType);
-
-                    Notification::make()
-                        ->title('Fiche CRM retrouvée')
-                        ->body(($this->currentContactData['nom'] ?? 'Contact').' a été associé automatiquement au numéro d’appel entrant.')
-                        ->success()
-                        ->send();
-
-                    return;
-                }
-            }
-        }
-
-        $this->incomingCallMatches = app(PhoningContactSearchService::class)->findByPhone($phone);
-
-        if ($this->incomingCallMatches === []) {
-            Notification::make()
-                ->title('Aucun contact reconnu')
-                ->body('Le numéro '.$phone.' ne correspond à aucune fiche CRM.')
-                ->warning()
-                ->send();
-
-            return;
-        }
-
-        $first = $this->incomingCallMatches[0];
-        $model = $this->resolveModel($first['type'], $first['id']);
-
-        if (! $model) {
-            return;
-        }
-
-        $this->selectedContactId = $first['id'];
-        $this->selectedContactType = $first['type'];
-        $this->showSearchResults = false;
-        $this->searchQuery = $first['nom'];
-
-        Notification::make()
-            ->title('Fiche CRM retrouvée')
-            ->body($first['nom'].' a été associé automatiquement au numéro d’appel entrant.')
-            ->success()
-            ->send();
-    }
-
-    #[\Livewire\Attributes\On('ringover-call-lifecycle')]
-    public function updateRingoverCallLifecycle(?string $callId = null, ?string $startedAt = null, ?string $endedAt = null, ?string $phone = null): void
-    {
-        if (filled($callId)) {
-            $this->ringoverCallId = $callId;
-        }
-
-        if (filled($startedAt)) {
-            $this->ringoverCallStartedAt = $startedAt;
-        }
-
-        if (filled($endedAt)) {
-            $this->ringoverCallEndedAt = $endedAt;
-        }
-
-        $phone = preg_replace('/[^0-9+]/', '', (string) $phone);
-        if ($phone) {
-            $this->ringoverDialedPhone = $phone;
-            $this->incomingCallPhone = $this->incomingCallPhone ?: $phone;
-        }
-
-        if (filled($this->ringoverCallStartedAt) && ! empty($this->ringoverCallStartedAt) && ! $this->incomingCallPhone) {
-            $this->incomingCallPhone = $this->currentContactData['telephone'] ?? null;
-        }
     }
 
     // ── Enregistrement ────────────────────────────────────────────────
@@ -1489,57 +1086,7 @@ class PhoningWorkflow extends Page
         dispatch(new \App\Jobs\GenerateFicheWordJob($this->lastAppelId));
     }
 
-    public function getCallHistory(): array
-    {
-        if (! $this->currentContact) {
-            return [];
-        }
-
-        return Appel::where('appelable_type', get_class($this->currentContact))
-            ->where('appelable_id', $this->currentContact->id)
-            ->with('user')
-            ->orderBy('date_heure', 'desc')
-            ->limit(15)
-            ->get()
-            ->map(function ($a) {
-                $phoningStatut = filled($a->phoning_status)
-                    ? StatutPhoning::where('model_type', 'prospect')->where('code', $a->phoning_status)->first()
-                    : null;
-                $pipelineCode = $phoningStatut?->pipeline_statut;
-
-                return [
-                    'date' => $a->date_heure->format('d/m/Y H:i'),
-                    'agent' => $a->user ? trim("{$a->user->prenom} {$a->user->nom}") : 'Système',
-                    'statut' => $a->phoning_status ?? $a->resultat?->value,
-                    'statut_label' => $a->phoning_result ?? $a->resultat?->label() ?? '—',
-                    'statut_bar' => $phoningStatut?->couleur_css ?? 'background:rgb(156 163 175)',
-                    'pipeline_code' => $pipelineCode,
-                    'pipeline_label' => $pipelineCode
-                        ? app(PipelineStatutService::class)->label('prospect', $pipelineCode)
-                        : null,
-                    'pipeline_badge_style' => $pipelineCode
-                        ? (PipelineStatut::findFor('prospect', $pipelineCode)?->badge_style
-                            ?? 'background:rgb(243 244 246); color:rgb(55 65 81);')
-                        : null,
-                    'notes' => $a->phoning_notes ?? $a->commentaire,
-                    'campagne' => $a->campagne?->nom,
-                ];
-            })
-            ->toArray();
-    }
-
     // ── Passer ────────────────────────────────────────────────────────
-    public function skipCall(): void
-    {
-        if (empty($this->contactQueue)) {
-            return;
-        }
-        $first = array_shift($this->contactQueue);
-        $this->contactQueue[] = $first;
-        Notification::make()->title('Contact passé')->body('Repoussé en fin de file.')->warning()->send();
-        $this->loadNextContact();
-    }
-
     protected function getResultLabel(): string
     {
         $statut = $this->getSelectedStatus();
@@ -1704,101 +1251,6 @@ class PhoningWorkflow extends Page
     {
         return $this->compterTentativesNonAbouties();
     }
-    public function selectCampagne(int $campagneId): void
-    {
-        $this->currentCampagneId = $campagneId;
-        $this->campagneFiltreId = $campagneId;
-        $this->completed = 0;
-        $this->loadQueue();
-        $this->loadNextContact();
-
-        $campagne = CampagnePhoning::find($campagneId);
-        Notification::make()
-            ->title('Campagne sélectionnée')
-            ->body($campagne?->nom ?? 'Campagne #' . $campagneId)
-            ->success()
-            ->send();
-    }
-
-    public function clearCampagne(): void
-    {
-        $this->currentCampagneId = null;
-        $this->campagneFiltreId = null;
-        $this->completed = 0;
-        $this->loadQueue();
-        $this->loadNextContact();
-
-        Notification::make()
-            ->title('Toutes les campagnes')
-            ->body('File rechargée avec toutes les campagnes actives.')
-            ->info()
-            ->send();
-    }
-
-    public function getCampagneInfo(): ?array
-    {
-        if (! $this->currentCampagneId) {
-            return null;
-        }
-
-        $campagne = CampagnePhoning::find($this->currentCampagneId);
-        if (! $campagne) {
-            return null;
-        }
-
-        $stats = $campagne->getStats();
-
-        return [
-            'id' => $campagne->id,
-            'nom' => $campagne->nom,
-            'statut' => $campagne->statut,
-            'statut_label' => $campagne->statut_label,
-            'type_entite' => $campagne->type_entite_label,
-            'total_contacts' => $stats['total_contacts'],
-            'contacts_traites' => $stats['contacts_traites'],
-            'progression' => $stats['progression'],
-            'total_appels' => $stats['total_appels'],
-        ];
-    }
-
-    /**
-     * Nombre exact de contacts encore appelables (ignore ceux déjà traités
-     * définitivement, mais garde les "non répondu" et assimilés puisqu'ils
-     * restent à rappeler) — recalculé en base à chaque affichage plutôt que
-     * déduit de la taille de $contactQueue, qui elle diminue de façon
-     * irréversible au fil des appels de la session en cours.
-     */
-    public function getContactsRestantsCount(): int
-    {
-        if ($this->campagneFiltreId) {
-            return CampagnePhoning::find($this->campagneFiltreId)?->countQueueContacts() ?? 0;
-        }
-
-        $userId = $this->supervisedUserId ?? Auth::id();
-
-        return CampagnePhoning::active()
-            ->forUser($userId)
-            ->get()
-            ->sum(fn (CampagnePhoning $campagne) => $campagne->countQueueContacts());
-    }
-
-    public function getCampagnesDisponibles(): array
-    {
-        $userId = $this->supervisedUserId ?? Auth::id();
-
-        return CampagnePhoning::active()
-            ->forUser($userId)
-            ->get()
-            ->map(fn($c) => [
-                'id' => $c->id,
-                'nom' => $c->nom,
-                'type_entite' => $c->type_entite_label,
-                'contacts' => $c->countContacts(),
-            ])
-            ->toArray();
-    }
-
-
     protected function getHeaderActions(): array
     {
         return [

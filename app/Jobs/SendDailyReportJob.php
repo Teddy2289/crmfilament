@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Mail\DailyReportMail;
 use App\Models\EmailConfiguration;
 use App\Models\User;
+use App\Services\Crm\CrmSettingsService;
 use App\Services\Crm\DailyReportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,18 +19,19 @@ class SendDailyReportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(DailyReportService $service): int
+    public function handle(DailyReportService $service, ?CrmSettingsService $settings = null): int
     {
+        $settings = $settings ?? app(CrmSettingsService::class);
         $this->configureMailerFromActiveEmailConfiguration();
 
         $envoyes = 0;
 
-        $destinataires = $service->destinatairesPourRoles([
+        $destinataires = $service->destinatairesPourRoles($settings->get('roles.daily_report_roles', [
             User::ROLE_TELEPROSPECTEUR,
             User::ROLE_COMMERCIAL,
             User::ROLE_SUPERVISEUR,
             DailyReportService::ROLE_TEAM_LEADER,
-        ]);
+        ]));
 
         foreach ($destinataires as $user) {
             $rapport = match ($user->role_cache) {

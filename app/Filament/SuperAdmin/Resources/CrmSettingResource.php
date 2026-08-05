@@ -244,6 +244,7 @@ class CrmSettingResource extends Resource
             'mail' => 'Emails',
             'workflow' => 'Workflow',
             'ringover' => 'Ringover',
+            'reporting' => 'Reporting',
             'theme' => 'Thèmes',
         ];
     }

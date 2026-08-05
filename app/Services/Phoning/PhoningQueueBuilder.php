@@ -51,6 +51,11 @@ class PhoningQueueBuilder
             return [];
         }
 
+        // Cas dégénéré : une seule campagne → retourner dans l'ordre naturel sans randomisation.
+        if (count($listesParCampagne) === 1) {
+            return array_values($listesParCampagne[0]);
+        }
+
         $queue = [];
         $seen = [];
         $campagnes = collect($listesParCampagne)
@@ -68,8 +73,15 @@ class PhoningQueueBuilder
 
         while ($restant) {
             $restant = false;
+            // Ordre déterministe : campagnes triées par taille décroissante de pool restant,
+            // puis par index pour les ex-æquos. Cela garantit qu'une campagne plus grande
+            // ne se fait pas dépasser par une plus petite lors du premier passage.
+            usort($campagnes, function (array $a, array $b): int {
+                $diff = count($b['items']) - count($a['items']);
+
+                return $diff !== 0 ? $diff : $a['index'] - $b['index'];
+            });
             $ordre = range(0, count($campagnes) - 1);
-            shuffle($ordre);
 
             foreach ($ordre as $campagneIndex) {
                 $campagne = $campagnes[$campagneIndex];
