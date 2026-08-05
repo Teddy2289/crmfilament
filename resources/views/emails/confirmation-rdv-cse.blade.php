@@ -23,6 +23,9 @@ Notre Responsable de Secteur vous présentera les modalités de formation pour v
 N'hésitez pas à me contacter si vous souhaitez modifier ce créneau.
 
 Cordialement,<br>
-{{ $teleprospecteur->prenom }} {{ $teleprospecteur->nom }}<br>
+{{ $signature_name ?? ($teleprospecteur->prenom . ' ' . $teleprospecteur->nom) }}<br>
+@if(!empty($signature_phone))
+Tél. {{ $signature_phone }}<br>
+@endif
 {{ config('app.name') }}
 </x-mail::message>

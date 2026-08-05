@@ -162,6 +162,8 @@ class PhoningWorkflow extends Page
 
     public ?string $ringoverCallEndedAt = null;
 
+    public ?string $ringoverDialedPhone = null;
+
     public array $incomingCallMatches = [];
 
     public ?string $incomingCallPhone = null;
@@ -508,11 +510,25 @@ class PhoningWorkflow extends Page
         $this->ringoverCallId = null;
         $this->ringoverCallStartedAt = now()->toIso8601String();
         $this->ringoverCallEndedAt = null;
+        $this->ringoverDialedPhone = $phoneNumber;
+        $this->incomingCallPhone = $this->incomingCallPhone ?: $phoneNumber;
 
         // On ne redirige plus toute la page : on envoie le numéro au badge
         // Ringover flottant (déjà persistant sur tout le site) via un événement
         // browser, écouté dans phoning-workflow.blade.php.
         $this->dispatch('ringover-call', phone: $phoneNumber);
+    }
+
+    #[\Livewire\Attributes\On('ringover-call')]
+    public function captureRingoverDialedPhone(?string $phone = null): void
+    {
+        $phone = preg_replace('/[^0-9+]/', '', (string) $phone);
+        if (! $phone) {
+            return;
+        }
+
+        $this->ringoverDialedPhone = $phone;
+        $this->incomingCallPhone = $this->incomingCallPhone ?: $phone;
     }
 
     #[\Livewire\Attributes\On('search-incoming-call')]
@@ -603,7 +619,7 @@ class PhoningWorkflow extends Page
     }
 
     #[\Livewire\Attributes\On('ringover-call-lifecycle')]
-    public function updateRingoverCallLifecycle(?string $callId = null, ?string $startedAt = null, ?string $endedAt = null): void
+    public function updateRingoverCallLifecycle(?string $callId = null, ?string $startedAt = null, ?string $endedAt = null, ?string $phone = null): void
     {
         if (filled($callId)) {
             $this->ringoverCallId = $callId;
@@ -615,6 +631,12 @@ class PhoningWorkflow extends Page
 
         if (filled($endedAt)) {
             $this->ringoverCallEndedAt = $endedAt;
+        }
+
+        $phone = preg_replace('/[^0-9+]/', '', (string) $phone);
+        if ($phone) {
+            $this->ringoverDialedPhone = $phone;
+            $this->incomingCallPhone = $this->incomingCallPhone ?: $phone;
         }
 
         if (filled($this->ringoverCallStartedAt) && ! empty($this->ringoverCallStartedAt) && ! $this->incomingCallPhone) {
@@ -1448,6 +1470,7 @@ class PhoningWorkflow extends Page
             'phoning_agent_id' => Auth::id(),
             'campagne_id' => $this->currentCampagneId,
             'ringover_call_id' => $this->ringoverCallId,
+            'numero_appelant' => $this->ringoverDialedPhone ?: $this->currentContactData['telephone'] ?? null,
             'fiche_type' => $ficheType,
             'fiche_data' => $ficheType ? $this->buildFicheData($ficheType) : null,
         ]);
