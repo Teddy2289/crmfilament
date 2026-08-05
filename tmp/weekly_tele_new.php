@@ -1,4 +1,6 @@
 <?php
+$new = <<<'PHP'
+<?php
 
 namespace App\Mail;
 
@@ -13,7 +15,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class WeeklyCommercialRecap extends Mailable
+class WeeklyTeleprospecteurRecap extends Mailable
 {
     use Queueable, SerializesModels, HasEmailTemplate;
 
@@ -23,7 +25,7 @@ class WeeklyCommercialRecap extends Mailable
         public Carbon $startDate,
         public Carbon $endDate
     ) {
-        $this->templateKey = 'recap.weekly_commercial';
+        $this->templateKey = 'recap.weekly_teleprospecteur';
 
         $this->templateVariables = [
             'prenom' => $this->user->prenom ?? '',
@@ -51,3 +53,6 @@ class WeeklyCommercialRecap extends Mailable
         return [];
     }
 }
+PHP;
+file_put_contents(__DIR__ . '/../app/Mail/WeeklyTeleprospecteurRecap.php', $new);
+echo 'written';

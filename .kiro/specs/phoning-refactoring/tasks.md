@@ -170,7 +170,7 @@ avant de passer à la suivante.
     - Vérifier que `PhoningWorkflowStatusesTest` passe (getStatusValidationCodes() reste accessible)
     - _Requirements: 1.1, 5.10, 13.1, 13.6_
 
-- [~] 5. Checkpoint — Persistance résultats (étapes 3–4)
+- [x] 5. Checkpoint — Persistance résultats (étapes 3–4)
   - Lancer `php artisan test --filter="PhoningResultService|PhoningContactUpdateService|PhoningWorkflowStatusesTest"` et vérifier passage complet.
   - Vérifier que `HasStatusResult` expose bien `saveInterlocuteur()`, `getSelectedStatus()`, `getStatutsPhoning()`, `getStatutsPhoningGroupes()`, `getPipelineTransitionPreview()`, `compterTentativesNonAbouties()`, `getTentativesAppel()`, `getRappelStatusCodes()`.
   - Vérifier que `applyContactUpdate()` délègue à `PhoningContactUpdateService::updateContact()` et n'utilise pas de `match` inline.
@@ -219,12 +219,12 @@ avant de passer à la suivante.
     - **Property 4 : `emailPreviewConfirmed = true ⟹ showEmailPreview = false` pour toute séquence confirm/cancel/open**
     - **Validates: Requirements 4.7**
 
-  - [-] 6.6 Wirer `HasEmailPreview` dans `PhoningWorkflow`
+  - [x] 6.6 Wirer `HasEmailPreview` dans `PhoningWorkflow`
     - Ajouter `use HasEmailPreview;`, supprimer code migré
     - Vérifier que `PhoningWorkflowPreviewTest` passe (getEmailPreviewPayload() reste accessible)
     - _Requirements: 1.1, 13.2, 13.6_
 
-- [ ] 7. Créer le Concern HasQueueManagement et refactorer PhoningBackOffice
+- [x] 7. Créer le Concern HasQueueManagement et refactorer PhoningBackOffice
   - [x] 7.1 Créer le trait `App\Filament\NsConseil\Concerns\HasQueueManagement`
     - Déclarer les propriétés : `prospectList`, `selectedIds`, `filterStatut`, `filterDept`, `filterRappelOnly`
     - Implémenter `loadProspects()` : peuple `prospectList` avec la file formatée de l'utilisateur sélectionné
@@ -241,7 +241,7 @@ avant de passer à la suivante.
     - **Property 11 : `reorderFromDrag(orderedIds)` est une permutation de la liste originale**
     - **Validates: Requirements 6.4**
 
-  - [ ] 7.3 Wirer `HasQueueManagement` dans `PhoningBackOffice`
+  - [x] 7.3 Wirer `HasQueueManagement` dans `PhoningBackOffice`
     - Ajouter `use HasQueueManagement;`, supprimer code migré
     - Vérifier que `PhoningBackOffice` reste ≤ 200 lignes (point de départ : 345 lignes)
     - _Requirements: 1.2, 13.4, 13.5, 13.6_

@@ -1,4 +1,6 @@
 <?php
+$new = <<<'PHP'
+<?php
 
 namespace App\Mail;
 
@@ -51,3 +53,6 @@ class WeeklyCommercialRecap extends Mailable
         return [];
     }
 }
+PHP;
+file_put_contents(__DIR__ . '/../app/Mail/WeeklyCommercialRecap.php', $new);
+echo 'written';

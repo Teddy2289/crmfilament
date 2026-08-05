@@ -1,22 +1,34 @@
 <?php
+$path = __DIR__ . '/../app/Mail/WeeklyCommercialRecap.php';
+$p = file_get_contents($path);
+$old = <<<'PHP'
+    public function __construct(
+        public User $user,
+        public array $stats,
+        public Carbon $startDate,
+        public Carbon $endDate
+    ) {}
 
-namespace App\Mail;
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'Récapitulatif hebdomadaire - Commercial',
+        );
+    }
 
-use App\Mail\Traits\HasEmailTemplate;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.weekly-commercial-recap',
+        );
+    }
 
-class WeeklyCommercialRecap extends Mailable
-{
-    use Queueable, SerializesModels, HasEmailTemplate;
-
+    public function attachments(): array
+    {
+        return [];
+    }
+PHP;
+$new = <<<'PHP'
     public function __construct(
         public User $user,
         public array $stats,
@@ -50,4 +62,11 @@ class WeeklyCommercialRecap extends Mailable
     {
         return [];
     }
+PHP;
+if (strpos($p, $old) !== false) {
+    $p = str_replace($old, $new, $p);
+    file_put_contents($path, $p);
+    echo "patched2";
+} else {
+    echo "old not found";
 }
