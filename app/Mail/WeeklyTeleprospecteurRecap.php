@@ -30,7 +30,11 @@ class WeeklyTeleprospecteurRecap extends Mailable
             'nom' => $this->user->nom ?? '',
             'start_date' => $this->startDate->format('d/m/Y'),
             'end_date' => $this->endDate->format('d/m/Y'),
-            'stats' => $this->stats,
+            'appels_realises' => $this->stats['appels_realises'] ?? '',
+            'prospects_contactes' => $this->stats['prospects_contactes'] ?? '',
+            'rdv_planifies' => $this->stats['rdv_planifies'] ?? '',
+            'conversions_qf' => $this->stats['conversions_qf'] ?? '',
+            'conversions_partenaire' => $this->stats['conversions_partenaire'] ?? '',
         ];
     }
 

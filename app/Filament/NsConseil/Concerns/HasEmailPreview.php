@@ -122,7 +122,7 @@ trait HasEmailPreview
     // ── Factory Mailables ────────────────────────────────────────────
 
     /** Req 4.10 */
-    public function getPreviewMailableForStatut(string $statut): ?Mailable
+    protected function getPreviewMailableForStatut(string $statut): ?Mailable
     {
         $contact = $this->currentContact ?? null;
 
@@ -165,7 +165,7 @@ trait HasEmailPreview
     }
 
     /** Req 4.11 */
-    public function buildPreviewRdvMailable(Prospect $prospect): ?Mailable
+    protected function buildPreviewRdvMailable(Prospect $prospect): ?Mailable
     {
         if (empty($this->rappel_date)) {
             return null;
@@ -190,7 +190,7 @@ trait HasEmailPreview
     }
 
     /** Req 4.12 */
-    public function resolvePreviewRecipient(string $statut): ?string
+    protected function resolvePreviewRecipient(string $statut): ?string
     {
         $contact = $this->currentContact ?? null;
         $prospect = $contact instanceof Prospect
@@ -215,7 +215,7 @@ trait HasEmailPreview
     }
 
     /** Req 4.13 */
-    public function buildProspectionMailContext(?RendezVous $rdv = null): array
+    protected function buildProspectionMailContext(?RendezVous $rdv = null): array
     {
         $context = ['rdv' => $rdv];
 
@@ -234,7 +234,7 @@ trait HasEmailPreview
         return $context;
     }
 
-    public function localPreviewFallbackEmail(): ?string
+    protected function localPreviewFallbackEmail(): ?string
     {
         if (app()->environment('production')) {
             return null;

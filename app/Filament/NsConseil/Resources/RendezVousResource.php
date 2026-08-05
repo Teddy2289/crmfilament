@@ -19,6 +19,8 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use App\Models\Prospect;
+use App\Models\Partenaire;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -435,6 +437,18 @@ class RendezVousResource extends Resource
                 Infolists\Components\TextEntry::make('interlocuteur_email')
                     ->label('Email')
                     ->copyable(),
+
+                Infolists\Components\TextEntry::make('fiche_liee')
+                    ->label('Fiche liée')
+                    ->getStateUsing(fn($record) => $record->rdvable ? (
+                        ($record->rdvable->nom ?? null) ?: (($record->rdvable->prenom ?? null) ? ($record->rdvable->prenom . ' ' . ($record->rdvable->nom ?? '')) : null)
+                    ) : '—')
+                    ->url(fn($record) => match ($record->rdvable_type) {
+                        'App\\Models\\Prospect' => ProspectResource::getUrl('view', ['record' => $record->rdvable_id], panel: 'ns-conseil'),
+                        'App\\Models\\Partenaire' => PartenaireResource::getUrl('view', ['record' => $record->rdvable_id], panel: 'ns-conseil'),
+                        'App\\Models\\Client' => ClientResource::getUrl('view', ['record' => $record->rdvable_id], panel: 'ns-conseil'),
+                        default => null,
+                    }),
             ])->columns(3),
 
             Infolists\Components\Section::make('Équipe')->schema([

@@ -30,7 +30,11 @@ class WeeklyCommercialRecap extends Mailable
             'nom' => $this->user->nom ?? '',
             'start_date' => $this->startDate->format('d/m/Y'),
             'end_date' => $this->endDate->format('d/m/Y'),
-            'stats' => $this->stats,
+            'rdv_realises' => $this->stats['rdv_realises'] ?? '',
+            'prospects_qf' => $this->stats['prospects_qf'] ?? '',
+            'conversions_partenaire' => $this->stats['conversions_partenaire'] ?? '',
+            'partenaires_actifs' => $this->stats['partenaires_actifs'] ?? '',
+            'opportunites_en_cours' => $this->stats['opportunites_en_cours'] ?? '',
         ];
     }
 

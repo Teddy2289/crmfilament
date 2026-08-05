@@ -246,7 +246,7 @@ avant de passer à la suivante.
     - Vérifier que `PhoningBackOffice` reste ≤ 200 lignes (point de départ : 345 lignes)
     - _Requirements: 1.2, 13.4, 13.5, 13.6_
 
-- [~] 8. Checkpoint — Concerns et Services complets (étapes 1–7)
+- [x] 8. Checkpoint — Concerns et Services complets (étapes 1–7)
   - Lancer `php artisan test` (suite complète) et vérifier zéro régression : `PhoningWorkflowPreviewTest`, `PhoningWorkflowStatusesTest`, `CampagnePhoningQueueTest`, `PhoningQueueBuilderInterleaveTest`, `PhoningWorkflowContactsRestantsTest`.
   - Vérifier les limites de lignes : `PhoningWorkflow ≤ 200`, `PhoningBackOffice ≤ 200`.
   - Vérifier que `PhoningContactUpdateService` existe et expose `updateContact()`, `creerRendezVous()`, `appliquerRappelProspect()`.
@@ -310,7 +310,7 @@ avant de passer à la suivante.
     - _Requirements: 11.5_
 
 - [ ] 12. Nettoyage du code mort et vérification des limites de lignes
-  - [~] 12.1 Supprimer le code mort dans `PhoningWorkflow.php` et `PhoningBackOffice.php`
+  - [x] 12.1 Supprimer le code mort dans `PhoningWorkflow.php` et `PhoningBackOffice.php`
     - Supprimer propriétés, méthodes et blocs commentés désormais entièrement couverts par les Concerns
     - Vérifier `PhoningWorkflow ≤ 200 lignes` (depuis 1 566 lignes) et `PhoningBackOffice ≤ 200 lignes` (depuis 345 lignes)
     - _Requirements: 1.1, 1.2_
@@ -320,7 +320,7 @@ avant de passer à la suivante.
     - `phoning-workflow.blade.php ≤ 300 lignes` (depuis ~3 000+ lignes), `phoning-back-office.blade.php ≤ 300 lignes` (depuis 1 279 lignes)
     - _Requirements: 1.5, 1.6, 1.7_
 
-  - [~] 12.3 Écrire les tests d'intégration de rétrocompatibilité
+  - [ ] 12.3 Écrire les tests d'intégration de rétrocompatibilité
     - `PhoningWorkflow::mount()` sans exception si file vide
     - `PhoningBackOffice::loadProspects()` retourne `[]` sans téléprospecteur sélectionné
     - Rendu sans erreur du composant `contact-panel` avec props minimaux

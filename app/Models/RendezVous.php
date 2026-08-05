@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\RendezVousAssociation;
 
 class RendezVous extends Model
 {
@@ -256,6 +257,11 @@ class RendezVous extends Model
     public function synchroniserOutlook(string $eventId): void
     {
         $this->update(['outlook_event_id' => $eventId]);
+    }
+
+    public function associations()
+    {
+        return $this->hasMany(RendezVousAssociation::class, 'rendez_vous_id');
     }
 
     public function synchroniserGoogle(string $eventId): void
