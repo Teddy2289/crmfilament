@@ -100,10 +100,12 @@ class InvitationAgendaResponsableMail extends Mailable
             'invitation-rdv.ics'
         )->withMime('text/calendar');
 
-        // Fiche récap (fichier local généré par FicheGenerationService)
-        if ($this->fichePdfPath && file_exists($this->fichePdfPath)) {
-            $mime = mime_content_type($this->fichePdfPath) ?: 'application/octet-stream';
-            $attachments[] = Attachment::fromPath($this->fichePdfPath)->withMime($mime);
+        // Fiche récap (fichier local ou URL distant généré par FicheGenerationService)
+        if ($this->fichePdfPath) {
+            $ficheAttachment = $this->resolvePdfAttachment($this->fichePdfPath);
+            if ($ficheAttachment) {
+                $attachments[] = $ficheAttachment;
+            }
         }
 
         // Enregistrement audio de l'appel (URL signée Ringover/AWS, téléchargée à la volée)
@@ -115,6 +117,51 @@ class InvitationAgendaResponsableMail extends Mailable
         }
 
         return $attachments;
+    }
+
+    private function resolvePdfAttachment(string $path): ?Attachment
+    {
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            try {
+                $response = Http::timeout(15)->get($path);
+                if ($response->successful()) {
+                    $extension = pathinfo(parse_url($path, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION) ?: 'pdf';
+                    $mime = $response->header('Content-Type') ?: 'application/pdf';
+
+                    return Attachment::fromData(fn () => $response->body(), 'fiche-recap.'.$extension)
+                        ->withMime($mime);
+                }
+
+                Log::warning('InvitationAgendaResponsableMail: fiche récap distante inaccessible', [
+                    'rdv_id' => $this->rdv->id,
+                    'path' => $path,
+                    'status' => $response->status(),
+                ]);
+
+                return null;
+            } catch (\Throwable $e) {
+                Log::warning('InvitationAgendaResponsableMail: téléchargement fiche récap échoué', [
+                    'rdv_id' => $this->rdv->id,
+                    'path' => $path,
+                    'message' => $e->getMessage(),
+                ]);
+
+                return null;
+            }
+        }
+
+        if (! file_exists($path)) {
+            Log::warning('InvitationAgendaResponsableMail: fiche récap locale introuvable', [
+                'rdv_id' => $this->rdv->id,
+                'path' => $path,
+            ]);
+
+            return null;
+        }
+
+        $mime = mime_content_type($path) ?: 'application/pdf';
+
+        return Attachment::fromPath($path)->withMime($mime);
     }
 
     private function fetchAudioAttachment(string $audioPath): ?Attachment

@@ -79,7 +79,7 @@ avant de passer à la suivante.
     - Vérifier que les tests `CampagnePhoningQueueTest`, `PhoningWorkflowContactsRestantsTest` passent toujours
     - _Requirements: 1.1, 2.1, 13.1, 13.6_
 
-- [ ] 2. Checkpoint — File d'appels (étape 1)
+- [x] 2. Checkpoint — File d'appels (étape 1)
   - Lancer `php artisan test --filter="PhoningQueueService|CampagnePhoningQueueTest|PhoningQueueBuilderInterleaveTest|PhoningWorkflowContactsRestantsTest"` et vérifier passage complet.
   - Vérifier que `HasContactQueue` expose bien `skipCall()`, `getCampagnesDisponibles()`, `getCampagneInfo()`, `getContactsRestantsCount()`, `getCallHistory()`.
   - Vérifier que `PhoningQueueService::findByPhone()` délègue correctement à `PhoningContactSearchService`.
@@ -100,7 +100,7 @@ avant de passer à la suivante.
     - Ajouter `use HasCallSession;`, supprimer code migré
     - _Requirements: 1.1, 13.6_
 
-- [ ] 4. Créer PhoningResultService et le Concern HasStatusResult
+- [x] 4. Créer PhoningResultService et le Concern HasStatusResult
   - [x] 4.1 Créer `App\Services\Phoning\PhoningResultService`
     - Implémenter `applyResult(contact, type, statut, fields)` dans une transaction DB : update statut + création `Appel`
     - Vérifier la réservation cache avant toute écriture ; lancer `AuthorizationException` si absente
@@ -142,7 +142,7 @@ avant de passer à la suivante.
     - _Requirements: 16.1–16.11_
 
 
-  - [~] 4.5 Créer le trait `App\Filament\NsConseil\Concerns\HasStatusResult`
+  - [x] 4.5 Créer le trait `App\Filament\NsConseil\Concerns\HasStatusResult`
     - Déclarer les propriétés : `statut_resultat`, `commentaires`, `rappel_date`, `rappel_heure`, `nom_interlocuteur_standard`, `creneaux_permanence_cse`, `email_general_standard`, `interlocuteur_nom`, `interlocuteur_fonction`, `interlocuteur_telephone`, `interlocuteur_email`, `interlocuteur_add_nom`, `interlocuteur_add_fonction`, `interlocuteur_add_telephone`, `interlocuteur_add_email`, `lieu_rdv`, `invitation_agenda_envoyee`, `enregistrement_appel_joint`, `enregistrement_raison`, `besoins_exprimes`, `objections_soulevees`, `points_attention_rdv`, `presence_cse`, `jour_dispo_appel`, `lastAppelId`
     - Implémenter `submitResult()` selon l'algorithme formel du design (validation → preview → persistance via `PhoningContactUpdateService::updateContact()` + `PhoningResultService::applyResult()` → dispatch jobs → notification → avancer file)
     - L'appel à `applyContactUpdate()` doit déléguer à `PhoningContactUpdateService::updateContact()` plutôt qu'un `match` inline sur `contactType`
@@ -165,7 +165,7 @@ avant de passer à la suivante.
     - **Property 9 : `contactQueue` reste inchangée si `applyResult()` lève une exception**
     - **Validates: Requirements 14.1**
 
-  - [~] 4.7 Wirer `HasStatusResult` dans `PhoningWorkflow`
+  - [x] 4.7 Wirer `HasStatusResult` dans `PhoningWorkflow`
     - Ajouter `use HasStatusResult;`, supprimer code migré
     - Vérifier que `PhoningWorkflowStatusesTest` passe (getStatusValidationCodes() reste accessible)
     - _Requirements: 1.1, 5.10, 13.1, 13.6_
@@ -178,7 +178,7 @@ avant de passer à la suivante.
   - Demander confirmation à l'utilisateur avant de continuer.
 
 - [ ] 6. Créer PhoningEmailPreviewService et le Concern HasEmailPreview
-  - [~] 6.1 Créer `App\Services\Phoning\PhoningEmailPreviewService`
+  - [ ] 6.1 Créer `App\Services\Phoning\PhoningEmailPreviewService`
     - Implémenter `buildPayload(statut, contact, formFields)` : crée le Mailable, résout destinataire, extrait sujet/corps
     - Retourner `null` si statut hors de l'ensemble déclencheur email
     - Implémenter `makeMailable(statut, contact, fields)` : factory vers les Mailables existants
@@ -196,7 +196,7 @@ avant de passer à la suivante.
     - **Property 8 : payload non-null ⟹ `subject` non vide et `strip_tags(body)` non vide ; statut non-déclencheur ⟹ null**
     - **Validates: Requirements 9.2, 9.3, 9.4**
 
-  - [~] 6.4 Créer le trait `App\Filament\NsConseil\Concerns\HasEmailPreview`
+  - [x] 6.4 Créer le trait `App\Filament\NsConseil\Concerns\HasEmailPreview`
     - Déclarer les propriétés : `showEmailPreview`, `emailPreviewConfirmed`, `emailPreviewRecipient`, `emailPreviewSubject`, `emailPreviewBody`, `emailPreviewOriginalSubject`, `emailPreviewOriginalBody`
     - Implémenter `openEmailPreview()` : déléguer à `PhoningEmailPreviewService::buildPayload()`, set `showEmailPreview = true`
     - Implémenter `confirmEmailPreview()` : `emailPreviewConfirmed = true`, `showEmailPreview = false`, puis appeler `submitResult()`
@@ -219,13 +219,13 @@ avant de passer à la suivante.
     - **Property 4 : `emailPreviewConfirmed = true ⟹ showEmailPreview = false` pour toute séquence confirm/cancel/open**
     - **Validates: Requirements 4.7**
 
-  - [~] 6.6 Wirer `HasEmailPreview` dans `PhoningWorkflow`
+  - [-] 6.6 Wirer `HasEmailPreview` dans `PhoningWorkflow`
     - Ajouter `use HasEmailPreview;`, supprimer code migré
     - Vérifier que `PhoningWorkflowPreviewTest` passe (getEmailPreviewPayload() reste accessible)
     - _Requirements: 1.1, 13.2, 13.6_
 
 - [ ] 7. Créer le Concern HasQueueManagement et refactorer PhoningBackOffice
-  - [~] 7.1 Créer le trait `App\Filament\NsConseil\Concerns\HasQueueManagement`
+  - [x] 7.1 Créer le trait `App\Filament\NsConseil\Concerns\HasQueueManagement`
     - Déclarer les propriétés : `prospectList`, `selectedIds`, `filterStatut`, `filterDept`, `filterRappelOnly`
     - Implémenter `loadProspects()` : peuple `prospectList` avec la file formatée de l'utilisateur sélectionné
     - Implémenter `reorderFromDrag(orderedIds)` : réordonner `prospectList` selon `orderedIds` + `saveQueue()`
@@ -241,7 +241,7 @@ avant de passer à la suivante.
     - **Property 11 : `reorderFromDrag(orderedIds)` est une permutation de la liste originale**
     - **Validates: Requirements 6.4**
 
-  - [~] 7.3 Wirer `HasQueueManagement` dans `PhoningBackOffice`
+  - [ ] 7.3 Wirer `HasQueueManagement` dans `PhoningBackOffice`
     - Ajouter `use HasQueueManagement;`, supprimer code migré
     - Vérifier que `PhoningBackOffice` reste ≤ 200 lignes (point de départ : 345 lignes)
     - _Requirements: 1.2, 13.4, 13.5, 13.6_

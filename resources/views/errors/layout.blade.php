@@ -1,22 +1,19 @@
 @props(["pageTitle", "statusCode", "message", "description"])
 
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-50">
+<html lang="fr" class="h-full">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $pageTitle }} — CRM NS Conseil</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-    </style>
+    {{-- Charger le thème NS Conseil (fonts + variables CSS) --}}
+    @include('filament.ns-conseil.theme')
 </head>
-<body class="h-full bg-slate-50">
+<body class="h-full fi-body">
     <div class="min-h-screen flex items-center justify-center px-4 py-12">
         <div class="w-full max-w-4xl rounded-[2rem] border border-slate-200 bg-white shadow-2xl shadow-slate-200/70 overflow-hidden">
-            <div class="bg-gradient-to-r from-indigo-600 to-fuchsia-600 p-10 text-white">
+            <div style="background: var(--ns-primary);" class="p-10 text-white">
                 <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex items-center gap-4">
                         <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/15 text-white shadow-lg shadow-black/10">
@@ -41,8 +38,8 @@
                 <p class="mt-4 text-sm leading-6 text-slate-500">{{ $description }}</p>
 
                 <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <a href="/" class="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800">Retour à l'accueil</a>
-                    <a href="javascript:history.back()" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-slate-50">Revenir en arrière</a>
+                    <a href="/" class="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg transition" style="background:var(--ns-primary);">Retour à l'accueil</a>
+                    <a href="javascript:history.back()" class="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition" style="border:1px solid var(--ns-border);">Revenir en arrière</a>
                 </div>
             </div>
         </div>

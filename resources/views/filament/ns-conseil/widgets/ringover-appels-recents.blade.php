@@ -35,6 +35,15 @@
 
             <div class="flex flex-wrap items-center gap-2">
                 <label class="text-sm font-medium text-gray-700 w-full">Autres filtres</label>
+                <input type="text" wire:model.debounce.500ms="filterText" placeholder="Recherche note / résumé / transcription"
+                    class="pw-field-input min-w-[220px]" />
+                <select wire:model="filterTextType" class="pw-field-input">
+                    <option value="">Recherche générale</option>
+                    <option value="note">Note uniquement</option>
+                    <option value="transcription">Transcription uniquement</option>
+                </select>
+                <input type="date" wire:model="filterFrom" class="pw-field-input" />
+                <input type="date" wire:model="filterTo" class="pw-field-input" />
                 <select wire:model="filterAnswered" class="pw-field-input">
                     <option value="">Tous statuts</option>
                     <option value="answered">Répondu</option>
@@ -48,6 +57,14 @@
                     class="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">
                     Réinitialiser
                 </button>
+            </div>
+        </div>
+        <div class="flex items-center justify-between gap-4 mb-4 text-sm text-gray-600">
+            <div>{{ $resultCount }} appel{{ $resultCount > 1 ? 's' : '' }} trouvé{{ $resultCount > 1 ? 's' : '' }}</div>
+            <div class="flex items-center gap-3 text-xs text-gray-500">
+                <span>Filtre texte: <strong>{{ $filterText ?: '—' }}</strong></span>
+                <span>De: <strong>{{ $filterFrom ?: '—' }}</strong></span>
+                <span>À: <strong>{{ $filterTo ?: '—' }}</strong></span>
             </div>
         </div>
 
@@ -67,6 +84,8 @@
                         <th class="pb-2 pr-4">Duree</th>
                         <th class="pb-2 pr-4">Agent</th>
                         <th class="pb-2 pr-4">Numero</th>
+                        <th class="pb-2 pr-4">Type</th>
+                        <th class="pb-2 pr-4">Résumé / Note</th>
                         <th class="pb-2">Enregistrement</th>
                     </tr>
                 </thead>
@@ -79,11 +98,21 @@
                             $min = floor($duree / 60);
                             $sec = $duree % 60;
                             $dureeLabel = $min > 0 ? "{$min}min {$sec}s" : "{$sec}s";
-                            $agent = $call['user']['concat_name'] ?? '-';
+                            $agent = $call['user']['concat_name'] ?? $call['user']['name'] ?? ($call['user']['first_name'] ?? '-');
                             $numero = $call['contact_number'] ?? $call['from_number'] ?? $call['to_number'] ?? '-';
                             $date = ! empty($call['start_time'])
                                 ? \Carbon\Carbon::parse($call['start_time'])->format('d/m/Y H:i')
-                                : '-';
+                                : (! empty($call['started_at']) ? \Carbon\Carbon::parse($call['started_at'])->format('d/m/Y H:i') : '-');
+                            $note = data_get($call, 'comments.0.content')
+                                ?? data_get($call, 'comments.0.text')
+                                ?? data_get($call, 'comment');
+                            $transcription = data_get($call, 'transcription')
+                                ?? data_get($call, 'record.transcription')
+                                ?? data_get($call, 'recording.transcription')
+                                ?? data_get($call, 'call.transcription');
+                            $summary = data_get($call, 'summary') ?? data_get($call, 'title');
+                            $hasNote = filled($note);
+                            $hasTranscription = filled($transcription);
                             $color = $isAnswered ? 'success' : 'danger';
                             $label = $isAnswered ? 'Realise' : 'Manque';
                         @endphp
@@ -103,9 +132,41 @@
                             </td>
                             <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">{{ $dureeLabel }}</td>
                             <td class="py-2 pr-4 text-gray-700 dark:text-gray-300">{{ $agent }}</td>
-                            <td class="py-2 pr-4 text-gray-600 dark:text-gray-400 font-mono text-xs">{{ $numero }}</td>
+                            <td class="py-2 pr-4">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    @if ($hasNote)
+                                        <span class="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-100 text-amber-800">Note</span>
+                                    @endif
+                                    @if ($hasTranscription)
+                                        <span class="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full bg-sky-100 text-sky-800">Transcription</span>
+                                    @endif
+                                    @if (! $hasNote && ! $hasTranscription)
+                                        <span class="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-600">Aucun texte</span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="py-2 pr-4 text-gray-700 dark:text-gray-300 max-w-[360px] break-words">
+                                @if ($summary)
+                                    <div class="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1">{{ $summary }}</div>
+                                @endif
+                                @if ($note && $note !== $summary)
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">Note: {{ $note }}</div>
+                                @endif
+                                @if ($transcription)
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-help"
+                                            title="{{ Str::limit(trim($transcription), 300) }}">
+                                            <x-heroicon-o-document-text class="w-3.5 h-3.5" />
+                                            Transcription disponible
+                                        </span>
+                                    </div>
+                                @endif
+                            </td>
                             <td class="py-2">
-                                @if (! empty($call['record']))
+                                @if (! empty($call['record']) || ! empty($call['recording']) || ! empty($call['recording_url']))
+                                    @php
+                                        $audioUrl = $call['record'] ?? $call['recording'] ?? $call['recording_url'];
+                                    @endphp
                                     <div x-data="{ open: false }" class="flex flex-col gap-1">
                                         <button
                                             x-on:click="
@@ -114,7 +175,8 @@
                                                 $nextTick(() => {
                                                     const audio = $el.parentElement.querySelector('audio');
                                                     if (audio) {
-                                                        audio.src = '{{ $call['record'] }}';
+                                                        const audioSrc = @json($audioUrl);
+                                                        audio.src = audioSrc;
                                                         audio.load();
                                                         audio.play();
                                                     }
@@ -136,7 +198,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-8 text-center text-gray-400">Aucun appel</td>
+                            <td colspan="8" class="py-8 text-center text-gray-400">Aucun appel</td>
                         </tr>
                     @endforelse
                 </tbody>

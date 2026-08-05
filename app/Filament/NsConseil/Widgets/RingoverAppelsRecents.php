@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Widgets;
 use App\Services\RingoverService;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 
 class RingoverAppelsRecents extends Widget
 {
@@ -34,7 +35,17 @@ class RingoverAppelsRecents extends Widget
 
     public string $filterAnswered = '';
 
+    public ?string $filterFrom = null;
+
+    public ?string $filterTo = null;
+
+    public string $filterText = '';
+
+    public string $filterTextType = '';
+
     public bool $filterHasRecording = false;
+
+    public int $resultCount = 0;
 
     public array $agents = [];
 
@@ -73,20 +84,6 @@ class RingoverAppelsRecents extends Widget
             ->sortBy('name')
             ->values()
             ->all();
-
-        return collect($users)
-            ->map(function (array $user): array {
-                $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: ($user['name'] ?? ($user['email'] ?? ''));
-
-                return [
-                    'id' => (string) ($user['id'] ?? $user['user_id'] ?? ''),
-                    'name' => $name,
-                ];
-            })
-            ->where('id')
-            ->sortBy('name')
-            ->values()
-            ->all();
     }
 
     public function loadCalls(): void
@@ -98,6 +95,22 @@ class RingoverAppelsRecents extends Widget
 
         if ($this->filterDirection) {
             $filters['direction'] = $this->filterDirection;
+        }
+
+        if ($this->filterFrom) {
+            try {
+                $filters['from'] = Carbon::parse($this->filterFrom)->startOfDay()->timestamp;
+            } catch (\Throwable) {
+                // ignore invalid date
+            }
+        }
+
+        if ($this->filterTo) {
+            try {
+                $filters['to'] = Carbon::parse($this->filterTo)->endOfDay()->timestamp;
+            } catch (\Throwable) {
+                // ignore invalid date
+            }
         }
 
         try {
@@ -117,7 +130,8 @@ class RingoverAppelsRecents extends Widget
 
         $filteredCalls = array_values(array_filter($rawCalls, fn (array $call): bool => $this->passesFilters($call)));
 
-        $this->hasMore = count($filteredCalls) > $this->page * $this->perPage;
+        $this->resultCount = count($filteredCalls);
+        $this->hasMore = $this->resultCount > $this->page * $this->perPage;
         $this->calls = array_slice($filteredCalls, ($this->page - 1) * $this->perPage, $this->perPage);
     }
 
@@ -139,8 +153,29 @@ class RingoverAppelsRecents extends Widget
             return false;
         }
 
-        if ($this->filterHasRecording && empty(data_get($call, 'record'))) {
+        if ($this->filterHasRecording && ! $this->hasRecording($call)) {
             return false;
+        }
+
+        if ($this->filterText) {
+            $needle = mb_strtolower(trim($this->filterText));
+            $haystack = '';
+
+            if ($this->filterTextType === 'note') {
+                $haystack = mb_strtolower($this->extractCallNote($call) ?? '');
+            } elseif ($this->filterTextType === 'transcription') {
+                $haystack = mb_strtolower($this->extractCallTranscription($call) ?? '');
+            } else {
+                $haystack = mb_strtolower(implode(' ', array_filter([
+                    $this->extractCallNote($call),
+                    $this->extractCallSummary($call),
+                    $this->extractCallTranscription($call),
+                ])));
+            }
+
+            if ($needle === '' || $haystack === '' || str_contains($haystack, $needle) === false) {
+                return false;
+            }
         }
 
         return true;
@@ -161,6 +196,53 @@ class RingoverAppelsRecents extends Widget
         }
 
         return false;
+    }
+
+    protected function extractCallNote(array $call): ?string
+    {
+        return $this->stringValue(
+            data_get($call, 'comments.0.content')
+            ?? data_get($call, 'comments.0.text')
+            ?? data_get($call, 'comment')
+        );
+    }
+
+    protected function extractCallSummary(array $call): ?string
+    {
+        return $this->stringValue(
+            data_get($call, 'summary')
+            ?? data_get($call, 'title')
+        );
+    }
+
+    protected function extractCallTranscription(array $call): ?string
+    {
+        return $this->stringValue(
+            data_get($call, 'transcription')
+            ?? data_get($call, 'record.transcription')
+            ?? data_get($call, 'recording.transcription')
+            ?? data_get($call, 'call.transcription')
+        );
+    }
+
+    protected function hasRecording(array $call): bool
+    {
+        return ! empty(data_get($call, 'record'))
+            || ! empty(data_get($call, 'recording'))
+            || ! empty(data_get($call, 'recording_url'));
+    }
+
+    protected function stringValue(mixed $value): ?string
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        if (is_array($value)) {
+            return trim(implode(' ', array_filter(array_map('strval', $value))));
+        }
+
+        return trim((string) $value);
     }
 
     public function setDirection(string $direction): void
@@ -188,6 +270,30 @@ class RingoverAppelsRecents extends Widget
         $this->loadCalls();
     }
 
+    public function updatedFilterTextType(): void
+    {
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
+    public function updatedFilterFrom(): void
+    {
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
+    public function updatedFilterTo(): void
+    {
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
+    public function updatedFilterText(): void
+    {
+        $this->page = 1;
+        $this->loadCalls();
+    }
+
     public function updatedFilterHasRecording(): void
     {
         $this->page = 1;
@@ -200,6 +306,10 @@ class RingoverAppelsRecents extends Widget
         $this->filterNumber = '';
         $this->filterAgent = '';
         $this->filterAnswered = '';
+        $this->filterFrom = null;
+        $this->filterTo = null;
+        $this->filterText = '';
+        $this->filterTextType = '';
         $this->filterHasRecording = false;
         $this->page = 1;
         $this->loadCalls();

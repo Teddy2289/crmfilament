@@ -77,10 +77,10 @@ class SendInvitationAgendaJob implements ShouldQueue
 
     private function resolveFichePath(Prospect $prospect, RendezVous $rdv): ?string
     {
-        // La fiche bleue est générée en fiche_word_path (disque public) par
-        // GenerateFicheWordJob, pas via le mécanisme Document/FicheTemplate
-        // (celui-ci ne se déclenche jamais : ses codes de statut sont en
-        // majuscules alors que phoning_status est enregistré en minuscules).
+        if (! empty($rdv->pdf_recap)) {
+            return $this->resolveLocalOrRemotePath($rdv->pdf_recap);
+        }
+
         $appel = Appel::where('appelable_type', Prospect::class)
             ->where('appelable_id', $prospect->id)
             ->where('fiche_type', 'bleue')
@@ -93,9 +93,22 @@ class SendInvitationAgendaJob implements ShouldQueue
             return null;
         }
 
-        $relative = Str::after($appel->fiche_word_path, '/storage/');
-        $absolutePath = Storage::disk('public')->path($relative);
+        return $this->resolveLocalOrRemotePath($appel->fiche_word_path);
+    }
 
-        return file_exists($absolutePath) ? $absolutePath : null;
+    private function resolveLocalOrRemotePath(string $path): ?string
+    {
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+
+        if (str_contains($path, '/storage/')) {
+            $relative = Str::after($path, '/storage/');
+            $absolutePath = Storage::disk('public')->path($relative);
+
+            return file_exists($absolutePath) ? $absolutePath : null;
+        }
+
+        return file_exists($path) ? $path : null;
     }
 }
