@@ -30,6 +30,11 @@ Schedule::job(new SendWeeklyReportJob([
     ->weeklyOn(1, '08:00')
     ->withoutOverlapping();
 
+// CDC WF5 / WF6 : rapport quotidien CRM (tous les jours 07h00).
+Schedule::job(new \App\Jobs\SendDailyReportJob())
+    ->dailyAt('07:00')
+    ->withoutOverlapping();
+
 // Fiches Word : envoi automatique fiches jaunes J+7 (quotidien 08h00).
 Schedule::job(new \App\Jobs\SendFicheJauneJ7Job())
     ->dailyAt('08:00')
