@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Filament\NsConseil\Resources\ProspectResource;
+use App\Models\EmailConfiguration;
 use App\Models\Prospect;
 use App\Models\User;
 use Filament\Notifications\Actions\Action;
@@ -30,13 +31,16 @@ class SendProspectionMailJob implements ShouldQueue
         public string $emailLabel,
         public ?int $prospectId = null,
         public ?int $notifyUserId = null,
+        public ?string $sourceEmail = null,
+        public ?int $emailConfigurationId = null,
     ) {
     }
 
     public function handle(): void
     {
         try {
-            Mail::to($this->to)->send($this->mailable);
+            $this->configureMailerFromEmailConfiguration();
+            Mail::mailer('smtp')->to($this->to)->send($this->mailable);
             $this->notifier(true);
         } catch (\Throwable $e) {
             Log::error("SendProspectionMailJob: échec envoi [{$this->emailLabel}] à {$this->to}" .
@@ -64,6 +68,9 @@ class SendProspectionMailJob implements ShouldQueue
         $lignes = [
             'Destinataire' => $this->to,
         ];
+        if ($this->sourceEmail) {
+            $lignes['Configuration email'] = $this->sourceEmail;
+        }
         if ($prospect) {
             $lignes['Prospect'] = $prospect->nom;
         }
@@ -105,5 +112,35 @@ class SendProspectionMailJob implements ShouldQueue
             ->implode('');
 
         return "<div>{$rows}</div>";
+    }
+
+    protected function configureMailerFromEmailConfiguration(): void
+    {
+        if (! $this->emailConfigurationId) {
+            return;
+        }
+
+        $config = EmailConfiguration::find($this->emailConfigurationId);
+        if (! $config) {
+            return;
+        }
+
+        $smtpConfig = [
+            'transport' => 'smtp',
+            'host' => $config->smtp_host,
+            'port' => $config->smtp_port,
+            'username' => $config->email,
+            'password' => $config->password,
+            'encryption' => $config->smtp_encryption === 'none' ? null : $config->smtp_encryption,
+            'timeout' => null,
+            'local_domain' => config('mail.mailers.smtp.local_domain'),
+        ];
+
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp' => array_merge(config('mail.mailers.smtp', []), $smtpConfig),
+            'mail.from.address' => $config->email,
+            'mail.from.name' => $config->from_name ?: config('mail.from.name'),
+        ]);
     }
 }
