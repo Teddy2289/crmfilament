@@ -36,14 +36,27 @@ class WeeklyTeleprospecteurRecap extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: $this->getRenderedSubject());
+        try {
+            return new Envelope(subject: $this->getRenderedSubject());
+        } catch (\Throwable $e) {
+            return new Envelope(subject: 'Récapitulatif hebdomadaire - Téléprospecteur');
+        }
     }
 
     public function content(): Content
     {
-        return new Content(view: 'emails.template', with: [
-            'corps' => $this->getRenderedBody(),
-        ]);
+        try {
+            return new Content(view: 'emails.template', with: [
+                'corps' => $this->getRenderedBody(),
+            ]);
+        } catch (\Throwable $e) {
+            return new Content(view: 'emails.weekly-teleprospecteur-recap', with: [
+                'user' => $this->user,
+                'stats' => $this->stats,
+                'startDate' => $this->startDate,
+                'endDate' => $this->endDate,
+            ]);
+        }
     }
 
     public function attachments(): array
