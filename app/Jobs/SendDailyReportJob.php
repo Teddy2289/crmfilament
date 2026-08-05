@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Mail\DailyReportMail;
+use App\Models\EmailConfiguration;
 use App\Models\User;
 use App\Services\Crm\DailyReportService;
 use Illuminate\Bus\Queueable;
@@ -19,12 +20,16 @@ class SendDailyReportJob implements ShouldQueue
 
     public function handle(DailyReportService $service): int
     {
+        $this->configureMailerFromActiveEmailConfiguration();
+
         $envoyes = 0;
 
-        $destinataires = User::query()
-            ->where('actif', true)
-            ->whereNotNull('email')
-            ->get();
+        $destinataires = $service->destinatairesPourRoles([
+            User::ROLE_TELEPROSPECTEUR,
+            User::ROLE_COMMERCIAL,
+            User::ROLE_SUPERVISEUR,
+            DailyReportService::ROLE_TEAM_LEADER,
+        ]);
 
         foreach ($destinataires as $user) {
             $rapport = match ($user->role_cache) {
@@ -33,12 +38,42 @@ class SendDailyReportJob implements ShouldQueue
                 default => $service->pourTeamLeader($user),
             };
 
-            Mail::to($user->email)->send(new DailyReportMail($rapport));
+            Mail::mailer('smtp')->to($user->email)->send(new DailyReportMail($rapport));
             $envoyes++;
         }
 
-        Log::info("Rapport quotidien CRM envoye a {$envoyes} destinataire(s).\n");
+        Log::info("Rapport quotidien CRM envoye a {$envoyes} destinataire(s).");
 
         return $envoyes;
+    }
+
+    protected function configureMailerFromActiveEmailConfiguration(): void
+    {
+        $config = EmailConfiguration::query()
+            ->where('is_global', true)
+            ->where('active', true)
+            ->first();
+
+        if (! $config) {
+            return;
+        }
+
+        $smtpConfig = [
+            'transport' => 'smtp',
+            'host' => $config->smtp_host,
+            'port' => $config->smtp_port,
+            'username' => $config->email,
+            'password' => $config->password,
+            'encryption' => $config->smtp_encryption === 'none' ? null : $config->smtp_encryption,
+            'timeout' => null,
+            'local_domain' => config('mail.mailers.smtp.local_domain'),
+        ];
+
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp' => array_merge(config('mail.mailers.smtp', []), $smtpConfig),
+            'mail.from.address' => $config->email,
+            'mail.from.name' => $config->from_name ?: config('mail.from.name'),
+        ]);
     }
 }

@@ -116,6 +116,9 @@ Voici votre récapitulatif pour la journée du **{{ $debut->format('d/m/Y') }}**
 @endif
 @endif
 
-Bonne journée,<br>
-{{ config('app.name') }}
+Merci de votre attention.
+
+Cordialement,<br>
+L'équipe {{ config('app.name') }}
+
 </x-mail::message>
