@@ -9,6 +9,7 @@ use App\Mail\GenericProspectionMail;
 use App\Mail\PreviewableProspectionMail;
 use App\Models\Prospect;
 use App\Models\RendezVous;
+use App\Models\EmailConfiguration;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -182,11 +183,32 @@ class ProspectionMailService
      */
     protected function fallbackEmail(): ?string
     {
-        if (app()->environment('production')) {
-            return null;
+        // Try the authenticated user's active mail configuration first.
+        $userId = Auth::id();
+
+        if ($userId) {
+            $config = EmailConfiguration::forUser($userId)
+                ->active()
+                ->first();
+
+            if ($config && filter_var($config->email, FILTER_VALIDATE_EMAIL)) {
+                return $config->email;
+            }
         }
 
-        return config('mail.redirect_all_to');
+        // Prefer the authenticated user's email if available and valid.
+        $userEmail = optional(Auth::user())->email;
+        if (is_string($userEmail) && filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
+            return $userEmail;
+        }
+
+        // In non-production environments, fall back to the configured redirect address.
+        if (! app()->environment('production')) {
+            return config('mail.redirect_all_to');
+        }
+
+        // In production, if no user email is available, do not send.
+        return null;
     }
 
     protected function resolveDestinataire(array $contexte, string $default): string
