@@ -497,7 +497,7 @@ class ProspectResource extends Resource
                             $record->enregistrement_audio_path ?? null,
                         );
 
-                        $cc = implode(', ', InvitationAgendaResponsableMail::CC_FIXES);
+                        $cc = implode(', ', InvitationAgendaResponsableMail::getCcFixes());
                         Mail::to($rdv->commercial->email)->send($mailable);
                         $mailable->logEnvoi($record, $rdv->commercial->email, $cc);
 

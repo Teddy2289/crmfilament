@@ -23,7 +23,7 @@ class AopiaIcsService
         return implode("\r\n", [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//AOPIA LIKE FORMATION//CRMFilament//FR',
+            'PRODID:-//'.strtoupper(config('aopia.brand_name_long', 'AOPIA LIKE Formation')).'//CRMFilament//FR',
             'CALSCALE:GREGORIAN',
             'METHOD:REQUEST',
             'BEGIN:VEVENT',

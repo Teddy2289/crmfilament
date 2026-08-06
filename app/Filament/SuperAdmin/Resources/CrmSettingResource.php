@@ -108,13 +108,30 @@ class CrmSettingResource extends Resource
                                             }
                                         }),
 
+                                    Forms\Components\TagsInput::make('valeur')
+                                        ->label('Valeurs')
+                                        ->placeholder('Ajouter une adresse email')
+                                        ->visible(fn (Get $get): bool => $get('type') === 'json' && $get('cle') === 'mail2_locked_cc')
+                                        ->hydrateStateUsing(function (mixed $state): array {
+                                            if (is_string($state)) {
+                                                $decoded = json_decode($state, true);
+
+                                                return is_array($decoded) ? $decoded : [];
+                                            }
+
+                                            return is_array($state) ? $state : [];
+                                        })
+                                        ->dehydrateStateUsing(fn (mixed $state): string => json_encode(array_values(array_filter(array_map('trim', (array) $state)))) )
+                                        ->columnSpanFull(),
+
                                     Forms\Components\Textarea::make('valeur')
                                         ->label('Valeur')
                                         ->required()
                                         ->rows(fn (Get $get): int => $get('type') === 'json' ? 8 : 3)
                                         ->helperText(fn (Get $get): string => static::valueHelper($get('type')))
                                         ->rule(fn (Get $get): Closure => static::valueValidationRule($get('type')))
-                                        ->columnSpanFull(),
+                                        ->columnSpanFull()
+                                        ->visible(fn (Get $get): bool => ! ($get('type') === 'json' && $get('cle') === 'mail2_locked_cc')),
 
                                     Forms\Components\Placeholder::make('apercu_valeur')
                                         ->label('Aperçu')

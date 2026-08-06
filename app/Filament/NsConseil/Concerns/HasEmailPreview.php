@@ -208,8 +208,8 @@ trait HasEmailPreview
                 ?: $prospect->fallback_interlocuteur_email
                 ?: $this->localPreviewFallbackEmail(),
             'cse_hz' => app()->environment('production')
-                ? 'bruno@ns-conseil.com'
-                : ($this->localPreviewFallbackEmail() ?: 'bruno@ns-conseil.com'),
+                ? config('aopia.mail.cse_hors_zone_email', 'bruno@ns-conseil.com')
+                : ($this->localPreviewFallbackEmail() ?: config('aopia.mail.preview_fallback_email', 'bruno@ns-conseil.com')),
             default => null,
         };
     }

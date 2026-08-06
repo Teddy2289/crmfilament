@@ -22,4 +22,8 @@ return [
     ['groupe' => 'mail', 'cle' => 'from_name', 'valeur' => 'AOPIA Formation', 'type' => 'string', 'label' => 'Nom expéditeur', 'description' => null, 'ordre' => 2],
     ['groupe' => 'mail', 'cle' => 'mail2_locked_cc', 'valeur' => '["bruno@ns-conseil.com","nirina@ns-conseil.com"]', 'type' => 'json', 'label' => 'CC invitation agenda', 'description' => 'Destinataires en copie du modèle 2', 'ordre' => 3],
     ['groupe' => 'mail', 'cle' => 'send_deadline_minutes', 'valeur' => '30', 'type' => 'int', 'label' => 'Délai envoi mail (min)', 'description' => 'Délai max après prise de RDV', 'ordre' => 4],
+    ['groupe' => 'mail', 'cle' => 'cse_hors_zone_email', 'valeur' => 'bruno@ns-conseil.com', 'type' => 'string', 'label' => 'Email CSE hors zone', 'description' => 'Destinataire en charge des CSE hors zone', 'ordre' => 5],
+    ['groupe' => 'mail', 'cle' => 'preview_fallback_email', 'valeur' => 'bruno@ns-conseil.com', 'type' => 'string', 'label' => 'Email fallback aperçu', 'description' => 'Adresse de secours pour l’aperçu email en non-production', 'ordre' => 6],
+    ['groupe' => 'theme', 'cle' => 'brand_name', 'valeur' => 'AOPIA Formation', 'type' => 'string', 'label' => 'Nom de marque court', 'description' => 'Nom utilisé dans les sujets et signatures email', 'ordre' => 1],
+    ['groupe' => 'theme', 'cle' => 'brand_name_long', 'valeur' => 'AOPIA LIKE Formation', 'type' => 'string', 'label' => 'Nom de marque long', 'description' => 'Nom utilisé dans les calendriers et libellés globaux', 'ordre' => 2],
 ];

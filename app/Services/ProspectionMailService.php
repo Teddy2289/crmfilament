@@ -157,8 +157,8 @@ class ProspectionMailService
         // En local/staging, redirigé vers l'adresse de fallback si 'bruno@ns-conseil.com'
         // n'est pas voulu comme destinataire de test.
         $destinataire = app()->environment('production')
-            ? 'bruno@ns-conseil.com'
-            : ($this->fallbackEmail() ?: 'bruno@ns-conseil.com');
+            ? config('aopia.mail.cse_hors_zone_email', 'bruno@ns-conseil.com')
+            : ($this->fallbackEmail() ?: config('aopia.mail.preview_fallback_email', 'bruno@ns-conseil.com'));
 
         Log::info("MAIL DEBUG: envoyerHorsZone", ['destinataire' => $destinataire]);
 

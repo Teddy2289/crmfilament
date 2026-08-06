@@ -23,6 +23,11 @@ class InvitationAgendaResponsableMail extends Mailable
         'nirina@ns-conseil.com',
     ];
 
+    public static function getCcFixes(): array
+    {
+        return array_values(array_filter(array_map('trim', (array) config('aopia.mail.mail2_locked_cc', self::CC_FIXES))));
+    }
+
     public function __construct(
         public Prospect   $prospect,
         public RendezVous $rdv,
@@ -68,7 +73,7 @@ class InvitationAgendaResponsableMail extends Mailable
     {
         $commercialEmail = $this->rdv->commercial?->email;
 
-        $cc = collect(self::CC_FIXES)
+        $cc = collect(self::getCcFixes())
             ->reject(fn (string $email) => $commercialEmail && strcasecmp($email, $commercialEmail) === 0);
 
         $teleproEmail = $this->rdv->teleprospecteur?->email;

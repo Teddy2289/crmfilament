@@ -491,7 +491,8 @@ class GoogleCalendarService
             $lines[] = "\n📝 Notes :\n{$rdv->notes}";
         }
 
-        $lines[] = "\n🔗 CRM AOPIA LIKE Formation — RDV #{$rdv->id}";
+        $brand = config('aopia.brand_name_long', 'AOPIA LIKE Formation');
+        $lines[] = "\n🔗 CRM {$brand} — RDV #{$rdv->id}";
 
         return implode("\n", $lines);
     }

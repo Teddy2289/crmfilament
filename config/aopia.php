@@ -10,7 +10,12 @@ return [
         'from_name' => env('AOPIA_MAIL_FROM_NAME', 'AOPIA Formation'),
         'mail2_locked_cc' => array_filter(array_map('trim', explode(',', env('AOPIA_MAIL2_CC', 'bruno@ns-conseil.com,nirina@ns-conseil.com')))),
         'send_deadline_minutes' => (int) env('AOPIA_MAIL_DEADLINE_MINUTES', 30),
+        'cse_hors_zone_email' => env('AOPIA_CSE_HORS_ZONE_EMAIL', 'bruno@ns-conseil.com'),
+        'preview_fallback_email' => env('AOPIA_PREVIEW_FALLBACK_EMAIL', 'bruno@ns-conseil.com'),
     ],
+
+    'brand_name' => env('AOPIA_BRAND_NAME', 'AOPIA Formation'),
+    'brand_name_long' => env('AOPIA_BRAND_NAME_LONG', 'AOPIA LIKE Formation'),
 
     'qf' => [
         'minimum_employee_count' => (int) env('AOPIA_QF_MIN_EMPLOYEES', 12),

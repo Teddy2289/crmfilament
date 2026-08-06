@@ -253,7 +253,7 @@ avant de passer à la suivante.
   - Vérifier que `HasEmailPreview` expose les méthodes `getPreviewMailableForStatut()`, `buildPreviewRdvMailable()`, `resolvePreviewRecipient()`, `buildProspectionMailContext()`.
   - Demander confirmation à l'utilisateur avant de continuer.
 
-- [-] 9. Découper phoning-workflow.blade.php en composants Blade anonymes
+- [x] 9. Découper phoning-workflow.blade.php en composants Blade anonymes
   - [x] 9.1 Créer `resources/views/components/phoning/contact-panel.blade.php`
     - Déclarer `@props(['contact', 'contactType', 'queueCount', 'progress', 'isSupervisorMode'])`
     - Extraire la carte identité entreprise, la barre de contact et la progression depuis le blade monolithique
@@ -275,7 +275,7 @@ avant de passer à la suivante.
     - Extraire l'iframe Ringover, la boîte NR et les infos d'appel entrant
     - _Requirements: 10.4, 10.6, 1.7_
 
-  - [-] 9.5 Mettre à jour `phoning-workflow.blade.php` pour utiliser les composants
+  - [x] 9.5 Mettre à jour `phoning-workflow.blade.php` pour utiliser les composants
     - Remplacer le HTML inline par `<x-phoning::contact-panel ...>`, `<x-phoning::status-panel ...>`, `<x-phoning::email-preview ...>`, `<x-phoning::ringover-widget ...>`
     - Vérifier que le template orchestrateur reste ≤ 300 lignes (point de départ ~3 000+ lignes)
     - _Requirements: 1.3, 10.7_
@@ -334,7 +334,7 @@ avant de passer à la suivante.
     - **Property 5 : `statut_resultat ∈ StatutPhoning::pluck('code')` avant tout appel à `applyResult()`**
     - **Validates: Requirements 8.2, 8.3**
 
-- [~] 13. Checkpoint final — Suite de tests complète (étape 12)
+- [-] 13. Checkpoint final — Suite de tests complète (étape 12)
   - Lancer `php artisan test` (suite complète) et vérifier zéro échec.
   - Vérifier que tous les fichiers respectent leurs limites de lignes définies.
   - Vérifier la liste complète des tests préexistants : `PhoningWorkflowPreviewTest`, `PhoningWorkflowStatusesTest`, `CampagnePhoningQueueTest`, `PhoningQueueBuilderInterleaveTest`, `PhoningWorkflowContactsRestantsTest` — tous doivent passer sans modification des fichiers de test.

@@ -91,8 +91,8 @@ class PhoningEmailPreviewService
                 ?: $contact->fallback_interlocuteur_email
                 ?: $this->fallbackEmail(),
             'cse_hz' => app()->environment('production')
-                ? 'bruno@ns-conseil.com'
-                : ($this->fallbackEmail() ?: 'bruno@ns-conseil.com'),
+                ? config('aopia.mail.cse_hors_zone_email', 'bruno@ns-conseil.com')
+                : ($this->fallbackEmail() ?: config('aopia.mail.preview_fallback_email', 'bruno@ns-conseil.com')),
             default => null,
         };
     }
