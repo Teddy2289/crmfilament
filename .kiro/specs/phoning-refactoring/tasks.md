@@ -260,12 +260,12 @@ avant de passer à la suivante.
     - Vérifier rendu sans exception avec un tableau de props minimal
     - _Requirements: 10.1, 10.6, 1.7_
 
-  - [~] 9.2 Créer `resources/views/components/phoning/status-panel.blade.php`
+  - [x] 9.2 Créer `resources/views/components/phoning/status-panel.blade.php`
     - Déclarer `@props(['statuts', 'selectedStatut', 'commentaires', 'rappelDate', 'rappelHeure'])`
     - Extraire les onglets cas, chips statuts et rappel box
     - _Requirements: 10.2, 10.6, 1.7_
 
-  - [~] 9.3 Créer `resources/views/components/phoning/email-preview.blade.php`
+  - [x] 9.3 Créer `resources/views/components/phoning/email-preview.blade.php`
     - Déclarer `@props(['emailPreviewSubject', 'emailPreviewBody', 'emailPreviewRecipient'])`
     - Extraire la modal d'aperçu email éditable avec bindings `wire:model.live`
     - _Requirements: 10.3, 10.6, 1.7_
@@ -280,8 +280,8 @@ avant de passer à la suivante.
     - Vérifier que le template orchestrateur reste ≤ 300 lignes (point de départ ~3 000+ lignes)
     - _Requirements: 1.3, 10.7_
 
-- [ ] 10. Découper phoning-back-office.blade.php et créer queue-table
-  - [~] 10.1 Créer `resources/views/components/phoning/queue-table.blade.php`
+- [-] 10. Découper phoning-back-office.blade.php et créer queue-table
+  - [x] 10.1 Créer `resources/views/components/phoning/queue-table.blade.php`
     - Déclarer `@props(['prospects', 'selectedIds'])`
     - Extraire le tableau triable SortableJS avec les boutons de réorganisation
     - _Requirements: 10.5, 10.6, 1.7_

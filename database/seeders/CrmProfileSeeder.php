@@ -50,6 +50,13 @@ class CrmProfileSeeder extends Seeder
         }
 
         if (is_array($perms)) {
+            if (in_array('allopro', $perms, true)) {
+                $perms = array_merge(
+                    AccessRightsCatalog::permissionNamesForPanel('allopro'),
+                    array_values(array_filter($perms, fn ($perm) => $perm !== 'allopro'))
+                );
+            }
+
             foreach ($perms as $perm) {
                 Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
             }

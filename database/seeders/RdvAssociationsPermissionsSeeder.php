@@ -20,11 +20,14 @@ class RdvAssociationsPermissionsSeeder extends Seeder
 
         // Assign to roles if they exist
         $roles = Role::whereIn('name', [
+            'super_admin',
             'administrateur',
             'team_leader',
-            'teleprospecteur', // "telepro"
-            'back_office',     // "agent back office"
-            'responsable_plateau', // superviseur/manager
+            'superviseur',
+            'responsable_plateau',
+            'teleprospecteur',
+            'back_office',
+            'operateur_n1',
         ])->get();
 
         foreach ($roles as $role) {

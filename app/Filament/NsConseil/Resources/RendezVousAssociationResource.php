@@ -22,7 +22,7 @@ class RendezVousAssociationResource extends Resource
     protected static string $permissionPrefix = 'rdv_association';
     protected static ?string $model = RendezVousAssociation::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-link-vertical';
+    protected static ?string $navigationIcon = 'heroicon-o-link';
     protected static ?string $navigationGroup = 'Activités';
     protected static ?string $navigationLabel = 'Associations RDV';
 

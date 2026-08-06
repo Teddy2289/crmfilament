@@ -11,7 +11,7 @@ trait HasRoleAccess
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isSuperviseur()) {
             return true;
         }
 
