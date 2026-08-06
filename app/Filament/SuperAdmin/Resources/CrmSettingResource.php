@@ -50,7 +50,7 @@ class CrmSettingResource extends Resource
                                     Forms\Components\Radio::make('default_crm')
                                         ->label('CRM par défaut')
                                         ->options([
-                                            'ns-conseil' => 'NS Conseil',
+                                            'ns-conseil' => 'AOPIA LIKE Formation',
                                             'allopro' => 'AlloPro',
                                         ])
                                         ->default('ns-conseil')
@@ -207,7 +207,7 @@ class CrmSettingResource extends Resource
                 Tables\Filters\SelectFilter::make('default_crm')
                     ->label('CRM')
                     ->options([
-                        'ns-conseil' => 'NS Conseil',
+                        'ns-conseil' => 'AOPIA LIKE Formation',
                         'allopro' => 'AlloPro',
                     ]),
 
@@ -266,7 +266,7 @@ class CrmSettingResource extends Resource
     {
         return match ($crm) {
             'allopro' => 'AlloPro',
-            default => 'NS Conseil',
+            default => 'AOPIA LIKE Formation',
         };
     }
 

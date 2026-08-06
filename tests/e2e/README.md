@@ -1,6 +1,6 @@
 # Tests E2E Playwright
 
-Ce dossier contient les tests navigateur Playwright du panel NS Conseil.
+Ce dossier contient les tests navigateur Playwright du panel AOPIA LIKE Formation.
 
 ## Lancer les tests
 

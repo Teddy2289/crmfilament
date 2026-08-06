@@ -12,10 +12,10 @@ class ThemeSeeder extends Seeder
         $defaults = [
             [
                 'name' => 'ns-conseil-default',
-                'label' => 'NS Conseil - Filament',
+                'label' => 'AOPIA LIKE Formation - Filament',
                 'panel' => 'ns-conseil',
                 'primary_color' => 'blue',
-                'brand_name' => 'NS CONSEIL - CRM Partenaires',
+                'brand_name' => 'AOPIA LIKE Formation - CRM Partenaires',
             ],
             [
                 'name' => 'admin-default',

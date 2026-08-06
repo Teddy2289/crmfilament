@@ -1,10 +1,10 @@
 # Cahier des Charges — CRM Commercial EspoCRM
-**AOPIA / LIKE Formation — NS Conseil**
+**AOPIA / LIKE Formation — AOPIA LIKE Formation**
 Version 1.0 — Mai 2026 | Statut : Projet à valider
 
 | Champ | Information |
 |---|---|
-| Entreprise cliente | AOPIA / LIKE Formation — NS Conseil |
+| Entreprise cliente | AOPIA / LIKE Formation — AOPIA LIKE Formation |
 | Interlocuteur principal | Alexandre FLOREK — Co-Gérant |
 | Responsable partenariats | Bruno BIARDOUX |
 | Responsable ADV/RC | Franck PINO CORTES |
@@ -15,7 +15,7 @@ Version 1.0 — Mai 2026 | Statut : Projet à valider
 
 ## 1. Contexte et objectifs
 
-AOPIA et LIKE Formation (marques de NS Conseil) sont des organismes de formation professionnelle. L'activité commerciale repose sur deux axes : la gestion de partenaires (CSE, syndicats, entreprises) et le suivi des clients bénéficiaires.
+AOPIA et LIKE Formation (marques de AOPIA LIKE Formation) sont des organismes de formation professionnelle. L'activité commerciale repose sur deux axes : la gestion de partenaires (CSE, syndicats, entreprises) et le suivi des clients bénéficiaires.
 
 L'entreprise dispose actuellement de plusieurs outils distincts :
 - Un CRM Dolibarr gérant la facturation, les paiements et le suivi pédagogique des formateurs

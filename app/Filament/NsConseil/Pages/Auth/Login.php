@@ -14,6 +14,6 @@ class Login extends FilamentLogin
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Accédez à votre espace de travail NS Conseil';
+        return 'Accédez à votre espace de travail AOPIA LIKE Formation';
     }
 }

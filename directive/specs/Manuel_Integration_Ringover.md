@@ -18,7 +18,7 @@ Dans le code Laravel, les elements actifs sont:
 - `app/Services/RingoverService.php`
 - `app/Console/Commands/SyncRingoverCalls.php`
 - `app/Filament/NsConseil/Pages/RingoverDashboard.php`
-- widgets Ringover du panel Ns Conseil
+- widgets Ringover du panel AOPIA LIKE Formation
 - champs `ringover_*` sur `app/Models/Appel.php`, `app/Models/Ticket.php` et `app/Models/User.php`
 - setting CRM `prospection.ringover_rule`
 

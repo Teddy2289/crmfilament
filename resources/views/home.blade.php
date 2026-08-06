@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CRM NS Conseil</title>
+    <title>CRM AOPIA LIKE Formation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
         </div>
-        <h2 class="mt-6 text-3xl font-extrabold tracking-tight text-slate-900">CRM NS Conseil</h2>
+        <h2 class="mt-6 text-3xl font-extrabold tracking-tight text-slate-900">CRM AOPIA LIKE Formation</h2>
         <p class="mt-2 text-sm text-slate-500">Bienvenue sur votre portail d'accès</p>
     </div>
 
@@ -35,7 +35,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-4">
-                    <!-- Espace NS Conseil -->
+                    <!-- Espace AOPIA LIKE Formation -->
                     <a href="/ns-conseil" class="flex items-center p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all group">
                         <div class="p-2.5 rounded-lg bg-indigo-50 group-hover:bg-indigo-100 text-indigo-600 transition-colors">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -43,7 +43,7 @@
                             </svg>
                         </div>
                         <div class="ml-4 flex-1">
-                            <span class="block text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">Espace NS Conseil</span>
+                            <span class="block text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">Espace AOPIA LIKE Formation</span>
                             <span class="block text-xs text-slate-400 mt-0.5">Accès au CRM principal</span>
                         </div>
                         <svg class="h-5 w-5 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">

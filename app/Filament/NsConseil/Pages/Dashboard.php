@@ -30,7 +30,7 @@ class Dashboard extends BaseDashboard
 
     protected static ?string $navigationLabel = 'Tableau de bord';
 
-    protected static ?string $title = 'Tableau de bord NS CONSEIL';
+    protected static ?string $title = 'Tableau de bord AOPIA LIKE Formation';
 
     public function filtersForm(Form $form): Form
     {

@@ -71,7 +71,7 @@ class CrmProfileResource extends Resource
                             Forms\Components\Select::make('panel')
                                 ->label('Panneau')
                                 ->options([
-                                    'ns-conseil' => 'NS Conseil',
+                                    'ns-conseil' => 'AOPIA LIKE Formation',
                                     'admin' => 'Admin',
                                     'super-admin' => 'Super administrateur',
                                     'allopro' => 'Allopro',
@@ -106,7 +106,7 @@ class CrmProfileResource extends Resource
                         ->options([
                             'super-admin' => 'Super administrateur',
                             'admin' => 'Admin',
-                            'ns-conseil' => 'NS Conseil',
+                            'ns-conseil' => 'AOPIA LIKE Formation',
                             'allopro' => 'AlloPro',
                         ])
                         ->columns(2)

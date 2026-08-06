@@ -163,7 +163,7 @@ class RoleResource extends Resource
                                 ->schema([
                                     static::modulePermissionSection(
                                         key: 'aopia',
-                                        title: 'NS Conseil / AOPIA',
+                                        title: 'AOPIA LIKE Formation / AOPIA',
                                         icon: 'heroicon-o-building-office-2',
                                         moduleKeys: self::AOPIA_MODULES,
                                     ),

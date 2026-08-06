@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Scripts d'appel Ns Conseil / AOPIA pour le workflow de phoning.
+ * Scripts d'appel AOPIA LIKE Formation / AOPIA pour le workflow de phoning.
  */
 return [
     [

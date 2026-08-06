@@ -4,7 +4,7 @@
             NS
         </div>
         <div>
-            <div style="font-size:13px;font-weight:700;color:#1f2a33;line-height:1.2;">NS CONSEIL</div>
+            <div style="font-size:13px;font-weight:700;color:#1f2a33;line-height:1.2;">AOPIA LIKE Formation</div>
             <div style="font-size:11px;color:#6e7b87;margin-top:2px;">CRM Partenaires</div>
         </div>
     </div>

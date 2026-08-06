@@ -23,7 +23,7 @@ return [
     [
         'role_name' => 'administrateur',
         'label' => 'Administrateur',
-        'description' => 'Paramétrage CRM et accès complet NS Conseil.',
+        'description' => 'Paramétrage CRM et accès complet AOPIA LIKE Formation.',
         'panels' => ['super-admin', 'admin', 'ns-conseil', 'allopro'],
         'landing_path' => '/ns-conseil',
         'couleur' => 'warning',
@@ -168,7 +168,7 @@ return [
     [
         'role_name' => 'responsable_plateau',
         'label' => 'Responsable plateau AlloPro',
-        'description' => 'Pilotage centre de contact AlloPro et supervision des workflows NS Conseil.',
+        'description' => 'Pilotage centre de contact AlloPro et supervision des workflows AOPIA LIKE Formation.',
         'panels' => ['allopro', 'ns-conseil'],
         'landing_path' => '/allopro',
         'couleur' => 'orange',
@@ -192,7 +192,7 @@ return [
     [
         'role_name' => 'operateur_n1',
         'label' => 'Opérateur N1',
-        'description' => 'Accueil et qualification appels entrants AlloPro, avec accès minimal NS Conseil pour prospects et RDV.',
+        'description' => 'Accueil et qualification appels entrants AlloPro, avec accès minimal AOPIA LIKE Formation pour prospects et RDV.',
         'panels' => ['allopro', 'ns-conseil'],
         'landing_path' => '/allopro/tickets',
         'couleur' => 'gray',
@@ -214,7 +214,7 @@ return [
     [
         'role_name' => 'back_office',
         'label' => 'Back-Office',
-        'description' => 'Suivi dossiers et réclamations AlloPro, avec accès minimal NS Conseil pour la gestion des prospects, RDV et phoning.',
+        'description' => 'Suivi dossiers et réclamations AlloPro, avec accès minimal AOPIA LIKE Formation pour la gestion des prospects, RDV et phoning.',
         'panels' => ['allopro', 'ns-conseil'],
         'landing_path' => '/allopro/tickets',
         'couleur' => 'teal',

@@ -3,9 +3,9 @@
 
 <style>
 /* ════════════════════════════════════════════════════════
-   NS CONSEIL — Thème "Marine & Doré"
+   AOPIA LIKE Formation — Thème "Marine & Doré"
    Filament v3 — Juillet 2026
-   Palette extraite du visuel NS CONSEIL :
+   Palette extraite du visuel AOPIA LIKE Formation :
    #2C4A5E (bleu marine) · #3F8FA3 (teal titre) · #E8B873 (doré/tan)
    #D9A455 (doré accent) · #FFFFFF
 ════════════════════════════════════════════════════════ */

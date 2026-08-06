@@ -15,7 +15,7 @@ class UsersSeeder extends Seeder
     public function run(): void
     {
         $users = [
-            // ── NS CONSEIL ─────────────────────────────────────────
+            // ── AOPIA LIKE Formation ─────────────────────────────────────────
             [
                 'nom' => 'FLOREK',
                 'prenom' => 'Alexandre',

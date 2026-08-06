@@ -280,31 +280,31 @@ avant de passer à la suivante.
     - Vérifier que le template orchestrateur reste ≤ 300 lignes (point de départ ~3 000+ lignes)
     - _Requirements: 1.3, 10.7_
 
-- [-] 10. Découper phoning-back-office.blade.php et créer queue-table
+- [x] 10. Découper phoning-back-office.blade.php et créer queue-table
   - [x] 10.1 Créer `resources/views/components/phoning/queue-table.blade.php`
     - Déclarer `@props(['prospects', 'selectedIds'])`
     - Extraire le tableau triable SortableJS avec les boutons de réorganisation
     - _Requirements: 10.5, 10.6, 1.7_
 
-  - [ ] 10.2 Mettre à jour `phoning-back-office.blade.php` pour utiliser `x-phoning::queue-table`
+  - [x] 10.2 Mettre à jour `phoning-back-office.blade.php` pour utiliser `x-phoning::queue-table`
     - Remplacer le HTML inline par `<x-phoning::queue-table :prospects="$prospectList" wire:model="selectedIds" />`
     - Vérifier que le template orchestrateur reste ≤ 300 lignes (point de départ 1 279 lignes)
     - _Requirements: 1.4, 10.8_
 
 - [ ] 11. Extraire les styles CSS en fichiers dédiés compilés par Vite
-  - [~] 11.1 Créer `resources/css/phoning-workflow.css`
+  - [x] 11.1 Créer `resources/css/phoning-workflow.css`
     - Déplacer tous les blocs `<style>` inline de `phoning-workflow.blade.php` vers ce fichier (~850 lignes de classes `.pw-*`)
     - Ajouter `@vite('resources/css/phoning-workflow.css')` dans le template orchestrateur
     - Supprimer tous les blocs `<style>` restants du template
     - _Requirements: 11.1, 11.3, 11.5, 11.6_
 
-  - [~] 11.2 Créer `resources/css/phoning-back-office.css`
+  - [x] 11.2 Créer `resources/css/phoning-back-office.css`
     - Déplacer tous les blocs `<style>` inline de `phoning-back-office.blade.php` vers ce fichier (~958 lignes de classes `.pbo-*`)
     - Ajouter `@vite('resources/css/phoning-back-office.css')` dans le template orchestrateur
     - Supprimer tous les blocs `<style>` restants du template
     - _Requirements: 11.2, 11.4, 11.5, 11.6_
 
-  - [~] 11.3 Déclarer les nouveaux points d'entrée CSS dans `vite.config.js`
+  - [x] 11.3 Déclarer les nouveaux points d'entrée CSS dans `vite.config.js`
     - Ajouter `resources/css/phoning-workflow.css` et `resources/css/phoning-back-office.css` au tableau `input`
     - Lancer `npm run build` pour vérifier compilation sans erreur
     - _Requirements: 11.5_

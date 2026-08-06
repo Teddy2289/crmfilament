@@ -1,6 +1,6 @@
 # Compte-Rendu de Réunion — CRM EspoCRM (Synthèse)
 
-**Projet :** CRM Commercial AOPIA / LIKE Formation (NS Conseil)
+**Projet :** CRM Commercial AOPIA / LIKE Formation (AOPIA LIKE Formation)
 **Outil :** EspoCRM (open source, self-hosted)
 **Durée :** ~1h15
 

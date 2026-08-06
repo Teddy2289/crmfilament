@@ -13,7 +13,7 @@
 | `../../ETAT_AVANCEMENT.md` | Etat d'avancement courant et backlog |
 | `../../MANUEL.md` | Manuel technique de deploiement/developpement |
 | `Modele_Projet_AOPIA_Laravel.md` | Reference fonctionnelle Laravel/Filament |
-| `MANUEL_UTILISATION.md` | Manuel utilisateur Ns Conseil et Super Admin |
+| `MANUEL_UTILISATION.md` | Manuel utilisateur AOPIA LIKE Formation et Super Admin |
 | `Champs_Requis_Par_Entite.md` | Champs requis et droits par champ |
 | `../../tests/e2e/README.md` | Tests navigateur Playwright |
 

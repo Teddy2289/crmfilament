@@ -50,7 +50,7 @@ class NsConseilPanelProvider extends PanelProvider
             ->id('ns-conseil')
             ->path('ns-conseil')
             ->login(NsConseilLogin::class)
-            ->brandName($theme?->brand_name ?? 'NS CONSEIL — CRM Partenaires')
+            ->brandName($theme?->brand_name ?? 'AOPIA LIKE Formation — CRM Partenaires')
             ->brandLogo(fn() => view('filament.ns-conseil.brand-logo', [
                 'logoPath' => $theme?->brand_logo_path,
             ]))
@@ -66,7 +66,7 @@ class NsConseilPanelProvider extends PanelProvider
                 // ici, et le badge s'affiche sans couleur.
                 ...Color::all(),
 
-                // Alias de marque NS Conseil — déclarés après pour prendre le pas
+                // Alias de marque AOPIA LIKE Formation — déclarés après pour prendre le pas
                 // sur les valeurs par défaut de Color::all() ci-dessus.
                 'primary'       => Color::hex('#2C4A5E'),
                 'gray'          => Color::Slate,
@@ -135,7 +135,7 @@ class NsConseilPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()
 
-            // ── Thème NS Conseil (Marine & Doré) ─────────────────────
+            // ── Thème AOPIA LIKE Formation (Marine & Doré) ─────────────────────
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn() => view('filament.ns-conseil.theme'),

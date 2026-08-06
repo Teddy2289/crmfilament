@@ -23,7 +23,7 @@ class NavigationOrderSettings extends Page implements HasForms
 
     protected static ?string $navigationLabel = 'Ordre des menus';
 
-    protected static ?string $title = 'Ordre des menus — NS Conseil';
+    protected static ?string $title = 'Ordre des menus — AOPIA LIKE Formation';
 
     protected static ?string $navigationGroup = 'Paramétrage CRM';
 
@@ -102,7 +102,7 @@ class NavigationOrderSettings extends Page implements HasForms
                 'default_crm' => 'ns-conseil',
                 'valeur' => json_encode($order, JSON_UNESCAPED_UNICODE),
                 'type' => 'json',
-                'label' => 'Ordre des groupes de menu (NS Conseil)',
+                'label' => 'Ordre des groupes de menu (AOPIA LIKE Formation)',
             ],
         );
 
@@ -110,7 +110,7 @@ class NavigationOrderSettings extends Page implements HasForms
 
         Notification::make()
             ->title('Ordre des menus mis à jour')
-            ->body('Le nouveau classement s\'appliquera au prochain chargement du menu NS Conseil.')
+            ->body('Le nouveau classement s\'appliquera au prochain chargement du menu AOPIA LIKE Formation.')
             ->success()
             ->send();
     }

@@ -22,7 +22,7 @@
             @yield('content')
         </div>
         <div class="footer">
-            AOPIA Formation — NS Conseil &bull; assistante-commerciale@ns-conseil.com
+            AOPIA Formation — AOPIA LIKE Formation &bull; assistante-commerciale@ns-conseil.com
         </div>
     </div>
 </body>

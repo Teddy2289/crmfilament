@@ -14,7 +14,7 @@ Pour le projet actuel, utiliser:
 | Besoin | Emplacement Laravel |
 |---|---|
 | Model | `app/Models` |
-| Resource Filament Ns Conseil | `app/Filament/NsConseil/Resources` |
+| Resource Filament AOPIA LIKE Formation | `app/Filament/NsConseil/Resources` |
 | Resource Filament AlloPro | `app/Filament/Allopro/Resources` |
 | Resource Super Admin | `app/Filament/SuperAdmin/Resources` |
 | Service metier AOPIA | `app/Services/Aopia` |

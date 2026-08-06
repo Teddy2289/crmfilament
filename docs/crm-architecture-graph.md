@@ -321,7 +321,7 @@ reporte / interrompu / annule / abandon
 ### Accès Panels
 - **admin**: Panel principal
 - **allopro**: Panel Allopro
-- **ns-conseil**: Panel NS Conseil
+- **ns-conseil**: Panel AOPIA LIKE Formation
 - **partenaires-pme**: Panel Partenaires PME
 
 ---

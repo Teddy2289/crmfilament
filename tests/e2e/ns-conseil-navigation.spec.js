@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginToNsConseil } from './support/auth.js';
 
-test.describe('Navigation NS Conseil', () => {
+test.describe('Navigation AOPIA LIKE Formation', () => {
     test('ouvre la liste des prospects apres connexion', async ({ page }) => {
         await loginToNsConseil(page);
 

@@ -67,7 +67,7 @@ Theme UI:
 ## 4. Arborescence fonctionnelle
 
 ```text
-CRM NS Conseil
+CRM AOPIA LIKE Formation
   Pipeline
     Opportunites
     Prospects
@@ -370,19 +370,19 @@ Modules couverts:
 
 | Module | Panel |
 |---|---|
-| prospects | Ns Conseil |
-| partenaires | Ns Conseil |
-| clients | Ns Conseil |
-| opportunites | Ns Conseil |
-| rendez_vous | Ns Conseil |
-| entreprises | Ns Conseil |
-| campagne_phonings | Ns Conseil |
-| dossier_formations | Ns Conseil |
-| activites | Ns Conseil |
-| rapports | Ns Conseil |
-| document_knowledges | Ns Conseil |
-| script_appels | Ns Conseil |
-| statut_phonings | Ns Conseil |
+| prospects | AOPIA LIKE Formation |
+| partenaires | AOPIA LIKE Formation |
+| clients | AOPIA LIKE Formation |
+| opportunites | AOPIA LIKE Formation |
+| rendez_vous | AOPIA LIKE Formation |
+| entreprises | AOPIA LIKE Formation |
+| campagne_phonings | AOPIA LIKE Formation |
+| dossier_formations | AOPIA LIKE Formation |
+| activites | AOPIA LIKE Formation |
+| rapports | AOPIA LIKE Formation |
+| document_knowledges | AOPIA LIKE Formation |
+| script_appels | AOPIA LIKE Formation |
+| statut_phonings | AOPIA LIKE Formation |
 | tickets | AlloPro |
 | fiche_p2 | AlloPro |
 | artisans | AlloPro |
@@ -419,16 +419,16 @@ Entites actuellement exposees aux droits champ:
 
 | Entite | Panel |
 |---|---|
-| prospects | Ns Conseil |
-| partenaires | Ns Conseil |
-| clients | Ns Conseil |
-| opportunites | Ns Conseil |
-| rendez_vous | Ns Conseil |
-| entreprises | Ns Conseil |
-| campagne_phonings | Ns Conseil |
-| dossier_formations | Ns Conseil |
-| script_appels | Ns Conseil |
-| statut_phonings | Ns Conseil |
+| prospects | AOPIA LIKE Formation |
+| partenaires | AOPIA LIKE Formation |
+| clients | AOPIA LIKE Formation |
+| opportunites | AOPIA LIKE Formation |
+| rendez_vous | AOPIA LIKE Formation |
+| entreprises | AOPIA LIKE Formation |
+| campagne_phonings | AOPIA LIKE Formation |
+| dossier_formations | AOPIA LIKE Formation |
+| script_appels | AOPIA LIKE Formation |
+| statut_phonings | AOPIA LIKE Formation |
 | tickets | AlloPro |
 
 Comportement:
@@ -459,7 +459,7 @@ npx playwright test tests/e2e/role-field-visibility.spec.js
 Le test couvre:
 
 - acces complet;
-- acces selectif Ns Conseil;
+- acces selectif AOPIA LIKE Formation;
 - acces selectif AlloPro;
 - generation du catalogue;
 - droits `show`, `create`, `edit`, `flux`, `all`;
@@ -480,7 +480,7 @@ Implementation actuelle:
 - `app/Services/RingoverUserMapper.php`
 - `app/Http/Controllers/RingoverWebhookController.php`
 - `app/Console/Commands/SyncRingoverCalls.php`
-- widgets Ringover dans Ns Conseil
+- widgets Ringover dans AOPIA LIKE Formation
 - champs Ringover dans `app/Models/Appel.php`
 - route webhook `/api/ringover/webhook`
 

@@ -19,7 +19,7 @@ Ce document contient les identifiants de connexion pour les utilisateurs de dém
 - **Email:** `luc.robert.5@demo-crm.local` | **Mot de passe:** `demo123`
 - **Email:** `claire.richard.6@demo-crm.local` | **Mot de passe:** `demo123`
 
-**Accès:** Accès complet au panel NS Conseil, gestion des utilisateurs et configuration.
+**Accès:** Accès complet au panel AOPIA LIKE Formation, gestion des utilisateurs et configuration.
 
 ---
 
@@ -29,7 +29,7 @@ Ce document contient les identifiants de connexion pour les utilisateurs de dém
 - **Email:** `nicolas.leroy.9@demo-crm.local` | **Mot de passe:** `demo123`
 
 **Accès:** 
-- Panel NS Conseil
+- Panel AOPIA LIKE Formation
 - Gestion des prospects et partenaires (CRUD)
 - Gestion des rendez-vous
 - Création d'opportunités
@@ -42,7 +42,7 @@ Ce document contient les identifiants de connexion pour les utilisateurs de dém
 - **Email:** `camille.laurent.12@demo-crm.local` | **Mot de passe:** `demo123`
 
 **Accès:**
-- Panel NS Conseil
+- Panel AOPIA LIKE Formation
 - Gestion des prospects (CRUD)
 - Enregistrement des appels
 - Workflow phoning CSE
@@ -137,7 +137,7 @@ php artisan db:seed --class=DemoUsersSeeder
 
 ## Panels par rôle
 
-| Rôle | NS Conseil | Admin | Super Admin | Allopro |
+| Rôle | AOPIA LIKE Formation | Admin | Super Admin | Allopro |
 |------|------------|-------|-------------|---------|
 | Super Admin | ✅ | ✅ | ✅ | ✅ |
 | Administrateur | ✅ | ✅ | ❌ | ❌ |

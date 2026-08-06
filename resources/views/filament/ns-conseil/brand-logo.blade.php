@@ -7,11 +7,11 @@
 <div style="display: flex; align-items: center; gap: 0.6rem;">
     <img
         src="{{ $logoUrl }}"
-        alt="NS Conseil"
+        alt="AOPIA LIKE Formation"
         style="height: 3.5rem; width: auto;"
     />
     <span style="font-weight: 700; font-size: 1rem; line-height: 1.1; color: #ffffff; letter-spacing: -0.01em;">
-        NS CONSEIL
+        AOPIA LIKE Formation
         <span style="display: block; font-size: 0.65rem; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 0.05em;">
             CRM PARTENAIRES
         </span>

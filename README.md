@@ -12,13 +12,13 @@ CRM commercial Laravel/Filament pour AOPIA, LIKE Formation et le domaine AlloPro
 - PhpSpreadsheet pour les imports Excel
 - Dompdf et generation de fiches
 - Google Calendar / Microsoft Graph selon les integrations activees
-- Playwright pour les tests navigateur du panel Ns Conseil
+- Playwright pour les tests navigateur du panel AOPIA LIKE Formation
 
 ## Panels
 
 | Panel | URL | Usage |
 |---|---|---|
-| Ns Conseil | `/ns-conseil` | CRM AOPIA / LIKE: prospects, partenaires, clients, appels, RDV, phoning |
+| AOPIA LIKE Formation | `/ns-conseil` | CRM AOPIA / LIKE: prospects, partenaires, clients, appels, RDV, phoning |
 | AlloPro | `/allopro` | Centre de contact artisans et tickets |
 | Admin | `/admin` | Administration generale |
 | Super Admin | `/super-admin` | Utilisateurs, roles, permissions, profils, dictionnaires et parametres CRM |
@@ -65,7 +65,7 @@ Fichiers principaux:
 
 ## Imports Excel
 
-Les importeurs utilisent PhpSpreadsheet et les resolvers Filament du panel Ns Conseil.
+Les importeurs utilisent PhpSpreadsheet et les resolvers Filament du panel AOPIA LIKE Formation.
 
 | Import | Source | Code |
 |---|---|---|
@@ -108,10 +108,10 @@ php artisan config:clear
 | `ETAT_AVANCEMENT.md` | Avancement courant du projet |
 | `MANUEL.md` | Manuel technique de deploiement, developpement et tests |
 | `directive/specs/Modele_Projet_AOPIA_Laravel.md` | Modele fonctionnel Laravel/Filament |
-| `directive/specs/MANUEL_UTILISATION.md` | Manuel utilisateur du panel Ns Conseil |
+| `directive/specs/MANUEL_UTILISATION.md` | Manuel utilisateur du panel AOPIA LIKE Formation |
 | `directive/specs/Champs_Requis_Par_Entite.md` | Champs requis et droits par champ |
 | `tests/e2e/README.md` | Lancement des tests Playwright |
 
 ## Licence
 
-Projet proprietaire AOPIA / LIKE Formation / NS Conseil.
+Projet proprietaire AOPIA / LIKE Formation / AOPIA LIKE Formation.

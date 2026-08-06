@@ -29,7 +29,7 @@ class NsConseilTheme
 
     public function getLabel(): string
     {
-        return $this->theme?->label ?? 'NS Conseil';
+        return $this->theme?->label ?? 'AOPIA LIKE Formation';
     }
 
     public function getColors(): array

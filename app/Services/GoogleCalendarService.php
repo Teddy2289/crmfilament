@@ -491,7 +491,7 @@ class GoogleCalendarService
             $lines[] = "\n📝 Notes :\n{$rdv->notes}";
         }
 
-        $lines[] = "\n🔗 CRM NS Conseil — RDV #{$rdv->id}";
+        $lines[] = "\n🔗 CRM AOPIA LIKE Formation — RDV #{$rdv->id}";
 
         return implode("\n", $lines);
     }

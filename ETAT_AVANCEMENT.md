@@ -40,7 +40,7 @@ Les droits sont centralises dans `app/Support/AccessRightsCatalog.php` et utilis
 
 Le catalogue gere les droits par module pour les panels:
 
-- Ns Conseil: prospects, partenaires, clients, opportunites, appels, RDV, campagnes, statuts, imports.
+- AOPIA LIKE Formation: prospects, partenaires, clients, opportunites, appels, RDV, campagnes, statuts, imports.
 - AlloPro: tickets et ressources associees.
 - Super Admin: users, roles, profils CRM, parametres et dictionnaires.
 
@@ -69,7 +69,7 @@ Les formulaires filtrent les donnees non autorisees a la creation et a l'edition
 Le test `tests/Feature/RoleAccessRightsTest.php` verifie:
 
 - role en acces complet;
-- role selectif Ns Conseil;
+- role selectif AOPIA LIKE Formation;
 - role selectif AlloPro;
 - presence du catalogue de droits champs;
 - actions `show`, `create`, `edit`, `flux`, `all`;
@@ -96,7 +96,7 @@ Les fichiers source de test sont dans `directive/archive/`. Les regles de mappin
 | `README.md` | Mis a jour: stack, panels, droits, imports, commandes |
 | `MANUEL.md` | A maintenir comme manuel technique courant |
 | `directive/specs/Modele_Projet_AOPIA_Laravel.md` | Source principale de mapping CDC vers Laravel |
-| `directive/specs/MANUEL_UTILISATION.md` | Manuel utilisateur Ns Conseil |
+| `directive/specs/MANUEL_UTILISATION.md` | Manuel utilisateur AOPIA LIKE Formation |
 | `directive/specs/Champs_Requis_Par_Entite.md` | Champs requis et droits par champ |
 | `tests/e2e/README.md` | Guide Playwright actuel |
 

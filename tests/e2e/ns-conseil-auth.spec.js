@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { loginToNsConseil } from './support/auth.js';
 
-test.describe('Authentification NS Conseil', () => {
+test.describe('Authentification AOPIA LIKE Formation', () => {
     test('redirige un visiteur anonyme vers la page de connexion', async ({ page }) => {
         await page.goto('/ns-conseil');
 
         await expect(page).toHaveURL(/\/ns-conseil\/login$/);
-        await expect(page.getByText('NS CONSEIL').first()).toBeVisible();
+        await expect(page.getByText('AOPIA LIKE Formation').first()).toBeVisible();
         await expect(page.getByLabel(/adresse e-mail|email/i)).toBeVisible();
     });
 

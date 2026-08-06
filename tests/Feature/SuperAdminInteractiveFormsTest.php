@@ -43,7 +43,7 @@ class SuperAdminInteractiveFormsTest extends TestCase
             ->assertSee('Identité')
             ->assertSee('Modules')
             ->assertSee('Champs')
-            ->assertSee('NS Conseil / AOPIA')
+            ->assertSee('AOPIA LIKE Formation / AOPIA')
             ->assertSee('AOPIA - Prospects')
             ->assertSee('Autres tables')
             ->assertSee('Module')

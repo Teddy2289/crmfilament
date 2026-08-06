@@ -5,9 +5,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $pageTitle }} — CRM NS Conseil</title>
+    <title>{{ $pageTitle }} — CRM AOPIA LIKE Formation</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    {{-- Charger le thème NS Conseil (fonts + variables CSS) --}}
+    {{-- Charger le thème AOPIA LIKE Formation (fonts + variables CSS) --}}
     @include('filament.ns-conseil.theme')
 </head>
 <body class="h-full fi-body">

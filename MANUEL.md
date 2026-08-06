@@ -61,7 +61,7 @@ Panels:
 
 | Panel | URL |
 |---|---|
-| Ns Conseil | `/ns-conseil` |
+| AOPIA LIKE Formation | `/ns-conseil` |
 | AlloPro | `/allopro` |
 | Admin | `/admin` |
 | Super Admin | `/super-admin` |
@@ -302,7 +302,7 @@ Le dossier `tests/e2e/README.md` documente les variables disponibles.
 
 ### Tests Dusk
 
-`tests/Browser/` contient encore des tests Dusk historiques. Playwright est le parcours E2E principal pour le panel Ns Conseil.
+`tests/Browser/` contient encore des tests Dusk historiques. Playwright est le parcours E2E principal pour le panel AOPIA LIKE Formation.
 
 ---
 

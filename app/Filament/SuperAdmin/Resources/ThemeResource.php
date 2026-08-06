@@ -45,7 +45,7 @@ class ThemeResource extends Resource
                         Forms\Components\Select::make('panel')
                             ->label('Panneau')
                             ->options([
-                                'ns-conseil' => 'NS Conseil',
+                                'ns-conseil' => 'AOPIA LIKE Formation',
                                 'admin' => 'Admin',
                                 'super-admin' => 'Super administrateur',
                                 'allopro' => 'Allopro',
@@ -299,7 +299,7 @@ class ThemeResource extends Resource
                 Tables\Filters\SelectFilter::make('panel')
                     ->label('Panneau')
                     ->options([
-                        'ns-conseil' => 'NS Conseil',
+                        'ns-conseil' => 'AOPIA LIKE Formation',
                         'admin' => 'Admin',
                         'super-admin' => 'Super administrateur',
                         'allopro' => 'Allopro',

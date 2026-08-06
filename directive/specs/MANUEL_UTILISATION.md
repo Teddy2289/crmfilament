@@ -2,7 +2,7 @@
 
 **Version**: 1.1
 **Date**: 26 Juin 2026
-**Panel principal**: Ns Conseil (`/ns-conseil`)
+**Panel principal**: AOPIA LIKE Formation (`/ns-conseil`)
 **Administration**: Super Admin (`/super-admin`)
 
 ---
@@ -15,7 +15,7 @@ URLs locales usuelles:
 
 | Panel | URL |
 |---|---|
-| Ns Conseil | `http://crmfilament.test/ns-conseil` |
+| AOPIA LIKE Formation | `http://crmfilament.test/ns-conseil` |
 | AlloPro | `http://crmfilament.test/allopro` |
 | Super Admin | `http://crmfilament.test/super-admin` |
 
@@ -44,7 +44,7 @@ La visibilite depend des droits du role et du profil CRM.
 Chemin:
 
 ```text
-Ns Conseil > Prospects
+AOPIA LIKE Formation > Prospects
 ```
 
 Actions possibles selon droits:
@@ -81,7 +81,7 @@ La conversion en partenaire est disponible uniquement apres QF valide. Une fois 
 Chemin:
 
 ```text
-Ns Conseil > Workflow Phoning
+AOPIA LIKE Formation > Workflow Phoning
 ```
 
 Le workflow permet de:
@@ -108,7 +108,7 @@ DEP_XX + tag statut obligatoire par appel
 Chemin:
 
 ```text
-Ns Conseil > Partenaires
+AOPIA LIKE Formation > Partenaires
 ```
 
 Une fiche partenaire contient:
@@ -137,7 +137,7 @@ A prospecter -> En cours -> RDV en cours -> Signe accord cadre -> Convention eng
 Chemin:
 
 ```text
-Ns Conseil > Clients
+AOPIA LIKE Formation > Clients
 ```
 
 Les clients sont principalement importes depuis Dolibarr.
@@ -164,7 +164,7 @@ Les droits peuvent empecher la creation ou la modification de certains champs se
 Chemin:
 
 ```text
-Ns Conseil > Opportunites
+AOPIA LIKE Formation > Opportunites
 ```
 
 Une opportunite sert a suivre un signal faible avant qu'il devienne un prospect.
@@ -231,7 +231,7 @@ Cet historique sert a la tracabilite commerciale.
 Chemin:
 
 ```text
-Ns Conseil > Administration > Base de connaissances
+AOPIA LIKE Formation > Administration > Base de connaissances
 ```
 
 Le module regroupe les procedures, scripts, FAQ/objections, modeles mails et modeles de fiche recap.
