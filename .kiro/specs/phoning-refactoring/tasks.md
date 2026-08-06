@@ -275,7 +275,7 @@ avant de passer à la suivante.
     - Extraire l'iframe Ringover, la boîte NR et les infos d'appel entrant
     - _Requirements: 10.4, 10.6, 1.7_
 
-  - [~] 9.5 Mettre à jour `phoning-workflow.blade.php` pour utiliser les composants
+  - [-] 9.5 Mettre à jour `phoning-workflow.blade.php` pour utiliser les composants
     - Remplacer le HTML inline par `<x-phoning::contact-panel ...>`, `<x-phoning::status-panel ...>`, `<x-phoning::email-preview ...>`, `<x-phoning::ringover-widget ...>`
     - Vérifier que le template orchestrateur reste ≤ 300 lignes (point de départ ~3 000+ lignes)
     - _Requirements: 1.3, 10.7_
@@ -286,7 +286,7 @@ avant de passer à la suivante.
     - Extraire le tableau triable SortableJS avec les boutons de réorganisation
     - _Requirements: 10.5, 10.6, 1.7_
 
-  - [~] 10.2 Mettre à jour `phoning-back-office.blade.php` pour utiliser `x-phoning::queue-table`
+  - [ ] 10.2 Mettre à jour `phoning-back-office.blade.php` pour utiliser `x-phoning::queue-table`
     - Remplacer le HTML inline par `<x-phoning::queue-table :prospects="$prospectList" wire:model="selectedIds" />`
     - Vérifier que le template orchestrateur reste ≤ 300 lignes (point de départ 1 279 lignes)
     - _Requirements: 1.4, 10.8_
