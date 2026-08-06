@@ -264,7 +264,7 @@ class PartenaireResource extends Resource
                         fn($state) => ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom((string) $state))?->icon()
                     ),
 
-                Tables\Columns\TextColumn::make('departement')
+                Tables\Columns\TextColumn::make('departement_label')
                     ->label('Département')->sortable()->alignCenter(),
 
                 Tables\Columns\TextColumn::make('statut')
@@ -459,7 +459,7 @@ class PartenaireResource extends Resource
                         fn($state) => ($state instanceof OrganizationType ? $state : OrganizationType::tryFrom($state))?->color() ?? 'gray'
                     ),
 
-                Tables\Columns\TextColumn::make('departement')
+                Tables\Columns\TextColumn::make('departement_label')
                     ->label('Département')
                     ->alignCenter(),
 
@@ -699,7 +699,7 @@ class PartenaireResource extends Resource
                             ->placeholder('—')
                             ->icon('heroicon-o-building-office'),
 
-                        Infolists\Components\TextEntry::make('departement')
+                        Infolists\Components\TextEntry::make('departement_label')
                             ->label('Département')
                             ->placeholder('—')
                             ->badge()

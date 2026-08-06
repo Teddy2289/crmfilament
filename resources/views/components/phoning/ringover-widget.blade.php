@@ -1,4 +1,4 @@
-@props(['phone', 'nrCount', 'maxNr', 'callId'])
+@props(['phone', 'nrCount', 'maxNr', 'callId', 'incomingCallPhone' => null, 'incomingCallMatches' => []])
 
 {{--
     Composant : ringover-widget

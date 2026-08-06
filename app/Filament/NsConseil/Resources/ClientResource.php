@@ -232,7 +232,7 @@ class ClientResource extends Resource
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('departement')
+                Tables\Columns\TextColumn::make('departement_label')
                     ->label('Dép.')
                     ->searchable()
                     ->sortable()
@@ -558,7 +558,7 @@ class ClientResource extends Resource
                     Infolists\Components\TextEntry::make('ville')
                         ->label('Ville')
                         ->placeholder('—'),
-                    Infolists\Components\TextEntry::make('departement')
+                    Infolists\Components\TextEntry::make('departement_label')
                         ->label('Département')
                         ->placeholder('—'),
                     Infolists\Components\TextEntry::make('region')

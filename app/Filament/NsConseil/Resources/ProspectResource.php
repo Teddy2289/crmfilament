@@ -357,7 +357,7 @@ class ProspectResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('departement')
+                Tables\Columns\TextColumn::make('departement_label')
                     ->label('Département')
                     ->alignCenter()
                     ->sortable(),
@@ -620,7 +620,7 @@ class ProspectResource extends Resource
                         ? "{$record->commercial->prenom} {$record->commercial->nom}"
                         : '—'),
 
-                Tables\Columns\TextColumn::make('departement')
+                Tables\Columns\TextColumn::make('departement_label')
                     ->label('Dép.')
                     ->alignCenter(),
 
@@ -772,7 +772,7 @@ class ProspectResource extends Resource
                             ->label("Secteur d'activité")
                             ->placeholder('—'),
 
-                        TextEntry::make('departement')
+                        TextEntry::make('departement_label')
                             ->label('Département')
                             ->placeholder('—'),
 

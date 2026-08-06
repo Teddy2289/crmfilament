@@ -196,7 +196,7 @@ class OpportuniteResource extends Resource
                             ? $state->label()
                             : ($state ? (OrganizationType::tryFrom((string) $state)?->label() ?? $state) : '-')),
 
-                    Infolists\Components\TextEntry::make('departement')
+                    Infolists\Components\TextEntry::make('departement_label')
                         ->label('Departement')
                         ->default('-'),
 
@@ -348,7 +348,7 @@ class OpportuniteResource extends Resource
                     ->sortable()
                     ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('departement')
+                Tables\Columns\TextColumn::make('departement_label')
                     ->label('Dép.')
                     ->alignCenter()
                     ->sortable(),

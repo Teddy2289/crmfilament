@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
+use App\Traits\HasDepartementLabel;
 use App\Traits\HasModelValidation;
 use App\Traits\HasInputSanitization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Support\Str;
 
 class Partenaire extends Model
 {
-    use HasFactory, SoftDeletes, HasModelValidation, HasInputSanitization;
+    use HasFactory, SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization;
 
     protected static function boot()
     {

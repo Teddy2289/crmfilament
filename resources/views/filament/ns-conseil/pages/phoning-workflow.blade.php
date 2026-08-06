@@ -270,6 +270,8 @@ $tentativesActuelles = $this->getTentativesAppel();
                     :nr-count="$tentativesActuelles"
                     :max-nr="$maxTentatives"
                     :call-id="$ringoverCallId"
+                    :incoming-call-phone="$incomingCallPhone"
+                    :incoming-call-matches="$incomingCallMatches"
                 />
 
             </div>{{-- /pw-col-side --}}

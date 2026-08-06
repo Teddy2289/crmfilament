@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
 use App\Enums\ProspectStatut;
+use App\Traits\HasDepartementLabel;
 use App\Traits\HasModelValidation;
 use App\Traits\HasInputSanitization;
 use Database\Factories\ProspectFactory;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class Prospect extends Model
 {
-    use HasFactory, SoftDeletes, HasModelValidation, HasInputSanitization;
+    use HasFactory, SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization;
 
     protected $table = 'prospects';
 

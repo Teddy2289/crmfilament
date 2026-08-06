@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasDepartementLabel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class Opportunite extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasDepartementLabel;
 
     protected $table = 'opportunites';
 

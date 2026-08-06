@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasDepartementLabel;
 use App\Traits\HasModelValidation;
 use App\Traits\HasInputSanitization;
 use Illuminate\Database\Eloquent\Builder;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Client extends Model
 {
-    use SoftDeletes, HasModelValidation, HasInputSanitization;
+    use SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization;
 
     protected $table = 'clients';
 
