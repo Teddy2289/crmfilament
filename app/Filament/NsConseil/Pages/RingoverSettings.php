@@ -28,7 +28,7 @@ class RingoverSettings extends Page
 
     public ?EnvSetting $ringoverTimeoutSetting = null;
 
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         $user = auth()->user();
 
@@ -85,3 +85,4 @@ class RingoverSettings extends Page
             ->send();
     }
 }
+

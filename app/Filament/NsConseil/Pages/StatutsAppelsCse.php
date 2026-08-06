@@ -21,7 +21,7 @@ class StatutsAppelsCse extends Page
 
     protected static ?string $slug = 'statuts-appels-cse';
 
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         return AccessRightsCatalog::userCan(auth()->user(), 'statuts_appels_cse.view');
     }
@@ -31,3 +31,4 @@ class StatutsAppelsCse extends Page
         return static::canAccess();
     }
 }
+

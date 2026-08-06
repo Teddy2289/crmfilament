@@ -177,8 +177,8 @@ avant de passer à la suivante.
   - Vérifier que `PhoningWorkflow.php` a réduit significativement son nombre de lignes après les extractions 1, 3 et 4.
   - Demander confirmation à l'utilisateur avant de continuer.
 
-- [ ] 6. Créer PhoningEmailPreviewService et le Concern HasEmailPreview
-  - [ ] 6.1 Créer `App\Services\Phoning\PhoningEmailPreviewService`
+- [x] 6. Créer PhoningEmailPreviewService et le Concern HasEmailPreview
+  - [x] 6.1 Créer `App\Services\Phoning\PhoningEmailPreviewService`
     - Implémenter `buildPayload(statut, contact, formFields)` : crée le Mailable, résout destinataire, extrait sujet/corps
     - Retourner `null` si statut hors de l'ensemble déclencheur email
     - Implémenter `makeMailable(statut, contact, fields)` : factory vers les Mailables existants
@@ -253,8 +253,8 @@ avant de passer à la suivante.
   - Vérifier que `HasEmailPreview` expose les méthodes `getPreviewMailableForStatut()`, `buildPreviewRdvMailable()`, `resolvePreviewRecipient()`, `buildProspectionMailContext()`.
   - Demander confirmation à l'utilisateur avant de continuer.
 
-- [ ] 9. Découper phoning-workflow.blade.php en composants Blade anonymes
-  - [~] 9.1 Créer `resources/views/components/phoning/contact-panel.blade.php`
+- [-] 9. Découper phoning-workflow.blade.php en composants Blade anonymes
+  - [x] 9.1 Créer `resources/views/components/phoning/contact-panel.blade.php`
     - Déclarer `@props(['contact', 'contactType', 'queueCount', 'progress', 'isSupervisorMode'])`
     - Extraire la carte identité entreprise, la barre de contact et la progression depuis le blade monolithique
     - Vérifier rendu sans exception avec un tableau de props minimal
@@ -270,7 +270,7 @@ avant de passer à la suivante.
     - Extraire la modal d'aperçu email éditable avec bindings `wire:model.live`
     - _Requirements: 10.3, 10.6, 1.7_
 
-  - [~] 9.4 Créer `resources/views/components/phoning/ringover-widget.blade.php`
+  - [x] 9.4 Créer `resources/views/components/phoning/ringover-widget.blade.php`
     - Déclarer `@props(['phone', 'nrCount', 'maxNr', 'callId'])`
     - Extraire l'iframe Ringover, la boîte NR et les infos d'appel entrant
     - _Requirements: 10.4, 10.6, 1.7_
@@ -309,18 +309,18 @@ avant de passer à la suivante.
     - Lancer `npm run build` pour vérifier compilation sans erreur
     - _Requirements: 11.5_
 
-- [ ] 12. Nettoyage du code mort et vérification des limites de lignes
+- [x] 12. Nettoyage du code mort et vérification des limites de lignes
   - [x] 12.1 Supprimer le code mort dans `PhoningWorkflow.php` et `PhoningBackOffice.php`
     - Supprimer propriétés, méthodes et blocs commentés désormais entièrement couverts par les Concerns
     - Vérifier `PhoningWorkflow ≤ 200 lignes` (depuis 1 566 lignes) et `PhoningBackOffice ≤ 200 lignes` (depuis 345 lignes)
     - _Requirements: 1.1, 1.2_
 
-  - [~] 12.2 Vérifier les limites de lignes de tous les fichiers créés
+  - [x] 12.2 Vérifier les limites de lignes de tous les fichiers créés
     - Chaque Concern PHP ≤ 300 lignes, chaque Service PHP ≤ 200 lignes, chaque composant Blade ≤ 300 lignes
     - `phoning-workflow.blade.php ≤ 300 lignes` (depuis ~3 000+ lignes), `phoning-back-office.blade.php ≤ 300 lignes` (depuis 1 279 lignes)
     - _Requirements: 1.5, 1.6, 1.7_
 
-  - [ ] 12.3 Écrire les tests d'intégration de rétrocompatibilité
+  - [x] 12.3 Écrire les tests d'intégration de rétrocompatibilité
     - `PhoningWorkflow::mount()` sans exception si file vide
     - `PhoningBackOffice::loadProspects()` retourne `[]` sans téléprospecteur sélectionné
     - Rendu sans erreur du composant `contact-panel` avec props minimaux

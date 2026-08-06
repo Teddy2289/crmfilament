@@ -17,6 +17,16 @@ class ListProspects extends ListRecords
 {
     use HasResponsiveTable, WithCommonEagerLoading;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
     protected static string $resource = ProspectResource::class;
 
     protected function getHeaderActions(): array
@@ -69,3 +79,4 @@ class ListProspects extends ListRecords
         return $tabs;
     }
 }
+

@@ -56,7 +56,7 @@ class TicketResource extends Resource
     protected static ?string $recordTitleAttribute = 'reference';
 
     // ── Navigation badge ─────────────────────────────────────────
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         return static::userCanViewResourceList();
     }
@@ -541,3 +541,4 @@ class TicketResource extends Resource
         return static::userCanResourcePermission('create');
     }
 }
+

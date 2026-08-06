@@ -3,9 +3,9 @@
 namespace App\Filament\NsConseil\Resources\RendezVousAssociationResource\Pages;
 
 use App\Filament\NsConseil\Resources\RendezVousAssociationResource;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ViewRecord;
 
-class ListRendezVousAssociations extends ListRecords
+class ViewRendezVousAssociation extends ViewRecord
 {
     protected static string $resource = RendezVousAssociationResource::class;
 
@@ -15,6 +15,11 @@ class ListRendezVousAssociations extends ListRecords
     }
 
     public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
     {
         return static::canAccess();
     }

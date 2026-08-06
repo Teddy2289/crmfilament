@@ -11,6 +11,16 @@ class CreateRendezVous extends CreateRecord
 {
     protected static string $resource = RendezVousResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canAccess();
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
@@ -26,3 +36,4 @@ class CreateRendezVous extends CreateRecord
         return RendezVousResource::filterFormDataForFieldPermissions($data, 'create');
     }
 }
+

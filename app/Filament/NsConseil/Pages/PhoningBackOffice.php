@@ -28,7 +28,7 @@ class PhoningBackOffice extends Page
 
     protected static ?int $navigationSort = 3;
 
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         return static::userHasAnyRole(['admin', 'superviseur']);
     }
@@ -62,3 +62,4 @@ class PhoningBackOffice extends Page
         ];
     }
 }
+

@@ -62,8 +62,9 @@ class Dashboard extends Page
         }
     }
 
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         return auth()->user()?->hasAnyRole(['super_admin', 'administrateur']) ?? false;
     }
 }
+

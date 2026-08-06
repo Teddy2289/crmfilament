@@ -4,7 +4,7 @@ namespace App\Support;
 
 trait UsesResourcePermissions
 {
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         return static::userCanViewResourceList();
     }
@@ -276,3 +276,4 @@ protected static function getRawChildComponents(object $component, string $prope
         }
     }
 }
+

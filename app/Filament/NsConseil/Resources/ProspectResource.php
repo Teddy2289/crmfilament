@@ -53,6 +53,21 @@ class ProspectResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationBadge(): ?string
     {
         return (string) app(NavigationBadgeCacheService::class)->getProspectsCount();
@@ -1249,3 +1264,4 @@ class ProspectResource extends Resource
         ];
     }
 }
+

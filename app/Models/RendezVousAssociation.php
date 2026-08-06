@@ -25,4 +25,17 @@ class RendezVousAssociation extends Model
     {
         return $this->belongsTo(RendezVous::class, 'rendez_vous_id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Polymorphic accessor to the associated model (Prospect/Partenaire/Client)
+     */
+    public function rdvable()
+    {
+        return $this->morphTo();
+    }
 }

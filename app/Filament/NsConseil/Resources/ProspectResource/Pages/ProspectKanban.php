@@ -9,6 +9,11 @@ class ProspectKanban extends Page
 {
     protected static string $resource = ProspectResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
     protected static string $view = 'livewire.prospect-kanban';
 
     protected static ?string $navigationLabel = 'Pipeline Kanban';
@@ -17,3 +22,4 @@ class ProspectKanban extends Page
 
     protected static ?string $title = 'Pipeline Prospects';
 }
+

@@ -13,6 +13,21 @@ class ViewPartenaire extends ViewRecord
 {
     protected static string $resource = PartenaireResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canAccess();
+    }
+
     protected function getHeaderWidgets(): array
     {
         return [
@@ -53,3 +68,4 @@ class ViewPartenaire extends ViewRecord
         ];
     }
 }
+

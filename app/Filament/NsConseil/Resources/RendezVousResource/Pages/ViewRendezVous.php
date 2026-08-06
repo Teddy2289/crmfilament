@@ -21,6 +21,21 @@ class ViewRendezVous extends ViewRecord
 {
     protected static string $resource = RendezVousResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canAccess();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -193,3 +208,4 @@ class ViewRendezVous extends ViewRecord
         ];
     }
 }
+

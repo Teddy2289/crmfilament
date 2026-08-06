@@ -11,6 +11,16 @@ class EditProspect extends EditRecord
 {
     use HasResponsiveForm;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canAccess();
+    }
+
     protected static string $resource = ProspectResource::class;
 
     protected function mutateFormDataBeforeSave(array $data): array
@@ -31,3 +41,4 @@ class EditProspect extends EditRecord
         return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
     }
 }
+

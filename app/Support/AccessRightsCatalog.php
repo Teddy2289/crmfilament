@@ -105,6 +105,14 @@ class AccessRightsCatalog
                     'rendez_vous.delete' => 'Supprimer',
                 ],
             ],
+            'rdv_association' => [
+                'label' => 'AOPIA - Associations RDV',
+                'panel' => 'ns-conseil',
+                'permissions' => [
+                    'rdv_association.view_any' => 'Lister',
+                    'rdv_association.view' => 'Voir',
+                ],
+            ],
             'entreprises' => [
                 'label' => 'AOPIA - Entreprises',
                 'panel' => 'ns-conseil',

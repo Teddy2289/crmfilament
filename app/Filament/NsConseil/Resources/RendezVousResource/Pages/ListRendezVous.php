@@ -20,6 +20,16 @@ class ListRendezVous extends ListRecords
 
     protected static string $resource = RendezVousResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
     protected function getHeaderActions(): array
     {
         return [Actions\CreateAction::make()];
@@ -82,3 +92,4 @@ class ListRendezVous extends ListRecords
         );
     }
 }
+

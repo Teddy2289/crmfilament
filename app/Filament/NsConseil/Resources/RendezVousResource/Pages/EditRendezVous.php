@@ -12,6 +12,16 @@ class EditRendezVous extends EditRecord
 {
     protected static string $resource = RendezVousResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canAccess();
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         return RendezVousResource::filterFormDataForFieldPermissions($data, 'edit');
@@ -30,3 +40,4 @@ class EditRendezVous extends EditRecord
         return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
     }
 }
+

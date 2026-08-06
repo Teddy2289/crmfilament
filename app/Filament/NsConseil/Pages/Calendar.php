@@ -22,7 +22,7 @@ class Calendar extends Page
 
     protected static string $view = 'filament.ns-conseil.pages.calendar';
 
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         return AccessRightsCatalog::userCan(auth()->user(), 'calendrier.view');
     }
@@ -117,3 +117,4 @@ class Calendar extends Page
         ];
     }
 }
+

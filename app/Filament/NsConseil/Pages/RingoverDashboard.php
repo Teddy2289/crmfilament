@@ -37,7 +37,7 @@ class RingoverDashboard extends Page
 
     public int $ringoverTimeout = 10;
 
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         $user = auth()->user();
 
@@ -147,3 +147,4 @@ class RingoverDashboard extends Page
         return [RingoverAppelsRecents::class];
     }
 }
+

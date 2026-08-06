@@ -12,6 +12,16 @@ class CreatePartenaire extends CreateRecord
 
     protected static string $resource = PartenaireResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canAccess();
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);

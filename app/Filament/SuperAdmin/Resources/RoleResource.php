@@ -35,6 +35,7 @@ class RoleResource extends Resource
         'clients',
         'opportunites',
         'rendez_vous',
+        'rdv_association',
         'entreprises',
         'campagne_phonings',
         'groupe_telepros',

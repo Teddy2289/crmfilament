@@ -14,6 +14,7 @@ class DocumentKnowledge extends Model
     protected $fillable = [
         'titre',
         'description',
+        'contenu',
         'type',
         'categorie',
         'fichier_path',

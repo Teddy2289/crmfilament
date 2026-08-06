@@ -72,3 +72,28 @@ test('PhoningBackOffice respecte la limite de lignes ≤ 200', function () {
     $lines = count(file($file));
     expect($lines)->toBeLessThanOrEqual(200);
 });
+
+test('composant contact-panel existe et respecte la limite de lignes ≤ 300', function () {
+    $file = dirname(__DIR__, 2) . '/resources/views/components/phoning/contact-panel.blade.php';
+    expect(file_exists($file))->toBeTrue('contact-panel.blade.php doit exister');
+    $lines = count(file($file));
+    expect($lines)->toBeLessThanOrEqual(300);
+});
+
+test('composant contact-panel déclare les bons @props', function () {
+    $file    = dirname(__DIR__, 2) . '/resources/views/components/phoning/contact-panel.blade.php';
+    $content = file_get_contents($file);
+    expect($content)->toContain('@props');
+    foreach (['contact', 'contactType', 'queueCount', 'progress', 'isSupervisorMode'] as $prop) {
+        expect($content)->toContain("'{$prop}'");
+    }
+});
+
+test('composant contact-panel se compile sans exception Blade', function () {
+    $file   = dirname(__DIR__, 2) . '/resources/views/components/phoning/contact-panel.blade.php';
+    $source = file_get_contents($file);
+
+    // BladeCompiler::compileString() est accessible statiquement
+    expect(fn () => \Illuminate\Support\Facades\Blade::compileString($source))
+        ->not->toThrow(\Throwable::class);
+});

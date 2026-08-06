@@ -11,6 +11,11 @@ class PartenaireKanban extends KanbanBoard
 {
     protected static string $resource = PartenaireResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check() && auth()->user()?->actif;
+    }
+
     protected static string $model = Partenaire::class;
 
     protected static string $statusEnum = OrganizationStatus::class;

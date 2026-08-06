@@ -1,0 +1,304 @@
+﻿                <div class="pw-result-panel pw-card">
+                    <div class="pw-result-header">
+                        <span class="pw-result-header-icon">
+                            <svg class="pw-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>
+                        </span>
+                        <span>Résultat de l'appel</span>
+                    </div>
+
+                    <div class="pw-case-tabs">
+                        @foreach ($statutsGroupes as $groupeKey => $groupe)
+                        <button type="button"
+                            class="pw-case-tab {{ $groupeKey === $activeGroupeKey ? 'active' : '' }}"
+                            data-case-tab="{{ $groupeKey }}"
+                            onclick="switchCaseTab('{{ $groupeKey }}')">
+                            {{ $groupe['label'] }}
+                        </button>
+                        @endforeach
+                    </div>
+
+                    @foreach ($statutsGroupes as $groupeKey => $groupe)
+                    <div class="pw-case-panel {{ $groupeKey === $activeGroupeKey ? 'active' : '' }}" data-case-panel="{{ $groupeKey }}">
+                        <div class="pw-chip-group">
+                            <div class="pw-chip-row">
+                                @foreach ($groupe['statuts'] as $option)
+                                @php
+                                $isActive = $statut_resultat === $option['value'];
+                                $optColor = trim(\Illuminate\Support\Str::after($option['bar'], 'background:'));
+                                $optionStyle = 'border-left-color: '.$optColor.';';
+                                if ($isActive) {
+                                $optionStyle .= ' '.$option['bar'].'; color:white;';
+                                }
+                                @endphp
+                                <label wire:click="$set('statut_resultat', '{{ $option['value'] }}')"
+                                    onclick="toggleRappel('{{ $option['value'] }}')"
+                                    title="{{ $option['label'] }} — {{ $option['sub'] }}{{ $option['action'] ? ' → '.$option['action'] : '' }}"
+                                    class="pw-chip"
+                                    style="{{ $optionStyle }}">
+                                    <span class="pw-chip-icon">{{ $option['icon'] ?? '•' }}</span>
+                                    <span class="pw-chip-main">
+                                        <span class="pw-chip-label-row {{ $isActive ? 'pw-chip-label-row--active' : '' }}">
+                                            {{ $option['label'] }}
+                                            @if (!empty($option['prioritaire']))
+                                            <span class="pw-chip-star" title="Prioritaire">★</span>
+                                            @endif
+                                        </span>
+                                        <span class="pw-chip-sub" style="{{ $isActive ? 'color:rgba(255,255,255,.85);' : '' }}">
+                                            {{ $option['sub'] }}{{ $option['action'] ? ' → '.$option['action'] : '' }}
+                                        </span>
+                                        @if (!empty($option['pipeline_label']))
+                                        <span class="pw-chip-pipeline" style="{{ $isActive ? 'color:rgba(255,255,255,.9);' : 'color:rgb(100 116 139);' }}">
+                                            Pipeline : {{ $option['pipeline_label'] }}
+                                        </span>
+                                        @endif
+                                    </span>
+                                    <input type="radio" wire:model="statut_resultat" value="{{ $option['value'] }}" style="display:none;">
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+
+                    @if ($pipelinePreview)
+                    <div class="pw-pipeline-link" wire:key="pipeline-preview-{{ $statut_resultat }}">
+                        <div class="pw-pipeline-link-title">Lien statut d'appel → statut pipeline</div>
+                        <div class="pw-pipeline-link-flow">
+                            @if ($pipelinePreview['current'])
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['current']['badge_style'] }}">
+                                Pipeline actuel · {{ $pipelinePreview['current']['label'] }}
+                            </span>
+                            @endif
+                            <span class="pw-pipeline-link-arrow">→</span>
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['call_status']['bar'] ?? '' }}; color:white;">
+                                {{ $pipelinePreview['call_status']['icon'] ?? '•' }} Appel · {{ $pipelinePreview['call_status']['label'] }}
+                            </span>
+                            @if ($pipelinePreview['next'])
+                            <span class="pw-pipeline-link-arrow">→</span>
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['next']['badge_style'] }}">
+                                Pipeline après qualification · {{ $pipelinePreview['next']['label'] }}
+                            </span>
+                            @endif
+                        </div>
+                        <div class="pw-pipeline-link-note">
+                            @if ($pipelinePreview['unchanged'])
+                                Le statut pipeline reste inchangé après enregistrement de cet appel.
+                            @else
+                                Le statut pipeline du prospect passera automatiquement à « {{ $pipelinePreview['next']['label'] ?? '—' }} » lors de l'enregistrement.
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    <div id="pw-rappel-box"
+                        class="pw-rappel-box {{ in_array($statut_resultat, $rappelCodes) ? 'visible' : '' }}">
+                        <div class="pw-rappel-box-title">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                            @if (in_array($statut_resultat, ['rapl_elu', 'rapl_std']))
+                            Créneau de rappel
+                            @else
+                            Planifier le rappel / RDV
+                            @endif
+                        </div>
+                        @if ($statut_resultat === 'rapl_elu')
+                        <div style="font-size:0.7rem; background:#fffbe6; border:1px dashed #d4a800; border-radius:0.5rem; padding:4px 8px; color:#7a5c00; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.375rem;">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                            Note obligatoire dans le compte rendu : date + heure + nom de l'élu
+                        </div>
+                        @elseif ($statut_resultat === 'rapl_std')
+                        <div style="font-size:0.7rem; background:#fffbe6; border:1px dashed #d4a800; border-radius:0.5rem; padding:4px 8px; color:#7a5c00; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.375rem;">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                            Note obligatoire dans le compte rendu : date + heure + nom du standard
+                        </div>
+                        @endif
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                            <div>
+                                <div class="pw-field-label">Date</div>
+                                <input type="date" wire:model="rappel_date" class="pw-field-input">
+                            </div>
+                            <div>
+                                <div class="pw-field-label">Heure</div>
+                                <input type="time" wire:model="rappel_heure" class="pw-field-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    @if ($statut_resultat === 'rdv')
+                    <div class="pw-fiche-recap" style="background:rgb(239 246 255); border-color:rgb(59 130 246);">
+                        <div class="pw-fiche-recap-header" style="background:rgb(59 130 246); color:white;">
+                            <svg class="pw-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            FICHE RECAP RDV PRIS
+                        </div>
+                        <div style="padding:0.875rem; display:flex; flex-direction:column; gap:0.625rem;">
+                            <div>
+                                <div class="pw-field-label">Lieu du RDV</div>
+                                <input type="text" wire:model="lieu_rdv" class="pw-field-input" placeholder="Adresse / Agence AOPIA / Visioconférence">
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                                <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; cursor:pointer; padding:0.375rem; background:white; border-radius:0.5rem; border:1px solid rgb(209 213 219);">
+                                    <input type="checkbox" wire:model="invitation_agenda_envoyee" style="width:1rem;height:1rem;">
+                                    Invitation agenda envoyée
+                                </label>
+                                <div>
+                                    <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; cursor:pointer; padding:0.375rem; background:white; border-radius:0.5rem; border:1px solid rgb(209 213 219);">
+                                        <input type="checkbox" wire:model="enregistrement_appel_joint" style="width:1rem;height:1rem;">
+                                        Enregistrement joint
+                                    </label>
+                                    @if (!$enregistrement_appel_joint)
+                                    <input type="text" wire:model="enregistrement_raison" class="pw-field-input" style="margin-top:0.25rem; font-size:0.75rem;" placeholder="Raison...">
+                                    @endif
+                                </div>
+                            </div>
+                            <div>
+                                <div class="pw-field-label">Besoins exprimés par le CSE</div>
+                                <textarea wire:model="besoins_exprimes" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Résumé des besoins / attentes identifiées..."></textarea>
+                            </div>
+                            <div>
+                                <div class="pw-field-label">Objections soulevées</div>
+                                <textarea wire:model="objections_soulevees" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Objections rencontrées et façon dont elles ont été traitées..."></textarea>
+                            </div>
+                            <div>
+                                <div class="pw-field-label">Points d'attention pour le RDV</div>
+                                <textarea wire:model="points_attention_rdv" rows="2" class="pw-field-input" style="resize:vertical; margin-top:0;" placeholder="Éléments particuliers à transmettre au Responsable de Secteur..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if ($statut_resultat === 'cse_ni')
+                    <div class="pw-fiche-recap" style="background:rgb(255 251 235); border-color:rgb(234 179 8);">
+                        <div class="pw-fiche-recap-header" style="background:rgb(234 179 8); color:rgb(66 32 6);">
+                            <svg class="pw-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            FICHE RECAP RDV À PRENDRE — Rappel J+7
+                        </div>
+                        <div style="padding:0.875rem; font-size:0.8125rem; color:rgb(92 52 8);">
+                            <p style="margin:0 0 0.5rem; font-weight:600;">Un email sera envoyé par l'assistante commerciale.</p>
+                            <ul style="margin:0; padding-left:1.25rem; font-size:0.75rem; color:rgb(120 53 15); line-height:1.7;">
+                                <li>Coordonnées CSE → onglet <strong>Standard / CSE</strong> ci-contre</li>
+                                <li>Commentaires → champ compte rendu ci-dessous</li>
+                                <li>Date rappel J+7 → bloc rappel ci-dessus (auto : {{ now()->addDays(7)->format('d/m/Y') }})</li>
+                            </ul>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if (in_array($statut_resultat, ['bloc2', 'ncse_50', 'ncse_plus50', 'cse_zone']))
+                    <div class="pw-fiche-recap" style="background:rgb(240 253 244); border-color:rgb(34 197 94);">
+                        <div class="pw-fiche-recap-header" style="background:rgb(34 197 94); color:white;">
+                            <svg class="pw-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                            FICHE RECAP RDV À CONCLURE — Commercial
+                        </div>
+                        <div style="padding:0.875rem; display:flex; flex-direction:column; gap:0.625rem;">
+                            <div>
+                                <div class="pw-field-label">Présence d'un CSE</div>
+                                <select wire:model="presence_cse" class="pw-field-input">
+                                    <option value="">— Sélectionner —</option>
+                                    <option value="oui">Oui</option>
+                                    <option value="non">Non</option>
+                                    <option value="a_confirmer">À confirmer</option>
+                                </select>
+                            </div>
+                            <div>
+                                <div class="pw-field-label">Jour disponible pour l'appel</div>
+                                <input type="text" wire:model="jour_dispo_appel" class="pw-field-input" placeholder="ex : Lundi matin, Mercredi 14h-16h">
+                            </div>
+                            <div style="font-size:0.75rem; color:rgb(22 101 52); background:rgb(220 252 231); border-radius:0.5rem; padding:0.5rem 0.75rem; line-height:1.6;">
+                                Coordonnées CSE → onglet <strong>Standard / CSE</strong> · Commentaires → champ ci-dessous
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if (
+                        $nom_interlocuteur_standard || $creneaux_permanence_cse || $email_general_standard ||
+                        $interlocuteur_nom || $interlocuteur_fonction || $interlocuteur_telephone || $interlocuteur_email ||
+                        $commentaires
+                    )
+                    <div class="pw-fiche-recap" style="background:rgb(249 250 251); border-color:rgb(209 213 219); margin-top:1rem;">
+                        <div class="pw-fiche-recap-header" style="background:rgb(55 65 81); color:white;">
+                            <svg class="pw-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            Récapitulatif de saisie
+                        </div>
+                        <div style="padding:0.875rem; font-size:0.85rem; color:rgb(30 41 59); display:grid; gap:0.5rem;">
+                            @if ($nom_interlocuteur_standard)
+                            <div><strong>Standard :</strong> {{ $nom_interlocuteur_standard }}</div>
+                            @endif
+                            @if ($creneaux_permanence_cse)
+                            <div><strong>Créneaux CSE :</strong> {{ $creneaux_permanence_cse }}</div>
+                            @endif
+                            @if ($email_general_standard)
+                            <div><strong>Email standard :</strong> {{ $email_general_standard }}</div>
+                            @endif
+                            @if ($interlocuteur_nom)
+                            <div><strong>Interlocuteur CSE :</strong> {{ $interlocuteur_nom }}</div>
+                            @endif
+                            @if ($interlocuteur_fonction)
+                            <div><strong>Fonction :</strong> {{ $interlocuteur_fonction }}</div>
+                            @endif
+                            @if ($interlocuteur_telephone)
+                            <div><strong>Téléphone CSE :</strong> {{ $interlocuteur_telephone }}</div>
+                            @endif
+                            @if ($interlocuteur_email)
+                            <div><strong>Email CSE :</strong> {{ $interlocuteur_email }}</div>
+                            @endif
+                            @if ($commentaires)
+                            <div><strong>Compte rendu :</strong> {{ \Illuminate\Support\Str::limit($commentaires, 140) }}</div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    <textarea wire:model="commentaires" rows="4"
+                        placeholder="Compte rendu : interlocuteur joint, objections, décision, prochaine étape..." class="pw-textarea"></textarea>
+
+                    @if ($statut_resultat && in_array($statut_resultat, ['rapl_elu', 'rapl_std']) && !$commentaires)
+                    <div style="font-size:0.75rem; color:rgb(220 38 38); margin-top:0.5rem; display:flex; align-items:center; gap:0.375rem;">
+                        <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                        Note obligatoire : date + heure + nom {{ $statut_resultat === 'rapl_elu' ? 'de l\'élu' : 'du standard' }}.
+                    </div>
+                    @elseif ($statut_resultat && !$commentaires && !in_array($statut_resultat, ['nrp', 'fax', 'maj']))
+                    <div style="font-size:0.75rem; color:rgb(249 115 22); margin-top:0.5rem; display:flex; align-items:center; gap:0.375rem;">
+                        <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                        Ajoutez un commentaire avant d'enregistrer.
+                    </div>
+                    @endif
+
+                    @if ($errors->has('statut_resultat') || $errors->has('commentaires'))
+                    <div style="font-size:0.875rem; color:rgb(190 35 50); margin-top:0.75rem; background:rgb(254 226 226); border:1px solid rgb(248 113 113); border-radius:0.75rem; padding:0.75rem;">
+                        <div style="font-weight:700; margin-bottom:0.5rem;">Erreur de validation</div>
+                        @error('statut_resultat')
+                        <div>Statut : {{ $message }}</div>
+                        @enderror
+                        @error('commentaires')
+                        <div>Commentaires : {{ $message }}</div>
+                        @enderror
+                    </div>
+                    @endif
+
+                    @error('commentaires')
+                    <div style="font-size:0.75rem; color:rgb(190 35 50); margin-top:0.5rem;">
+                        {{ $message }}
+                    </div>
+                    @enderror
+
+                    <div class="pw-actions">
+                        <button wire:click="submitResult" wire:loading.attr="disabled" class="pw-btn-primary"
+                            {{ !$statut_resultat ? 'disabled style=opacity:.5;cursor:not-allowed' : '' }}>
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            Enregistrer &amp; suivant
+                        </button>
+                        <button wire:click.prevent="skipCall" class="pw-btn-secondary" title="Repousser en fin de file">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                            Passer
+                        </button>
+                    </div>
+                    @if (!$statut_resultat || ($statut_resultat && $this->commentaireRequis() && !$commentaires))
+                    <div style="margin-top:0.75rem; color:rgb(190 35 50); font-size:.875rem;">
+                        @if (!$statut_resultat)
+                            Sélectionnez un statut dans le résultat d'appel pour activer l'enregistrement.
+                        @elseif ($this->commentaireRequis() && !$commentaires)
+                            Un commentaire est requis pour ce statut avant de pouvoir enregistrer.
+                        @endif
+                    </div>
+                    @endif
+                </div>

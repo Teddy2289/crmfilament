@@ -35,7 +35,7 @@ class DocumentKnowledgeResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
-    public static function canAccess(): bool
+    public static function canAccess(array $parameters = []): bool
     {
         return static::userCanViewResourceList();
     }
@@ -79,6 +79,23 @@ class DocumentKnowledgeResource extends Resource
                         Forms\Components\Textarea::make('description')
                             ->label('Description')
                             ->rows(3),
+
+                        Forms\Components\RichEditor::make('contenu')
+                            ->label('Contenu de la procédure')
+                            ->toolbarButtons([
+                                'bold',
+                                'italic',
+                                'underline',
+                                'strike',
+                                'bulletList',
+                                'orderedList',
+                                'blockquote',
+                                'link',
+                                'undo',
+                                'redo',
+                            ])
+                            ->columnSpanFull()
+                            ->helperText('Saisissez la procédure opérationnelle en texte riche, modifiable depuis l’administration.'),
 
                         Forms\Components\Select::make('type')
                             ->label('Type')
@@ -205,6 +222,10 @@ class DocumentKnowledgeResource extends Resource
                         ->label('Description')
                         ->columnSpanFull()
                         ->placeholder('Aucune description'),
+                    Infolists\Components\Placeholder::make('contenu')
+                        ->label('Contenu de la procédure')
+                        ->content(fn (DocumentKnowledge $record): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString($record->contenu ?: '<span class="text-sm text-gray-500">Aucun contenu défini.</span>'))
+                        ->columnSpanFull(),
                     Infolists\Components\TextEntry::make('type')
                         ->label('Type')
                         ->badge()
@@ -294,3 +315,4 @@ class DocumentKnowledgeResource extends Resource
         ];
     }
 }
+
