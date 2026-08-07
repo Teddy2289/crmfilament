@@ -179,6 +179,18 @@ class PhoningQueueBuilder
         return $acquired || (int) Cache::get($key) === $userId;
     }
 
+    public function renewContactLock(int $userId, string $type, int $id): bool
+    {
+        $key = "phoning_queue_reservation_{$type}_{$id}";
+        if ((int) Cache::get($key) !== $userId) {
+            return false;
+        }
+        Cache::put($key, $userId, now()->addMinutes(30));
+        Log::debug('ContactLock renouvelé', ['type' => $type, 'id' => $id, 'user' => $userId, 'action' => 'renew']);
+
+        return true;
+    }
+
     public function releaseQueueReservationForUser(int $userId, string $type, int $id): void
     {
         $key = "phoning_queue_reservation_{$type}_{$id}";

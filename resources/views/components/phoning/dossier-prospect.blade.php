@@ -43,7 +43,7 @@
             Dossier Prospect
         </span>
         @if ($editActionRoute)
-        <a href="{{ $editActionRoute }}" target="_blank" style="font-size:0.75rem;color:rgb(14 116 144);text-decoration:underline;">
+        <a href="{{ $editActionRoute }}" target="_blank" class="pw-info-edit-link">
             Accéder à la fiche →
         </a>
         @endif
@@ -51,12 +51,12 @@
 
     {{-- Onglets --}}
     <div class="pw-info-tabs">
-        <button class="pw-info-tab {{ ($info['type'] ?? '') === 'prospect' ? '' : 'active' }}" data-tab="contact" onclick="switchInfoTab('contact')">
+        <button class="pw-info-tab active" data-tab="contact" onclick="switchInfoTab('contact')">
             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
             Contact
         </button>
         @if (($info['type'] ?? '') === 'prospect')
-        <button class="pw-info-tab active" data-tab="interlocuteur" onclick="switchInfoTab('interlocuteur')">
+        <button class="pw-info-tab" data-tab="interlocuteur" onclick="switchInfoTab('interlocuteur')">
             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Interlocuteurs
         </button>
@@ -87,11 +87,11 @@
         <div class="pw-info-grid">
             <div class="pw-field-full">
                 <div class="pw-field-label">Téléphone principal</div>
-                <div style="display:flex;gap:0.5rem;align-items:center;">
-                    <span style="padding:0.375rem 0.5rem;background:rgb(249 250 251);border:1px solid rgb(209 213 219);border-radius:0.5rem;font-size:0.75rem;color:rgb(107 114 128);">🇫🇷 +33</span>
-                    <input type="text" value="{{ $info['telephone'] ?? '' }}" readonly class="pw-field-input" style="flex:1;font-weight:600;font-size:0.9375rem;" onclick="this.select();document.execCommand('copy');" title="Cliquer pour copier">
+                <div class="pw-contact-row">
+                    <span class="pw-contact-prefix">🇫🇷 +33</span>
+                    <input type="text" value="{{ $info['telephone'] ?? '' }}" readonly class="pw-field-input pw-copy-input" onclick="this.select();document.execCommand('copy');" title="Cliquer pour copier">
                     @if (!empty($info['telephone']))
-                    <a href="tel:{{ $info['telephone'] }}" onclick="event.preventDefault();appelerAvecRingover('{{ $info['telephone'] }}')" style="padding:0.375rem 0.625rem;background:rgb(34 197 94);color:white;border-radius:0.5rem;font-size:0.75rem;font-weight:600;text-decoration:none;white-space:nowrap;">Appeler</a>
+                    <a href="tel:{{ $info['telephone'] }}" onclick="event.preventDefault();appelerAvecRingover('{{ $info['telephone'] }}')" class="pw-contact-call-button">Appeler</a>
                     @endif
                 </div>
             </div>
@@ -113,7 +113,7 @@
             @if (!empty($info['adresse_complete']))
             <div class="pw-field-full">
                 <div class="pw-field-label">Adresse complète</div>
-                <div class="pw-field-value" style="font-size:0.8125rem;">{{ $info['adresse_complete'] }}</div>
+                <div class="pw-field-value pw-field-value-small">{{ $info['adresse_complete'] }}</div>
             </div>
             @endif
         </div>
@@ -133,7 +133,7 @@
             @if (!empty($info['rappel_planifie_at']))
             <div class="pw-field-full">
                 <div class="pw-field-label">Rappel planifié</div>
-                <div class="pw-field-value {{ $info['rappel_en_retard'] ? 'pw-rappel-late' : '' }}" style="display:flex;align-items:center;gap:0.375rem;">
+                <div class="pw-field-value pw-field-value-inline {{ $info['rappel_en_retard'] ? 'pw-rappel-late' : '' }}">
                     <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     {{ $info['rappel_planifie_at'] }}@if ($info['rappel_en_retard']) — EN RETARD @endif
                 </div>

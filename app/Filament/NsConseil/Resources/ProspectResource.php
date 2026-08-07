@@ -406,6 +406,19 @@ class ProspectResource extends Resource
                     ->relationship('teleprospecteur', 'nom')
                     ->label('Téléprospecteur'),
 
+                Tables\Filters\SelectFilter::make('departement')
+                    ->label('Département')
+                    ->options(
+                        fn() => Prospect::whereNotNull('departement')
+                            ->where('departement', '!=', '')
+                            ->distinct()
+                            ->orderBy('departement')
+                            ->pluck('departement', 'departement')
+                            ->toArray()
+                    )
+                    ->placeholder('Tous les départements')
+                    ->searchable(),
+
                 Tables\Filters\Filter::make('a_relancer')
                     ->label('À relancer')
                     ->query(fn(Builder $q) => $q->whereIn('statut', [

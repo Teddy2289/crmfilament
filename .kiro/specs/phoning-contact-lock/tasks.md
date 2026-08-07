@@ -7,13 +7,13 @@ Implémentation en PHP/Laravel du verrouillage de fiches (ContactLock) et de l'e
 ## Tasks
 
 - [ ] 1. Ajouter les méthodes de verrouillage dans `PhoningQueueBuilder`
-  - [-] 1.1 Implémenter `acquireContactLock(int $userId, string $type, int $id): bool`
+  - [x] 1.1 Implémenter `acquireContactLock(int $userId, string $type, int $id): bool`
     - Utiliser `Cache::add()` pour l'acquisition atomique avec TTL 30 min
     - Retourner `true` si le verrou est acquis ou si l'utilisateur est déjà propriétaire (reentrant)
     - Émettre `Log::debug` si acquis, `Log::info` si conflit avec un autre propriétaire
     - _Requirements: 1.1, 1.3, 1.4, 7.1, 7.2_
 
-  - [-] 1.2 Implémenter `renewContactLock(int $userId, string $type, int $id): bool`
+  - [x] 1.2 Implémenter `renewContactLock(int $userId, string $type, int $id): bool`
     - Vérifier que `Cache::get($key) === $userId` avant de renouveler
     - Appeler `Cache::put($key, $userId, now()->addMinutes(30))` si propriétaire
     - Émettre `Log::debug` sur renouvellement réussi

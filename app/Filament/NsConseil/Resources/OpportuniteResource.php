@@ -404,6 +404,19 @@ class OpportuniteResource extends Resource
                     ->options(Opportunite::SOURCES)
                     ->label('Source'),
 
+                Tables\Filters\SelectFilter::make('departement')
+                    ->label('Département')
+                    ->options(
+                        fn() => Opportunite::whereNotNull('departement')
+                            ->where('departement', '!=', '')
+                            ->distinct()
+                            ->orderBy('departement')
+                            ->pluck('departement', 'departement')
+                            ->toArray()
+                    )
+                    ->placeholder('Tous les départements')
+                    ->searchable(),
+
                 Tables\Filters\SelectFilter::make('assigne_a')
                     ->relationship('assigneA', 'nom')
                     ->label('Assigné'),

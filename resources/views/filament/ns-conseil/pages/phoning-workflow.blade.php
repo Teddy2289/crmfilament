@@ -134,9 +134,10 @@ $tentativesActuelles = $this->getTentativesAppel();
             };
         }
 
-        document.addEventListener('livewire:navigated', () => {
-            // noop — Alpine gère le modal email
-        });
+        document.addEventListener('livewire:init', () => { switchInfoTab('contact'); });
+        document.addEventListener('livewire:navigated', () => { switchInfoTab('contact'); });
+        document.addEventListener('DOMContentLoaded', () => { switchInfoTab('contact'); });
+        setTimeout(() => { switchInfoTab('contact'); }, 0);
 
         function toggleRappel(val) {
             const box = document.getElementById('pw-rappel-box');
@@ -211,7 +212,7 @@ $tentativesActuelles = $this->getTentativesAppel();
     @endphp
 
     {{-- ══ BARRE DE RECHERCHE ══ --}}
-    <div class="pw-search-bar" style="position:relative; margin-bottom:1rem;">
+    <div class="pw-search-bar">
         <input wire:model.live.debounce.300ms="searchQuery"
                type="search"
                placeholder="Rechercher un contact…"
@@ -306,7 +307,7 @@ $tentativesActuelles = $this->getTentativesAppel();
             <div class="pw-empty-icon">✅</div>
             <div class="pw-empty-title">File d'appels vide</div>
             <div class="pw-empty-sub">Tous les contacts ont été traités pour cette session.</div>
-            <button wire:click="refreshQueue" class="pw-btn-secondary" style="margin-top:1rem;">
+            <button wire:click="refreshQueue" class="pw-btn-secondary pw-empty-action">
                 Rafraîchir la file
             </button>
         </div>

@@ -6,7 +6,7 @@ use Carbon\Carbon;
 
 trait HasDashboardDateRange
 {
-    protected function getDashboardDateRange(): array
+    public function getDashboardDateRange(): array
     {
         $startDate = ! empty($this->filters['startDate'])
             ? Carbon::parse($this->filters['startDate'])->startOfDay()
