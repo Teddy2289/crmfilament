@@ -10,6 +10,7 @@ use App\Models\ContactPartenaire;
 use App\Models\Prospect;
 use App\Models\StatutPhoning;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Builds and sanitizes the phoning call queue: assembles the default queue
@@ -147,7 +148,7 @@ class PhoningQueueBuilder
             $existingOwner = Cache::get($cacheKey);
 
             if ($existingOwner === null) {
-                if (Cache::add($cacheKey, $userId, now()->addMinutes(15))) {
+                if (Cache::add($cacheKey, $userId, now()->addMinutes(30))) {
                     $available[] = $item;
                 }
                 continue;
@@ -155,20 +156,36 @@ class PhoningQueueBuilder
 
             if ((int) $existingOwner === $userId) {
                 $available[] = $item;
-                Cache::put($cacheKey, $userId, now()->addMinutes(15));
+                Cache::put($cacheKey, $userId, now()->addMinutes(30));
             }
         }
 
         return $available;
     }
 
+    public function acquireContactLock(int $userId, string $type, int $id): bool
+    {
+        $key = "phoning_queue_reservation_{$type}_{$id}";
+        $acquired = Cache::add($key, $userId, now()->addMinutes(30));
+        if ($acquired) {
+            Log::debug('ContactLock posé', ['type' => $type, 'id' => $id, 'user' => $userId, 'action' => 'lock']);
+        } else {
+            $owner = Cache::get($key);
+            if ((int) $owner !== $userId) {
+                Log::info('ContactLock conflit', ['type' => $type, 'id' => $id, 'user' => $userId, 'owner' => $owner]);
+            }
+        }
+
+        return $acquired || (int) Cache::get($key) === $userId;
+    }
+
     public function releaseQueueReservationForUser(int $userId, string $type, int $id): void
     {
-        $cacheKey = "phoning_queue_reservation_{$type}_{$id}";
-        $ownerId = Cache::get($cacheKey);
+        $key = "phoning_queue_reservation_{$type}_{$id}";
 
-        if ((int) $ownerId === $userId) {
-            Cache::forget($cacheKey);
+        if ((int) Cache::get($key) === $userId) {
+            Cache::forget($key);
+            Log::debug('ContactLock libéré', ['type' => $type, 'id' => $id, 'user' => $userId, 'action' => 'release']);
         }
     }
 

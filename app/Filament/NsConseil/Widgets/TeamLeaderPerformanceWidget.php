@@ -3,11 +3,11 @@
 namespace App\Filament\NsConseil\Widgets;
 
 use App\Enums\ProspectStatut;
+use App\Filament\NsConseil\Concerns\HasDashboardDateRange;
 use App\Models\Appel;
 use App\Models\Prospect;
 use App\Models\User;
 use App\Services\Crm\CrmSettingsService;
-use Carbon\Carbon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -15,6 +15,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class TeamLeaderPerformanceWidget extends BaseWidget
 {
+    use HasDashboardDateRange;
     use InteractsWithPageFilters;
 
     protected static ?string $heading = '📊 Statistiques & Performance des utilisateurs (Jour / Semaine / Mois / Filtre Date)';
@@ -39,13 +40,7 @@ class TeamLeaderPerformanceWidget extends BaseWidget
     {
         $roles = app(CrmSettingsService::class)->get('roles.teleprospecteur_roles', ['teleprospecteur', 'commercial']);
 
-        $startDate = ! empty($this->filters['startDate'])
-            ? Carbon::parse($this->filters['startDate'])->startOfDay()
-            : now()->startOfMonth();
-
-        $endDate = ! empty($this->filters['endDate'])
-            ? Carbon::parse($this->filters['endDate'])->endOfDay()
-            : now()->endOfMonth();
+        [$startDate, $endDate] = $this->getDashboardDateRange();
 
         return $table
             ->query(

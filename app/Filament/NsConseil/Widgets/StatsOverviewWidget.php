@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Widgets;
 
 use App\Enums\OrganizationStatus;
+use App\Filament\NsConseil\Concerns\HasDashboardDateRange;
 use App\Enums\ProspectStatut;
 use App\Models\Partenaire;
 use App\Models\Prospect;
@@ -11,12 +12,16 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class StatsOverviewWidget extends BaseWidget
 {
+    use HasDashboardDateRange;
+
     protected static ?int $sort = 1;
 
     protected int|string|array $columnSpan = 'full';
 
     protected function getStats(): array
     {
+        [$startDate, $endDate] = $this->getDashboardDateRange();
+
         $user = auth()->user();
 
         // Filtre selon rôle — commercial voit ses propres données
@@ -57,14 +62,16 @@ class StatsOverviewWidget extends BaseWidget
                 ProspectStatut::KO->value,
                 ProspectStatut::QF->value,
             ])
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
 
         $rappelsAujourdhui = (clone $prospectQuery)
-            ->whereDate('rappel_planifie_at', today())
+            ->whereBetween('rappel_planifie_at', [$startDate, $endDate])
             ->count();
 
         $rappelsEnRetard = (clone $prospectQuery)
             ->where('rappel_planifie_at', '<', now())
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->whereNotIn('statut', [
                 ProspectStatut::KO->value,
                 ProspectStatut::QF->value,
@@ -73,7 +80,7 @@ class StatsOverviewWidget extends BaseWidget
 
         $qfCeMois = (clone $prospectQuery)
             ->where('statut', ProspectStatut::QF->value)
-            ->whereMonth('qf_valide_at', now()->month)
+            ->whereBetween('qf_valide_at', [$startDate, $endDate])
             ->count();
 
         return [

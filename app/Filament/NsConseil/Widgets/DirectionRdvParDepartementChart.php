@@ -2,6 +2,7 @@
 
 namespace App\Filament\NsConseil\Widgets;
 
+use App\Filament\NsConseil\Concerns\HasDashboardDateRange;
 use App\Models\RendezVous;
 use App\Models\User;
 use Filament\Widgets\ChartWidget;
@@ -9,7 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class DirectionRdvParDepartementChart extends ChartWidget
 {
-    protected static ?string $heading = 'RDV par commercial — Ce mois';
+    use HasDashboardDateRange;
+
+    protected static ?string $heading = 'RDV par commercial — Période';
 
     protected static ?int $sort = 4;
 
@@ -28,10 +31,11 @@ class DirectionRdvParDepartementChart extends ChartWidget
 
     protected function getData(): array
     {
+        [$startDate, $endDate] = $this->getDashboardDateRange();
+
         $data = RendezVous::query()
             ->select('commercial_id', DB::raw('COUNT(*) as total'))
-            ->whereMonth('date_heure', now()->month)
-            ->whereYear('date_heure', now()->year)
+            ->whereBetween('date_heure', [$startDate, $endDate])
             ->whereNotNull('commercial_id')
             ->groupBy('commercial_id')
             ->orderByDesc('total')

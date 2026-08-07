@@ -248,6 +248,16 @@ $tentativesActuelles = $this->getTentativesAppel();
                     :is-supervisor-mode="$isSupervisorMode"
                 />
 
+                {{-- Dossier prospect : onglets Contact/Interlocuteurs/Journal/RDV --}}
+                <x-phoning::dossier-prospect
+                    :info="$info"
+                    :call-history="$callHistory"
+                    :note-lines="$noteLines"
+                    :contact-type="$contactType"
+                    :incoming-call-phone="$incomingCallPhone"
+                    :incoming-call-matches="$incomingCallMatches"
+                />
+
                 {{-- Panneau statut / résultat --}}
                 <x-phoning::status-panel
                     :statuts="$this->getStatutsPhoning()"

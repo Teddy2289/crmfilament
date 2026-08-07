@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Widgets;
 
 use App\Enums\ProspectStatut;
+use App\Filament\NsConseil\Concerns\HasDashboardDateRange;
 use App\Models\Appel;
 use App\Models\Prospect;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -11,6 +12,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class ProspectionKpiWidget extends BaseWidget
 {
+    use HasDashboardDateRange;
     use InteractsWithPageFilters;
 
     protected static ?int $sort = 1;
@@ -35,6 +37,8 @@ class ProspectionKpiWidget extends BaseWidget
         $user = auth()->user();
         $isTp = $user->hasRoleCache('teleprospecteur');
 
+        [$startDate, $endDate] = $this->getDashboardDateRange();
+
         $debutSemaine = now()->startOfWeek();
         $finSemaine = now()->endOfWeek();
 
@@ -44,6 +48,9 @@ class ProspectionKpiWidget extends BaseWidget
             ->when($isTp, fn ($q) => $q->where('user_id', $user->id));
 
         $appelsJour = (clone $appelsQuery)->whereDate('date_heure', today())->count();
+        $appelsPeriode = (clone $appelsQuery)
+            ->whereBetween('date_heure', [$startDate, $endDate])
+            ->count();
         $appelsSemaine = (clone $appelsQuery)
             ->whereBetween('date_heure', [$debutSemaine, $finSemaine])
             ->count();
@@ -51,6 +58,10 @@ class ProspectionKpiWidget extends BaseWidget
         // CSE joints = statuts STD_Joint ou au-delà
         $cseJoints = (clone $appelsQuery)
             ->whereBetween('date_heure', [$debutSemaine, $finSemaine])
+            ->whereIn('phoning_status', ['std_joint', 'cse_ni', 'rdv', 'rapl_elu', 'rp', 'rpc'])
+            ->count();
+        $cseJointsPeriode = (clone $appelsQuery)
+            ->whereBetween('date_heure', [$startDate, $endDate])
             ->whereIn('phoning_status', ['std_joint', 'cse_ni', 'rdv', 'rapl_elu', 'rp', 'rpc'])
             ->count();
 
@@ -62,10 +73,14 @@ class ProspectionKpiWidget extends BaseWidget
             ->where('statut', ProspectStatut::QF->value)
             ->whereBetween('qf_valide_at', [$debutSemaine, $finSemaine])
             ->count();
+        $rdvQfPeriode = (clone $prospectQuery)
+            ->where('statut', ProspectStatut::QF->value)
+            ->whereBetween('qf_valide_at', [$startDate, $endDate])
+            ->count();
 
         // Taux de conversion
-        $tauxConversion = $appelsSemaine > 0
-            ? round(($cseJoints / $appelsSemaine) * 100, 1)
+        $tauxConversion = $appelsPeriode > 0
+            ? round(($cseJointsPeriode / $appelsPeriode) * 100, 1)
             : 0;
 
         // Rappels du jour
@@ -81,17 +96,17 @@ class ProspectionKpiWidget extends BaseWidget
 
         return [
             Stat::make('Appels du jour', $appelsJour)
-                ->description("{$appelsSemaine} cette semaine")
+                ->description("{$appelsPeriode} sur la période")
                 ->icon('heroicon-o-phone-arrow-up-right')
                 ->color('primary'),
 
-            Stat::make('CSE joints', $cseJoints)
+            Stat::make('CSE joints', $cseJointsPeriode)
                 ->description("Taux : {$tauxConversion}%")
                 ->icon('heroicon-o-user-group')
                 ->color($tauxConversion >= 20 ? 'success' : 'warning'),
 
-            Stat::make('RDV QF validés', $rdvQf)
-                ->description('Cette semaine')
+            Stat::make('RDV QF validés', $rdvQfPeriode)
+                ->description('Période filtrée')
                 ->icon('heroicon-o-check-circle')
                 ->color('success'),
 

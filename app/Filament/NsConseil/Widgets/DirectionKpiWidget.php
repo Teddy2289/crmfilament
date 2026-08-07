@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Widgets;
 
 use App\Enums\OrganizationStatus;
+use App\Filament\NsConseil\Concerns\HasDashboardDateRange;
 use App\Enums\ProspectStatut;
 use App\Enums\RendezVousStatut;
 use App\Models\Client;
@@ -14,6 +15,8 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class DirectionKpiWidget extends BaseWidget
 {
+    use HasDashboardDateRange;
+
     protected static ?int $sort = 1;
 
     protected static ?string $pollingInterval = '120s';
@@ -31,30 +34,29 @@ class DirectionKpiWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $clients3mois = Client::where('created_at', '>=', now()->subMonths(3))->count();
+        [$startDate, $endDate] = $this->getDashboardDateRange();
+
+        $clients3mois = Client::whereBetween('created_at', [$startDate->copy()->subMonths(3), $endDate])->count();
 
         $partenairesSignes = Partenaire::whereIn('statut', [
             OrganizationStatus::SigneAccordCadre->value,
             OrganizationStatus::ConventionEngagement->value,
-        ])->count();
+        ])->whereBetween('created_at', [$startDate, $endDate])->count();
 
         $prospectsActifs = Prospect::whereNotIn('statut', [
             ProspectStatut::KO->value,
             ProspectStatut::QF->value,
-        ])->count();
+        ])->whereBetween('created_at', [$startDate, $endDate])->count();
 
         $qfMois = Prospect::where('statut', ProspectStatut::QF->value)
-            ->whereMonth('qf_valide_at', now()->month)
-            ->whereYear('qf_valide_at', now()->year)
+            ->whereBetween('qf_valide_at', [$startDate, $endDate])
             ->count();
 
-        $rdvMois = RendezVous::whereMonth('date_heure', now()->month)
-            ->whereYear('date_heure', now()->year)
+        $rdvMois = RendezVous::whereBetween('date_heure', [$startDate, $endDate])
             ->count();
 
         $rdvRealises = RendezVous::where('statut', RendezVousStatut::Realise)
-            ->whereMonth('date_heure', now()->month)
-            ->whereYear('date_heure', now()->year)
+            ->whereBetween('date_heure', [$startDate, $endDate])
             ->count();
 
         $tauxTransformation = $rdvMois > 0 ? round(($rdvRealises / $rdvMois) * 100, 1) : 0;
