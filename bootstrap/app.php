@@ -113,4 +113,51 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        // ── Masquage des écrans d'erreur ─────────────────────────────
+        // APP_DEBUG est lu depuis la BDD (EnvSetting) en priorité, puis
+        // depuis la config (valeur .env) en fallback.
+        // Permet à un admin de basculer le mode debug depuis l'UI
+        // sans redéployer ni modifier manuellement le fichier .env.
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            // Les requêtes API ont leur propre rendu JSON — ne pas interférer
+            if ($request->is('api/*')) {
+                return null;
+            }
+
+            // Lire la valeur depuis la BDD si la connexion est disponible
+            $debugEnabled = false;
+            try {
+                $setting = \App\Models\EnvSetting::firstWhere('key', 'APP_DEBUG');
+                if ($setting !== null) {
+                    $debugEnabled = in_array(strtolower($setting->value), ['true', '1'], true);
+                } else {
+                    $debugEnabled = filter_var(config('app.debug'), FILTER_VALIDATE_BOOLEAN);
+                }
+            } catch (\Throwable) {
+                // Connexion BDD non disponible (boot, migration, etc.) → fallback .env
+                $debugEnabled = filter_var(config('app.debug'), FILTER_VALIDATE_BOOLEAN);
+            }
+
+            if ($debugEnabled) {
+                // Mode debug : laisser Laravel/Ignition afficher l'erreur normalement
+                return null;
+            }
+
+            // Mode production : page d'erreur générique, sans stack trace
+            $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+
+            // Utiliser une vue dédiée si elle existe (404, 403, 503…)
+            $viewName = "errors.{$status}";
+            if (view()->exists($viewName)) {
+                return response()->view($viewName, [], $status);
+            }
+
+            return response()->view('errors.generic', [
+                'status'  => $status,
+                'message' => $status === 404
+                    ? 'La page demandée est introuvable.'
+                    : 'Une erreur est survenue. Veuillez réessayer ou contacter l\'administrateur.',
+            ], $status);
+        });
+
     })->create();

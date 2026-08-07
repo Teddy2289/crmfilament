@@ -42,7 +42,7 @@ class MesPartenairesRecentWidget extends BaseWidget
                     ->color(fn (OrganizationStatus $state) => $state->color())
                     ->icon(fn (OrganizationStatus $state) => $state->icon()),
 
-                Tables\Columns\TextColumn::make('departement')
+                Tables\Columns\TextColumn::make('departement_label')
                     ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('date_modification_statut')

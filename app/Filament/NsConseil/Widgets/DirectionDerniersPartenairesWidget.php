@@ -67,7 +67,7 @@ class DirectionDerniersPartenairesWidget extends BaseWidget
                         ? "{$record->commercial->prenom} {$record->commercial->nom}"
                         : '—'),
 
-                Tables\Columns\TextColumn::make('departement')
+                Tables\Columns\TextColumn::make('departement_label')
                     ->label('Dép.'),
 
                 Tables\Columns\TextColumn::make('date_modification_statut')

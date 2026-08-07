@@ -28,6 +28,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\Url;
 
 class ViewCampagnePhoning extends ViewRecord implements HasTable
 {
@@ -36,6 +37,14 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
     protected static string $resource = CampagnePhoningResource::class;
 
     protected static string $view = 'filament.ns-conseil.resources.campagne-phoning-resource.pages.view-campagne-phoning';
+
+    /** @var string|null Filtre chronologique — date de début (YYYY-MM-DD) */
+    #[Url(as: 'du')]
+    public ?string $filtreDateDebut = null;
+
+    /** @var string|null Filtre chronologique — date de fin (YYYY-MM-DD) */
+    #[Url(as: 'au')]
+    public ?string $filtreDateFin = null;
 
     protected function getHeaderActions(): array
     {
@@ -122,6 +131,71 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                         ->badge()
                         ->color('info'),
 
+                    // ── Filtre chronologique ─────────────────────────────────
+                    \Filament\Infolists\Components\Actions::make([
+                        \Filament\Infolists\Components\Actions\Action::make('filtrer_dates')
+                            ->label('Filtrer par période')
+                            ->icon('heroicon-o-funnel')
+                            ->color('gray')
+                            ->form([
+                                \Filament\Forms\Components\DatePicker::make('date_debut')
+                                    ->label('Du')
+                                    ->default($this->filtreDateDebut)
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->maxDate(fn (array $get) => $get('date_fin') ?: now()),
+                                \Filament\Forms\Components\DatePicker::make('date_fin')
+                                    ->label('Au')
+                                    ->default($this->filtreDateFin)
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->minDate(fn (array $get) => $get('date_debut') ?: null)
+                                    ->maxDate(now()),
+                            ])
+                            ->action(function (array $data): void {
+                                $this->filtreDateDebut = $data['date_debut'] ?: null;
+                                $this->filtreDateFin   = $data['date_fin']   ?: null;
+                            })
+                            ->modalSubmitActionLabel('Appliquer')
+                            ->modalWidth('sm'),
+
+                        \Filament\Infolists\Components\Actions\Action::make('reset_dates')
+                            ->label('Réinitialiser')
+                            ->icon('heroicon-o-x-circle')
+                            ->color('danger')
+                            ->visible(fn () => $this->filtreDateDebut !== null || $this->filtreDateFin !== null)
+                            ->action(function (): void {
+                                $this->filtreDateDebut = null;
+                                $this->filtreDateFin   = null;
+                            }),
+                    ]),
+
+                    // ── Badge période active ─────────────────────────────────
+                    ...($this->filtreDateDebut || $this->filtreDateFin
+                        ? [
+                            TextEntry::make('filtre_actif')
+                                ->hiddenLabel()
+                                ->getStateUsing(function () {
+                                    $du = $this->filtreDateDebut
+                                        ? \Carbon\Carbon::parse($this->filtreDateDebut)->format('d/m/Y')
+                                        : null;
+                                    $au = $this->filtreDateFin
+                                        ? \Carbon\Carbon::parse($this->filtreDateFin)->format('d/m/Y')
+                                        : null;
+
+                                    return match (true) {
+                                        $du && $au => "Période filtrée : du {$du} au {$au}",
+                                        $du        => "Période filtrée : à partir du {$du}",
+                                        $au        => "Période filtrée : jusqu'au {$au}",
+                                        default    => '',
+                                    };
+                                })
+                                ->badge()
+                                ->color('warning')
+                                ->icon('heroicon-o-calendar-days'),
+                        ]
+                        : []),
+
                     ...($this->getRecord()->statutsUtilises() === []
                         ? [
                             TextEntry::make('aucun_appel')
@@ -147,7 +221,7 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
             ->tabs(
                 collect($record->statutsUtilises())
                     ->map(function (string $code) use ($record) {
-                        $appels = $record->appelsParStatut($code);
+                        $appels = $record->appelsParStatut($code, $this->filtreDateDebut, $this->filtreDateFin);
 
                         return Tab::make($record->statutLabel($code))
                             ->badge($appels->count())

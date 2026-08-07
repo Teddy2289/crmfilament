@@ -95,15 +95,14 @@ class PhoningWorkflow extends Page
             $this->campagneFiltreId = (int) $campagneId;
         }
 
-        $this->loadQueue();
-
+        // Configurer le contact demandé avant loadQueue() pour que
+        // ensureRequestedContactPriority() soit appelé au bon moment
         if ($contactId = request()->query('contact_id')) {
             $this->requestedContactId = (int) $contactId;
             $this->requestedContactType = request()->query('contact_type', 'prospect');
         }
 
-        $this->ensureRequestedContactPriority();
-        $this->loadNextContact();
+        $this->loadQueue();
     }
     // ── Requête centrale téléprospecteurs ────────────────────────────
     // Double critère : rôle Spatie OU role_cache pour couvrir les deux cas

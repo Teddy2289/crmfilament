@@ -334,7 +334,7 @@ avant de passer à la suivante.
     - **Property 5 : `statut_resultat ∈ StatutPhoning::pluck('code')` avant tout appel à `applyResult()`**
     - **Validates: Requirements 8.2, 8.3**
 
-- [-] 13. Checkpoint final — Suite de tests complète (étape 12)
+- [x] 13. Checkpoint final — Suite de tests complète (étape 12)
   - Lancer `php artisan test` (suite complète) et vérifier zéro échec.
   - Vérifier que tous les fichiers respectent leurs limites de lignes définies.
   - Vérifier la liste complète des tests préexistants : `PhoningWorkflowPreviewTest`, `PhoningWorkflowStatusesTest`, `CampagnePhoningQueueTest`, `PhoningQueueBuilderInterleaveTest`, `PhoningWorkflowContactsRestantsTest` — tous doivent passer sans modification des fichiers de test.

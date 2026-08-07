@@ -168,11 +168,17 @@ class CampagnePhoning extends Model
     /**
      * Liste des appels de la campagne pour un statut donné, avec le contact
      * lié chargé — sert de base à la "fiche" de chaque prospect traité.
+     *
+     * @param  string       $code
+     * @param  string|null  $dateDebut  Format YYYY-MM-DD (inclusif)
+     * @param  string|null  $dateFin    Format YYYY-MM-DD (inclusif, jusqu'à 23:59:59)
      */
-    public function appelsParStatut(string $code)
+    public function appelsParStatut(string $code, ?string $dateDebut = null, ?string $dateFin = null)
     {
         return $this->appels()
             ->where('phoning_status', $code)
+            ->when($dateDebut, fn (Builder $q) => $q->whereDate('date_heure', '>=', $dateDebut))
+            ->when($dateFin,   fn (Builder $q) => $q->whereDate('date_heure', '<=', $dateFin))
             ->with(['appelable', 'user'])
             ->orderByDesc('date_heure')
             ->get();
