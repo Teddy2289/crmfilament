@@ -130,7 +130,10 @@ class PhoningContactUpdateService
     public function appliquerRappelProspect(Prospect $prospect, array $fields): void
     {
         $rappelAt = $fields['rappel_date'] . ' ' . ($fields['rappel_heure'] ?: '08:00');
-        $prospect->update(['rappel_planifie_at' => $rappelAt]);
+        $prospect->update([
+            'rappel_planifie_at' => $rappelAt,
+            'teleprospecteur_id' => Auth::id(),
+        ]);
     }
 
     /**

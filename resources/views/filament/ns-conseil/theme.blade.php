@@ -805,4 +805,17 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
 .fi-modal .z-40 {
     z-index: 999999 !important;
 }
+
+/* ── Sur la page Phoning Workflow, masquer tout widget Ringover flottant ──
+   Le widget flottant global injecte un <div id="ringover-…"> en position:fixed.
+   La page phoning-workflow a la classe .pw-wrap sur son conteneur.
+   On utilise un flag CSS (variable custom property définie via JS) pour masquer
+   le widget flottant résiduel. */
+body.pw-phoning-active [id^="ringover"]:not(#ringover-embed-phoning),
+body.pw-phoning-active [class*="ringover-widget-container"]:not(#ringover-embed-phoning) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 </style>

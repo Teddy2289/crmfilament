@@ -201,13 +201,13 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                                     ->default($this->filtreDateDebut)
                                     ->native(false)
                                     ->displayFormat('d/m/Y')
-                                    ->maxDate(fn (Get $get) => $get('date_fin') ?: now()),
+                                    ->maxDate(fn ($get) => $get('date_fin') ?: now()),
                                 \Filament\Forms\Components\DatePicker::make('date_fin')
                                     ->label('Au')
                                     ->default($this->filtreDateFin)
                                     ->native(false)
                                     ->displayFormat('d/m/Y')
-                                    ->minDate(fn (Get $get) => $get('date_debut') ?: null)
+                                    ->minDate(fn ($get) => $get('date_debut') ?: null)
                                     ->maxDate(now()),
                             ])
                             ->action(function (array $data): void {

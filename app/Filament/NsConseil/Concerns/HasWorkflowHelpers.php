@@ -63,6 +63,7 @@ trait HasWorkflowHelpers
             'lieu_rdv', 'invitation_agenda_envoyee', 'enregistrement_appel_joint', 'enregistrement_raison',
             'besoins_exprimes', 'objections_soulevees', 'points_attention_rdv',
             'presence_cse', 'jour_dispo_appel',
+            'emailTemplateKey', 'emailTabSubject', 'emailTabBody', 'emailTabRecipient',
         ]);
     }
 

@@ -9,31 +9,36 @@ $tentativesActuelles = $this->getTentativesAppel();
     @vite('resources/css/phoning-workflow.css')
 
     {{-- ── Initialisation Ringover incrusté dans la colonne droite ────────────
-         Ce script doit s'exécuter AVANT le widget global (ringover-dialer.blade.php)
-         qui a une garde « if (window.ringoverPhone) return ». En initialisant ici
-         avec container:'ringover-embed-phoning', le SDK est ancré dans la colonne
-         droite du workflow au lieu de flotter en position:fixed sur la page entière.
+         Le widget global (ringover-dialer.blade.php) détecte l'URL et ne se
+         monte PAS sur cette page. Ici on initialise le SDK en mode 'relative'
+         dans le conteneur dédié #ringover-embed-phoning.
 
          Stratégie :
-         1. On pose un objet factice ringoverPhone IMMÉDIATEMENT pour bloquer
-            le widget global (qui vérifie if(window.ringoverPhone) return).
-         2. Au DOMContentLoaded on remplace le factice par l'instance réelle
-            dans le conteneur dédié.
+         1. On détruit le widget flottant global s'il existe déjà (ex: navigation
+            Livewire depuis une autre page).
+         2. On remplace ringoverPhone par le widget incrusté dans le conteneur.
     --}}
-    <script src="https://webcdn.ringover.com/resources/SDK/1.1.3/ringover-sdk.js"></script>
     <script>
-        if (!window.ringoverPhone) {
-            window.ringoverPhone = { __placeholder: true };
+        function _destroyGlobalRingover() {
+            if (window.ringoverPhone && !window.ringoverPhone.__placeholder) {
+                if (typeof window.ringoverPhone.destroy === 'function') {
+                    try { window.ringoverPhone.destroy(); } catch (e) {}
+                }
+                // Masquer tous les éléments Ringover flottants résiduels
+                document.querySelectorAll('[id^="ringover"]').forEach(function(el) {
+                    if (el.id !== 'ringover-embed-phoning') {
+                        el.style.display = 'none';
+                    }
+                });
+                window.ringoverPhone = null;
+            }
         }
 
         function _initRingoverInContainer() {
+            _destroyGlobalRingover();
+
             var container = document.getElementById('ringover-embed-phoning');
-            if (!container) {
-                if (window.ringoverPhone && window.ringoverPhone.__placeholder) {
-                    window.ringoverPhone = null;
-                }
-                return;
-            }
+            if (!container) { return; }
 
             if (typeof window.RingoverSDK !== 'function') {
                 setTimeout(_initRingoverInContainer, 150);
@@ -71,18 +76,24 @@ $tentativesActuelles = $this->getTentativesAppel();
             };
         }
 
+        // Lancement immédiat (si SDK déjà chargé) ou au DOMContentLoaded
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', _initRingoverInContainer);
         } else {
             _initRingoverInContainer();
         }
 
-        document.addEventListener('livewire:init', _initRingoverInContainer);
+        // Marquer le body pour que le CSS cache les éléments Ringover flottants
+        document.body.classList.add('pw-phoning-active');
+
+        // Après navigation Livewire vers cette page
         document.addEventListener('livewire:navigated', function () {
-            if (window.ringoverPhone && typeof window.ringoverPhone.destroy === 'function') {
-                try { window.ringoverPhone.destroy(); } catch (e) {}
+            if (!window.location.pathname.includes('phoning-workflow')) {
+                document.body.classList.remove('pw-phoning-active');
+                return;
             }
-            window.ringoverPhone = { __placeholder: true };
+            document.body.classList.add('pw-phoning-active');
+            window.ringoverPhone = null;
             setTimeout(_initRingoverInContainer, 200);
         });
     </script>

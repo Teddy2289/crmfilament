@@ -230,9 +230,7 @@ class PhoningQueueBuilder
 
         $prospectIds = $itemsByType->get('prospect', []);
 
-        // Task 2.3 — Build a rappel_planifie_at lookup map for prospects.
-        // We include the column in this query so we can exclude prospects whose
-        // rappel is scheduled in the future (> now()) in the final filter closure.
+        // Task 2.3 — Build a rappel_planifie_at and teleprospecteur_id lookup map for prospects.
         $prospectRappelMap = [];
         $validProspectIds = [];
 
@@ -241,12 +239,15 @@ class PhoningQueueBuilder
                 ->whereIn('id', $prospectIds)
                 ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
                 ->whereNull('deleted_at')
-                ->select('id', 'rappel_planifie_at')
+                ->select('id', 'rappel_planifie_at', 'teleprospecteur_id')
                 ->get();
 
             foreach ($prospectRows as $row) {
                 $validProspectIds[] = $row->id;
-                $prospectRappelMap[$row->id] = $row->rappel_planifie_at;
+                $prospectRappelMap[$row->id] = [
+                    'rappel_planifie_at' => $row->rappel_planifie_at,
+                    'teleprospecteur_id' => $row->teleprospecteur_id,
+                ];
             }
         }
 
@@ -286,7 +287,7 @@ class PhoningQueueBuilder
 
         $now = now();
 
-        return collect($queue)->filter(function ($item) use ($validIdsByType, $prospectRappelMap, $now) {
+        return collect($queue)->filter(function ($item) use ($validIdsByType, $prospectRappelMap, $now, $userId) {
             $type = $item['type'];
             $id = $item['id'];
 
@@ -297,17 +298,30 @@ class PhoningQueueBuilder
                 return false;
             }
 
-            // Task 2.3 — Exclude prospects with a future rappel_planifie_at.
+            // Task 2.3 — Exclude prospects with a future or other user's rappel.
             if ($type === 'prospect') {
-                $rappel = $prospectRappelMap[$id] ?? null;
-                if ($rappel !== null) {
-                    try {
-                        $rappelAt = $rappel instanceof \Carbon\Carbon ? $rappel : \Carbon\Carbon::parse($rappel);
-                        if ($rappelAt->gt($now)) {
-                            return false;
+                $prospectData = $prospectRappelMap[$id] ?? null;
+                if ($prospectData !== null) {
+                    $rappel = $prospectData['rappel_planifie_at'] ?? null;
+                    $assignedTeleproId = $prospectData['teleprospecteur_id'] ?? null;
+
+                    // Si un rappel est planifié
+                    if ($rappel !== null) {
+                        try {
+                            $rappelAt = $rappel instanceof \Carbon\Carbon ? $rappel : \Carbon\Carbon::parse($rappel);
+
+                            // Règle 1 : Si le rappel est réservé nominativement à un autre téléprospecteur, l'exclure de la file des autres
+                            if ($assignedTeleproId !== null && (int)$assignedTeleproId !== (int)$userId) {
+                                return false;
+                            }
+
+                            // Règle 2 : Exclure les prospects dont le rappel est prévu dans le futur (> now())
+                            if ($rappelAt->gt($now)) {
+                                return false;
+                            }
+                        } catch (\Throwable) {
+                            // Graceful fallback
                         }
-                    } catch (\Throwable) {
-                        // Graceful fallback: malformed date → treat as callable.
                     }
                 }
             }
@@ -334,6 +348,7 @@ class PhoningQueueBuilder
 
         $prioritaires = [];
         $normaux = [];
+        $now = now();
 
         foreach ($queue as $item) {
             if (($item['type'] ?? '') !== 'prospect') {
@@ -347,8 +362,9 @@ class PhoningQueueBuilder
                 continue;
             }
 
+            // Un rappel est prioritaire uniquement s'il est en retard OU si l'heure du rappel est déjà atteinte/passée dans la journée (<= now())
             $estPrioritaire = $prospect->rappel_est_en_retard
-                || ($prospect->rappel_planifie_at && $prospect->rappel_planifie_at->isToday());
+                || ($prospect->rappel_planifie_at && $prospect->rappel_planifie_at->lte($now));
 
             if ($estPrioritaire) {
                 $prioritaires[] = $item;

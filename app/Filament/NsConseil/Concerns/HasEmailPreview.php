@@ -2,10 +2,13 @@
 
 namespace App\Filament\NsConseil\Concerns;
 
+use App\Jobs\SendProspectionMailJob;
 use App\Mail\ConfirmationRdvProspectMail;
 use App\Mail\ContactSansCSEMail;
 use App\Mail\GenericProspectionMail;
+use App\Mail\PreviewableProspectionMail;
 use App\Mail\PriseContactBlocMail;
+use App\Models\EmailTemplate;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use Filament\Notifications\Notification;
@@ -28,6 +31,12 @@ trait HasEmailPreview
     public ?string $emailPreviewOriginalSubject   = null;
     public ?string $emailPreviewOriginalBody      = null;
 
+    public string $emailPreviewMode               = 'status';
+    public string $emailTemplateKey               = '';
+    public string $emailTabSubject                = '';
+    public string $emailTabBody                   = '';
+    public ?string $emailTabRecipient             = null;
+
     // ── Actions publiques ────────────────────────────────────────────
 
     /** Req 4.4 */
@@ -47,6 +56,14 @@ trait HasEmailPreview
         $this->emailPreviewConfirmed = true;
         $this->showEmailPreview      = false;
 
+        if ($this->emailPreviewMode === 'standalone') {
+            $this->sendStandaloneEmail();
+            $this->emailPreviewMode = 'status';
+            $this->resetEmailPreviewState();
+
+            return;
+        }
+
         $this->submitResult();
     }
 
@@ -55,6 +72,191 @@ trait HasEmailPreview
     {
         $this->showEmailPreview      = false;
         $this->emailPreviewConfirmed = false;
+        $this->emailPreviewMode      = 'status';
+    }
+
+    public function openEmailPreviewStandalone(): void
+    {
+        if (blank($this->emailTabRecipient) || ! filter_var(trim($this->emailTabRecipient), FILTER_VALIDATE_EMAIL)) {
+            Notification::make()
+                ->title('Destinataire invalide')
+                ->body('Veuillez renseigner une adresse email valide.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        if (blank($this->emailTabSubject) || blank(strip_tags((string) $this->emailTabBody))) {
+            Notification::make()
+                ->title('Mail incomplet')
+                ->body('Le sujet et le corps du message sont obligatoires avant envoi.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $this->emailPreviewMode            = 'standalone';
+        $this->showEmailPreview            = true;
+        $this->emailPreviewRecipient       = trim($this->emailTabRecipient);
+        $this->emailPreviewSubject         = trim($this->emailTabSubject);
+        $this->emailPreviewBody            = $this->emailTabBody;
+        $this->emailPreviewOriginalSubject = $this->emailTabSubject;
+        $this->emailPreviewOriginalBody    = $this->emailTabBody;
+        $this->emailPreviewConfirmed       = false;
+    }
+
+    public function loadEmailTemplate(): void
+    {
+        if (blank($this->emailTemplateKey)) {
+            return;
+        }
+
+        $template = EmailTemplate::findByCle($this->emailTemplateKey);
+        if (! $template) {
+            return;
+        }
+
+        $variables = $this->buildEmailTemplateVariables();
+
+        $this->emailTabSubject   = $template->renderSujet($variables);
+        $this->emailTabBody      = $template->renderCorps($variables);
+        $this->emailTabRecipient = $this->emailTabRecipient ?? $this->resolveStandaloneEmailRecipient();
+    }
+
+    protected function buildEmailTemplateVariables(): array
+    {
+        $data = [
+            'nom'                   => $this->currentContactData['nom'] ?? null,
+            'entreprise_nom'        => $this->currentContactData['nom'] ?? null,
+            'telephone'             => $this->currentContactData['telephone'] ?? null,
+            'ville'                 => $this->currentContactData['ville'] ?? null,
+            'code_postal'           => $this->currentContactData['code_postal'] ?? null,
+            'departement'           => $this->currentContactData['departement'] ?? null,
+            'email'                 => $this->currentContactData['email'] ?? null,
+            'interlocuteur_nom'     => $this->currentContactData['interlocuteur_nom'] ?? null,
+            'interlocuteur_prenom'  => $this->currentContactData['interlocuteur_prenom'] ?? null,
+            'interlocuteur_email'   => $this->currentContactData['interlocuteur_email'] ?? null,
+            'interlocuteur_telephone' => $this->currentContactData['interlocuteur_telephone'] ?? null,
+            'email_general_standard' => $this->currentContactData['email_general_standard'] ?? null,
+            'secteur_activite'      => $this->currentContactData['secteur_activite'] ?? null,
+        ];
+
+        if ($this->currentContact instanceof Prospect) {
+            $data = array_merge($data, [
+                'nom'                   => $this->currentContact->nom,
+                'entreprise_nom'        => $this->currentContact->nom,
+                'telephone'             => $this->currentContact->telephone,
+                'ville'                 => $this->currentContact->ville,
+                'code_postal'           => $this->currentContact->code_postal,
+                'departement'           => $this->currentContact->departement,
+                'email'                 => $this->currentContact->email,
+                'interlocuteur_nom'     => $this->currentContact->interlocuteur_nom,
+                'interlocuteur_prenom'  => $this->currentContact->interlocuteur_prenom,
+                'interlocuteur_email'   => $this->currentContact->interlocuteur_email,
+                'interlocuteur_telephone' => $this->currentContact->interlocuteur_telephone,
+                'email_general_standard' => $this->currentContact->email_general_standard,
+                'secteur_activite'      => $this->currentContact->secteur_activite,
+            ]);
+        } elseif (is_array($this->currentContact)) {
+            $data = array_merge($data, array_filter($this->currentContact, fn ($value, $key) => is_string($value) && in_array($key, [
+                'nom', 'telephone', 'ville', 'code_postal', 'departement', 'email',
+                'interlocuteur_nom', 'interlocuteur_prenom', 'interlocuteur_email', 'interlocuteur_telephone',
+                'email_general_standard', 'secteur_activite',
+            ], true), ARRAY_FILTER_USE_BOTH));
+        }
+
+        return array_filter($data, fn ($value) => $value !== null);
+    }
+
+    protected function resolveStandaloneEmailRecipient(): ?string
+    {
+        $candidates = [];
+
+        if ($this->currentContact instanceof Prospect) {
+            $candidates = [
+                $this->currentContact->interlocuteur_email,
+                $this->currentContact->email_general_standard,
+                $this->currentContact->email,
+            ];
+        } elseif (is_array($this->currentContact)) {
+            $candidates = [
+                $this->currentContact['interlocuteur_email'] ?? null,
+                $this->currentContact['email_general_standard'] ?? null,
+                $this->currentContact['email'] ?? null,
+            ];
+        }
+
+        foreach ($candidates as $candidate) {
+            if (! empty($candidate) && filter_var(trim((string) $candidate), FILTER_VALIDATE_EMAIL)) {
+                return trim((string) $candidate);
+            }
+        }
+
+        return null;
+    }
+
+    protected function resolveProspectIdForStandaloneEmail(): ?int
+    {
+        if ($this->currentContact instanceof Prospect) {
+            return $this->currentContact->getKey();
+        }
+
+        if (is_array($this->currentContact) && isset($this->currentContact['id'])) {
+            return (int) $this->currentContact['id'];
+        }
+
+        return null;
+    }
+
+    protected function sendStandaloneEmail(): void
+    {
+        $recipient = trim((string) ($this->emailPreviewRecipient ?? ''));
+        if (! filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            Notification::make()
+                ->title('Destinataire invalide')
+                ->body('Adresse email invalide ou manquante.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $subject = trim((string) $this->emailPreviewSubject);
+        $body = $this->emailPreviewBody ?? '';
+
+        if (blank($subject) || blank(strip_tags($body))) {
+            Notification::make()
+                ->title('Mail incomplet')
+                ->body('Le sujet et le corps du message sont obligatoires.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        try {
+            dispatch(new SendProspectionMailJob(
+                mailable: new PreviewableProspectionMail($subject, $body),
+                to: $recipient,
+                emailLabel: 'Email personnalisé',
+                prospectId: $this->resolveProspectIdForStandaloneEmail(),
+                notifyUserId: Auth::id(),
+            ));
+
+            Notification::make()
+                ->title('Email en file d’attente')
+                ->body("Le message a été mis en file d'attente pour {$recipient}.")
+                ->success()
+                ->send();
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('Échec d’envoi')
+                ->body('Impossible de mettre le message en file : ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     /** Req 4.6 */
@@ -92,6 +294,7 @@ trait HasEmailPreview
     {
         $this->showEmailPreview            = false;
         $this->emailPreviewConfirmed       = false;
+        $this->emailPreviewMode            = 'status';
         $this->emailPreviewRecipient       = null;
         $this->emailPreviewSubject         = null;
         $this->emailPreviewBody            = null;

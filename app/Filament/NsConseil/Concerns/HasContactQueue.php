@@ -7,6 +7,7 @@ use App\Models\CampagnePhoning;
 use App\Models\Client;
 use App\Models\ContactPartenaire;
 use App\Models\Prospect;
+use App\Models\StatutPhoning;
 use App\Services\Phoning\PhoningContactResolver;
 use App\Services\Phoning\PhoningQueueBuilder;
 use App\Services\Phoning\PhoningQueueService;
@@ -321,11 +322,116 @@ trait HasContactQueue
             return [];
         }
 
-        return Appel::where('appelable_type', $modelClass)
+        // Charger la table des statuts phoning pour mapper code -> label/couleur
+        $contactType = $this->currentContact['type'] ?? 'prospect';
+        $statutsMap  = [];
+        try {
+            $statutsMap = StatutPhoning::forModelType($contactType)
+                ->keyBy('code')
+                ->map(fn ($s) => [
+                    'label'          => $s->label,
+                    'bar'            => $s->couleur_css ?? 'background:rgb(107 114 128)',
+                    'pipeline_label' => $s->pipeline_statut,
+                ])
+                ->toArray();
+        } catch (\Throwable $e) {
+            // Table manquante ou autre erreur : on continue sans labels
+        }
+
+        return Appel::with(['user', 'campagne'])
+            ->where('appelable_type', $modelClass)
             ->where('appelable_id', $this->currentContact['id'])
             ->orderByDesc('created_at')
             ->limit(15)
             ->get()
+            ->map(function (Appel $appel) use ($statutsMap) {
+                // ── 1. Code phoning workflow ──────────────────────────
+                $code       = $appel->phoning_status ?: null;
+                $statutInfo = $code ? ($statutsMap[$code] ?? null) : null;
+
+                // ── 2. Agent ──────────────────────────────────────────
+                $agent = $appel->ringover_agent_nom
+                    ?? $appel->user?->name
+                    ?? '—';
+
+                // ── 3. Date ───────────────────────────────────────────
+                $date = $appel->date_heure
+                    ? $appel->date_heure->format('d/m/Y H:i')
+                    : ($appel->created_at?->format('d/m/Y H:i') ?? '');
+
+                // ── 4. Notes / compte-rendu ───────────────────────────
+                $notes = $appel->phoning_notes ?: $appel->commentaire ?: null;
+
+                // ── 5. Badge statut ───────────────────────────────────
+                // Priorité : StatutPhoning > EventResult > Ringover tag > type
+                if ($statutInfo) {
+                    $statutLabel = $statutInfo['label'];
+                    $statutBar   = $statutInfo['bar'];
+                } elseif ($code) {
+                    // Code inconnu dans StatutPhoning, afficher le code brut
+                    $statutLabel = strtoupper($code);
+                    $statutBar   = 'background:rgb(107 114 128)';
+                } elseif ($appel->resultat instanceof \App\Enums\EventResult) {
+                    // Appel Ringover : utiliser EventResult
+                    $statutLabel = $appel->resultat->label();
+                    $statutBar   = match ($appel->resultat) {
+                        \App\Enums\EventResult::Realise    => 'background:rgb(34 197 94)',
+                        \App\Enums\EventResult::Annule     => 'background:rgb(239 68 68)',
+                        \App\Enums\EventResult::Decale     => 'background:rgb(234 179 8)',
+                        \App\Enums\EventResult::NonAbouti  => 'background:rgb(156 163 175)',
+                        \App\Enums\EventResult::Rappel     => 'background:rgb(99 102 241)',
+                    };
+                } elseif ($appel->type instanceof \App\Enums\EventType) {
+                    // Fallback ultime : type d'événement
+                    $statutLabel = $appel->type->label();
+                    $statutBar   = match ($appel->type) {
+                        \App\Enums\EventType::Appel        => 'background:rgb(59 130 246)',
+                        \App\Enums\EventType::Permanence   => 'background:rgb(34 197 94)',
+                        \App\Enums\EventType::Presentation => 'background:rgb(168 85 247)',
+                        default                             => 'background:rgb(107 114 128)',
+                    };
+                } else {
+                    $statutLabel = 'Appel';
+                    $statutBar   = 'background:rgb(107 114 128)';
+                }
+
+                // ── 6. Pipeline ───────────────────────────────────────
+                $pipelineLabel = $statutInfo['pipeline_label'] ?? null;
+
+                // ── 7. Qualification détaillée ────────────────────────
+                // Priorité : phoning_result (label workflow) > ringover_status_tag > ringover_department_tag
+                $resultatLabel = null;
+                if (filled($appel->phoning_result)) {
+                    $resultatLabel = $appel->phoning_result;
+                } elseif (filled($appel->ringover_status_tag)) {
+                    $resultatLabel = '📞 ' . $appel->ringover_status_tag;
+                } elseif (filled($appel->ringover_department_tag)) {
+                    $resultatLabel = '🏷 ' . $appel->ringover_department_tag;
+                }
+
+                // ── 8. Durée ──────────────────────────────────────────
+                $dureeFormatee = null;
+                if ($appel->duree_secondes) {
+                    $m = intdiv($appel->duree_secondes, 60);
+                    $s = $appel->duree_secondes % 60;
+                    $dureeFormatee = $m > 0 ? "{$m}m{$s}s" : "{$s}s";
+                }
+
+                return [
+                    'statut_label'         => $statutLabel,
+                    'statut_bar'           => $statutBar,
+                    'pipeline_label'       => $pipelineLabel,
+                    'pipeline_badge_style' => null,
+                    'agent'                => $agent,
+                    'date'                 => $date,
+                    'notes'                => $notes,
+                    'campagne'             => $appel->campagne?->nom ?? null,
+                    'duree'                => $appel->duree_secondes,
+                    'duree_formatee'       => $dureeFormatee,
+                    'resultat_label'       => $resultatLabel,
+                    'source'               => $appel->ringover_call_id ? 'ringover' : 'workflow',
+                ];
+            })
             ->toArray();
     }
 
