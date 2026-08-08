@@ -201,8 +201,23 @@ class PhoningQueueBuilder
         }
     }
 
-    public function filterValidQueue(array $queue): array
+    public function filterValidQueue(array $queue, ?int $userId = null): array
     {
+        // Task 2.2 — Filter out items locked by another user (foreign-lock filter).
+        // This is a fast in-memory cache check done before any DB queries.
+        if ($userId !== null) {
+            $queue = array_values(array_filter($queue, function (array $item) use ($userId): bool {
+                $type = $item['type'] ?? null;
+                $id = $item['id'] ?? null;
+                if (! is_string($type) || $id === null) {
+                    return true;
+                }
+                $owner = Cache::get("phoning_queue_reservation_{$type}_{$id}");
+                // Keep if: no lock (null) OR locked by this user.
+                return $owner === null || (int) $owner === $userId;
+            }));
+        }
+
         $itemsByType = collect($queue)
             ->groupBy(fn (array $item): string => $item['type'] ?? '')
             ->map(fn ($items) => $items->pluck('id')->filter()->unique()->values()->all());
@@ -214,14 +229,26 @@ class PhoningQueueBuilder
             ->all();
 
         $prospectIds = $itemsByType->get('prospect', []);
-        $validProspectIds = $prospectIds === []
-            ? []
-            : Prospect::query()
+
+        // Task 2.3 — Build a rappel_planifie_at lookup map for prospects.
+        // We include the column in this query so we can exclude prospects whose
+        // rappel is scheduled in the future (> now()) in the final filter closure.
+        $prospectRappelMap = [];
+        $validProspectIds = [];
+
+        if ($prospectIds !== []) {
+            $prospectRows = Prospect::query()
                 ->whereIn('id', $prospectIds)
                 ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
                 ->whereNull('deleted_at')
-                ->pluck('id')
-                ->all();
+                ->select('id', 'rappel_planifie_at')
+                ->get();
+
+            foreach ($prospectRows as $row) {
+                $validProspectIds[] = $row->id;
+                $prospectRappelMap[$row->id] = $row->rappel_planifie_at;
+            }
+        }
 
         if ($validProspectIds !== [] && $retireCodes !== []) {
             $prospectsRetires = Appel::query()
@@ -257,11 +284,35 @@ class PhoningQueueBuilder
             'client' => array_flip($validClientIds),
         ];
 
-        return collect($queue)->filter(function ($item) use ($validIdsByType) {
-            return match ($item['type']) {
-                'prospect', 'partenaire', 'client' => isset($validIdsByType[$item['type']][$item['id']]),
+        $now = now();
+
+        return collect($queue)->filter(function ($item) use ($validIdsByType, $prospectRappelMap, $now) {
+            $type = $item['type'];
+            $id = $item['id'];
+
+            if (! match ($type) {
+                'prospect', 'partenaire', 'client' => isset($validIdsByType[$type][$id]),
                 default => true,
-            };
+            }) {
+                return false;
+            }
+
+            // Task 2.3 — Exclude prospects with a future rappel_planifie_at.
+            if ($type === 'prospect') {
+                $rappel = $prospectRappelMap[$id] ?? null;
+                if ($rappel !== null) {
+                    try {
+                        $rappelAt = $rappel instanceof \Carbon\Carbon ? $rappel : \Carbon\Carbon::parse($rappel);
+                        if ($rappelAt->gt($now)) {
+                            return false;
+                        }
+                    } catch (\Throwable) {
+                        // Graceful fallback: malformed date → treat as callable.
+                    }
+                }
+            }
+
+            return true;
         })->values()->toArray();
     }
 

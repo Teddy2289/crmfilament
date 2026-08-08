@@ -8,7 +8,9 @@ use App\Models\Client;
 use App\Models\ContactPartenaire;
 use App\Models\Prospect;
 use App\Services\Phoning\PhoningContactResolver;
+use App\Services\Phoning\PhoningQueueBuilder;
 use App\Services\Phoning\PhoningQueueService;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -72,15 +74,28 @@ trait HasContactQueue
      */
     public function loadNextContact(): void
     {
+        // Task 6.1 — Libérer le verrou du contact précédent (Req 3.2)
+        if ($this->currentContact !== null) {
+            $type = $this->currentContact['type'] ?? null;
+            $id   = (int) ($this->currentContact['id'] ?? 0);
+            if ($type && $id > 0) {
+                app(PhoningQueueBuilder::class)
+                    ->releaseQueueReservationForUser(Auth::id(), $type, $id);
+            }
+        }
+
         if (empty($this->contactQueue)) {
-            $this->currentContact = null;
+            $this->currentContact     = null;
+            $this->currentContactData = [];
+            $this->contactType        = '';
 
             return;
         }
 
         $item  = array_shift($this->contactQueue);
+        $this->contactType = $item['type'] ?? '';
         $model = app(PhoningContactResolver::class)
-            ->resolveModel($item['type'] ?? '', (int) ($item['id'] ?? 0));
+            ->resolveModel($this->contactType, (int) ($item['id'] ?? 0));
 
         if ($model === null) {
             $this->loadNextContact(); // skip silencieux
@@ -89,9 +104,24 @@ trait HasContactQueue
         }
 
         $contactData          = app(PhoningContactResolver::class)
-            ->buildContactData($model, $item['type']);
-        $this->currentContact = array_merge($item, $contactData);
-        $this->currentCampagneId = $item['campagne_id'] ?? null;
+            ->buildContactData($model, $this->contactType);
+        $this->currentContact     = array_merge($item, $contactData);
+        $this->currentContactData = $this->currentContact;
+        $this->populateContactFormFields($model, $this->contactType);
+        $this->currentCampagneId  = $item['campagne_id'] ?? null;
+
+        // Task 6.1 — Acquérir le verrou sur le nouveau contact (Req 1.1, 1.2)
+        if ($this->currentContact !== null) {
+            $type = $this->currentContact['type'] ?? null;
+            $id   = (int) ($this->currentContact['id'] ?? 0);
+            if ($type && $id > 0) {
+                $acquired = app(PhoningQueueBuilder::class)
+                    ->acquireContactLock(Auth::id(), $type, $id);
+                if (! $acquired) {
+                    $this->loadNextContact(); // contact verrouillé → passer au suivant
+                }
+            }
+        }
     }
 
     // ── Recherche ────────────────────────────────────────────────────
@@ -144,11 +174,69 @@ trait HasContactQueue
     /** Déplace le premier élément en dernière position sans créer d'Appel. Req 2.9 */
     public function skipCall(): void
     {
-        if (empty($this->contactQueue)) {
+        if (empty($this->contactQueue) && $this->currentContact === null) {
             return;
         }
 
-        array_push($this->contactQueue, array_shift($this->contactQueue));
+        // Task 6.2 — Libérer le verrou du contact courant avant le skip (Req 3.3)
+        if ($this->currentContact !== null) {
+            app(PhoningQueueBuilder::class)->releaseQueueReservationForUser(
+                Auth::id(),
+                $this->currentContact['type'] ?? '',
+                (int) ($this->currentContact['id'] ?? 0),
+            );
+        }
+
+        if (! empty($this->contactQueue)) {
+            array_push($this->contactQueue, array_shift($this->contactQueue));
+        }
+    }
+
+    /**
+     * Renouvelle le verrou du contact courant. Appelé par polling Livewire.
+     * Si le verrou a expiré ou a été repris, notifie l'utilisateur et passe au suivant.
+     * Task 6.3 — Req 2.1, 2.2, 2.3
+     */
+    public function renewCurrentContactLock(): void
+    {
+        if ($this->currentContact === null) {
+            return;
+        }
+
+        $type = $this->currentContact['type'] ?? null;
+        $id   = (int) ($this->currentContact['id'] ?? 0);
+
+        if (! $type || $id <= 0) {
+            return;
+        }
+
+        $renewed = app(PhoningQueueBuilder::class)
+            ->renewContactLock(Auth::id(), $type, $id);
+
+        if (! $renewed) {
+            Notification::make()
+                ->title('Fiche libérée')
+                ->body('Le verrou sur cette fiche a expiré. Passage au contact suivant.')
+                ->warning()
+                ->send();
+
+            $this->loadNextContact();
+        }
+    }
+
+    /**
+     * Libère le verrou du contact courant à la destruction de la page Livewire.
+     * Task 6.4 — Req 3.4
+     */
+    public function dehydrate(): void
+    {
+        if ($this->currentContact !== null) {
+            app(PhoningQueueBuilder::class)->releaseQueueReservationForUser(
+                Auth::id(),
+                $this->currentContact['type'] ?? '',
+                (int) ($this->currentContact['id'] ?? 0),
+            );
+        }
     }
 
     /** Assure que le contact demandé via URL est en tête de file. Req 2.10 */

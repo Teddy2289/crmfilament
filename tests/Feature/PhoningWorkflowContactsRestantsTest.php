@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\NsConseil\Pages\PhoningWorkflow;
 use App\Models\CampagnePhoning;
+use App\Models\CrmProfile;
 use App\Models\GroupeTelepro;
 use App\Models\Prospect;
 use App\Models\StatutPhoning;
@@ -123,7 +124,7 @@ class PhoningWorkflowContactsRestantsTest extends TestCase
         $component = Livewire::actingAs($user)->test(PhoningWorkflow::class);
 
         $this->assertSame(2, $component->instance()->getContactsRestantsCount());
-        $this->assertCount(2, $component->instance()->contactQueue);
+        $this->assertCount(1, $component->instance()->contactQueue);
 
         $component->set('statut_resultat', 'nrp')->call('submitResult');
 
@@ -138,6 +139,17 @@ class PhoningWorkflowContactsRestantsTest extends TestCase
     {
         $role = Role::create(['name' => 'test_full_access_phoning_workflow', 'guard_name' => 'web']);
         AccessRightsCatalog::syncFullAccess($role);
+
+        CrmProfile::updateOrCreate(
+            ['role_name' => $role->name],
+            [
+                'label' => 'Phoning full access',
+                'panels' => ['ns-conseil'],
+                'landing_path' => '/ns-conseil',
+                'ordre' => 1,
+                'actif' => true,
+            ]
+        );
 
         $user = User::factory()->create([
             'role_cache' => $role->name,

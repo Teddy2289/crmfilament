@@ -352,6 +352,12 @@ class CampagnePhoning extends Model
             );
         }
 
+        // Exclure les prospects dont le rappel est planifié dans le futur (Req 5.1, 5.3, 5.4, 5.5)
+        $query->where(function ($q) {
+            $q->whereNull('rappel_planifie_at')
+              ->orWhere('rappel_planifie_at', '<=', now());
+        });
+
         return $query;
     }
 

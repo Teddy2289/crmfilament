@@ -7,13 +7,19 @@ use App\Enums\EventType;
 use App\Enums\ProspectStatut;
 use App\Enums\StatutCampagneProspection;
 use App\Models\Appel;
+use App\Models\ArtisanProspection;
 use App\Models\CampagnePhoning;
+use App\Models\Client;
+use App\Models\ContactParticulier;
+use App\Models\ContactPartenaire;
 use App\Models\Prospect;
 use App\Models\StatutPhoning;
 use App\Services\Crm\CrmSettingsService;
+use App\Services\Phoning\PhoningContactResolver;
 use App\Services\ProspectionMailService;
 use Carbon\Carbon;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -52,7 +58,11 @@ trait HasCallRecording
 
     protected function updateArtisan(): void
     {
-        $artisan = $this->currentContact;
+        $artisan = $this->resolveCurrentContactModel();
+        if (! $artisan) {
+            return;
+        }
+
         $nouveauStatut = match ($this->statut_resultat) {
             'std_joint', 'rp', 'rpc' => StatutCampagneProspection::RP,
             'std_nr', 'cse_nr'       => StatutCampagneProspection::NR,
@@ -71,38 +81,56 @@ trait HasCallRecording
 
     protected function updatePartenaire(): void
     {
+        $partenaire = $this->resolveCurrentContactModel();
+        if (! $partenaire) {
+            return;
+        }
+
         $note = '[Appel du ' . now()->format('d/m/Y H:i') . '] ' . $this->getResultLabel();
         if ($this->commentaires) {
             $note .= "\n{$this->commentaires}";
         }
-        $this->currentContact->ajouterNote($note);
+        $partenaire->ajouterNote($note);
     }
 
     protected function updateParticulier(): void
     {
+        $particulier = $this->resolveCurrentContactModel();
+        if (! $particulier) {
+            return;
+        }
+
         $note = '[Appel du ' . now()->format('d/m/Y H:i') . '] ' . $this->getResultLabel();
         if ($this->commentaires) {
             $note .= ' - ' . $this->commentaires;
         }
-        $this->currentContact->update([
-            'notes' => ($this->currentContact->notes ? $this->currentContact->notes . "\n" : '') . $note,
+        $particulier->update([
+            'notes' => ($particulier->notes ? $particulier->notes . "\n" : '') . $note,
         ]);
     }
 
     protected function updateClient(): void
     {
+        $client = $this->resolveCurrentContactModel();
+        if (! $client) {
+            return;
+        }
+
         $note = '[Appel du ' . now()->format('d/m/Y H:i') . '] ' . $this->getResultLabel();
         if ($this->commentaires) {
             $note .= ' — ' . $this->commentaires;
         }
-        $extra = $this->currentContact->extra_data ?? [];
+        $extra = $client->extra_data ?? [];
         $extra['historique_appels'][] = $note;
-        $this->currentContact->update(['extra_data' => $extra]);
+        $client->update(['extra_data' => $extra]);
     }
 
     protected function updateProspect(): void
     {
-        $prospect   = $this->currentContact;
+        $prospect   = $this->resolveCurrentContactModel();
+        if (! $prospect) {
+            return;
+        }
         $statutMeta = StatutPhoning::where('model_type', 'prospect')
             ->where('code', $this->statut_resultat)
             ->first();
@@ -244,7 +272,7 @@ trait HasCallRecording
                 'date_rdv'                  => $this->rappel_date ?: null,
                 'heure_rdv'                 => $this->rappel_heure ?: null,
                 'lieu_rdv'                  => $this->lieu_rdv ?: null,
-                'invitation_agenda_envoyee' => $this->invitation_agenda_envoyee ? 'Oui' : 'Non',
+                'invitation_agenda_envoyee' => $this->enregistrement_appel_joint ? 'Oui' : 'Non',
                 'enregistrement_appel_joint' => $this->enregistrement_appel_joint ? 'Oui' : 'Non',
                 'enregistrement_raison'     => $this->enregistrement_raison ?: null,
                 'besoins_exprimes'          => $this->besoins_exprimes ?: null,
@@ -268,6 +296,27 @@ trait HasCallRecording
         };
     }
 
+    protected function resolveCurrentContactModel(): ?Model
+    {
+        if (! $this->currentContact) {
+            return null;
+        }
+
+        if ($this->currentContact instanceof Model) {
+            return $this->currentContact;
+        }
+
+        $type = $this->currentContact['type'] ?? null;
+        $id   = isset($this->currentContact['id']) ? (int) $this->currentContact['id'] : 0;
+
+        if (! $type || $id <= 0) {
+            return null;
+        }
+
+        return app(PhoningContactResolver::class)
+            ->resolveModel($type, $id);
+    }
+
     // ── Journal d'appel ──────────────────────────────────────────────
 
     protected function enregistrerAppel(): void
@@ -288,9 +337,28 @@ trait HasCallRecording
         $dateFin       = filled($this->ringoverCallEndedAt)   ? Carbon::parse($this->ringoverCallEndedAt)   : now();
         $dureeSecondes = max(0, (int) $dateFin->diffInSeconds($dateHeure, false));
 
+        $contact = $this->currentContact;
+        $appelableType = null;
+        $appelableId = null;
+
+        if (is_array($contact)) {
+            $appelableType = match ($contact['type'] ?? '') {
+                'prospect'   => Prospect::class,
+                'artisan'    => ArtisanProspection::class,
+                'partenaire' => ContactPartenaire::class,
+                'particulier' => ContactParticulier::class,
+                'client'     => Client::class,
+                default      => null,
+            };
+            $appelableId = $contact['id'] ?? null;
+        } elseif ($contact !== null) {
+            $appelableType = get_class($contact);
+            $appelableId = $contact->id;
+        }
+
         $appel = Appel::create([
-            'appelable_type'     => get_class($this->currentContact),
-            'appelable_id'       => $this->currentContact->id,
+            'appelable_type'     => $appelableType,
+            'appelable_id'       => $appelableId,
             'user_id'            => Auth::id(),
             'type'               => EventType::Appel,
             'date_heure'         => $dateHeure,

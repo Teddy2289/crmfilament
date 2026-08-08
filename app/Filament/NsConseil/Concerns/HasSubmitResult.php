@@ -24,6 +24,8 @@ trait HasSubmitResult
             return;
         }
 
+        $this->contactType = $this->resolveContactType() ?? $this->contactType;
+
         $codesValides = $this->getStatusValidationCodes();
 
         $this->validate([
@@ -87,16 +89,23 @@ trait HasSubmitResult
 
         // Libérer la réservation cache
         if ($this->currentContact && $this->contactType) {
-            app(PhoningQueueBuilder::class)->releaseQueueReservationForUser(
-                Auth::id(),
-                $this->contactType,
-                (int) $this->currentContact->getKey(),
-            );
+            $contactId = is_array($this->currentContact)
+                ? (int) ($this->currentContact['id'] ?? 0)
+                : (int) $this->currentContact->getKey();
+
+            if ($contactId > 0) {
+                app(PhoningQueueBuilder::class)->releaseQueueReservationForUser(
+                    Auth::id(),
+                    $this->contactType,
+                    $contactId,
+                );
+            }
         }
 
         $this->resetEmailPreviewState();
 
-        array_shift($this->contactQueue);
+        $this->maybeRequeueCurrentContactAfterResult();
+
         $this->completed++;
 
         $this->checkCampagneCompletion();
@@ -111,5 +120,66 @@ trait HasSubmitResult
         return $this->contactType === 'prospect'
             && $this->currentContact instanceof Prospect
             && $this->getEmailPreviewPayload() !== null;
+    }
+
+    protected function maybeRequeueCurrentContactAfterResult(): void
+    {
+        if (! $this->currentContact) {
+            return;
+        }
+
+        $this->contactType = $this->resolveContactType() ?? $this->contactType;
+        if (! $this->contactType) {
+            return;
+        }
+
+        $status = $this->getSelectedStatus();
+        if (! $status) {
+            return;
+        }
+
+        if ($status->retire_de_file || ! $status->compte_comme_tentative) {
+            return;
+        }
+
+        $campagneId = null;
+        if (is_array($this->currentContact)) {
+            $campagneId = isset($this->currentContact['campagne_id'])
+                ? (int) $this->currentContact['campagne_id']
+                : null;
+        }
+
+        if ($campagneId === null) {
+            $campagneId = $this->currentCampagneId;
+        }
+
+        $contactId = is_array($this->currentContact)
+            ? (int) ($this->currentContact['id'] ?? 0)
+            : (int) $this->currentContact->getKey();
+
+        if ($contactId <= 0) {
+            return;
+        }
+
+        $this->contactQueue[] = [
+            'type'        => $this->contactType,
+            'id'          => $contactId,
+            'campagne_id' => $campagneId,
+        ];
+    }
+
+    protected function resolveContactType(): ?string
+    {
+        if ($this->contactType) {
+            return $this->contactType;
+        }
+
+        if (! $this->currentContact) {
+            return null;
+        }
+
+        return is_array($this->currentContact)
+            ? ($this->currentContact['type'] ?? null)
+            : null;
     }
 }

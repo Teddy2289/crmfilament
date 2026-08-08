@@ -1,11 +1,91 @@
-﻿@php
+@php
 $rappelCodes = $this->getRappelStatusCodes();
 $maxTentatives = app(\App\Services\Crm\CrmSettingsService::class)->get('prospection.max_standard_attempts', 3);
 $tentativesActuelles = $this->getTentativesAppel();
 @endphp
 
 <x-filament-panels::page>
+    <div wire:poll.keep-alive.300000ms="renewCurrentContactLock" class="pw-wrap">
     @vite('resources/css/phoning-workflow.css')
+
+    {{-- ── Initialisation Ringover incrusté dans la colonne droite ────────────
+         Ce script doit s'exécuter AVANT le widget global (ringover-dialer.blade.php)
+         qui a une garde « if (window.ringoverPhone) return ». En initialisant ici
+         avec container:'ringover-embed-phoning', le SDK est ancré dans la colonne
+         droite du workflow au lieu de flotter en position:fixed sur la page entière.
+
+         Stratégie :
+         1. On pose un objet factice ringoverPhone IMMÉDIATEMENT pour bloquer
+            le widget global (qui vérifie if(window.ringoverPhone) return).
+         2. Au DOMContentLoaded on remplace le factice par l'instance réelle
+            dans le conteneur dédié.
+    --}}
+    <script src="https://webcdn.ringover.com/resources/SDK/1.1.3/ringover-sdk.js"></script>
+    <script>
+        if (!window.ringoverPhone) {
+            window.ringoverPhone = { __placeholder: true };
+        }
+
+        function _initRingoverInContainer() {
+            var container = document.getElementById('ringover-embed-phoning');
+            if (!container) {
+                if (window.ringoverPhone && window.ringoverPhone.__placeholder) {
+                    window.ringoverPhone = null;
+                }
+                return;
+            }
+
+            if (typeof window.RingoverSDK !== 'function') {
+                setTimeout(_initRingoverInContainer, 150);
+                return;
+            }
+
+            // Ne pas ré-instancier si déjà généré et fonctionnel
+            if (window.ringoverPhone && !window.ringoverPhone.__placeholder && typeof window.ringoverPhone.dial === 'function') {
+                return;
+            }
+
+            try {
+                // Vider le conteneur au cas où une ancienne iframe résiduelle s'y trouve
+                container.innerHTML = '';
+
+                window.ringoverPhone = new window.RingoverSDK({
+                    container: 'ringover-embed-phoning',
+                    type: 'relative',
+                    size: 'auto',
+                    animation: true,
+                });
+                window.ringoverPhone.generate();
+            } catch (err) {
+                console.warn('Erreur initialisation Ringover SDK:', err);
+            }
+
+            window.appelerAvecRingover = function (numero) {
+                if (!numero) { return; }
+                if (window.ringoverPhone && typeof window.ringoverPhone.dial === 'function') {
+                    window.ringoverPhone.show();
+                    window.ringoverPhone.dial(numero);
+                } else {
+                    window.location.href = 'tel:' + numero;
+                }
+            };
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', _initRingoverInContainer);
+        } else {
+            _initRingoverInContainer();
+        }
+
+        document.addEventListener('livewire:init', _initRingoverInContainer);
+        document.addEventListener('livewire:navigated', function () {
+            if (window.ringoverPhone && typeof window.ringoverPhone.destroy === 'function') {
+                try { window.ringoverPhone.destroy(); } catch (e) {}
+            }
+            window.ringoverPhone = { __placeholder: true };
+            setTimeout(_initRingoverInContainer, 200);
+        });
+    </script>
 
     @push('scripts')
     <script>
@@ -84,7 +164,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                 },
 
                 resetTemplate() {
-                    if (this.isDirty && !window.confirm('Réinitialiser le message au modèle d'origine ?')) {
+                    if (this.isDirty && !window.confirm("Réinitialiser le message au modèle d'origine ?")) {
                         return;
                     }
                     this.subject = this.originalSubject;
@@ -215,7 +295,7 @@ $tentativesActuelles = $this->getTentativesAppel();
     <div class="pw-search-bar">
         <input wire:model.live.debounce.300ms="searchQuery"
                type="search"
-               placeholder="Rechercher un contact…"
+               placeholder="Rechercher un contact (nom, téléphone, SIRET...)"
                class="pw-search-input"
                autocomplete="off">
         @if ($showSearchResults && count($searchResults) > 0)
@@ -235,19 +315,19 @@ $tentativesActuelles = $this->getTentativesAppel();
     {{-- ══ CONTENU PRINCIPAL ══ --}}
     @if ($currentContact)
 
+        {{-- Panneau identité contact (Toute la largeur du haut) --}}
+        <x-phoning::contact-panel
+            :contact="$info"
+            :contact-type="$contactType"
+            :queue-count="count($contactQueue)"
+            :progress="$progress"
+            :is-supervisor-mode="$isSupervisorMode"
+        />
+
         <div class="pw-layout">
 
-            {{-- ── Colonne gauche : infos contact + résultat appel ──────── --}}
+            {{-- ── Colonne gauche : dossier prospect + résultat appel ──────── --}}
             <div class="pw-col-main">
-
-                {{-- Panneau identité contact --}}
-                <x-phoning::contact-panel
-                    :contact="$info"
-                    :contact-type="$contactType"
-                    :queue-count="count($contactQueue)"
-                    :progress="$progress"
-                    :is-supervisor-mode="$isSupervisorMode"
-                />
 
                 {{-- Dossier prospect : onglets Contact/Interlocuteurs/Journal/RDV --}}
                 <x-phoning::dossier-prospect
@@ -314,5 +394,6 @@ $tentativesActuelles = $this->getTentativesAppel();
 
     @endif
 
+    </div>{{-- /wire:poll.keep-alive.300000ms="renewCurrentContactLock" --}}
 </x-filament-panels::page>
 

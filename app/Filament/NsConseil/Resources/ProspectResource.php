@@ -55,17 +55,17 @@ class ProspectResource extends Resource
 
     public static function canAccess(array $parameters = []): bool
     {
-        return auth()->check() && auth()->user()?->actif;
+        return static::userCanViewResourceList();
     }
 
     public static function canViewAny(): bool
     {
-        return static::canAccess();
+        return static::userCanViewResourceList();
     }
 
     public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return static::canAccess();
+        return static::userCanResourcePermission('view');
     }
 
     public static function getNavigationBadge(): ?string

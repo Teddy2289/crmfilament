@@ -51,7 +51,7 @@ class PhoningQueueService
 
             // Req 7.2 / 7.3 : cache hit ou miss
             $queue = $cached !== null
-                ? $this->builder->filterValidQueue($cached)       // Req 7.2
+                ? $this->builder->filterValidQueue($cached, $userId)       // Req 7.2 + Req 4.1/4.2
                 : $this->builder->buildDefaultQueue($userId, $campagneId); // Req 7.3
 
             // Req 7.4 : priorisation puis réservation, dans cet ordre

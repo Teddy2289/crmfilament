@@ -20,6 +20,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Tabs;
 use Filament\Infolists\Components\Tabs\Tab;
+use Filament\Forms\Get;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
@@ -120,6 +121,63 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                             $record->getStats()['progression'] >= 40 => 'warning',
                             default => 'danger',
                         }),
+
+                    // ── Détail par statut ────────────────────────────────────
+                    RepeatableEntry::make('stats_par_statut')
+                        ->label('Détail par statut')
+                        ->columnSpanFull()
+                        ->getStateUsing(function ($record) {
+                            $stats    = $record->getStats();
+                            $parStatut = $stats['par_statut'] ?? [];
+
+                            if (empty($parStatut)) {
+                                return [];
+                            }
+
+                            // Charger les métadonnées des statuts connus (label + couleur)
+                            $metas = \App\Models\StatutPhoning::where('model_type', $record->queueContactType())
+                                ->whereIn('code', array_keys($parStatut))
+                                ->orderBy('ordre')
+                                ->get(['code', 'label', 'couleur'])
+                                ->keyBy('code');
+
+                            $rows = [];
+                            // Statuts connus en premier (ordre configuré)
+                            foreach ($metas as $code => $meta) {
+                                $rows[] = [
+                                    'code'    => $code,
+                                    'label'   => $meta->label ?: $code,
+                                    'couleur' => $meta->couleur_filament ?? 'gray',
+                                    'total'   => $parStatut[$code] ?? 0,
+                                ];
+                            }
+                            // Statuts sans définition (legacy) à la fin
+                            foreach ($parStatut as $code => $total) {
+                                if (! isset($metas[$code])) {
+                                    $rows[] = [
+                                        'code'    => $code,
+                                        'label'   => $code,
+                                        'couleur' => 'gray',
+                                        'total'   => $total,
+                                    ];
+                                }
+                            }
+
+                            return $rows;
+                        })
+                        ->schema([
+                            TextEntry::make('label')
+                                ->label('Statut')
+                                ->getStateUsing(fn(array $state) => $state['label'])
+                                ->badge()
+                                ->color(fn(array $state) => $state['couleur']),
+                            TextEntry::make('total')
+                                ->label('Nombre d\'appels')
+                                ->getStateUsing(fn(array $state) => $state['total'])
+                                ->badge()
+                                ->color('gray'),
+                        ])
+                        ->columns(2),
                 ]),
 
             Section::make('Résultats des appels')
@@ -143,13 +201,13 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                                     ->default($this->filtreDateDebut)
                                     ->native(false)
                                     ->displayFormat('d/m/Y')
-                                    ->maxDate(fn (array $get) => $get('date_fin') ?: now()),
+                                    ->maxDate(fn (Get $get) => $get('date_fin') ?: now()),
                                 \Filament\Forms\Components\DatePicker::make('date_fin')
                                     ->label('Au')
                                     ->default($this->filtreDateFin)
                                     ->native(false)
                                     ->displayFormat('d/m/Y')
-                                    ->minDate(fn (array $get) => $get('date_debut') ?: null)
+                                    ->minDate(fn (Get $get) => $get('date_debut') ?: null)
                                     ->maxDate(now()),
                             ])
                             ->action(function (array $data): void {
