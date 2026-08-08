@@ -1,6 +1,7 @@
 @props([
     'info',
     'callHistory',
+    'modificationHistory',
     'noteLines',
     'contactType',
     'incomingCallPhone'   => null,
@@ -51,7 +52,7 @@
 
     {{-- Onglets --}}
     @php
-        $emailTemplates = \App\Models\EmailTemplate::active()->orderBy('nom')->get();
+        $emailTemplates = \App\Models\EmailTemplate::where('actif', true)->orderBy('nom')->get();
     @endphp
 
     <div class="pw-info-tabs">
@@ -78,6 +79,13 @@
             <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.25rem;height:1.25rem;padding:0 0.25rem;border-radius:9999px;background:rgb(99 102 241);color:white;font-size:0.65rem;font-weight:700;">{{ count($callHistory) }}</span>
             @endif
         </button>
+        @if (count($modificationHistory) > 0)
+        <button class="pw-info-tab" data-tab="history" onclick="switchInfoTab('history')">
+            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Historique
+            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.25rem;height:1.25rem;padding:0 0.25rem;border-radius:9999px;background:rgb(99 102 241);color:white;font-size:0.65rem;font-weight:700;">{{ count($modificationHistory) }}</span>
+        </button>
+        @endif
         @if (($info['type'] ?? '') !== 'client')
         <button class="pw-info-tab" data-tab="rdv" onclick="switchInfoTab('rdv')">
             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
@@ -336,6 +344,11 @@
 
     {{-- Panneau Journal --}}
     <div class="pw-info-panel" data-tab="journal" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+            <div style="font-size:0.875rem;font-weight:600;color:rgb(51 65 85);">Journal des interactions</div>
+            <div style="font-size:0.8rem;color:rgb(107 114 128);">{{ count($callHistory) }} appels</div>
+        </div>
+
         @if (count($callHistory) === 0)
         <div style="text-align:center;padding:2rem 1rem;color:rgb(156 163 175);font-size:0.875rem;">
             Aucun appel enregistré pour ce contact.
@@ -385,8 +398,37 @@
             @endforeach
         </div>
         @endif
-    </div>
 
+    {{-- Panneau Historique des modifications --}}
+    @if (count($modificationHistory) > 0)
+    <div class="pw-info-panel" data-tab="history" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+            <div style="font-size:0.875rem;font-weight:600;color:rgb(51 65 85);">Historique des modifications</div>
+            <div style="font-size:0.8rem;color:rgb(107 114 128);">{{ count($modificationHistory) }} entrées</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+            @foreach ($modificationHistory as $modif)
+            <div style="border-radius:0.75rem;border:1px solid rgb(226 232 240);background:white;padding:0.75rem;">
+                <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.5rem;font-size:0.8rem;color:rgb(75 85 99);">
+                    <div><strong>{{ $modif['champ_label'] }}</strong> · {{ $modif['type_label'] }}</div>
+                    <div>{{ $modif['date'] }}</div>
+                </div>
+                <div style="font-size:0.78rem;color:rgb(107 114 128);margin-bottom:0.5rem;">Par {{ $modif['user_label'] }}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                    <div style="background:rgb(249 250 251);border:1px solid rgb(226 232 240);border-radius:0.5rem;padding:0.75rem;">
+                        <div style="font-size:0.72rem;font-weight:700;margin-bottom:0.4rem;color:rgb(75 85 99);">Ancienne valeur</div>
+                        <div style="white-space:pre-wrap;word-break:break-word;font-size:0.78rem;color:rgb(51 65 85);">{{ $modif['ancienne_valeur'] }}</div>
+                    </div>
+                    <div style="background:rgb(249 250 251);border:1px solid rgb(226 232 240);border-radius:0.5rem;padding:0.75rem;">
+                        <div style="font-size:0.72rem;font-weight:700;margin-bottom:0.4rem;color:rgb(75 85 99);">Nouvelle valeur</div>
+                        <div style="white-space:pre-wrap;word-break:break-word;font-size:0.78rem;color:rgb(51 65 85);">{{ $modif['nouvelle_valeur'] }}</div>
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 
     {{-- Panneau RDV --}}
     @if (($info['type'] ?? '') !== 'client')
@@ -425,6 +467,21 @@
                 <textarea wire:model.defer="emailTabBody" rows="8" class="pw-textarea" placeholder="Écrivez le contenu du mail ou chargez un modèle"></textarea>
             </div>
         </div>
+
+        @php $detectedTemplateVariables = $this->getDetectedTemplateVariables(); @endphp
+        @if (!empty($detectedTemplateVariables))
+        <div style="margin-top:1rem;padding:0.75rem 0.9rem;border:1px solid rgb(229 231 235);border-radius:0.5rem;background:rgb(249 250 251);">
+            <div style="font-size:0.75rem;font-weight:600;color:rgb(75 85 99);margin-bottom:0.35rem;">Variables récupérées</div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                @foreach ($detectedTemplateVariables as $variable => $value)
+                <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.5rem;border-radius:999px;background:rgb(255 255 255);border:1px solid rgb(209 213 219);font-size:0.75rem;color:rgb(55 65 81);">
+                    <strong>{{ $variable }}</strong>
+                    <span style="color:rgb(107 114 128);">= {{ $value }}</span>
+                </span>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         @if (!empty($info['interlocuteur_email']) || !empty($info['email_general_standard']) || !empty($info['email']))
         <div class="pw-section-divider" style="margin-top:1rem;">Adresses disponibles</div>

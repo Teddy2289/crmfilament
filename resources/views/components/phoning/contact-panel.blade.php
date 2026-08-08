@@ -36,7 +36,7 @@
 @endphp
 
 {{-- ── CARTE IDENTITÉ ENTREPRISE ─────────────────────────────────────── --}}
-<div class="pw-summary-card">
+<div id="pw-contact-panel" class="pw-summary-card">
     <div class="pw-summary-top">
         <div class="pw-summary-identity">
             <div class="pw-summary-avatar">

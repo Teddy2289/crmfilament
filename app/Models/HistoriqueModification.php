@@ -82,7 +82,13 @@ class HistoriqueModification extends Model
 
     public function getChampLabelAttribute(): string
     {
-        return match ($this->champ) {
+        $champ = $this->champ;
+
+        if (blank($champ)) {
+            return 'Enregistrement';
+        }
+
+        return match ($champ) {
             'nom' => 'Nom',
             'prenom' => 'Prénom',
             'email' => 'Email',
@@ -93,7 +99,7 @@ class HistoriqueModification extends Model
             'ville' => 'Ville',
             'code_postal' => 'Code postal',
             'notes' => 'Notes',
-            default => $this->champ,
+            default => (string) $champ,
         };
     }
 

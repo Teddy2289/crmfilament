@@ -49,18 +49,46 @@ class HistoriqueModificationsWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('champ')
                     ->label('Champ')
-                    ->formatStateUsing(fn ($state) => $state ? $state : '-'),
+                    ->formatStateUsing(function ($state, $record) {
+                        if (blank($state)) {
+                            return 'Enregistrement';
+                        }
+
+                        return $record?->champ_label ?: (string) $state;
+                    }),
 
                 Tables\Columns\TextColumn::make('ancienne_valeur')
                     ->label('Ancienne valeur')
-                    ->formatStateUsing(fn ($state) => is_array($state) ? json_encode($state) : (string) $state)
-                    ->limit(30)
+                    ->formatStateUsing(function ($state, $record) {
+                        if (blank($state)) {
+                            return '—';
+                        }
+
+                        if (is_array($state)) {
+                            return json_encode($state, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                        }
+
+                        return (string) $state;
+                    })
+                    ->wrap()
+                    ->limit(80)
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('nouvelle_valeur')
                     ->label('Nouvelle valeur')
-                    ->formatStateUsing(fn ($state) => is_array($state) ? json_encode($state) : (string) $state)
-                    ->limit(30)
+                    ->formatStateUsing(function ($state, $record) {
+                        if (blank($state)) {
+                            return '—';
+                        }
+
+                        if (is_array($state)) {
+                            return json_encode($state, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                        }
+
+                        return (string) $state;
+                    })
+                    ->wrap()
+                    ->limit(80)
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('date_modification', 'desc')

@@ -127,47 +127,90 @@ trait HasEmailPreview
 
     protected function buildEmailTemplateVariables(): array
     {
-        $data = [
-            'nom'                   => $this->currentContactData['nom'] ?? null,
-            'entreprise_nom'        => $this->currentContactData['nom'] ?? null,
-            'telephone'             => $this->currentContactData['telephone'] ?? null,
-            'ville'                 => $this->currentContactData['ville'] ?? null,
-            'code_postal'           => $this->currentContactData['code_postal'] ?? null,
-            'departement'           => $this->currentContactData['departement'] ?? null,
-            'email'                 => $this->currentContactData['email'] ?? null,
-            'interlocuteur_nom'     => $this->currentContactData['interlocuteur_nom'] ?? null,
-            'interlocuteur_prenom'  => $this->currentContactData['interlocuteur_prenom'] ?? null,
-            'interlocuteur_email'   => $this->currentContactData['interlocuteur_email'] ?? null,
-            'interlocuteur_telephone' => $this->currentContactData['interlocuteur_telephone'] ?? null,
-            'email_general_standard' => $this->currentContactData['email_general_standard'] ?? null,
-            'secteur_activite'      => $this->currentContactData['secteur_activite'] ?? null,
-        ];
+        $sourceData = is_array($this->currentContactData) ? $this->currentContactData : [];
 
         if ($this->currentContact instanceof Prospect) {
-            $data = array_merge($data, [
-                'nom'                   => $this->currentContact->nom,
-                'entreprise_nom'        => $this->currentContact->nom,
-                'telephone'             => $this->currentContact->telephone,
-                'ville'                 => $this->currentContact->ville,
-                'code_postal'           => $this->currentContact->code_postal,
-                'departement'           => $this->currentContact->departement,
-                'email'                 => $this->currentContact->email,
-                'interlocuteur_nom'     => $this->currentContact->interlocuteur_nom,
-                'interlocuteur_prenom'  => $this->currentContact->interlocuteur_prenom,
-                'interlocuteur_email'   => $this->currentContact->interlocuteur_email,
-                'interlocuteur_telephone' => $this->currentContact->interlocuteur_telephone,
-                'email_general_standard' => $this->currentContact->email_general_standard,
-                'secteur_activite'      => $this->currentContact->secteur_activite,
-            ]);
+            $sourceData = array_merge($sourceData, $this->currentContact->toArray());
         } elseif (is_array($this->currentContact)) {
-            $data = array_merge($data, array_filter($this->currentContact, fn ($value, $key) => is_string($value) && in_array($key, [
-                'nom', 'telephone', 'ville', 'code_postal', 'departement', 'email',
-                'interlocuteur_nom', 'interlocuteur_prenom', 'interlocuteur_email', 'interlocuteur_telephone',
-                'email_general_standard', 'secteur_activite',
-            ], true), ARRAY_FILTER_USE_BOTH));
+            $sourceData = array_merge($sourceData, $this->currentContact);
         }
 
-        return array_filter($data, fn ($value) => $value !== null);
+        $nom = $this->resolveEmailTemplateValue($sourceData, ['nom', 'raison_sociale', 'entreprise_nom']);
+        $prenom = $this->resolveEmailTemplateValue($sourceData, ['prenom', 'first_name']);
+        $interlocuteurPrenom = $this->resolveEmailTemplateValue($sourceData, ['interlocuteur_prenom', 'prenom']);
+        $interlocuteurNom = $this->resolveEmailTemplateValue($sourceData, ['interlocuteur_nom', 'nom']);
+        $contactPrenomNom = trim(implode(' ', array_filter([$interlocuteurPrenom, $interlocuteurNom])));
+
+        $variables = array_filter([
+            'nom'                    => $nom,
+            'prenom'                 => $prenom,
+            'raison_sociale'        => $nom,
+            'entreprise_nom'        => $nom,
+            'telephone'             => $this->resolveEmailTemplateValue($sourceData, ['telephone', 'telephone_direct', 'telephone_mobile']),
+            'telephone_alt'         => $this->resolveEmailTemplateValue($sourceData, ['telephone_alt', 'telephone_perso']),
+            'email'                 => $this->resolveEmailTemplateValue($sourceData, ['email', 'email_perso']),
+            'ville'                 => $this->resolveEmailTemplateValue($sourceData, ['ville', 'commune']),
+            'code_postal'           => $this->resolveEmailTemplateValue($sourceData, ['code_postal', 'cp']),
+            'departement'           => $this->resolveEmailTemplateValue($sourceData, ['departement', 'department']),
+            'adresse'               => $this->resolveEmailTemplateValue($sourceData, ['adresse', 'adresse_complete']),
+            'adresse_complete'      => $this->resolveEmailTemplateValue($sourceData, ['adresse_complete', 'adresse']),
+            'interlocuteur_nom'     => $interlocuteurNom,
+            'interlocuteur_prenom'  => $interlocuteurPrenom,
+            'interlocuteur_email'   => $this->resolveEmailTemplateValue($sourceData, ['interlocuteur_email', 'email_interlocuteur']),
+            'interlocuteur_telephone' => $this->resolveEmailTemplateValue($sourceData, ['interlocuteur_telephone', 'telephone_interlocuteur']),
+            'interlocuteur_fonction' => $this->resolveEmailTemplateValue($sourceData, ['interlocuteur_fonction', 'fonction']),
+            'email_general_standard' => $this->resolveEmailTemplateValue($sourceData, ['email_general_standard', 'email_standard']),
+            'secteur_activite'      => $this->resolveEmailTemplateValue($sourceData, ['secteur_activite', 'activite']),
+            'date'                  => now()->translatedFormat('d/m/Y'),
+            'heure'                 => now()->format('H:i'),
+            'lieu'                  => $this->lieu_rdv ?: $this->resolveEmailTemplateValue($sourceData, ['lieu_rdv', 'lieu']),
+            'rdv_date'              => $this->rappel_date ?: $this->resolveEmailTemplateValue($sourceData, ['rappel_date', 'date_rdv']),
+            'rdv_heure'             => $this->rappel_heure ?: $this->resolveEmailTemplateValue($sourceData, ['rappel_heure', 'heure_rdv']),
+            'rdv_lieu'              => $this->lieu_rdv ?: $this->resolveEmailTemplateValue($sourceData, ['lieu_rdv', 'lieu']),
+            'contact_prenom_nom'    => $contactPrenomNom ?: $nom,
+            'cse_prenom'            => $interlocuteurPrenom,
+            'cse_nom'               => $interlocuteurNom,
+            'cse_prenom_nom'        => $contactPrenomNom ?: $nom,
+            'teleprospecteur_nom'   => trim((string) (Auth::user()?->nom ?? '')),
+            'teleprospecteur_prenom' => trim((string) (Auth::user()?->prenom ?? '')),
+            'teleprospecteur_prenom_nom' => trim((string) ((Auth::user()?->prenom ?? '') . ' ' . (Auth::user()?->nom ?? ''))),
+            'commercial_nom'        => $this->resolveEmailTemplateValue($sourceData, ['commercial', 'commercial_nom']),
+            'commercial_prenom_nom' => $this->resolveEmailTemplateValue($sourceData, ['commercial', 'commercial_nom']),
+        ], fn ($value) => $value !== null && $value !== '');
+
+        return $variables;
+    }
+
+    protected function resolveEmailTemplateValue(array $data, array $keys): mixed
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '') {
+                return $data[$key];
+            }
+        }
+
+        return null;
+    }
+
+    public function getDetectedTemplateVariables(): array
+    {
+        $content = trim((string) ($this->emailTabSubject ?? '') . "\n" . (string) ($this->emailTabBody ?? ''));
+
+        if (blank($content)) {
+            return [];
+        }
+
+        preg_match_all('/\{\{\s*([a-z0-9_]+)\s*\}\}/i', $content, $matches);
+
+        $variables = [];
+        $resolved = $this->buildEmailTemplateVariables();
+
+        foreach (array_unique($matches[1]) as $variable) {
+            $normalized = strtolower($variable);
+            $variables[$normalized] = $resolved[$normalized] ?? null;
+        }
+
+        return array_filter($variables, fn ($value) => $value !== null && $value !== '');
     }
 
     protected function resolveStandaloneEmailRecipient(): ?string

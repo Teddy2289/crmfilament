@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources\ProspectResource\Pages;
 use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\ProspectResource;
 use App\Filament\Widgets\HistoriqueModificationsWidget;
+use App\Filament\Widgets\ProspectInteractionHistoryWidget;
 use App\Models\FicheTemplate;
 use App\Services\Aopia\FicheGenerationService;
 use Filament\Actions;
@@ -38,6 +39,10 @@ class ViewProspect extends ViewRecord
     protected function getFooterWidgets(): array
     {
         return [
+            ProspectInteractionHistoryWidget::make([
+                'modelType' => Prospect::class,
+                'modelId' => $this->record->id,
+            ]),
             HistoriqueModificationsWidget::make([
                 'modelType' => Prospect::class,
                 'modelId' => $this->record->id,

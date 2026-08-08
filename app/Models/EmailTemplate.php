@@ -75,12 +75,23 @@ class EmailTemplate extends Model
     private function remplacerVariables(string $texte, array $variables): string
     {
         $estHtml = $this->estHtml($texte);
+        $variablesNormalisees = [];
 
         foreach ($variables as $cle => $valeur) {
-            $valeur = (string) $valeur;
-            $texte = str_replace('{{' . $cle . '}}', $estHtml ? e($valeur) : $valeur, $texte);
+            $variablesNormalisees[strtolower((string) $cle)] = $valeur;
         }
 
-        return $texte;
+        return preg_replace_callback('/\{\{\s*([a-z0-9_]+)\s*\}\}/i', function ($matches) use ($variablesNormalisees, $estHtml): string {
+            $cle = strtolower($matches[1]);
+            $valeur = $variablesNormalisees[$cle] ?? null;
+
+            if ($valeur === null || $valeur === '') {
+                return $matches[0];
+            }
+
+            $valeur = (string) $valeur;
+
+            return $estHtml ? e($valeur) : $valeur;
+        }, $texte) ?? $texte;
     }
 }

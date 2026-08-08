@@ -6,6 +6,7 @@ use App\Models\Appel;
 use App\Models\CampagnePhoning;
 use App\Models\Client;
 use App\Models\ContactPartenaire;
+use App\Models\HistoriqueModification;
 use App\Models\Prospect;
 use App\Models\StatutPhoning;
 use App\Services\Phoning\PhoningContactResolver;
@@ -430,6 +431,41 @@ trait HasContactQueue
                     'duree_formatee'       => $dureeFormatee,
                     'resultat_label'       => $resultatLabel,
                     'source'               => $appel->ringover_call_id ? 'ringover' : 'workflow',
+                ];
+            })
+            ->toArray();
+    }
+
+    public function getModificationHistory(): array
+    {
+        if ($this->currentContact === null) {
+            return [];
+        }
+
+        $modelClass = match ($this->currentContact['type'] ?? '') {
+            'prospect'   => Prospect::class,
+            'partenaire' => ContactPartenaire::class,
+            'client'     => Client::class,
+            default      => null,
+        };
+
+        if ($modelClass === null) {
+            return [];
+        }
+
+        return HistoriqueModification::with('user')
+            ->pourModel($modelClass, $this->currentContact['id'])
+            ->orderByDesc('date_modification')
+            ->limit(15)
+            ->get()
+            ->map(function (HistoriqueModification $entry) {
+                return [
+                    'date'            => $entry->date_modification?->format('d/m/Y H:i') ?? '',
+                    'type_label'      => $entry->type_modification_label,
+                    'champ_label'     => $entry->champ_label ?: 'Enregistrement',
+                    'ancienne_valeur' => $entry->ancienne_valeur_formatee,
+                    'nouvelle_valeur' => $entry->nouvelle_valeur_formatee,
+                    'user_label'      => $entry->user?->name ?? 'Système',
                 ];
             })
             ->toArray();

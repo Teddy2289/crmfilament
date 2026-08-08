@@ -1,4 +1,4 @@
-@php
+﻿@php
 $rappelCodes = $this->getRappelStatusCodes();
 $maxTentatives = app(\App\Services\Crm\CrmSettingsService::class)->get('prospection.max_standard_attempts', 3);
 $tentativesActuelles = $this->getTentativesAppel();
@@ -225,10 +225,68 @@ $tentativesActuelles = $this->getTentativesAppel();
             };
         }
 
-        document.addEventListener('livewire:init', () => { switchInfoTab('contact'); });
-        document.addEventListener('livewire:navigated', () => { switchInfoTab('contact'); });
-        document.addEventListener('DOMContentLoaded', () => { switchInfoTab('contact'); });
-        setTimeout(() => { switchInfoTab('contact'); }, 0);
+        function initPhoningWorkflowTabState() {
+            switchInfoTab(getStoredInfoTab());
+
+            if (window.Livewire && typeof window.Livewire.hook === 'function') {
+                window.Livewire.hook('message.sent', () => {
+                    saveContactPanelScroll();
+                });
+
+                window.Livewire.hook('message.processed', () => {
+                    switchInfoTab(getStoredInfoTab());
+                    restoreContactPanelScroll();
+                });
+            }
+        }
+
+        function saveContactPanelScroll() {
+            const panel = document.getElementById('pw-contact-panel');
+            if (!panel) {
+                window._pwContactPanelScrollTop = null;
+                window._pwContactPanelWasVisible = false;
+                return;
+            }
+
+            const rect = panel.getBoundingClientRect();
+            window._pwContactPanelScrollTop = window.scrollY;
+            window._pwContactPanelWasVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+        }
+
+        function restoreContactPanelScroll() {
+            const panel = document.getElementById('pw-contact-panel');
+            if (!panel || !window._pwContactPanelWasVisible) {
+                return;
+            }
+
+            if (typeof window._pwContactPanelScrollTop === 'number') {
+                window.scrollTo({
+                    top: window._pwContactPanelScrollTop,
+                    left: 0,
+                    behavior: 'auto',
+                });
+            } else {
+                panel.scrollIntoView({ behavior: 'auto', block: 'start' });
+            }
+
+            window._pwContactPanelWasVisible = false;
+            window._pwContactPanelScrollTop = null;
+        }
+
+        document.addEventListener('livewire:init', initPhoningWorkflowTabState);
+        document.addEventListener('livewire:navigated', initPhoningWorkflowTabState);
+        document.addEventListener('livewire:load', initPhoningWorkflowTabState);
+        document.addEventListener('DOMContentLoaded', initPhoningWorkflowTabState);
+        setTimeout(initPhoningWorkflowTabState, 150);
+
+        function getStoredInfoTab() {
+            const stored = sessionStorage.getItem('pw-info-tab');
+            return stored || 'contact';
+        }
+
+        function storeInfoTab(tab) {
+            sessionStorage.setItem('pw-info-tab', tab);
+        }
 
         function toggleRappel(val) {
             const box = document.getElementById('pw-rappel-box');
@@ -242,10 +300,22 @@ $tentativesActuelles = $this->getTentativesAppel();
         }
 
         function switchInfoTab(tab) {
+            let tabButton = document.querySelector(`.pw-info-tab[data-tab="${tab}"]`);
+            if (! tabButton) {
+                tab = 'contact';
+                tabButton = document.querySelector(`.pw-info-tab[data-tab="${tab}"]`);
+            }
+
+            const tabPanel = document.querySelector(`.pw-info-panel[data-tab="${tab}"]`);
+            if (! tabButton || ! tabPanel) {
+                return;
+            }
+
             document.querySelectorAll('.pw-info-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.pw-info-panel[data-tab]').forEach(p => p.style.display = 'none');
-            document.querySelector(`.pw-info-tab[data-tab="${tab}"]`).classList.add('active');
-            document.querySelector(`.pw-info-panel[data-tab="${tab}"]`).style.display = 'block';
+            tabButton.classList.add('active');
+            tabPanel.style.display = 'block';
+            storeInfoTab(tab);
         }
 
         function switchCaseTab(tab) {
@@ -256,9 +326,6 @@ $tentativesActuelles = $this->getTentativesAppel();
             if (btn) btn.classList.add('active');
             if (panel) panel.classList.add('active');
         }
-
-        document.addEventListener('livewire:navigated', () => { switchInfoTab('contact'); });
-        document.addEventListener('DOMContentLoaded', () => { switchInfoTab('contact'); });
 
         function appelerAvecRingover(phoneNumber) {
             if (!phoneNumber) return;
@@ -286,9 +353,10 @@ $tentativesActuelles = $this->getTentativesAppel();
     @endpush
 
     @php
-    $info         = $this->getContactInfo();
-    $callHistory  = $this->getCallHistory();
-    $noteLines    = [];
+    $info                = $this->getContactInfo();
+    $callHistory         = $this->getCallHistory();
+    $modificationHistory = $this->getModificationHistory();
+    $noteLines           = [];
     if (!empty($info['notes'])) {
         foreach (explode("\n", $info['notes']) as $line) {
             $line = trim($line);
@@ -344,6 +412,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                 <x-phoning::dossier-prospect
                     :info="$info"
                     :call-history="$callHistory"
+                    :modification-history="$modificationHistory"
                     :note-lines="$noteLines"
                     :contact-type="$contactType"
                     :incoming-call-phone="$incomingCallPhone"
