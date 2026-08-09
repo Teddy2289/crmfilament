@@ -17,6 +17,7 @@ use App\Filament\NsConseil\Widgets\ProspectionKpiWidget;
 use App\Filament\NsConseil\Widgets\ProspectionStatutsChart;
 use App\Filament\NsConseil\Widgets\RappelsDuJourWidget;
 use App\Filament\NsConseil\Widgets\StatsOverviewWidget;
+use App\Filament\NsConseil\Widgets\TachesDuJourWidget;
 use App\Filament\NsConseil\Widgets\TeamLeaderAlertsWidget;
 use App\Filament\NsConseil\Widgets\TeamLeaderPerformanceWidget;
 use Filament\Forms\Components\DatePicker;
@@ -51,6 +52,9 @@ class Dashboard extends BaseDashboard
         $user = auth()->user();
 
         $widgets = [];
+
+        // Widget tâches du jour pour tous les utilisateurs connectés
+        $widgets[] = TachesDuJourWidget::class;
 
         // Direction (admin / super_admin)
         if ($user->hasRoleCache('admin') || $user->isSuperAdmin()) {

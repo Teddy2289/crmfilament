@@ -24,6 +24,10 @@ class Task extends Model
         'assigne_a',
         'prospect_id',
         'partenaire_id',
+        'client_id',
+        'rendez_vous_id',
+        'opportunite_id',
+        'appel_id',
         'created_by',
     ];
 
@@ -152,5 +156,25 @@ class Task extends Model
     public function partenaire()
     {
         return $this->belongsTo(Partenaire::class);
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+    public function rendezVous()
+    {
+        return $this->belongsTo(RendezVous::class);
+    }
+
+    public function opportunite()
+    {
+        return $this->belongsTo(Opportunite::class);
+    }
+
+    public function appel()
+    {
+        return $this->belongsTo(Appel::class);
     }
 }

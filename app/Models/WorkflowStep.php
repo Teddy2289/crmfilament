@@ -17,12 +17,14 @@ class WorkflowStep extends Model
         'actif',
         'parent_step_id', // Pour les branches
         'condition_label', // Label de la condition (ex: "Oui", "Non")
+        'est_final', // Si c'est l'étape finale
     ];
 
     protected $casts = [
         'config' => 'array',
         'actif' => 'boolean',
         'ordre' => 'integer',
+        'est_final' => 'boolean',
     ];
 
     const TYPES = [
@@ -46,6 +48,11 @@ class WorkflowStep extends Model
     public function childSteps()
     {
         return $this->hasMany(WorkflowStep::class, 'parent_step_id');
+    }
+
+    public function instances()
+    {
+        return $this->hasMany(WorkflowInstance::class, 'current_step_id');
     }
 
     public function getTypeLabelAttribute(): string

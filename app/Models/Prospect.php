@@ -943,11 +943,26 @@ class Prospect extends Model
 
     public function historiqueInteractions()
     {
-        return $this->morphMany(HistoriqueInteractionUser::class, 'interactable');
+        return $this->morphMany(HistoriqueInteraction::class, 'interactible');
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
     }
 
     public function historiqueModifications()
     {
         return $this->morphMany(HistoriqueModification::class, 'model');
+    }
+
+    public function workflowInstance()
+    {
+        return $this->morphOne(WorkflowInstance::class, 'instanceable');
+    }
+
+    public function workflowHistories()
+    {
+        return $this->morphMany(WorkflowHistory::class, 'instanceable');
     }
 }

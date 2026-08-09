@@ -332,6 +332,34 @@ class DossierFormationResource extends Resource
                     ->label('')
                     ->modalHeading('Dossier de formation'),
 
+                Tables\Actions\Action::make('demarrer_workflow')
+                    ->label('Démarrer validation')
+                    ->icon('heroicon-o-play')
+                    ->color('primary')
+                    ->visible(fn(DossierFormation $record) => !$record->workflowInstance && $record->etat === 'en_cours')
+                    ->requiresConfirmation()
+                    ->modalHeading('Démarrer le workflow de validation ?')
+                    ->action(function (DossierFormation $record) {
+                        $workflowGroupe = \App\Models\WorkflowGroupe::where('model_type', 'dossier_formation')
+                            ->where('actif', true)
+                            ->first();
+
+                        if (!$workflowGroupe) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Aucun workflow configuré pour les dossiers de formation')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        \App\Models\WorkflowInstance::demarrerPour($record, $workflowGroupe);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Workflow démarré')
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\EditAction::make()
                     ->label(''),
 

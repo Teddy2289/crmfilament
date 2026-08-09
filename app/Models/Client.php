@@ -637,4 +637,9 @@ class Client extends Model
     {
         return $this->morphMany(HistoriqueModification::class, 'model');
     }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
 }

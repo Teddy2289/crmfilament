@@ -349,6 +349,34 @@ class PartenaireResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->color('secondary'),
 
+                Tables\Actions\Action::make('demarrer_workflow')
+                    ->label('Démarrer validation')
+                    ->icon('heroicon-o-play')
+                    ->color('primary')
+                    ->visible(fn(Partenaire $record) => !$record->workflowInstance && $record->statut === OrganizationStatus::EnCours)
+                    ->requiresConfirmation()
+                    ->modalHeading('Démarrer le workflow de validation ?')
+                    ->action(function (Partenaire $record) {
+                        $workflowGroupe = \App\Models\WorkflowGroupe::where('model_type', 'partenaire')
+                            ->where('actif', true)
+                            ->first();
+
+                        if (!$workflowGroupe) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Aucun workflow configuré pour les partenaires')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        \App\Models\WorkflowInstance::demarrerPour($record, $workflowGroupe);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Workflow démarré')
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('changer_statut')

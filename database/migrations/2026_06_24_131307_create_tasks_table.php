@@ -22,12 +22,22 @@ return new class extends Migration
             $table->foreignId('assigne_a')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('prospect_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('partenaire_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('client_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('rendez_vous_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('opportunite_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('appel_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
             
             $table->index(['statut', 'date_echeance']);
             $table->index('assigne_a');
+            $table->index('prospect_id');
+            $table->index('partenaire_id');
+            $table->index('client_id');
+            $table->index('rendez_vous_id');
+            $table->index('opportunite_id');
+            $table->index('appel_id');
         });
     }
 

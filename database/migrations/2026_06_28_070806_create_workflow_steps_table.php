@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('ordre')->default(0);
             $table->json('config')->nullable();
             $table->boolean('actif')->default(true);
+            $table->boolean('est_final')->default(false);
             $table->timestamps();
             
             $table->index(['workflow_groupe_id', 'ordre']);

@@ -451,6 +451,34 @@ class ProspectResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
 
+                Tables\Actions\Action::make('demarrer_workflow')
+                    ->label('Démarrer validation')
+                    ->icon('heroicon-o-play')
+                    ->color('primary')
+                    ->visible(fn(Prospect $record) => !$record->workflowInstance && $record->statut === ProspectStatut::RPC)
+                    ->requiresConfirmation()
+                    ->modalHeading('Démarrer le workflow de validation ?')
+                    ->action(function (Prospect $record) {
+                        $workflowGroupe = \App\Models\WorkflowGroupe::where('model_type', 'prospect')
+                            ->where('actif', true)
+                            ->first();
+
+                        if (!$workflowGroupe) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Aucun workflow configuré pour les prospects')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        \App\Models\WorkflowInstance::demarrerPour($record, $workflowGroupe);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Workflow démarré')
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\ActionGroup::make([
                 Tables\Actions\EditAction::make(),
 
