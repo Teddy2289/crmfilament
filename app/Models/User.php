@@ -452,6 +452,16 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Notification::class)->where('lu', false);
     }
 
+    public function apiTokens()
+    {
+        return $this->hasMany(ApiToken::class);
+    }
+
+    public function evenementsCalendrier()
+    {
+        return $this->hasMany(EvenementCalendrier::class);
+    }
+
     public function crmProfile()
     {
         return $this->belongsTo(CrmProfile::class, 'role_cache', 'role_name');

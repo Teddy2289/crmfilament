@@ -110,7 +110,6 @@ class CampagnePhoningResource extends Resource
     {
         return $form->schema(static::applyFormFieldPermissions([
             Forms\Components\Wizard::make([
-                // ── Étape 1 : Identité & Attribution ────────────────────
                 Forms\Components\Wizard\Step::make('Identité & Attribution')
                     ->description('Nom, dates, entité et agents affectés')
                     ->icon('heroicon-o-megaphone')
@@ -413,6 +412,8 @@ class CampagnePhoningResource extends Resource
                             ->columnSpanFull(),
                     ]),
             ])
+            ->persistStepInQueryString('step')
+            ->skippable()
             ->columnSpanFull(),
         ]));
     }
