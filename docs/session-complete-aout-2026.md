@@ -243,27 +243,30 @@ Cette session a permis d'ajouter 3 fonctionnalités majeures au CRM:
 
 ## 5. Instructions pour l'Utilisateur
 
-### Avant d'utiliser les nouvelles fonctionnalités
+### Migrations exécutées ✅
 
-**Migrations à exécuter:**
-```bash
-php artisan migrate
-```
+Les migrations suivantes ont été exécutées avec succès:
+- `2024_08_09_000002_create_workflow_instances_table` - Table workflow_instances
+- `2024_08_09_000003_create_workflow_histories_table` - Table workflow_histories
+- `2026_08_09_193649_add_est_final_to_workflow_steps_table` - Ajout champ est_final à workflow_steps
 
-**Configuration des workflows:**
-1. Créer des WorkflowGroupes dans la base de données:
-   - model_type: 'prospect', 'partenaire', 'dossier_formation'
-   - code: code unique
-   - label: label affiché
-   - actif: true
+### Workflows configurés ✅
 
-2. Créer des WorkflowSteps pour chaque groupe:
-   - workflow_groupe_id: FK vers le groupe
-   - label: label de l'étape
-   - code: code unique
-   - type: type d'étape
-   - ordre: ordre de l'étape
-   - est_final: true pour la dernière étape
+Les workflows standards ont été créés automatiquement via le seeder:
+
+**Prospect (validation_standard):**
+1. Vérification initiale (task)
+2. Validation commerciale (approval)
+3. Validation finale (approval) - Étape finale
+
+**Partenaire (validation_standard):**
+1. Vérification documents (task)
+2. Validation direction (approval) - Étape finale
+
+**Dossier Formation (validation_standard):**
+1. Vérification inscription (task)
+2. Validation pédagogique (approval)
+3. Validation administrative (approval) - Étape finale
 
 ### Utilisation
 

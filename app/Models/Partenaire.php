@@ -599,7 +599,7 @@ class Partenaire extends Model
 
     public function historiqueInteractions()
     {
-        return $this->morphMany(HistoriqueInteraction::class, 'interactible');
+        return $this->morphMany(HistoriqueInteractionUser::class, 'interactable');
     }
 
     public function tasks()

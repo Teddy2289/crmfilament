@@ -8,11 +8,13 @@ use App\Models\EmailConfiguration;
 use App\Services\Email\ImapService;
 use App\Services\Email\MailboxSwitcherService;
 use Filament\Actions;
+use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ListEmails extends ListRecords
 {
@@ -66,6 +68,23 @@ class ListEmails extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('mailbox_switcher')
+                ->label(fn () => $this->getActiveMailboxLabel())
+                ->icon('heroicon-o-inbox')
+                ->form([
+                    Forms\Components\Select::make('mailbox_id')
+                        ->label('Boîte mail active')
+                        ->options(fn () => $this->getMailboxOptions())
+                        ->default(fn () => session('active_mailbox_id'))
+                        ->disabled(fn () => $this->getAvailableMailboxCount() <= 1)
+                        ->allowHtml()
+                        ->required(),
+                ])
+                ->action(function (array $data) {
+                    app(MailboxSwitcherService::class)->switchMailbox((int) $data['mailbox_id']);
+                    $this->resetPage();
+                }),
+
             Actions\Action::make('sync_mailbox')
                 ->label('Synchroniser la boîte mail')
                 ->icon('heroicon-o-arrow-path')
@@ -83,16 +102,13 @@ class ListEmails extends ListRecords
     public function syncMailbox(): void
     {
         $user = Auth::user();
-        $config = EmailConfiguration::query()
-            ->forUser($user->id)
-            ->active()
-            ->first();
+        $config = $this->mailboxSwitcherService->resolveActiveMailbox($user->id);
 
-        if (! $config) {
+        if ($config === null) {
             Notification::make()
-                ->title('Aucune configuration email active')
+                ->title('Aucune boîte mail active')
                 ->warning()
-                ->body('Aucune configuration de boîte mail active n’a été trouvée pour cet utilisateur.')
+                ->body('Aucune boîte mail active n\'est configurée. Veuillez sélectionner une boîte mail.')
                 ->send();
 
             return;
@@ -107,6 +123,11 @@ class ListEmails extends ListRecords
                 ->body("{$stats['synced']} email(s) synchronisé(s).")
                 ->send();
         } catch (\Throwable $e) {
+            Log::error('Erreur de synchronisation IMAP : ' . $e->getMessage(), [
+                'exception' => $e,
+                'config_id' => $config->id,
+            ]);
+
             Notification::make()
                 ->title('Erreur de synchronisation')
                 ->danger()
@@ -116,11 +137,25 @@ class ListEmails extends ListRecords
     }
 
     /**
-     * Définit la requête de base pour la table
+     * Définit la requête de base pour la table, filtrée selon la boîte active.
+     *
+     * - Config globale (is_global = true)  : filtre sur from_email = config->email
+     * - Config personnelle (is_global = false) : filtre sur user_id = auth()->id()
+     * - Aucune config (null) : retourne une requête vide (1 = 0)
      */
     protected function getTableQuery(): Builder
     {
-        return Email::query()->where('user_id', auth()->id());
+        $config = $this->mailboxSwitcherService->resolveActiveMailbox(Auth::id());
+
+        if ($config === null) {
+            return Email::query()->whereRaw('1 = 0');
+        }
+
+        if ($config->is_global) {
+            return Email::query()->where('from_email', $config->email);
+        }
+
+        return Email::query()->where('user_id', Auth::id());
     }
 
     /**

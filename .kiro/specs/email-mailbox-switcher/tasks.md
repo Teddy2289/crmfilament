@@ -49,22 +49,22 @@ Enrichit la page `ListEmails` du panel NsConseil avec un sélecteur de boîte ma
     - Pour tout `active_mailbox_id` invalide, inactif ou inaccessible en session, `resolveActiveMailbox()` retourne la première config disponible selon l'ordre de tri, ou `null`
     - **Validates : Requirements 3.3, 3.4**
 
-- [~] 2. Checkpoint — S'assurer que tous les tests du service passent, demander à l'utilisateur en cas de question.
+- [x] 2. Checkpoint — S'assurer que tous les tests du service passent, demander à l'utilisateur en cas de question.
 
-- [ ] 3. Modifier `ListEmails` — Injection du service et header action Mailbox Switcher
-  - [-] 3.1 Injecter `MailboxSwitcherService` dans `ListEmails` et exposer les méthodes helper
+- [x] 3. Modifier `ListEmails` — Injection du service et header action Mailbox Switcher
+  - [x] 3.1 Injecter `MailboxSwitcherService` dans `ListEmails` et exposer les méthodes helper
     - Injecter via `app(MailboxSwitcherService::class)` ou le constructeur
     - Ajouter `getActiveMailboxLabel(): string`, `getMailboxOptions(): array`, `getAvailableMailboxCount(): int`
     - _Requirements : 1.1, 1.4, 6.1_
 
-  - [~] 3.2 Ajouter la header action `mailbox_switcher` dans `getHeaderActions()`
+  - [x] 3.2 Ajouter la header action `mailbox_switcher` dans `getHeaderActions()`
     - Composant `Actions\Action` avec un `Forms\Components\Select` (options, default depuis session, disabled si ≤ 1 config)
     - Action : appel à `switchMailbox()` puis `$this->resetPage()`
     - Indicateur visuel pour les configs globales (`is_global = true`) — badge ou icône dans le label
     - _Requirements : 1.4, 2.1, 2.2, 2.3, 2.4, 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 4. Modifier `ListEmails::getTableQuery()` pour filtrer par boîte active
-  - [~] 4.1 Remplacer le filtre `user_id = auth()->id()` par la logique basée sur `resolveActiveMailbox()`
+- [x] 4. Modifier `ListEmails::getTableQuery()` pour filtrer par boîte active
+  - [x] 4.1 Remplacer le filtre `user_id = auth()->id()` par la logique basée sur `resolveActiveMailbox()`
     - Si `is_global = true` : `where('from_email', $config->email)`
     - Si `is_global = false` : `where('user_id', auth()->id())` (+ optionnellement `from_email`)
     - Si `null` : retourner une requête vide ou afficher un message d'absence de config
@@ -75,8 +75,8 @@ Enrichit la page `ListEmails` du panel NsConseil avec un sélecteur de boîte ma
     - Pour toute `EmailConfiguration` active, la requête ne retourne aucun email d'une autre boîte
     - **Validates : Requirements 4.1, 4.2, 4.3**
 
-- [ ] 5. Modifier `ListEmails::syncMailbox()` pour cibler la boîte active
-  - [~] 5.1 Remplacer `EmailConfiguration::forUser()` par `resolveActiveMailbox()`
+- [x] 5. Modifier `ListEmails::syncMailbox()` pour cibler la boîte active
+  - [x] 5.1 Remplacer `EmailConfiguration::forUser()` par `resolveActiveMailbox()`
     - Si `null` : afficher une notification `warning` sans invoquer `ImapService`
     - Si exception `\Throwable` : `Log::error()` + notification `danger` avec `$e->getMessage()`
     - Succès : inclure `$stats['synced']` dans la notification de succès
@@ -97,8 +97,8 @@ Enrichit la page `ListEmails` du panel NsConseil avec un sélecteur de boîte ma
     - Exception IMAP → notification `danger` affichée, `Log::error()` appelé
     - _Requirements : 5.2, 5.4_
 
-- [ ] 6. Gérer l'état « aucune configuration » dans `ListEmails`
-  - [~] 6.1 Afficher le message « Aucune boîte mail configurée » dans le sélecteur quand `resolveActiveMailbox()` retourne `null`
+- [x] 6. Gérer l'état « aucune configuration » dans `ListEmails`
+  - [x] 6.1 Afficher le message « Aucune boîte mail configurée » dans le sélecteur quand `resolveActiveMailbox()` retourne `null`
     - Désactiver le bouton "Synchroniser" dans ce cas
     - _Requirements : 1.3, 5.2_
 
@@ -106,15 +106,15 @@ Enrichit la page `ListEmails` du panel NsConseil avec un sélecteur de boîte ma
     - Vérifie que le label du sélecteur affiche le message d'absence et que le bouton Synchroniser est désactivé
     - _Requirements : 1.3, 5.2_
 
-- [ ] 7. Gérer la remise à zéro de la pagination après changement de boîte
-  - [~] 7.1 S'assurer que `$this->resetPage()` est bien appelé dans l'action `mailbox_switcher` après le switch
+- [x] 7. Gérer la remise à zéro de la pagination après changement de boîte
+  - [x] 7.1 S'assurer que `$this->resetPage()` est bien appelé dans l'action `mailbox_switcher` après le switch
     - _Requirements : 4.4_
 
   - [ ]* 7.2 Écrire le test d'exemple pour le reset de pagination
     - Après un switch de boîte, vérifier que la pagination revient à la page 1
     - _Requirements : 4.4_
 
-- [~] 8. Checkpoint final — S'assurer que tous les tests passent, demander à l'utilisateur en cas de question.
+- [x] 8. Checkpoint final — S'assurer que tous les tests passent, demander à l'utilisateur en cas de question.
 
 ## Notes
 

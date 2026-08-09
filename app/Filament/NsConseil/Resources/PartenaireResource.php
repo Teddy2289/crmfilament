@@ -353,7 +353,7 @@ class PartenaireResource extends Resource
                     ->label('Démarrer validation')
                     ->icon('heroicon-o-play')
                     ->color('primary')
-                    ->visible(fn(Partenaire $record) => !$record->workflowInstance && $record->statut === OrganizationStatus::EnCours)
+                    ->visible(fn(Partenaire $record) => !$record->workflowInstance && $record->statut === OrganizationStatus::EnCoursProspection)
                     ->requiresConfirmation()
                     ->modalHeading('Démarrer le workflow de validation ?')
                     ->action(function (Partenaire $record) {
