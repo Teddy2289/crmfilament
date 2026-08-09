@@ -6,6 +6,7 @@ use App\Filament\NsConseil\Resources\EmailResource;
 use App\Models\Email;
 use App\Models\EmailConfiguration;
 use App\Services\Email\ImapService;
+use App\Services\Email\MailboxSwitcherService;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
@@ -16,6 +17,51 @@ use Illuminate\Support\Facades\Auth;
 class ListEmails extends ListRecords
 {
     protected static string $resource = EmailResource::class;
+
+    protected MailboxSwitcherService $mailboxSwitcherService;
+
+    public function boot(): void
+    {
+        $this->mailboxSwitcherService = app(MailboxSwitcherService::class);
+    }
+
+    /**
+     * Retourne le label de la boîte mail active.
+     * Affiche "Aucune boîte mail configurée" si aucune config n'est disponible.
+     */
+    public function getActiveMailboxLabel(): string
+    {
+        $config = $this->mailboxSwitcherService->resolveActiveMailbox(Auth::id());
+
+        if ($config === null) {
+            return 'Aucune boîte mail configurée';
+        }
+
+        return $this->mailboxSwitcherService->buildOptionLabel($config);
+    }
+
+    /**
+     * Retourne les options pour le composant Select (id => label).
+     */
+    public function getMailboxOptions(): array
+    {
+        return $this->mailboxSwitcherService
+            ->getAvailableMailboxes(Auth::id())
+            ->mapWithKeys(fn (EmailConfiguration $config) => [
+                $config->id => $this->mailboxSwitcherService->buildOptionLabel($config),
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Retourne le nombre de boîtes mail disponibles pour l'utilisateur connecté.
+     */
+    public function getAvailableMailboxCount(): int
+    {
+        return $this->mailboxSwitcherService
+            ->getAvailableMailboxes(Auth::id())
+            ->count();
+    }
 
     protected function getHeaderActions(): array
     {

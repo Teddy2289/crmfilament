@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\ActivitePermanenceResource\Pages;
+use App\Filament\NsConseil\Resources\ActivitePermanenceResource\RelationManagers;
 use App\Models\ActivitePermanence;
 use App\Support\UsesResourcePermissions;
 use Filament\Forms;

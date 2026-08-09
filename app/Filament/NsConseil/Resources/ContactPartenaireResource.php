@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\ListContactPartenaires;
 use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\CreateContactPartenaire;
 use App\Filament\NsConseil\Resources\ContactPartenaireResource\Pages\EditContactPartenaire;
+use App\Filament\NsConseil\Resources\ContactPartenaireResource\RelationManagers;
 use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Models\ContactPartenaire;
 use App\Support\UsesResourcePermissions;

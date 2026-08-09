@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\DossierFormationResource\Pages;
+use App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers;
 use App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers\HeuresRelationManager;
 use App\Filament\NsConseil\Resources\DossierFormationResource\RelationManagers\PlanningRelationManager;
 use App\Models\DossierFormation;

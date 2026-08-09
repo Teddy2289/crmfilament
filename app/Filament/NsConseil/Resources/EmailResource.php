@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Resources\EmailResource\Pages;
+use App\Filament\NsConseil\Resources\EmailResource\RelationManagers;
 use App\Models\Email;
 use App\Models\EmailConfiguration;
 use Filament\Forms;

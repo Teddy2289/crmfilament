@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Enums\OrganizationType;
 use App\Enums\ProspectStatut;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource\Pages;
+use App\Filament\NsConseil\Resources\CampagnePhoningResource\RelationManagers;
 use App\Models\CampagnePhoning;
 use App\Models\EntiteCommerciale;
 use App\Models\GroupeTelepro;

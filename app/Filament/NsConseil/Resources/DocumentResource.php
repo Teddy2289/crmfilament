@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Enums\OrganizationCategory;
 use App\Filament\NsConseil\Resources\DocumentResource\Pages;
+use App\Filament\NsConseil\Resources\DocumentResource\RelationManagers;
 use App\Models\Document;
 use App\Models\Partenaire;
 use App\Models\Prospect;

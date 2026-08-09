@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Enums\RendezVousStatut;
 use App\Enums\RendezVousType;
 use App\Filament\NsConseil\Resources\RendezVousResource\Pages\CreateRendezVous;
+use App\Filament\NsConseil\Resources\RendezVousResource\RelationManagers;
 use App\Filament\NsConseil\Resources\RendezVousResource\Pages\EditRendezVous;
 use App\Filament\NsConseil\Resources\RendezVousResource\Pages\ListRendezVous;
 use App\Filament\NsConseil\Resources\RendezVousResource\Pages\ViewRendezVous;
