@@ -8,6 +8,8 @@ use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
 use App\Filament\NsConseil\Resources\ClientResource\Pages;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DossierFormationsRelationManager;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\HistoriqueModificationsRelationManager;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\PartenaireRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\PropositionsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\Exports\ClientExporter;
@@ -626,10 +628,12 @@ class ClientResource extends Resource
     public static function getRelations(): array
     {
         return [
+            PartenaireRelationManager::class,
             PropositionsRelationManager::class,
             DocumentsRelationManager::class,
             RendezVousRelationManager::class,
             DossierFormationsRelationManager::class,
+            HistoriqueModificationsRelationManager::class,
         ];
     }
 

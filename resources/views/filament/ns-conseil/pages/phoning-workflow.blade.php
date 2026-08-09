@@ -34,14 +34,23 @@ $tentativesActuelles = $this->getTentativesAppel();
             }
         }
 
+        let ringoverInitAttempts = 0;
+
         function _initRingoverInContainer() {
             _destroyGlobalRingover();
 
             var container = document.getElementById('ringover-embed-phoning');
-            if (!container) { return; }
+            if (!container) {
+                if (++ringoverInitAttempts < 20) {
+                    setTimeout(_initRingoverInContainer, 150);
+                }
+                return;
+            }
 
             if (typeof window.RingoverSDK !== 'function') {
-                setTimeout(_initRingoverInContainer, 150);
+                if (++ringoverInitAttempts < 20) {
+                    setTimeout(_initRingoverInContainer, 150);
+                }
                 return;
             }
 

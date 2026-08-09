@@ -1852,12 +1852,12 @@
 /* ══ Layout principal orchestrateur ══════════════════════════════════ */
 .pw-layout {
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
     gap: 1.25rem;
     align-items: start;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
     .pw-layout {
         grid-template-columns: 1fr;
     }

@@ -677,6 +677,68 @@ class PartenaireResource extends Resource
                 ]),
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // SECTION 3.5 : ACTIVITÉS (VENTE & PERMANENCE)
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Infolists\Components\Section::make(' Activités')
+                ->icon('heroicon-o-briefcase')
+                ->collapsible()
+                ->schema([
+                    Infolists\Components\Grid::make(2)->schema([
+                        // Activité Vente
+                        Infolists\Components\Section::make('Activité Vente')
+                            ->icon('heroicon-o-shopping-cart')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('activiteVente.nombre_ventes')
+                                    ->label('Nombre de ventes')
+                                    ->placeholder('0')
+                                    ->numeric()
+                                    ->badge()
+                                    ->color('success')
+                                    ->icon('heroicon-o-chart-bar'),
+
+                                Infolists\Components\TextEntry::make('activiteVente.ca_total')
+                                    ->label('CA Total')
+                                    ->placeholder('—')
+                                    ->money('EUR')
+                                    ->icon('heroicon-o-currency-euro'),
+
+                                Infolists\Components\TextEntry::make('activiteVente.derniere_vente')
+                                    ->label('Dernière vente')
+                                    ->placeholder('—')
+                                    ->date('d/m/Y')
+                                    ->icon('heroicon-o-calendar'),
+                            ])
+                            ->visible(fn($record) => $record->activiteVente !== null),
+
+                        // Activité Permanence
+                        Infolists\Components\Section::make('Activité Permanence')
+                            ->icon('heroicon-o-clock')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('activitePermanence.nombre_permanences')
+                                    ->label('Nombre de permanences')
+                                    ->placeholder('0')
+                                    ->numeric()
+                                    ->badge()
+                                    ->color('info')
+                                    ->icon('heroicon-o-calendar-days'),
+
+                                Infolists\Components\TextEntry::make('activitePermanence.derniere_permanence')
+                                    ->label('Dernière permanence')
+                                    ->placeholder('—')
+                                    ->date('d/m/Y')
+                                    ->icon('heroicon-o-calendar'),
+
+                                Infolists\Components\TextEntry::make('activitePermanence.frequence')
+                                    ->label('Fréquence')
+                                    ->placeholder('—')
+                                    ->badge()
+                                    ->color('gray'),
+                            ])
+                            ->visible(fn($record) => $record->activitePermanence !== null),
+                    ]),
+                ]),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // SECTION 4 : COORDONNÉES
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             Infolists\Components\Section::make(' Coordonnées')
@@ -834,6 +896,8 @@ class PartenaireResource extends Resource
             RelationManagers\ContactsRelationManager::class,
             RelationManagers\AppelsRelationManager::class,
             RelationManagers\RendezVousRelationManager::class,
+            RelationManagers\ClientsRelationManager::class,
+            RelationManagers\HistoriqueModificationsRelationManager::class,
             RelationManagers\DocumentsRelationManager::class,
             SentEmailsRelationManager::class,
         ];

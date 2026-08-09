@@ -601,4 +601,9 @@ class Partenaire extends Model
     {
         return $this->morphMany(HistoriqueInteractionUser::class, 'interactable');
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

@@ -632,4 +632,9 @@ class Client extends Model
     {
         return $this->morphMany(Document::class, 'documentable');
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

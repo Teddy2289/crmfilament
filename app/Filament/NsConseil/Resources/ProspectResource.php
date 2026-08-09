@@ -1262,6 +1262,7 @@ class ProspectResource extends Resource
             RelationManagers\AppelsRelationManager::class,
             RelationManagers\RendezVousRelationManager::class,
             RelationManagers\DocumentsRelationManager::class,
+            RelationManagers\HistoriqueModificationsRelationManager::class,
             SentEmailsRelationManager::class,
         ];
     }

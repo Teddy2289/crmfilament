@@ -10,6 +10,7 @@ use App\Filament\NsConseil\Widgets\DirectionKpiWidget;
 use App\Filament\NsConseil\Widgets\DirectionRdvParDepartementChart;
 use App\Filament\NsConseil\Widgets\FichesWordRecentesWidget;
 use App\Filament\NsConseil\Widgets\MesPartenairesRecentWidget;
+use App\Filament\NsConseil\Widgets\PlanningCommercialWidget;
 use App\Filament\NsConseil\Widgets\PipelinePartenairesWidget;
 use App\Filament\NsConseil\Widgets\ProspectionKpiWidget;
 use App\Filament\NsConseil\Widgets\ProspectionStatutsChart;
@@ -80,6 +81,7 @@ class Dashboard extends BaseDashboard
         // Commercial
         if ($user->hasRoleCache('commercial') || $user->hasRoleCache('superviseur') || $user->hasRoleCache('admin') || $user->isSuperAdmin()) {
             $widgets[] = CommercialKpiWidget::class;
+            $widgets[] = PlanningCommercialWidget::class;
             $widgets[] = DirectionRdvParDepartementChart::class;
             $widgets[] = CommercialAgendaWidget::class;
             $widgets[] = MesPartenairesRecentWidget::class;
