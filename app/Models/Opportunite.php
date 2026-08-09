@@ -527,4 +527,9 @@ class Opportunite extends Model
     {
         return $this->morphMany(RendezVous::class, 'rdvable');
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

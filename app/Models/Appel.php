@@ -467,4 +467,9 @@ class Appel extends Model
     {
         return $this->belongsTo(CampagnePhoning::class, 'campagne_id');
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

@@ -32,6 +32,7 @@ class AppelExporter extends Exporter
             ExportColumn::make('commentaire')->label('Commentaire'),
             ExportColumn::make('enregistrement_audio')->label('Enregistrement audio'),
             ExportColumn::make('user.email')->label('Utilisateur'),
+            ExportColumn::make('created_at')->label('Créé le'),
         ];
     }
 
@@ -44,5 +45,10 @@ class AppelExporter extends Exporter
         }
 
         return $body;
+    }
+
+    public function getFileName(Export $export): string
+    {
+        return "appels-{$export->created_at->format('Y-m-d-His')}.xlsx";
     }
 }

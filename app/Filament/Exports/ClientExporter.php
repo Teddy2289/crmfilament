@@ -47,4 +47,9 @@ class ClientExporter extends Exporter
 
         return $body;
     }
+
+    public function getFileName(Export $export): string
+    {
+        return "clients-{$export->created_at->format('Y-m-d-His')}.xlsx";
+    }
 }

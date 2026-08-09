@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Filament\Exports\AppelExporter;
 use App\Filament\NsConseil\Resources\AppelResource\Pages\ListAppels;
 use App\Filament\NsConseil\Resources\AppelResource\Pages\ViewAppel;
+use App\Filament\NsConseil\Resources\AppelResource\RelationManagers\HistoriqueModificationsRelationManager;
 use App\Models\Appel;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -343,7 +344,7 @@ class AppelResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            HistoriqueModificationsRelationManager::class,
         ];
     }
 

@@ -661,4 +661,9 @@ class RendezVous extends Model
         return $this->belongsTo(ContactParticulier::class, 'rdvable_id')
             ->where('rdvable_type', ContactParticulier::class);
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

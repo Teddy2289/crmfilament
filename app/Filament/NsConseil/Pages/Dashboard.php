@@ -9,6 +9,7 @@ use App\Filament\NsConseil\Widgets\DirectionDerniersPartenairesWidget;
 use App\Filament\NsConseil\Widgets\DirectionKpiWidget;
 use App\Filament\NsConseil\Widgets\DirectionRdvParDepartementChart;
 use App\Filament\NsConseil\Widgets\FichesWordRecentesWidget;
+use App\Filament\NsConseil\Widgets\GlobalStatsWidget;
 use App\Filament\NsConseil\Widgets\MesPartenairesRecentWidget;
 use App\Filament\NsConseil\Widgets\PlanningCommercialWidget;
 use App\Filament\NsConseil\Widgets\PipelinePartenairesWidget;
@@ -53,6 +54,7 @@ class Dashboard extends BaseDashboard
 
         // Direction (admin / super_admin)
         if ($user->hasRoleCache('admin') || $user->isSuperAdmin()) {
+            $widgets[] = GlobalStatsWidget::class;
             $widgets[] = DirectionKpiWidget::class;
             $widgets[] = StatsOverviewWidget::class;
             $widgets[] = DirectionDerniersPartenairesWidget::class;
