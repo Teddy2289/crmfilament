@@ -621,4 +621,14 @@ class Partenaire extends Model
     {
         return $this->morphMany(WorkflowHistory::class, 'instanceable');
     }
+
+    public function tags()
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
+    }
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
 }

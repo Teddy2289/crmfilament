@@ -3,14 +3,17 @@
 namespace App\Filament\NsConseil\Pages;
 
 use App\Filament\NsConseil\Widgets\ActiviteTraitementWidget;
+use App\Filament\NsConseil\Widgets\AnalyticsChartWidget;
 use App\Filament\NsConseil\Widgets\CommercialAgendaWidget;
 use App\Filament\NsConseil\Widgets\CommercialKpiWidget;
+use App\Filament\NsConseil\Widgets\ConversionFunnelWidget;
 use App\Filament\NsConseil\Widgets\DirectionDerniersPartenairesWidget;
 use App\Filament\NsConseil\Widgets\DirectionKpiWidget;
 use App\Filament\NsConseil\Widgets\DirectionRdvParDepartementChart;
 use App\Filament\NsConseil\Widgets\FichesWordRecentesWidget;
 use App\Filament\NsConseil\Widgets\GlobalStatsWidget;
 use App\Filament\NsConseil\Widgets\MesPartenairesRecentWidget;
+use App\Filament\NsConseil\Widgets\OpportunitesStatsWidget;
 use App\Filament\NsConseil\Widgets\PlanningCommercialWidget;
 use App\Filament\NsConseil\Widgets\PipelinePartenairesWidget;
 use App\Filament\NsConseil\Widgets\ProspectionKpiWidget;
@@ -55,6 +58,11 @@ class Dashboard extends BaseDashboard
 
         // Widget tâches du jour pour tous les utilisateurs connectés
         $widgets[] = TachesDuJourWidget::class;
+
+        // Analytics avancés pour tous les utilisateurs connectés
+        $widgets[] = AnalyticsChartWidget::class;
+        $widgets[] = OpportunitesStatsWidget::class;
+        $widgets[] = ConversionFunnelWidget::class;
 
         // Direction (admin / super_admin)
         if ($user->hasRoleCache('admin') || $user->isSuperAdmin()) {

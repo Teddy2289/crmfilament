@@ -424,10 +424,8 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Opportunite::class, 'assigne_a');
     }
 
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class);
-    }
+    // roles() est fourni par le trait HasRoles (Spatie Laravel Permission)
+    // — ne pas le redéfinir ici, sinon PHP résout App\Models\Role (inexistant).
 
     public function dashboards()
     {
@@ -437,6 +435,21 @@ class User extends Authenticatable implements FilamentUser
     public function dashboardParDefaut()
     {
         return $this->hasOne(UserDashboard::class)->where('par_defaut', true);
+    }
+
+    public function importMappings()
+    {
+        return $this->hasMany(ImportMapping::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function notificationsNonLues()
+    {
+        return $this->hasMany(Notification::class)->where('lu', false);
     }
 
     public function crmProfile()

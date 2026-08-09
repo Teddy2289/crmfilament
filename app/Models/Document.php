@@ -284,4 +284,14 @@ class Document extends Model
     {
         return $this->morphMany(HistoriqueModification::class, 'model');
     }
+
+    public function versions()
+    {
+        return $this->hasMany(DocumentVersion::class);
+    }
+
+    public function derniereVersion()
+    {
+        return $this->hasOne(DocumentVersion::class)->latest();
+    }
 }

@@ -396,7 +396,7 @@ class CampagnePhoningResource extends Resource
                             ->schema([
                                 Forms\Components\Placeholder::make('campaign_preview')
                                     ->label('Résumé de la campagne')
-                                    ->content(fn (Get $get) => static::buildCampaignPreview($get))
+                                    ->content(fn (Get $get) => new \Illuminate\Support\HtmlString(static::buildCampaignPreview($get)))
                                     ->columnSpanFull(),
                             ])
                             ->columnSpanFull(),
@@ -407,7 +407,7 @@ class CampagnePhoningResource extends Resource
                             ->schema([
                                 Forms\Components\Placeholder::make('audience_preview')
                                     ->label('Contacts ciblés')
-                                    ->content(fn (Get $get) => static::buildAudiencePreview($get))
+                                    ->content(fn (Get $get) => new \Illuminate\Support\HtmlString(static::buildAudiencePreview($get)))
                                     ->columnSpanFull(),
                             ])
                             ->columnSpanFull(),

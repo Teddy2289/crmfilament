@@ -102,7 +102,7 @@ class HistoriqueModificationsRelationManager extends RelationManager
 
     protected function getTableQuery(): Builder
     {
-        return parent::getTableQuery()
+        return $this->getRelationship()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

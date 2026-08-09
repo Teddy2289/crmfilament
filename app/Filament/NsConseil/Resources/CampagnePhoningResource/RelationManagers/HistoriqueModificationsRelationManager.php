@@ -8,7 +8,6 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class HistoriqueModificationsRelationManager extends RelationManager
 {
@@ -97,14 +96,6 @@ class HistoriqueModificationsRelationManager extends RelationManager
             ])
             ->bulkActions([
                 // Pas d'actions groupées
-            ]);
-    }
-
-    protected function getTableQuery(): Builder
-    {
-        return parent::getTableQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
             ]);
     }
 }
