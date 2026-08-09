@@ -190,4 +190,9 @@ class DossierFormation extends Model
     {
         return static::etatColor($this->etat);
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

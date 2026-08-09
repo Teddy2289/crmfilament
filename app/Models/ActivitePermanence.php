@@ -42,4 +42,9 @@ class ActivitePermanence extends Model
     {
         return $this->belongsTo(Consultant::class);
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

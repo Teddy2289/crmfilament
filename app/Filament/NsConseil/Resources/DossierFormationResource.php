@@ -559,6 +559,7 @@ class DossierFormationResource extends Resource
         return [
             HeuresRelationManager::class,
             PlanningRelationManager::class,
+            RelationManagers\HistoriqueModificationsRelationManager::class,
         ];
     }
 

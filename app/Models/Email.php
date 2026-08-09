@@ -273,4 +273,9 @@ class Email extends Model
     {
         return $this->belongsTo(Email::class, 'in_reply_to', 'message_id');
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

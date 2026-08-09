@@ -494,4 +494,9 @@ class CampagnePhoning extends Model
 
         return $q;
     }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
 }

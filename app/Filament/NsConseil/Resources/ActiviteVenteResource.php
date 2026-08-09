@@ -239,6 +239,7 @@ class ActiviteVenteResource extends Resource
     {
         return [
             RelationManagers\ClientsRelationManager::class,
+            RelationManagers\HistoriqueModificationsRelationManager::class,
         ];
     }
 

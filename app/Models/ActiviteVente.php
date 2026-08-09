@@ -117,17 +117,6 @@ class ActiviteVente extends Model
         return $this;
     }
 
-    // ── Relations ────────────────────────────────────────────────────
-    public function partenaire()
-    {
-        return $this->belongsTo(Partenaire::class);
-    }
-
-    public function consultant()
-    {
-        return $this->belongsTo(User::class, 'consultant_id');
-    }
-
     public function historiqueModifications()
     {
         return $this->morphMany(HistoriqueModification::class, 'model');

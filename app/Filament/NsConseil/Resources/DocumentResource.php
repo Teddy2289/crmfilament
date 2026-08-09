@@ -172,6 +172,13 @@ class DocumentResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\HistoriqueModificationsRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [

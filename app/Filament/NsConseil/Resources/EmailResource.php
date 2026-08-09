@@ -293,6 +293,13 @@ class EmailResource extends Resource
             ->modifyQueryUsing(fn ($query) => $query->where('user_id', Auth::id()));
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\HistoriqueModificationsRelationManager::class,
+        ];
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // PAGES
     // ─────────────────────────────────────────────────────────────────

@@ -186,7 +186,7 @@ class ActivitePermanenceResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\HistoriqueModificationsRelationManager::class,
         ];
     }
 
