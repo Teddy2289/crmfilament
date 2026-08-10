@@ -62,7 +62,11 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perHour($limit)
                 ->by($request->user()?->id ?: $request->ip())
-                ->response(fn () => response()->json(['message' => 'Too Many Requests'], 429));
+                ->response(fn ($request, array $headers) => response()->json(
+                    ['message' => 'Too Many Requests'],
+                    429,
+                    $headers
+                ));
         });
 
         // Tentatives de connexion : 10/minute par IP
@@ -71,7 +75,11 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute($limit)
                 ->by($request->ip())
-                ->response(fn () => response()->json(['message' => 'Too Many Attempts'], 429));
+                ->response(fn ($request, array $headers) => response()->json(
+                    ['message' => 'Too Many Attempts'],
+                    429,
+                    $headers
+                ));
         });
     }
 }

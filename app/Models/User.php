@@ -485,6 +485,26 @@ class User extends Authenticatable implements FilamentUser
         })->active()->get();
     }
 
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'created_by');
+    }
+
+    public function timeEntries()
+    {
+        return $this->hasMany(TimeEntry::class);
+    }
+
+    public function runningTimeEntry()
+    {
+        return $this->hasOne(TimeEntry::class)->running();
+    }
+
+    public function kpis()
+    {
+        return $this->hasMany(Kpi::class);
+    }
+
     public function crmProfile()
     {
         return $this->belongsTo(CrmProfile::class, 'role_cache', 'role_name');

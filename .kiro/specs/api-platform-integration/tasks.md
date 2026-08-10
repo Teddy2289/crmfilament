@@ -6,7 +6,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
 
 ## Tasks
 
-- [~] 1. Mettre en place l'infrastructure de base de l'API
+- [x] 1. Mettre en place l'infrastructure de base de l'API
   - Installer les dépendances Composer : `laravel/sanctum`, `spatie/laravel-query-builder`, `dedoc/scramble`
   - Publier et exécuter la migration Sanctum (`personal_access_tokens`)
   - Créer le fichier `routes/api.php` avec le squelette de routes `/api/v1/` (préfixe, groupe `auth:sanctum`, groupes `throttle:login` / `throttle:api`)
@@ -18,7 +18,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
 - [ ] 2. Implémenter l'authentification Sanctum (AuthController + AuthService)
-  - [~] 2.1 Créer `AuthService` (émission paire access/refresh, révocation, logging)
+  - [-] 2.1 Créer `AuthService` (émission paire access/refresh, révocation, logging)
     - Implémenter `issueTokenPair(User): array` — deux tokens Sanctum (`access` 24h, `refresh` 30j) avec abilities appropriées
     - Implémenter `revokeAccessToken(User): void` et `revokeAllTokens(User): void`
     - Consigner chaque émission, rafraîchissement et révocation dans les logs (user ID, IP, timestamp)
@@ -32,7 +32,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 4: Logout revokes the token**
     - **Validates: Requirements 2.6**
 
-  - [~] 2.4 Créer `LoginRequest` et `RefreshRequest` (validation des champs)
+  - [-] 2.4 Créer `LoginRequest` et `RefreshRequest` (validation des champs)
     - _Requirements: 2.1, 2.5_
 
   - [~] 2.5 Créer `AuthController` (login, refresh, logout, me)
@@ -51,7 +51,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 2.1, 2.2, 2.4_
 
 - [ ] 3. Implémenter la couche d'autorisation (Policies + FieldPermissionService)
-  - [~] 3.1 Créer `FieldPermissionService`
+  - [-] 3.1 Créer `FieldPermissionService`
     - Implémenter `filterFields(array $data, string $role, string $resource, string $action): array`
     - Interroger les enregistrements `FieldPermission` et supprimer les champs `visible_view = false`
     - Retourner tous les champs si aucun enregistrement `FieldPermission` n'existe (comportement par défaut visible)
@@ -85,7 +85,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Créer l'infrastructure partagée des contrôleurs et ressources
-  - [~] 5.1 Créer `ApiController` (classe abstraite de base)
+  - [ ] 5.1 Créer `ApiController` (classe abstraite de base)
     - Implémenter `success(mixed $data, int $status = 200): JsonResponse`
     - Implémenter `error(string $message, int $status, array $errors = []): JsonResponse`
     - Implémenter `paginate(QueryBuilder|Builder $query, string $resourceClass): JsonResponse` avec cap à 100 éléments et métadonnées complètes

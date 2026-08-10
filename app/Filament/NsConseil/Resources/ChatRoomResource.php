@@ -108,7 +108,7 @@ class ChatRoomResource extends Resource
                     ->label('Ouvrir')
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->color('primary')
-                    ->url(fn (ChatRoom $record) => route('filament.ns-conseil.resources.chat-rooms.chat', $record)),
+                    ->url(fn (ChatRoom $record) => ChatRoomResource::getUrl('chat', ['record' => $record])),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -133,7 +133,6 @@ class ChatRoomResource extends Resource
             'index' => Pages\ListChatRooms::route('/'),
             'create' => Pages\CreateChatRoom::route('/create'),
             'edit' => Pages\EditChatRoom::route('/{record}/edit'),
-            'chat' => Pages\ChatRoomChat::route('/{record}/chat'),
         ];
     }
 }
