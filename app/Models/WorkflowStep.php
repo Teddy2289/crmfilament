@@ -4,59 +4,48 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorkflowStep extends Model
 {
     protected $fillable = [
-        'workflow_groupe_id',
-        'label',
-        'code',
-        'type',
+        'workflow_id',
+        'nom',
+        'description',
         'ordre',
-        'config',
-        'actif',
-        'parent_step_id', // Pour les branches
-        'condition_label', // Label de la condition (ex: "Oui", "Non")
-        'est_final', // Si c'est l'étape finale
+        'type_action',
+        'assigne_a',
+        'conditions',
     ];
 
     protected $casts = [
-        'config' => 'array',
-        'actif' => 'boolean',
+        'conditions' => 'array',
         'ordre' => 'integer',
-        'est_final' => 'boolean',
     ];
 
-    const TYPES = [
-        'task' => 'Tâche',
-        'condition' => 'Condition',
-        'action' => 'Action',
+    const TYPES_ACTION = [
+        'approval' => 'Approbation',
         'notification' => 'Notification',
-        'approval' => 'Validation',
+        'task' => 'Tâche',
     ];
 
-    public function workflowGroupe(): BelongsTo
+    public function workflow(): BelongsTo
     {
-        return $this->belongsTo(WorkflowGroupe::class);
+        return $this->belongsTo(Workflow::class);
     }
 
-    public function parentStep(): BelongsTo
+    public function assigneA(): BelongsTo
     {
-        return $this->belongsTo(WorkflowStep::class, 'parent_step_id');
+        return $this->belongsTo(User::class, 'assigne_a');
     }
 
-    public function childSteps()
+    public function approvals(): HasMany
     {
-        return $this->hasMany(WorkflowStep::class, 'parent_step_id');
+        return $this->hasMany(WorkflowApproval::class);
     }
 
-    public function instances()
+    public function getTypeActionLabelAttribute(): string
     {
-        return $this->hasMany(WorkflowInstance::class, 'current_step_id');
-    }
-
-    public function getTypeLabelAttribute(): string
-    {
-        return self::TYPES[$this->type] ?? $this->type;
+        return self::TYPES_ACTION[$this->type_action] ?? $this->type_action;
     }
 }

@@ -81,7 +81,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 8: QF validation respects CrmProfile gate**
     - **Validates: Requirements 3.6**
 
-- [ ] 4. Checkpoint — Vérifier que les tests d'auth et d'autorisation passent
+- [-] 4. Checkpoint — Vérifier que les tests d'auth et d'autorisation passent
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 5. Créer l'infrastructure partagée des contrôleurs et ressources
@@ -131,7 +131,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Définir les règles de validation (champs obligatoires, formats)
     - _Requirements: 4.6_
 
-  - [~] 6.5 Créer `ProspectController`
+  - [-] 6.5 Créer `ProspectController`
     - `index` : QueryBuilder avec filtres autorisés (`statut`, `campagne_id`, `search` via scope), tris (`created_at`, `nom`, `statut`, `updated_at`), includes, restriction scope Téléprospecteur
     - `show`, `store`, `update`, `destroy` : avec `$this->authorize()`
     - `enregistrerAppel` : valider `statut_phoning_id`, enregistrer l'appel, mettre à jour `ProspectStatut`
@@ -153,7 +153,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Sérialiser les champs, convertir Enums (`OrganizationStatus`, `OrganizationType`)
     - _Requirements: 12.3_
 
-  - [~] 7.2 Créer `PartenaireController`
+  - [-] 7.2 Créer `PartenaireController`
     - `index` : filtres `statut`, `type` ; tri par défaut
     - `show`, `store`, `update` (pas de `destroy`)
     - `contacts` : liste paginée des `ContactPartenaire` liés
@@ -165,7 +165,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Lecture seule (GET uniquement) — la source de vérité reste Dolibarr
     - _Requirements: 6.4_
 
-  - [~] 7.4 Créer `ClientController`
+  - [-] 7.4 Créer `ClientController`
     - `index` : filtres `partenaire_id`, `search` (nom, prénom, référence client — partiel insensible à la casse)
     - `show`, `dossiersFormation`
     - _Requirements: 6.1, 6.2, 6.3_

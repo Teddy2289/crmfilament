@@ -119,3 +119,23 @@ Route::prefix('api/drag-drop')->middleware(['web', 'auth'])->group(function () {
     Route::post('/move/{resource}', [App\Http\Controllers\Api\DragDropController::class, 'moveToGroup']);
     Route::get('/config/{resource}', [App\Http\Controllers\Api\DragDropController::class, 'getConfig']);
 });
+
+// PDF Reports routes
+Route::prefix('reports')->middleware(['web', 'auth'])->group(function () {
+    Route::get('/prospect/{id}', [App\Http\Controllers\PdfReportController::class, 'prospectReport']);
+    Route::get('/client/{id}', [App\Http\Controllers\PdfReportController::class, 'clientReport']);
+    Route::get('/partenaire/{id}', [App\Http\Controllers\PdfReportController::class, 'partenaireReport']);
+    Route::get('/dossier-formation/{id}', [App\Http\Controllers\PdfReportController::class, 'dossierFormationReport']);
+    Route::get('/activities', [App\Http\Controllers\PdfReportController::class, 'activitiesReport']);
+    Route::post('/custom', [App\Http\Controllers\PdfReportController::class, 'customReport']);
+});
+
+// Import/Export routes
+Route::prefix('import-export')->middleware(['web', 'auth'])->group(function () {
+    Route::post('/export', [App\Http\Controllers\ImportExportController::class, 'export']);
+    Route::post('/import', [App\Http\Controllers\ImportExportController::class, 'import']);
+    Route::get('/field-mappings/{type}', [App\Http\Controllers\ImportExportController::class, 'getFieldMappings']);
+    Route::post('/templates', [App\Http\Controllers\ImportExportController::class, 'saveTemplate']);
+    Route::get('/templates', [App\Http\Controllers\ImportExportController::class, 'getTemplates']);
+    Route::get('/history', [App\Http\Controllers\ImportExportController::class, 'getHistory']);
+});

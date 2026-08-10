@@ -45,11 +45,50 @@ class AnalyticDashboardResource extends Resource
                     ]),
                 Forms\Components\Section::make('Configuration des widgets')
                     ->schema([
-                        Forms\Components\KeyValue::make('widgets')
+                        Forms\Components\Repeater::make('widgets')
                             ->label('Widgets')
-                            ->keyLabel('ID')
-                            ->valueLabel('Configuration')
-                            ->addActionLabel('Ajouter un widget'),
+                            ->schema([
+                                Forms\Components\Select::make('type')
+                                    ->label('Type de widget')
+                                    ->options([
+                                        'stats' => 'Statistiques',
+                                        'chart' => 'Graphique',
+                                        'table' => 'Tableau',
+                                        'list' => 'Liste',
+                                    ])
+                                    ->required(),
+                                Forms\Components\TextInput::make('title')
+                                    ->label('Titre'),
+                                Forms\Components\Select::make('data_source')
+                                    ->label('Source de données')
+                                    ->options([
+                                        'prospects' => 'Prospects',
+                                        'clients' => 'Clients',
+                                        'partenaires' => 'Partenaires',
+                                        'opportunites' => 'Opportunités',
+                                        'taches' => 'Tâches',
+                                    ])
+                                    ->required(),
+                                Forms\Components\TextInput::make('position_x')
+                                    ->label('Position X')
+                                    ->numeric()
+                                    ->default(0),
+                                Forms\Components\TextInput::make('position_y')
+                                    ->label('Position Y')
+                                    ->numeric()
+                                    ->default(0),
+                                Forms\Components\TextInput::make('width')
+                                    ->label('Largeur')
+                                    ->numeric()
+                                    ->default(1),
+                                Forms\Components\TextInput::make('height')
+                                    ->label('Hauteur')
+                                    ->numeric()
+                                    ->default(1),
+                            ])
+                            ->columns(3)
+                            ->reorderableWithDragAndDrop()
+                            ->collapsible(),
                     ]),
                 Forms\Components\Section::make('Filtres')
                     ->schema([
@@ -136,6 +175,7 @@ class AnalyticDashboardResource extends Resource
             'index' => Pages\ListAnalyticDashboards::route('/'),
             'create' => Pages\CreateAnalyticDashboard::route('/create'),
             'edit' => Pages\EditAnalyticDashboard::route('/{record}/edit'),
+            'view' => Pages\ViewAnalyticDashboard::route('/{record}'),
         ];
     }
 

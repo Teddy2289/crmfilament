@@ -58,11 +58,13 @@ class Dashboard extends BaseDashboard
 
         // Widget tâches du jour pour tous les utilisateurs connectés
         $widgets[] = TachesDuJourWidget::class;
+        $widgets[] = \App\Filament\NsConseil\Resources\NsConseilResource\Widgets\TasksOfDay::class;
 
         // Analytics avancés pour tous les utilisateurs connectés
         $widgets[] = AnalyticsChartWidget::class;
         $widgets[] = OpportunitesStatsWidget::class;
         $widgets[] = ConversionFunnelWidget::class;
+        $widgets[] = \App\Filament\NsConseil\Resources\NsConseilResource\Widgets\AdvancedAnalytics::class;
 
         // Direction (admin / super_admin)
         if ($user->hasRoleCache('admin') || $user->isSuperAdmin()) {

@@ -72,6 +72,11 @@ class TaskResource extends Resource
                             ->label('Date d\'échéance')
                             ->seconds(false),
 
+                        Forms\Components\DateTimePicker::make('date_rappel')
+                            ->label('Date de rappel')
+                            ->seconds(false)
+                            ->helperText('Date à laquelle un rappel sera envoyé'),
+
                         Forms\Components\Select::make('assigne_a')
                             ->label('Assignée à')
                             ->relationship('assigneA', 'nom')
@@ -145,6 +150,10 @@ class TaskResource extends Resource
                     ->badge()
                     ->color('info'),
 
+                Tables\Columns\BadgeColumn::make('priorite_label')
+                    ->label('Priorité')
+                    ->color(fn (Task $record) => $record->priorite_color),
+
                 Tables\Columns\TextColumn::make('statut_label')
                     ->label('Statut')
                     ->badge()
@@ -172,6 +181,10 @@ class TaskResource extends Resource
                 Tables\Filters\SelectFilter::make('statut')
                     ->label('Statut')
                     ->options(Task::STATUTS),
+
+                Tables\Filters\SelectFilter::make('priorite')
+                    ->label('Priorité')
+                    ->options(Task::PRIORITES),
 
                 Tables\Filters\SelectFilter::make('type')
                     ->label('Type')
