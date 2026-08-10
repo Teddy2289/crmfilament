@@ -462,6 +462,20 @@ class Client extends Model
 
     // ── Scopes ──────────────────────────────────────────────────────
 
+    /**
+     * Scope for API search filter — partial, case-insensitive on nom_tiers, prenom, ref_client.
+     */
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $like = '%' . mb_strtolower($term) . '%';
+
+        return $query->where(function ($q) use ($like) {
+            $q->whereRaw('LOWER(nom_tiers) LIKE ?', [$like])
+              ->orWhereRaw('LOWER(COALESCE(prenom, \'\')) LIKE ?', [$like])
+              ->orWhereRaw('LOWER(COALESCE(ref_client, \'\')) LIKE ?', [$like]);
+        });
+    }
+
     public function scopeContactables(Builder $query): Builder
     {
         return $query->where('ne_plus_contacter', false)

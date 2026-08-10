@@ -644,6 +644,20 @@ class Prospect extends Model
             ->whereYear('created_at', now()->year);
     }
 
+    /**
+     * Scope for the API search filter — partial, case-insensitive match on nom, siret, telephone.
+     */
+    public function scopeSearch($query, string $term): Builder
+    {
+        $like = '%' . mb_strtolower($term) . '%';
+
+        return $query->where(function ($q) use ($like) {
+            $q->whereRaw('LOWER(nom) LIKE ?', [$like])
+              ->orWhereRaw('LOWER(siret) LIKE ?', [$like])
+              ->orWhereRaw('LOWER(telephone) LIKE ?', [$like]);
+        });
+    }
+
     public function scopeSansActiviteDepuis($query, int $jours): Builder
     {
         return $query->where(function ($q) use ($jours) {
