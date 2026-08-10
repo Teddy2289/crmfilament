@@ -26,6 +26,9 @@ return new class extends Migration
             $table->index('created_by');
         });
 
+        // workflow_steps was already created in 2026_06_28_070806_create_workflow_steps_table.php
+        // with a different schema. We recreate it here with the correct schema.
+        Schema::dropIfExists('workflow_steps');
         Schema::create('workflow_steps', function (Blueprint $table) {
             $table->id();
             $table->foreignId('workflow_id')->constrained('workflows')->onDelete('cascade');

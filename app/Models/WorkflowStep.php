@@ -20,6 +20,7 @@ class WorkflowStep extends Model
 
     protected $casts = [
         'conditions' => 'array',
+        'config' => 'array',
         'ordre' => 'integer',
     ];
 

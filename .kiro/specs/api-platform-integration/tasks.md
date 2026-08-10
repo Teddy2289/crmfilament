@@ -81,7 +81,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 8: QF validation respects CrmProfile gate**
     - **Validates: Requirements 3.6**
 
-- [-] 4. Checkpoint — Vérifier que les tests d'auth et d'autorisation passent
+- [ ] 4. Checkpoint — Vérifier que les tests d'auth et d'autorisation passent
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 5. Créer l'infrastructure partagée des contrôleurs et ressources
@@ -131,7 +131,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Définir les règles de validation (champs obligatoires, formats)
     - _Requirements: 4.6_
 
-  - [-] 6.5 Créer `ProspectController`
+  - [ ] 6.5 Créer `ProspectController`
     - `index` : QueryBuilder avec filtres autorisés (`statut`, `campagne_id`, `search` via scope), tris (`created_at`, `nom`, `statut`, `updated_at`), includes, restriction scope Téléprospecteur
     - `show`, `store`, `update`, `destroy` : avec `$this->authorize()`
     - `enregistrerAppel` : valider `statut_phoning_id`, enregistrer l'appel, mettre à jour `ProspectStatut`
@@ -153,7 +153,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Sérialiser les champs, convertir Enums (`OrganizationStatus`, `OrganizationType`)
     - _Requirements: 12.3_
 
-  - [-] 7.2 Créer `PartenaireController`
+  - [ ] 7.2 Créer `PartenaireController`
     - `index` : filtres `statut`, `type` ; tri par défaut
     - `show`, `store`, `update` (pas de `destroy`)
     - `contacts` : liste paginée des `ContactPartenaire` liés
@@ -165,7 +165,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Lecture seule (GET uniquement) — la source de vérité reste Dolibarr
     - _Requirements: 6.4_
 
-  - [-] 7.4 Créer `ClientController`
+  - [ ] 7.4 Créer `ClientController`
     - `index` : filtres `partenaire_id`, `search` (nom, prénom, référence client — partiel insensible à la casse)
     - `show`, `dossiersFormation`
     - _Requirements: 6.1, 6.2, 6.3_
@@ -183,17 +183,17 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - `show`, `update`
     - _Requirements: 7.1, 7.3, 7.4_
 
-  - [~] 8.2 Créer `ReclamationResource`, `StoreReclamationRequest`, `UpdateReclamationRequest`, `ReclamationController`
+  - [ ] 8.2 Créer `ReclamationResource`, `StoreReclamationRequest`, `UpdateReclamationRequest`, `ReclamationController`
     - Vérification du rôle sur la mise à jour du statut (403 si non autorisé)
     - _Requirements: 7.2, 7.5_
 
-  - [~] 8.3 Créer `DevisResource` et `DevisController` (lecture seule)
+  - [ ] 8.3 Créer `DevisResource` et `DevisController` (lecture seule)
     - `index` : filtres `statut` (`StatutDevis`), `partenaire_id`
     - `show`
     - Lecture seule pour les rôles `Téléprospecteur` et `Opérateur N1`
     - _Requirements: 8.1, 8.3, 8.4, 8.5_
 
-  - [~] 8.4 Créer `BonDeCommandeResource` et `BonDeCommandeController` (lecture seule)
+  - [ ] 8.4 Créer `BonDeCommandeResource` et `BonDeCommandeController` (lecture seule)
     - `index`, `show`
     - _Requirements: 8.2_
 
@@ -204,11 +204,11 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 7.4, 7.5, 8.3, 8.4_
 
 - [ ] 9. Implémenter le contrôleur RendezVous
-  - [~] 9.1 Créer `RendezVousResource`, `StoreRendezVousRequest`, `UpdateRendezVousRequest`
+  - [ ] 9.1 Créer `RendezVousResource`, `StoreRendezVousRequest`, `UpdateRendezVousRequest`
     - `StoreRendezVousRequest` et `UpdateRendezVousRequest` : règle de validation `date_fin after:date_debut`
     - _Requirements: 9.5_
 
-  - [~] 9.2 Créer `RendezVousController`
+  - [ ] 9.2 Créer `RendezVousController`
     - `index` : retourner uniquement les RendezVous de l'utilisateur authentifié (sauf rôle à visibilité élargie) ; filtres `date_debut` et `date_fin` (bornes incluses)
     - `show`, `store` (201 + ressource créée), `update`
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
@@ -227,16 +227,16 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: `date_fin` antérieure à `date_debut` → 422
     - _Requirements: 9.2, 9.4, 9.5_
 
-- [~] 10. Checkpoint — Vérifier que tous les tests de ressources passent
+- [ ] 10. Checkpoint — Vérifier que tous les tests de ressources passent
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 11. Implémenter le contrôleur CampagnesPhoning + endpoint Appel
-  - [~] 11.1 Créer `CampagnePhoningResource` et `CampagnePhoningController`
+  - [ ] 11.1 Créer `CampagnePhoningResource` et `CampagnePhoningController`
     - `index`, `show`
     - `prospects` : liste paginée des Prospects de la campagne, triée par priorité de phoning ; lecture seule si campagne `archivée`
     - _Requirements: 10.1, 10.2, 10.5_
 
-  - [~] 11.2 Créer `EnregistrerAppelRequest` et relier à `ProspectController::enregistrerAppel()`
+  - [ ] 11.2 Créer `EnregistrerAppelRequest` et relier à `ProspectController::enregistrerAppel()`
     - Valider `statut_phoning_id` (existence dans `statut_phonings`) → 422 si invalide
     - Enregistrer l'appel, mettre à jour `ProspectStatut` selon les règles métier
     - _Requirements: 10.3, 10.4_
@@ -248,7 +248,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 10.2, 10.4, 10.5_
 
 - [ ] 12. Configurer le Rate Limiting et les en-têtes de sécurité
-  - [~] 12.1 Configurer les rate limiters dans `bootstrap/app.php` (ou `RouteServiceProvider`)
+  - [ ] 12.1 Configurer les rate limiters dans `bootstrap/app.php` (ou `RouteServiceProvider`)
     - `api` : 1 000 requêtes/heure par token/IP → 429 avec `Retry-After`
     - `login` : 10 tentatives/minute par IP → 429 avec `Retry-After`
     - Inclure `X-RateLimit-Limit` et `X-RateLimit-Remaining` dans les réponses authentifiées
@@ -258,7 +258,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 18: Rate limit headers present on authenticated responses**
     - **Validates: Requirements 14.4**
 
-  - [~] 12.3 Créer `Admin\UserTokenController` (révocation de tous les tokens d'un utilisateur)
+  - [ ] 12.3 Créer `Admin\UserTokenController` (révocation de tous les tokens d'un utilisateur)
     - `DELETE /api/v1/admin/users/{user}/tokens` protégé par le middleware de rôle `super_admin|administrateur`
     - _Requirements: 15.3_
 
@@ -268,7 +268,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 14.2, 15.3_
 
 - [ ] 13. Implémenter le logging des événements token
-  - [~] 13.1 Ajouter le logging dans `AuthService` pour login, refresh, logout
+  - [ ] 13.1 Ajouter le logging dans `AuthService` pour login, refresh, logout
     - Consigner user ID, adresse IP, horodatage dans les logs applicatifs
     - _Requirements: 15.4_
 
@@ -276,13 +276,13 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 19: Token events are logged**
     - **Validates: Requirements 15.4**
 
-  - [~] 13.3 Créer le middleware `EnsureTokenIsNotExpired` et l'appliquer sur les routes protégées
+  - [ ] 13.3 Créer le middleware `EnsureTokenIsNotExpired` et l'appliquer sur les routes protégées
     - Retourner 401 avec code `token_expired` si le token d'accès est expiré
     - Retourner 401 avec code `refresh_token_invalid` si le refresh token est révoqué ou expiré
     - _Requirements: 2.4, 15.2_
 
 - [ ] 14. Configurer la documentation OpenAPI (dedoc/scramble)
-  - [~] 14.1 Publier et configurer `config/scramble.php`
+  - [ ] 14.1 Publier et configurer `config/scramble.php`
     - Pointer sur `api/v1`, définir titre et version
     - Bloquer l'accès en production (403)
     - _Requirements: 13.1, 13.5_
@@ -293,13 +293,13 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 13.1, 13.5_
 
 - [ ] 15. Implémenter le support GraphQL optionnel (nuwave/lighthouse)
-  - [~] 15.1 Installer `nuwave/lighthouse` et créer `graphql/schema.graphql`
+  - [ ] 15.1 Installer `nuwave/lighthouse` et créer `graphql/schema.graphql`
     - Conditionner l'activation sur `config('api.graphql_enabled')`
     - Exposer `/api/graphql` et `/api/graphql-playground` (non-production uniquement)
     - Définir les types `Prospect`, `Partenaire` et les queries paginées avec `@paginate @guard`
     - _Requirements: 16.1, 16.2_
 
-  - [~] 15.2 Créer le middleware Lighthouse appliquant les permissions Spatie aux requêtes GraphQL
+  - [ ] 15.2 Créer le middleware Lighthouse appliquant les permissions Spatie aux requêtes GraphQL
     - Appliquer les mêmes règles d'autorisation qu'en REST
     - Appliquer les mêmes limites de rate limiting (`throttle:api`)
     - _Requirements: 16.3, 16.4_
@@ -310,7 +310,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: playground désactivé en production
     - _Requirements: 16.1, 16.2, 16.3_
 
-- [~] 16. Checkpoint final — Vérifier que toute la suite de tests passe
+- [ ] 16. Checkpoint final — Vérifier que toute la suite de tests passe
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

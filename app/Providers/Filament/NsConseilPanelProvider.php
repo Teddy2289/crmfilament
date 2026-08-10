@@ -147,7 +147,7 @@ class NsConseilPanelProvider extends PanelProvider
             // ── Loading overlay ──────────────────────────────────────
             ->renderHook(
                 PanelsRenderHook::BODY_START,
-                fn() => view('filament.ns-conseil.loading-overlay'),
+                fn() => view('filament.loading-overlay'),
             )
 
             // ── Keyboard shortcuts ─────────────────────────────────
