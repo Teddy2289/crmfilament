@@ -62,6 +62,12 @@ class TaskResource extends Resource
                             ->default('a_faire')
                             ->required(),
 
+                        Forms\Components\Select::make('priorite')
+                            ->label('Priorité')
+                            ->options(Task::PRIORITES)
+                            ->default('normale')
+                            ->required(),
+
                         Forms\Components\DateTimePicker::make('date_echeance')
                             ->label('Date d\'échéance')
                             ->seconds(false),

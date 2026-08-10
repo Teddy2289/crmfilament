@@ -9,6 +9,7 @@ use App\Services\RingoverService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
@@ -39,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ReclamationP8 ne suit pas la convention Foo → FooPolicy, donc on
+        // l'enregistre explicitement.
+        Gate::policy(\App\Models\ReclamationP8::class, \App\Policies\ReclamationPolicy::class);
+
         Validator::extend('siret', function ($attribute, $value) {
             return preg_match('/^\d{14}$/', $value);
         }, 'Le SIRET doit contenir exactement 14 chiffres.');

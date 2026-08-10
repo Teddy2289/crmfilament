@@ -63,12 +63,18 @@ class Integration extends Model
         return $query->where('type', 'outlook');
     }
 
+    public function scopeCrm($query)
+    {
+        return $query->where('type', 'crm');
+    }
+
     public function sendNotification(string $message, array $data = []): bool
     {
         return match($this->type) {
             'slack' => $this->sendSlackNotification($message, $data),
             'teams' => $this->sendTeamsNotification($message, $data),
             'outlook' => $this->sendOutlookNotification($message, $data),
+            'crm' => $this->sendCrmNotification($message, $data),
             default => false,
         };
     }
@@ -122,12 +128,36 @@ class Integration extends Model
         return false;
     }
 
+    protected function sendCrmNotification(string $message, array $data): bool
+    {
+        // Implementation pour CRM tiers (HubSpot, Salesforce, etc.)
+        $apiUrl = $this->config['api_url'] ?? null;
+        $apiKey = $this->config['api_key'] ?? null;
+        
+        if (!$apiUrl || !$apiKey) return false;
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type' => 'application/json',
+            ])->post($apiUrl, [
+                'message' => $message,
+                'data' => $data,
+            ]);
+
+            return $response->successful();
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
     public function verify(): bool
     {
         $result = match($this->type) {
             'slack' => $this->verifySlack(),
             'teams' => $this->verifyTeams(),
             'outlook' => $this->verifyOutlook(),
+            'crm' => $this->verifyCrm(),
             default => false,
         };
 
@@ -174,5 +204,23 @@ class Integration extends Model
     {
         // Implementation pour Outlook Graph API
         return false;
+    }
+
+    protected function verifyCrm(): bool
+    {
+        $apiUrl = $this->config['api_url'] ?? null;
+        $apiKey = $this->config['api_key'] ?? null;
+        
+        if (!$apiUrl || !$apiKey) return false;
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+            ])->get($apiUrl . '/health');
+
+            return $response->successful();
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

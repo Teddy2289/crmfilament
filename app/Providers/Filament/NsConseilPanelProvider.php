@@ -147,7 +147,19 @@ class NsConseilPanelProvider extends PanelProvider
             // ── Loading overlay ──────────────────────────────────────
             ->renderHook(
                 PanelsRenderHook::BODY_START,
-                fn() => view('filament.loading-overlay'),
+                fn() => view('filament.ns-conseil.loading-overlay'),
+            )
+
+            // ── Keyboard shortcuts ─────────────────────────────────
+            ->renderHook(
+                PanelsRenderHook::SCRIPTS_AFTER,
+                fn() => '<script src="' . asset('js/keyboard-shortcuts.js') . '"></script>',
+            )
+
+            // ── Drag and Drop ────────────────────────────────────
+            ->renderHook(
+                PanelsRenderHook::SCRIPTS_AFTER,
+                fn() => '<script src="' . asset('js/drag-drop.js') . '"></script>',
             )
 
             // ── CSS custom depuis la base de données ─────────────────

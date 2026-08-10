@@ -19,6 +19,7 @@ class Task extends Model
         'description',
         'type',
         'statut',
+        'priorite',
         'date_echeance',
         'date_realisation',
         'assigne_a',
@@ -29,6 +30,8 @@ class Task extends Model
         'opportunite_id',
         'appel_id',
         'created_by',
+        'rappel_envoye',
+        'date_rappel',
     ];
 
     const TYPES = [
@@ -43,6 +46,13 @@ class Task extends Model
         'en_cours' => 'En cours',
         'terminee' => 'Terminée',
         'annulee' => 'Annulée',
+    ];
+
+    const PRIORITES = [
+        'basse' => 'Basse',
+        'normale' => 'Normale',
+        'haute' => 'Haute',
+        'critique' => 'Critique',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -63,6 +73,22 @@ class Task extends Model
             'en_cours' => 'warning',
             'terminee' => 'success',
             'annulee' => 'danger',
+            default => 'gray',
+        };
+    }
+
+    public function getPrioriteLabelAttribute(): string
+    {
+        return self::PRIORITES[$this->priorite] ?? $this->priorite ?? 'Normale';
+    }
+
+    public function getPrioriteColorAttribute(): string
+    {
+        return match ($this->priorite) {
+            'basse' => 'gray',
+            'normale' => 'info',
+            'haute' => 'warning',
+            'critique' => 'danger',
             default => 'gray',
         };
     }

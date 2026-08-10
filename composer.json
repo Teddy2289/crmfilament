@@ -20,7 +20,7 @@
         "mokhosh/filament-kanban": "^2.11",
         "phpoffice/phpspreadsheet": "*",
         "phpoffice/phpword": "^1.4",
-        "pragmarx/google2fa-laravel": "*",
+        "pragmarx/google2fa-laravel": "^3.0",
         "ptplugins/filament-number-input": "^1.0",
         "saade/filament-fullcalendar": "^3.0",
         "spatie/laravel-model-states": "^2.12",

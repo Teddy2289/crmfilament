@@ -35,6 +35,7 @@ class IntegrationResource extends Resource
                                 'slack' => 'Slack',
                                 'teams' => 'Microsoft Teams',
                                 'outlook' => 'Outlook',
+                                'crm' => 'CRM Tiers (HubSpot, Salesforce, etc.)',
                             ])
                             ->required()
                             ->live(),
@@ -71,6 +72,26 @@ class IntegrationResource extends Resource
                             ->label('Tenant ID')
                             ->visible(fn (Forms\Get $get) => $get('type') === 'outlook')
                             ->helperText('ID du locataire Microsoft Azure'),
+                        Forms\Components\Select::make('config.crm_provider')
+                            ->label('Fournisseur CRM')
+                            ->options([
+                                'hubspot' => 'HubSpot',
+                                'salesforce' => 'Salesforce',
+                                'pipedrive' => 'Pipedrive',
+                                'zoho' => 'Zoho CRM',
+                            ])
+                            ->visible(fn (Forms\Get $get) => $get('type') === 'crm')
+                            ->required(fn (Forms\Get $get) => $get('type') === 'crm'),
+                        Forms\Components\TextInput::make('config.api_url')
+                            ->label('URL API')
+                            ->url()
+                            ->visible(fn (Forms\Get $get) => $get('type') === 'crm')
+                            ->required(fn (Forms\Get $get) => $get('type') === 'crm'),
+                        Forms\Components\TextInput::make('config.api_key')
+                            ->label('Clé API')
+                            ->password()
+                            ->visible(fn (Forms\Get $get) => $get('type') === 'crm')
+                            ->required(fn (Forms\Get $get) => $get('type') === 'crm'),
                     ]),
                 Forms\Components\Section::make('Statut')
                     ->schema([
@@ -98,6 +119,7 @@ class IntegrationResource extends Resource
                         'slack' => 'success',
                         'teams' => 'primary',
                         'outlook' => 'info',
+                        'crm' => 'warning',
                     ]),
                 Tables\Columns\IconColumn::make('verified')
                     ->label('Vérifié')
@@ -124,6 +146,7 @@ class IntegrationResource extends Resource
                         'slack' => 'Slack',
                         'teams' => 'Microsoft Teams',
                         'outlook' => 'Outlook',
+                        'crm' => 'CRM Tiers',
                     ]),
                 Tables\Filters\TernaryFilter::make('verified')
                     ->label('Vérifié'),

@@ -34,6 +34,9 @@ class User extends Authenticatable implements FilamentUser
         'ringover_email',
         'email_password',
         'email_last_sync',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
     ];
 
     protected $hidden = [
@@ -41,6 +44,8 @@ class User extends Authenticatable implements FilamentUser
         'remember_token',
         'google_token',
         'email_password',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -52,6 +57,7 @@ class User extends Authenticatable implements FilamentUser
             'actif' => 'boolean',
             'email_last_sync' => 'datetime',
             'email_password' => 'encrypted',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -508,6 +514,115 @@ class User extends Authenticatable implements FilamentUser
     public function integrations()
     {
         return $this->hasMany(Integration::class);
+    }
+
+    public function ganttTasks()
+    {
+        return $this->hasMany(GanttTask::class, 'assigned_to');
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
+    public function dataDeletionRequests()
+    {
+        return $this->hasMany(DataDeletionRequest::class);
+    }
+
+    public function backups()
+    {
+        return $this->hasMany(Backup::class, 'created_by');
+    }
+
+    public function analyticDashboards()
+    {
+        return $this->hasMany(AnalyticDashboard::class, 'created_by');
+    }
+
+    public function milestones()
+    {
+        return $this->hasMany(Milestone::class, 'assigned_to');
+    }
+
+    public function campaigns()
+    {
+        return $this->hasMany(Campaign::class, 'created_by');
+    }
+
+    public function assignedCampaigns()
+    {
+        return $this->hasMany(Campaign::class, 'assigned_to');
+    }
+
+    // Two Factor Authentication methods
+    public function hasTwoFactorEnabled(): bool
+    {
+        return !is_null($this->two_factor_secret) && !is_null($this->two_factor_confirmed_at);
+    }
+
+    public function enableTwoFactor(string $secret): void
+    {
+        $this->update([
+            'two_factor_secret' => encrypt($secret),
+            'two_factor_confirmed_at' => now(),
+        ]);
+    }
+
+    public function disableTwoFactor(): void
+    {
+        $this->update([
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
+        ]);
+    }
+
+    public function getTwoFactorSecret(): ?string
+    {
+        return $this->two_factor_secret ? decrypt($this->two_factor_secret) : null;
+    }
+
+    public function generateRecoveryCodes(): array
+    {
+        $codes = [];
+        for ($i = 0; $i < 10; $i++) {
+            $codes[] = strtoupper(bin2hex(random_bytes(4)));
+        }
+        
+        $this->update([
+            'two_factor_recovery_codes' => encrypt(json_encode($codes)),
+        ]);
+        
+        return $codes;
+    }
+
+    public function getRecoveryCodes(): array
+    {
+        return $this->two_factor_recovery_codes ? json_decode(decrypt($this->two_factor_recovery_codes), true) : [];
+    }
+
+    public function verifyRecoveryCode(string $code): bool
+    {
+        return in_array(strtoupper($code), $this->getRecoveryCodes());
+    }
+
+    public function consumeRecoveryCode(string $code): bool
+    {
+        $codes = $this->getRecoveryCodes();
+        $code = strtoupper($code);
+        
+        if (!in_array($code, $codes)) {
+            return false;
+        }
+        
+        $codes = array_diff($codes, [$code]);
+        $this->update([
+            'two_factor_recovery_codes' => encrypt(json_encode(array_values($codes))),
+        ]);
+        
+        return true;
     }
 
     public function crmProfile()

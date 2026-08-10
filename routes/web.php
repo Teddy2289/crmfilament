@@ -112,3 +112,10 @@ Route::get('/debug-calendar', function () {
         'events' => $allEvents,
     ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 })->middleware(['web', 'auth']);
+
+// Drag and Drop API routes
+Route::prefix('api/drag-drop')->middleware(['web', 'auth'])->group(function () {
+    Route::post('/reorder/{resource}', [App\Http\Controllers\Api\DragDropController::class, 'reorder']);
+    Route::post('/move/{resource}', [App\Http\Controllers\Api\DragDropController::class, 'moveToGroup']);
+    Route::get('/config/{resource}', [App\Http\Controllers\Api\DragDropController::class, 'getConfig']);
+});

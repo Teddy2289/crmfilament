@@ -17,7 +17,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
   - Ajouter le trait `HasApiTokens` au modèle `User`
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-- [ ] 2. Implémenter l'authentification Sanctum (AuthController + AuthService)
+- [x] 2. Implémenter l'authentification Sanctum (AuthController + AuthService)
   - [x] 2.1 Créer `AuthService` (émission paire access/refresh, révocation, logging)
     - Implémenter `issueTokenPair(User): array` — deux tokens Sanctum (`access` 24h, `refresh` 30j) avec abilities appropriées
     - Implémenter `revokeAccessToken(User): void` et `revokeAllTokens(User): void`
@@ -35,7 +35,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
   - [x] 2.4 Créer `LoginRequest` et `RefreshRequest` (validation des champs)
     - _Requirements: 2.1, 2.5_
 
-  - [~] 2.5 Créer `AuthController` (login, refresh, logout, me)
+  - [x] 2.5 Créer `AuthController` (login, refresh, logout, me)
     - `login` : valide les identifiants, retourne paire de tokens ou 401 générique
     - `refresh` : valide le refresh token (ability `[refresh]`), émet nouveau access token
     - `logout` : révoque le token courant, retourne 204
@@ -50,8 +50,8 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: 11 tentatives rapides → 429 avec en-tête `Retry-After`
     - _Requirements: 2.1, 2.2, 2.4_
 
-- [ ] 3. Implémenter la couche d'autorisation (Policies + FieldPermissionService)
-  - [-] 3.1 Créer `FieldPermissionService`
+- [x] 3. Implémenter la couche d'autorisation (Policies + FieldPermissionService)
+  - [x] 3.1 Créer `FieldPermissionService`
     - Implémenter `filterFields(array $data, string $role, string $resource, string $action): array`
     - Interroger les enregistrements `FieldPermission` et supprimer les champs `visible_view = false`
     - Retourner tous les champs si aucun enregistrement `FieldPermission` n'existe (comportement par défaut visible)
@@ -61,7 +61,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 6: FieldPermission masks hidden fields**
     - **Validates: Requirements 3.4, 12.4**
 
-  - [~] 3.3 Créer les Policies pour toutes les ressources
+  - [x] 3.3 Créer les Policies pour toutes les ressources
     - `ProspectPolicy`, `PartenairePolicy`, `ClientPolicy`, `TicketPolicy`, `ReclamationPolicy`, `DevisPolicy`, `BonDeCommandePolicy`, `RendezVousPolicy`, `CampagnePhoningPolicy`
     - Déléguer à `$user->hasPermissionTo()` (Spatie)
     - Implémenter la restriction `Téléprospecteur` dans `ProspectPolicy::view()` et `ProspectPolicy::viewAny()`
@@ -81,11 +81,11 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 8: QF validation respects CrmProfile gate**
     - **Validates: Requirements 3.6**
 
-- [~] 4. Checkpoint — Vérifier que les tests d'auth et d'autorisation passent
+- [ ] 4. Checkpoint — Vérifier que les tests d'auth et d'autorisation passent
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Créer l'infrastructure partagée des contrôleurs et ressources
-  - [ ] 5.1 Créer `ApiController` (classe abstraite de base)
+- [x] 5. Créer l'infrastructure partagée des contrôleurs et ressources
+  - [x] 5.1 Créer `ApiController` (classe abstraite de base)
     - Implémenter `success(mixed $data, int $status = 200): JsonResponse`
     - Implémenter `error(string $message, int $status, array $errors = []): JsonResponse`
     - Implémenter `paginate(QueryBuilder|Builder $query, string $resourceClass): JsonResponse` avec cap à 100 éléments et métadonnées complètes
@@ -112,7 +112,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Validates: Requirements 1.2**
 
 - [ ] 6. Implémenter le contrôleur et les ressources Prospects
-  - [~] 6.1 Créer `ProspectResource` et `ProspectCollection`
+  - [x] 6.1 Créer `ProspectResource` et `ProspectCollection`
     - Sérialiser tous les champs (id, nom, statut, siret, téléphone, email, ville, etc.)
     - Convertir les Enums en leur valeur de chaîne lisible (`.value`)
     - Appeler `FieldPermissionService::filterFields()` pour masquer les champs selon le rôle
@@ -127,7 +127,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 17: Serialization round-trip**
     - **Validates: Requirements 12.6**
 
-  - [~] 6.4 Créer `StoreProspectRequest` et `UpdateProspectRequest`
+  - [x] 6.4 Créer `StoreProspectRequest` et `UpdateProspectRequest`
     - Définir les règles de validation (champs obligatoires, formats)
     - _Requirements: 4.6_
 
@@ -149,7 +149,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 4.3, 4.4, 4.5, 4.6_
 
 - [ ] 7. Implémenter les contrôleurs Partenaires, Clients
-  - [~] 7.1 Créer `PartenaireResource`, `PartenaireCollection`, `StorePartenaireRequest`, `UpdatePartenaireRequest`
+  - [x] 7.1 Créer `PartenaireResource`, `PartenaireCollection`, `StorePartenaireRequest`, `UpdatePartenaireRequest`
     - Sérialiser les champs, convertir Enums (`OrganizationStatus`, `OrganizationType`)
     - _Requirements: 12.3_
 
@@ -161,7 +161,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Retourner 404 sur ID inexistant
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
 
-  - [~] 7.3 Créer `ClientResource`, `ClientCollection`
+  - [x] 7.3 Créer `ClientResource`, `ClientCollection`
     - Lecture seule (GET uniquement) — la source de vérité reste Dolibarr
     - _Requirements: 6.4_
 
@@ -177,7 +177,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 5.2, 5.3, 6.2, 6.3, 6.4_
 
 - [ ] 8. Implémenter les contrôleurs Tickets, Réclamations, Devis, BonsDeCommande
-  - [~] 8.1 Créer `TicketResource`, `StoreTicketRequest`, `UpdateTicketRequest`, `TicketController`
+  - [ ] 8.1 Créer `TicketResource`, `StoreTicketRequest`, `UpdateTicketRequest`, `TicketController`
     - `index` : filtre `statut` (`TicketStatut`)
     - `store` : associer `created_by` à l'utilisateur authentifié
     - `show`, `update`
