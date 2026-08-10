@@ -613,6 +613,30 @@ class ProspectResource extends Resource
                 ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('export_excel')
+                    ->label('Exporter Excel')
+                    ->icon('heroicon-o-table-cells')
+                    ->color('success')
+                    ->action(function () {
+                        return (new \App\Services\ExcelExportService())->exportProspects();
+                    }),
+                Tables\Actions\Action::make('export_pdf')
+                    ->label('Exporter PDF')
+                    ->icon('heroicon-o-document-text')
+                    ->color('danger')
+                    ->action(function () {
+                        $prospects = \App\Models\Prospect::with(['consultant', 'entiteCommerciale'])->get();
+                        $pdf = app('dompdf.wrapper');
+                        $pdf->loadView('pdf.custom-report', [
+                            'title' => 'Rapport Prospects',
+                            'summary' => [
+                                'Total prospects' => $prospects->count(),
+                                'Date export' => now()->format('d/m/Y H:i'),
+                            ],
+                            'slot' => view('pdf.prospects-table', ['prospects' => $prospects])
+                        ]);
+                        return $pdf->download('prospects-' . now()->format('Y-m-d-His') . '.pdf');
+                    }),
                 Tables\Actions\Action::make('switch_view')
                     ->label(session()->get('view_prospects', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
                     ->icon(session()->get('view_prospects', 'list') === 'kanban' ? 'heroicon-o-list-bullet' : 'heroicon-o-squares-2x2')

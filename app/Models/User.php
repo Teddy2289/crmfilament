@@ -13,12 +13,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable, SoftDeletes, HasModelValidation, HasInputSanitization;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes, HasModelValidation, HasInputSanitization;
 
     protected $fillable = [
         'nom',
@@ -442,12 +443,12 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(ImportMapping::class);
     }
 
-    public function notifications()
+    public function customNotifications()
     {
         return $this->hasMany(Notification::class);
     }
 
-    public function notificationsNonLues()
+    public function customNotificationsNonLues()
     {
         return $this->hasMany(Notification::class)->where('lu', false);
     }
@@ -460,6 +461,28 @@ class User extends Authenticatable implements FilamentUser
     public function evenementsCalendrier()
     {
         return $this->hasMany(EvenementCalendrier::class);
+    }
+
+    public function chatRooms()
+    {
+        return $this->hasMany(ChatRoom::class, 'created_by');
+    }
+
+    public function chatRoomParticipants()
+    {
+        return $this->hasMany(ChatRoomParticipant::class);
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    public function getActiveChatRoomsAttribute()
+    {
+        return ChatRoom::whereHas('participants', function ($q) {
+            $q->where('user_id', $this->id)->where('actif', true);
+        })->active()->get();
     }
 
     public function crmProfile()

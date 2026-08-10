@@ -796,6 +796,7 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
 #ringover-embed-phoning {
     position: relative !important;
     contain: layout paint !important;
+    overflow: hidden !important;
 }
 
 /* Sécurité complémentaire : si un élément Ringover s'échappe malgré tout
@@ -807,12 +808,10 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
 }
 
 /* ── Sur la page Phoning Workflow, masquer tout widget Ringover flottant ──
-   Le widget flottant global injecte un <div id="ringover-…"> en position:fixed.
-   La page phoning-workflow a la classe .pw-wrap sur son conteneur.
-   On utilise un flag CSS (variable custom property définie via JS) pour masquer
-   le widget flottant résiduel. */
-body.pw-phoning-active [id^="ringover"]:not(#ringover-embed-phoning),
-body.pw-phoning-active [class*="ringover-widget-container"]:not(#ringover-embed-phoning) {
+   On masque uniquement les éléments Ringover qui ne sont PAS descendants
+   du conteneur dédié #ringover-embed-phoning. */
+body.pw-phoning-active [id^="ringover"]:not(#ringover-embed-phoning):not(#ringover-embed-phoning [id^="ringover"]),
+body.pw-phoning-active [class*="ringover-widget-container"]:not(#ringover-embed-phoning):not(#ringover-embed-phoning [class*="ringover-widget-container"]) {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;

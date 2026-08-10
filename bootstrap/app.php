@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Middleware\EnsureSuperAdmin;
+use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\RingoverRateLimit;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
@@ -10,21 +12,28 @@ use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Middleware\SetCacheHeaders;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ValidateSignature;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
@@ -32,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -56,6 +66,13 @@ return Application::configure(basePath: dirname(__DIR__))
             SubstituteBindings::class,
         ]);
 
+        // ── Middlewares API ─────────────────────────────────────────
+        // ForceJsonResponse : garantit Accept: application/json sur toutes
+        // les requêtes /api/* (réponses JSON même pour 401/403/419…)
+        $middleware->api(prepend: [
+            ForceJsonResponse::class,
+        ]);
+
         // ── Aliases de middleware ───────────────────────────────────
         // Utilisés dans les routes et les panels Filament
         $middleware->alias([
@@ -78,6 +95,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // Ringover Rate Limiting
             'ringover.rate_limit' => RingoverRateLimit::class,
         ]);
+
+        // ── Rate Limiters API ───────────────────────────────────────
 
         // ── Redirection après auth ──────────────────────────────────
         // Filament gère ses propres redirections, mais on garde une
@@ -113,7 +132,52 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        // ── Masquage des écrans d'erreur ─────────────────────────────
+        // ── Handler d'exceptions JSON pour toutes les routes /api/* ─
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null; // Laisser les autres handlers prendre la main
+            }
+
+            return match (true) {
+                $e instanceof AuthenticationException =>
+                    response()->json(['message' => 'Unauthenticated.'], 401),
+
+                $e instanceof AuthorizationException =>
+                    response()->json(['message' => 'This action is unauthorized.'], 403),
+
+                $e instanceof ModelNotFoundException, $e instanceof NotFoundHttpException =>
+                    response()->json(['message' => 'Resource not found.'], 404),
+
+                $e instanceof ValidationException =>
+                    response()->json([
+                        'message' => 'The given data was invalid.',
+                        'errors'  => $e->errors(),
+                    ], 422),
+
+                $e instanceof TooManyRequestsHttpException =>
+                    response()->json(['message' => 'Too many requests.'], 429)
+                        ->header('Retry-After', $e->getHeaders()['Retry-After'] ?? 60),
+
+                $e instanceof HttpException =>
+                    response()->json(['message' => $e->getMessage() ?: 'HTTP error.'], $e->getStatusCode()),
+
+                default => (function () use ($e) {
+                    $errorId = (string) Str::uuid();
+                    \Illuminate\Support\Facades\Log::error('API unhandled exception', [
+                        'error_id'  => $errorId,
+                        'exception' => $e->getMessage(),
+                        'trace'     => $e->getTraceAsString(),
+                    ]);
+
+                    return response()->json([
+                        'message'  => 'Server error.',
+                        'error_id' => $errorId,
+                    ], 500);
+                })(),
+            };
+        });
+
+        // ── Masquage des écrans d'erreur (routes non-API) ─────────────────
         // APP_DEBUG est lu depuis la BDD (EnvSetting) en priorité, puis
         // depuis la config (valeur .env) en fallback.
         // Permet à un admin de basculer le mode debug depuis l'UI

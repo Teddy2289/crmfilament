@@ -1851,23 +1851,29 @@
 
 /* ══ Layout principal orchestrateur ══════════════════════════════════ */
 .pw-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-    gap: 1.25rem;
-    align-items: start;
+    display: grid !important;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px) !important;
+    gap: 1.25rem !important;
+    align-items: start !important;
+    justify-items: stretch !important;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 760px) {
     .pw-layout {
         grid-template-columns: 1fr;
     }
+}
+
+.pw-col-main,
+.pw-col-side {
+    min-width: 0;
 }
 
 .pw-col-main {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    min-width: 0;
 }
 
 .pw-col-side {

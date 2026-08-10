@@ -434,6 +434,30 @@ class PartenaireResource extends Resource
                 ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('export_excel')
+                    ->label('Exporter Excel')
+                    ->icon('heroicon-o-table-cells')
+                    ->color('success')
+                    ->action(function () {
+                        return (new \App\Services\ExcelExportService())->exportPartenaires();
+                    }),
+                Tables\Actions\Action::make('export_pdf')
+                    ->label('Exporter PDF')
+                    ->icon('heroicon-o-document-text')
+                    ->color('danger')
+                    ->action(function () {
+                        $partenaires = \App\Models\Partenaire::with(['consultant', 'entiteCommerciale'])->get();
+                        $pdf = app('dompdf.wrapper');
+                        $pdf->loadView('pdf.custom-report', [
+                            'title' => 'Rapport Partenaires',
+                            'summary' => [
+                                'Total partenaires' => $partenaires->count(),
+                                'Date export' => now()->format('d/m/Y H:i'),
+                            ],
+                            'slot' => view('pdf.partenaires-table', ['partenaires' => $partenaires])
+                        ]);
+                        return $pdf->download('partenaires-' . now()->format('Y-m-d-His') . '.pdf');
+                    }),
                 Tables\Actions\Action::make('switch_view')
                     ->label('Vue Kanban')
                     ->icon('heroicon-o-squares-2x2')

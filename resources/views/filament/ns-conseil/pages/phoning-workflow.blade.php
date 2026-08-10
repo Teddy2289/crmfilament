@@ -24,14 +24,18 @@ $tentativesActuelles = $this->getTentativesAppel();
                 if (typeof window.ringoverPhone.destroy === 'function') {
                     try { window.ringoverPhone.destroy(); } catch (e) {}
                 }
-                // Masquer tous les éléments Ringover flottants résiduels
-                document.querySelectorAll('[id^="ringover"]').forEach(function(el) {
-                    if (el.id !== 'ringover-embed-phoning') {
-                        el.style.display = 'none';
-                    }
-                });
-                window.ringoverPhone = null;
             }
+
+            document.querySelectorAll('[id^="ringover"], [class*="ringover-widget-container"]').forEach(function(el) {
+                if (el.id === 'ringover-embed-phoning' || el.closest('#ringover-embed-phoning')) {
+                    return;
+                }
+                if (el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            });
+
+            window.ringoverPhone = null;
         }
 
         let ringoverInitAttempts = 0;

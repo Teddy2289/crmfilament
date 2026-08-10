@@ -128,6 +128,8 @@ class NsConseilPanelProvider extends PanelProvider
             ])
             ->authMiddleware([Authenticate::class])
             ->authGuard('web')
+            ->profile(\App\Filament\NsConseil\Pages\UserProfile::class)
+            ->passwordReset()
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications()
             ->databaseNotificationsPolling('60s')

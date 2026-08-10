@@ -425,6 +425,30 @@ class ClientResource extends Resource
                 ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('export_excel')
+                    ->label('Exporter Excel')
+                    ->icon('heroicon-o-table-cells')
+                    ->color('success')
+                    ->action(function () {
+                        return (new \App\Services\ExcelExportService())->exportClients();
+                    }),
+                Tables\Actions\Action::make('export_pdf')
+                    ->label('Exporter PDF')
+                    ->icon('heroicon-o-document-text')
+                    ->color('danger')
+                    ->action(function () {
+                        $clients = \App\Models\Client::with(['consultant', 'entiteCommerciale'])->get();
+                        $pdf = app('dompdf.wrapper');
+                        $pdf->loadView('pdf.custom-report', [
+                            'title' => 'Rapport Clients',
+                            'summary' => [
+                                'Total clients' => $clients->count(),
+                                'Date export' => now()->format('d/m/Y H:i'),
+                            ],
+                            'slot' => view('pdf.clients-table', ['clients' => $clients])
+                        ]);
+                        return $pdf->download('clients-' . now()->format('Y-m-d-His') . '.pdf');
+                    }),
                 // Tables\Actions\Action::make('switch_view')
                 //     ->label(session()->get('view_clients', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
                 //     ->icon(session()->get('view_clients', 'list') === 'kanban' ? 'heroicon-o-bars-3' : 'heroicon-o-squares-2x2')

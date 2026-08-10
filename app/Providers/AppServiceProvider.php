@@ -6,7 +6,10 @@ use App\Models\CrmSetting;
 use App\Services\Aopia\AopiaIcsService;
 use App\Services\Crm\CrmSettingsService;
 use App\Services\RingoverService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Telescope\TelescopeServiceProvider;
@@ -51,5 +54,24 @@ class AppServiceProvider extends ServiceProvider
         // Enregistrement du namespace de composants Blade pour le module Phoning.
         // Permet d'utiliser <x-phoning::queue-table>, <x-phoning::contact-panel>, etc.
         Blade::anonymousComponentPath(resource_path('views/components/phoning'), 'phoning');
+
+        // ── Rate Limiters API ───────────────────────────────────────
+        // Requêtes authentifiées : 1 000/heure par token/IP
+        RateLimiter::for('api', function (Request $request) {
+            $limit = config('api.rate_limiting.api_limit', 1000);
+
+            return Limit::perHour($limit)
+                ->by($request->user()?->id ?: $request->ip())
+                ->response(fn () => response()->json(['message' => 'Too Many Requests'], 429));
+        });
+
+        // Tentatives de connexion : 10/minute par IP
+        RateLimiter::for('login', function (Request $request) {
+            $limit = config('api.rate_limiting.login_limit', 10);
+
+            return Limit::perMinute($limit)
+                ->by($request->ip())
+                ->response(fn () => response()->json(['message' => 'Too Many Attempts'], 429));
+        });
     }
 }
