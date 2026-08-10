@@ -18,7 +18,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
 - [ ] 2. Implémenter l'authentification Sanctum (AuthController + AuthService)
-  - [-] 2.1 Créer `AuthService` (émission paire access/refresh, révocation, logging)
+  - [x] 2.1 Créer `AuthService` (émission paire access/refresh, révocation, logging)
     - Implémenter `issueTokenPair(User): array` — deux tokens Sanctum (`access` 24h, `refresh` 30j) avec abilities appropriées
     - Implémenter `revokeAccessToken(User): void` et `revokeAllTokens(User): void`
     - Consigner chaque émission, rafraîchissement et révocation dans les logs (user ID, IP, timestamp)
@@ -32,7 +32,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 4: Logout revokes the token**
     - **Validates: Requirements 2.6**
 
-  - [-] 2.4 Créer `LoginRequest` et `RefreshRequest` (validation des champs)
+  - [x] 2.4 Créer `LoginRequest` et `RefreshRequest` (validation des champs)
     - _Requirements: 2.1, 2.5_
 
   - [~] 2.5 Créer `AuthController` (login, refresh, logout, me)

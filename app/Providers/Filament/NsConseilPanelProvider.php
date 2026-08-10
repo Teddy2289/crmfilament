@@ -82,6 +82,7 @@ class NsConseilPanelProvider extends PanelProvider
 
             ])
             ->defaultThemeMode(ThemeMode::Light)
+            ->darkMode(true)
             ->navigationGroups(static::buildNavigationGroups())
             ->plugins([
                 FilamentFullCalendarPlugin::make()

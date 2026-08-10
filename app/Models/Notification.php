@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
+    // Utilise 'custom_notifications' pour éviter le conflit avec la table Laravel native 'notifications'
+    protected $table = 'custom_notifications';
+
     protected $fillable = [
         'user_id',
         'type',

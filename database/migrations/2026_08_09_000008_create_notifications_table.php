@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('notifications', function (Blueprint $table) {
+        Schema::create('custom_notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('type'); // task_due, workflow_step, mention, system
@@ -18,7 +18,7 @@ return new class extends Migration
             $table->boolean('lu')->default(false);
             $table->dateTime('lu_at')->nullable();
             $table->timestamps();
-            
+
             $table->index('user_id');
             $table->index('lu');
             $table->index('type');
@@ -27,6 +27,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('custom_notifications');
     }
 };
