@@ -1,0 +1,1 @@
+﻿UPDATE rendez_vous SET statut='Planifié' WHERE statut NOT IN ('Planifié','Réalisé','Annulé','Décalé'); SELECT id, statut, HEX(statut) AS hex_statut FROM rendez_vous WHERE statut NOT IN ('Planifié','Réalisé','Annulé','Décalé');

@@ -3,6 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\User;
+use Illuminate\Encryption\Encrypter;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -126,6 +127,10 @@ class UserTest extends TestCase
     #[Test]
     public function google_connecte_attribute(): void
     {
+        // Bootstrap a minimal encrypter so encrypted:array cast works
+        $encrypter = new Encrypter(str_repeat('a', 32), 'AES-256-CBC');
+        \Illuminate\Database\Eloquent\Model::encryptUsing($encrypter);
+
         $user = new User;
 
         $user->google_token = null;
@@ -133,6 +138,9 @@ class UserTest extends TestCase
 
         $user->google_token = ['access_token' => 'abc'];
         $this->assertTrue($user->google_connecte);
+
+        // Reset encrypter to avoid side-effects
+        \Illuminate\Database\Eloquent\Model::encryptUsing(null);
     }
 
     #[Test]

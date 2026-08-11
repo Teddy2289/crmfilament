@@ -227,7 +227,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: `date_fin` antérieure à `date_debut` → 422
     - _Requirements: 9.2, 9.4, 9.5_
 
-- [-] 10. Checkpoint — Vérifier que tous les tests de ressources passent
+- [ ] 10. Checkpoint — Vérifier que tous les tests de ressources passent
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 11. Implémenter le contrôleur CampagnesPhoning + endpoint Appel

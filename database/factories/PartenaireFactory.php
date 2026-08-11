@@ -29,13 +29,9 @@ class PartenaireFactory extends Factory
             'adresse' => fake()->streetAddress(),
             'code_postal' => fake()->postcode(),
             'ville' => fake()->city(),
-            'departement' => (string) array_key_first(fake()->department()),
-            'region' => fake()->region(),
+            'departement' => fake()->numerify('##'),
             'telephone' => fake()->phoneNumber(),
             'email' => fake()->unique()->safeEmail(),
-            'site_web' => fake()->url(),
-            'commercial_id' => \App\Models\User::factory(),
-            'actif' => true,
         ];
     }
 }
