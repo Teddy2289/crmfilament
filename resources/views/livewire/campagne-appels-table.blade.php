@@ -7,12 +7,12 @@
     <div class="grid gap-4 xl:grid-cols-3">
         <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h3 class="text-sm font-semibold text-slate-900">Filtres</h3>
-            <p class="mt-1 text-xs text-slate-500">Affinez la liste des appels par téléprospecteur, date ou recherche.</p>
+            <p class="mt-1 text-xs text-slate-500">Affinez la liste des appels par téléprospecteur, agent, statut ou période.</p>
 
             <div class="mt-5 space-y-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Téléprospecteur</label>
-                    <select id="filter-teleprospecteur-{{ $slug }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <select wire:model="teleprospecteurId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="">Tous</option>
                         @foreach($this->teleprospecteurs as $id => $label)
                             <option value="{{ $id }}">{{ $label }}</option>
@@ -21,27 +21,47 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-medium text-gray-700">Agent</label>
+                    <select wire:model="agentId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">Tous</option>
+                        @foreach($this->agentOptions as $id => $label)
+                            <option value="{{ $id }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-700">Statut</label>
+                    <select wire:model="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">Tous</option>
+                        @foreach($this->statusOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
                     <label class="block text-xs font-medium text-gray-700">Recherche</label>
-                    <input id="filter-search-{{ $slug }}" type="search" placeholder="Contact, téléphone ou téléprospecteur" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    <input wire:model.debounce.300ms="search" type="search" placeholder="Contact, téléphone ou recherche..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-700">Date depuis</label>
-                        <input id="filter-date-from-{{ $slug }}" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                        <input wire:model="dateFrom" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-700">Date jusqu'à</label>
-                        <input id="filter-date-until-{{ $slug }}" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                        <input wire:model="dateUntil" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
                     </div>
                 </div>
 
                 <div class="grid gap-2 pt-2 sm:grid-cols-[1fr_auto]">
                     <div class="flex items-center gap-2">
-                        <button id="reset-filters-{{ $slug }}" type="button" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50">Réinitialiser</button>
-                        <button id="export-appels-{{ $slug }}" type="button" title="Téléchargement CSV avec séparateur ;" class="inline-flex items-center rounded-md border border-indigo-300 bg-indigo-600 px-3 py-2 text-xs font-medium text-white shadow-sm hover:bg-indigo-700">Télécharger le CSV</button>
+                        <button wire:click="resetFilters" type="button" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50">Réinitialiser</button>
+                        <button wire:click.prevent="downloadCsv" type="button" title="Téléchargement CSV avec séparateur ;" class="inline-flex items-center rounded-md border border-indigo-300 bg-indigo-600 px-3 py-2 text-xs font-medium text-white shadow-sm hover:bg-indigo-700">Télécharger le CSV</button>
                     </div>
-                    <span class="text-xs text-gray-500"><span id="filtered-count-{{ $slug }}">{{ $appels->count() }}</span> appel(s)</span>
+                    <span class="text-xs text-gray-500">{{ $appels->count() }} appel(s)</span>
                 </div>
             </div>
         </div>
@@ -116,9 +136,6 @@
                             <td colspan="5" class="px-4 py-10 text-center text-sm text-slate-500">Aucun appel pour ce statut.</td>
                         </tr>
                     @endforelse
-                    <tr id="no-results-row-{{ $slug }}" class="hidden">
-                        <td colspan="5" class="px-4 py-10 text-center text-sm text-slate-500">Aucune ligne ne correspond aux filtres sélectionnés.</td>
-                    </tr>
                 </tbody>
             </table>
         </div>
@@ -130,217 +147,4 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const container = document.getElementById('{{ $wrapperId }}');
-            if (! container) {
-                return;
-            }
 
-            const filters = {
-                teleprospecteur: container.querySelector('#filter-teleprospecteur-{{ $slug }}'),
-                dateFrom: container.querySelector('#filter-date-from-{{ $slug }}'),
-                dateUntil: container.querySelector('#filter-date-until-{{ $slug }}'),
-                search: container.querySelector('#filter-search-{{ $slug }}'),
-            };
-            const table = container.querySelector('#appels-table-{{ $slug }}');
-            const rows = Array.from(table.querySelectorAll('tbody tr[data-contact]'));
-            const filteredCount = container.querySelector('#filtered-count-{{ $slug }}');
-            const displayedCount = container.querySelector('#displayed-count-{{ $slug }}');
-            const noResultsRow = container.querySelector('#no-results-row-{{ $slug }}');
-            const exportButton = container.querySelector('#export-appels-{{ $slug }}');
-            const resetButton = container.querySelector('#reset-filters-{{ $slug }}');
-
-            const normalize = (value) => String(value || '').trim().toLowerCase();
-            // Parse date-only strings as local dates (avoid timezone/UTC inconsistencies)
-            const parseDate = (value) => value ? new Date(value + 'T00:00') : null;
-            let sortKey = null;
-            let sortDirection = 'asc';
-
-            const updateCounts = (visibleRows) => {
-                if (filteredCount) {
-                    filteredCount.textContent = `${visibleRows}`;
-                }
-                if (displayedCount) {
-                    displayedCount.textContent = `${visibleRows}`;
-                }
-            };
-
-            const compareRowValues = (a, b, key) => {
-                if (key === 'date') {
-                    const aDate = parseDate(a.dataset.date);
-                    const bDate = parseDate(b.dataset.date);
-                    if (!aDate && !bDate) return 0;
-                    if (!aDate) return -1;
-                    if (!bDate) return 1;
-                    return aDate - bDate;
-                }
-
-                const left = normalize(a.dataset[key]);
-                const right = normalize(b.dataset[key]);
-
-                if (left < right) return -1;
-                if (left > right) return 1;
-                return 0;
-            };
-
-            const sortVisibleRows = () => {
-                if (!sortKey) {
-                    return;
-                }
-
-                const visibleRows = rows
-                    .filter((row) => row.style.display !== 'none')
-                    .sort((a, b) => {
-                        const diff = compareRowValues(a, b, sortKey);
-                        return sortDirection === 'asc' ? diff : -diff;
-                    });
-
-                const tbody = table.querySelector('tbody');
-                if (!tbody) {
-                    return;
-                }
-
-                visibleRows.forEach((row) => tbody.appendChild(row));
-            };
-
-            const updateSortIndicators = () => {
-                const headerCells = container.querySelectorAll('th[data-sort]');
-
-                headerCells.forEach((header) => {
-                    const indicator = header.querySelector('.sort-indicator');
-                    const key = header.dataset.sort;
-
-                    if (!indicator) {
-                        return;
-                    }
-
-                    if (key === sortKey) {
-                        indicator.textContent = sortDirection === 'asc' ? '↑' : '↓';
-                        header.classList.add('text-slate-900');
-                    } else {
-                        indicator.textContent = '↕';
-                        header.classList.remove('text-slate-900');
-                    }
-                });
-            };
-
-            const setSortKey = (key) => {
-                if (sortKey === key) {
-                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortKey = key;
-                    sortDirection = 'asc';
-                }
-
-                updateSortIndicators();
-                applyFilters();
-            };
-
-            const headerCells = container.querySelectorAll('th[data-sort]');
-            headerCells.forEach((header) => {
-                header.addEventListener('click', () => {
-                    const key = header.dataset.sort;
-                    if (key) {
-                        setSortKey(key);
-                    }
-                });
-            });
-
-            const applyFilters = () => {
-                const teleprospecteur = normalize(filters.teleprospecteur?.value);
-                const dateFromRaw = parseDate(filters.dateFrom?.value);
-                const dateUntilRaw = parseDate(filters.dateUntil?.value);
-
-                // Make dateFrom start-of-day and dateUntil end-of-day to be inclusive
-                const dateFrom = dateFromRaw ? new Date(dateFromRaw.getFullYear(), dateFromRaw.getMonth(), dateFromRaw.getDate(), 0, 0, 0, 0) : null;
-                const dateUntil = dateUntilRaw ? new Date(dateUntilRaw.getFullYear(), dateUntilRaw.getMonth(), dateUntilRaw.getDate(), 23, 59, 59, 999) : null;
-                const search = normalize(filters.search?.value);
-
-                let visible = 0;
-
-                rows.forEach((row) => {
-                    const rowTeleprospecteur = normalize(row.dataset.teleprospecteur);
-                    const rowDate = parseDate(row.dataset.date);
-                    const rowContact = normalize(row.dataset.contact);
-                    const rowPhone = normalize(row.dataset.phone);
-                    const rowTelepro = normalize(row.dataset.telepro);
-
-                    const matchesTeleprospecteur = !teleprospecteur || rowTeleprospecteur === teleprospecteur;
-                    const matchesDateFrom = !dateFrom || (rowDate && rowDate >= dateFrom);
-                    const matchesDateUntil = !dateUntil || (rowDate && rowDate <= dateUntil);
-                    const matchesSearch = !search || rowContact.includes(search) || rowPhone.includes(search) || rowTelepro.includes(search);
-
-                    const visibleRow = matchesTeleprospecteur && matchesDateFrom && matchesDateUntil && matchesSearch;
-                    row.style.display = visibleRow ? '' : 'none';
-
-                    if (visibleRow) {
-                        visible += 1;
-                    }
-                });
-
-                sortVisibleRows();
-
-                if (noResultsRow) {
-                    noResultsRow.classList.toggle('hidden', visible > 0);
-                }
-                updateCounts(visible);
-            };
-
-            const resetFilters = () => {
-                Object.values(filters).forEach((element) => {
-                    if (element) {
-                        element.value = '';
-                    }
-                });
-                applyFilters();
-            };
-
-            const buildCsv = () => {
-                const visibleRows = rows.filter((row) => row.style.display !== 'none');
-                const headers = ['Contact', 'Téléphone', 'Date', 'Téléprospecteur', 'Statut'];
-                const csvRows = [headers.join(';')];
-
-                visibleRows.forEach((row) => {
-                    const cells = Array.from(row.querySelectorAll('td')).map((cell) => {
-                        const text = cell.textContent.replace(/\s+/g, ' ').trim();
-                        return `"${text.replace(/"/g, '""')}"`;
-                    });
-                    csvRows.push(cells.join(';'));
-                });
-
-                return csvRows.join('\n');
-            };
-
-            const downloadCsv = () => {
-                const csv = buildCsv();
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement('a');
-                const url = URL.createObjectURL(blob);
-                link.setAttribute('href', url);
-                    link.setAttribute('download', `appels-{{ $campagneId }}-{{ $slug }}.csv`);
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                };
-
-                Object.values(filters).forEach((element) => {
-                    if (element) {
-                        element.addEventListener('change', applyFilters);
-                        element.addEventListener('input', applyFilters);
-                    }
-                });
-
-                if (resetButton) {
-                    resetButton.addEventListener('click', resetFilters);
-                }
-
-                if (exportButton) {
-                    exportButton.addEventListener('click', downloadCsv);
-                }
-
-                applyFilters();
-            });
-        </script>
