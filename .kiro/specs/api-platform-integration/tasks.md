@@ -81,7 +81,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 8: QF validation respects CrmProfile gate**
     - **Validates: Requirements 3.6**
 
-- [-] 4. Checkpoint — Vérifier que les tests d'auth et d'autorisation passent
+- [x] 4. Checkpoint — Vérifier que les tests d'auth et d'autorisation passent
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 5. Créer l'infrastructure partagée des contrôleurs et ressources
@@ -176,24 +176,24 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: filtre `search` partiel insensible à la casse pour Clients
     - _Requirements: 5.2, 5.3, 6.2, 6.3, 6.4_
 
-- [ ] 8. Implémenter les contrôleurs Tickets, Réclamations, Devis, BonsDeCommande
-  - [~] 8.1 Créer `TicketResource`, `StoreTicketRequest`, `UpdateTicketRequest`, `TicketController`
+- [x] 8. Implémenter les contrôleurs Tickets, Réclamations, Devis, BonsDeCommande
+  - [x] 8.1 Créer `TicketResource`, `StoreTicketRequest`, `UpdateTicketRequest`, `TicketController`
     - `index` : filtre `statut` (`TicketStatut`)
     - `store` : associer `created_by` à l'utilisateur authentifié
     - `show`, `update`
     - _Requirements: 7.1, 7.3, 7.4_
 
-  - [~] 8.2 Créer `ReclamationResource`, `StoreReclamationRequest`, `UpdateReclamationRequest`, `ReclamationController`
+  - [x] 8.2 Créer `ReclamationResource`, `StoreReclamationRequest`, `UpdateReclamationRequest`, `ReclamationController`
     - Vérification du rôle sur la mise à jour du statut (403 si non autorisé)
     - _Requirements: 7.2, 7.5_
 
-  - [~] 8.3 Créer `DevisResource` et `DevisController` (lecture seule)
+  - [x] 8.3 Créer `DevisResource` et `DevisController` (lecture seule)
     - `index` : filtres `statut` (`StatutDevis`), `partenaire_id`
     - `show`
     - Lecture seule pour les rôles `Téléprospecteur` et `Opérateur N1`
     - _Requirements: 8.1, 8.3, 8.4, 8.5_
 
-  - [~] 8.4 Créer `BonDeCommandeResource` et `BonDeCommandeController` (lecture seule)
+  - [x] 8.4 Créer `BonDeCommandeResource` et `BonDeCommandeController` (lecture seule)
     - `index`, `show`
     - _Requirements: 8.2_
 
@@ -203,12 +203,12 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: filtres Devis (`statut`, `partenaire_id`)
     - _Requirements: 7.4, 7.5, 8.3, 8.4_
 
-- [ ] 9. Implémenter le contrôleur RendezVous
-  - [~] 9.1 Créer `RendezVousResource`, `StoreRendezVousRequest`, `UpdateRendezVousRequest`
+- [x] 9. Implémenter le contrôleur RendezVous
+  - [x] 9.1 Créer `RendezVousResource`, `StoreRendezVousRequest`, `UpdateRendezVousRequest`
     - `StoreRendezVousRequest` et `UpdateRendezVousRequest` : règle de validation `date_fin after:date_debut`
     - _Requirements: 9.5_
 
-  - [~] 9.2 Créer `RendezVousController`
+  - [x] 9.2 Créer `RendezVousController`
     - `index` : retourner uniquement les RendezVous de l'utilisateur authentifié (sauf rôle à visibilité élargie) ; filtres `date_debut` et `date_fin` (bornes incluses)
     - `show`, `store` (201 + ressource créée), `update`
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
@@ -231,7 +231,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 11. Implémenter le contrôleur CampagnesPhoning + endpoint Appel
-  - [~] 11.1 Créer `CampagnePhoningResource` et `CampagnePhoningController`
+  - [x] 11.1 Créer `CampagnePhoningResource` et `CampagnePhoningController`
     - `index`, `show`
     - `prospects` : liste paginée des Prospects de la campagne, triée par priorité de phoning ; lecture seule si campagne `archivée`
     - _Requirements: 10.1, 10.2, 10.5_
@@ -258,7 +258,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 18: Rate limit headers present on authenticated responses**
     - **Validates: Requirements 14.4**
 
-  - [~] 12.3 Créer `Admin\UserTokenController` (révocation de tous les tokens d'un utilisateur)
+  - [x] 12.3 Créer `Admin\UserTokenController` (révocation de tous les tokens d'un utilisateur)
     - `DELETE /api/v1/admin/users/{user}/tokens` protégé par le middleware de rôle `super_admin|administrateur`
     - _Requirements: 15.3_
 
@@ -281,8 +281,8 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Retourner 401 avec code `refresh_token_invalid` si le refresh token est révoqué ou expiré
     - _Requirements: 2.4, 15.2_
 
-- [ ] 14. Configurer la documentation OpenAPI (dedoc/scramble)
-  - [~] 14.1 Publier et configurer `config/scramble.php`
+- [x] 14. Configurer la documentation OpenAPI (dedoc/scramble)
+  - [x] 14.1 Publier et configurer `config/scramble.php`
     - Pointer sur `api/v1`, définir titre et version
     - Bloquer l'accès en production (403)
     - _Requirements: 13.1, 13.5_
