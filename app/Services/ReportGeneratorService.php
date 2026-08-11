@@ -89,4 +89,70 @@ class ReportGeneratorService
             'stats' => $stats,
         ];
     }
+
+    public function getDetailedPeriodStats($startDate, $endDate): array
+    {
+        return [
+            'prospects' => [
+                'total' => Prospect::whereBetween('created_at', [$startDate, $endDate])->count(),
+                'converted' => Prospect::whereBetween('created_at', [$startDate, $endDate])
+                    ->whereHas('client')
+                    ->count(),
+                'conversion_rate' => $this->getConversionRate('prospect', $startDate, $endDate),
+            ],
+            'clients' => [
+                'total' => Client::whereBetween('created_at', [$startDate, $endDate])->count(),
+                'active' => Client::whereBetween('created_at', [$startDate, $endDate])
+                    ->where('statut', 'actif')
+                    ->count(),
+            ],
+            'opportunites' => [
+                'total' => Opportunite::whereBetween('created_at', [$startDate, $endDate])->count(),
+                'won' => Opportunite::whereBetween('created_at', [$startDate, $endDate])
+                    ->where('statut', 'gagnee')
+                    ->count(),
+                'lost' => Opportunite::whereBetween('created_at', [$startDate, $endDate])
+                    ->where('statut', 'perdue')
+                    ->count(),
+                'win_rate' => $this->getWinRate($startDate, $endDate),
+            ],
+            'tasks' => [
+                'total' => \App\Models\Task::whereBetween('created_at', [$startDate, $endDate])->count(),
+                'completed' => \App\Models\Task::whereBetween('created_at', [$startDate, $endDate])
+                    ->where('statut', 'terminee')
+                    ->count(),
+                'overdue' => \App\Models\Task::where('date_echeance', '<', now())
+                    ->whereNotIn('statut', ['terminee', 'annulee'])
+                    ->count(),
+            ],
+        ];
+    }
+
+    private function getConversionRate($type, $startDate, $endDate): float
+    {
+        $total = Prospect::whereBetween('created_at', [$startDate, $endDate])->count();
+        $converted = Prospect::whereBetween('created_at', [$startDate, $endDate])
+            ->whereHas('client')
+            ->count();
+
+        if ($total === 0) {
+            return 0;
+        }
+
+        return ($converted / $total) * 100;
+    }
+
+    private function getWinRate($startDate, $endDate): float
+    {
+        $total = Opportunite::whereBetween('created_at', [$startDate, $endDate])->count();
+        $won = Opportunite::whereBetween('created_at', [$startDate, $endDate])
+            ->where('statut', 'gagnee')
+            ->count();
+
+        if ($total === 0) {
+            return 0;
+        }
+
+        return ($won / $total) * 100;
+    }
 }

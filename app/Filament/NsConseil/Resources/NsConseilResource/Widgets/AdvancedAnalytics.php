@@ -2,10 +2,9 @@
 
 namespace App\Filament\NsConseil\Resources\NsConseilResource\Widgets;
 
-use App\Services\AnalyticsService;
+use App\Services\ReportGeneratorService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\Auth;
 
 class AdvancedAnalytics extends BaseWidget
 {
@@ -17,11 +16,11 @@ class AdvancedAnalytics extends BaseWidget
 
     protected function getStats(): array
     {
-        $analyticsService = app(AnalyticsService::class);
+        $reportService = app(ReportGeneratorService::class);
         $startDate = now()->startOfMonth();
         $endDate = now()->endOfMonth();
 
-        $stats = $analyticsService->getDetailedPeriodStats($startDate, $endDate);
+        $stats = $reportService->getDetailedPeriodStats($startDate, $endDate);
 
         return [
             Stat::make('Prospects du mois', $stats['prospects']['total'])

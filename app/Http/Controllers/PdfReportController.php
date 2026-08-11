@@ -2,40 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\PdfReportService;
+use App\Services\PdfExportService;
 use Illuminate\Http\Request;
 
 class PdfReportController extends Controller
 {
-    protected $pdfReportService;
+    protected $pdfExportService;
 
-    public function __construct(PdfReportService $pdfReportService)
+    public function __construct(PdfExportService $pdfExportService)
     {
-        $this->pdfReportService = $pdfReportService;
+        $this->pdfExportService = $pdfExportService;
     }
 
     public function prospectReport($id)
     {
         $prospect = \App\Models\Prospect::findOrFail($id);
-        return $this->pdfReportService->generateProspectReport($prospect);
+        return $this->pdfExportService->generateFromView('pdf.prospect-report', [
+            'prospect' => $prospect,
+            'date' => now()->format('d/m/Y'),
+        ], "prospect-{$prospect->id}-report.pdf");
     }
 
     public function clientReport($id)
     {
         $client = \App\Models\Client::findOrFail($id);
-        return $this->pdfReportService->generateClientReport($client);
+        return $this->pdfExportService->generateFromView('pdf.client-report', [
+            'client' => $client,
+            'date' => now()->format('d/m/Y'),
+        ], "client-{$client->id}-report.pdf");
     }
 
     public function partenaireReport($id)
     {
         $partenaire = \App\Models\Partenaire::findOrFail($id);
-        return $this->pdfReportService->generatePartenaireReport($partenaire);
+        return $this->pdfExportService->generateFromView('pdf.partenaire-report', [
+            'partenaire' => $partenaire,
+            'date' => now()->format('d/m/Y'),
+        ], "partenaire-{$partenaire->id}-report.pdf");
     }
 
     public function dossierFormationReport($id)
     {
         $dossier = \App\Models\DossierFormation::findOrFail($id);
-        return $this->pdfReportService->generateDossierFormationReport($dossier);
+        return $this->pdfExportService->generateFromView('pdf.dossier-formation-report', [
+            'dossier' => $dossier,
+            'date' => now()->format('d/m/Y'),
+        ], "dossier-{$dossier->id}-report.pdf");
     }
 
     public function activitiesReport(Request $request)
@@ -44,7 +56,21 @@ class PdfReportController extends Controller
         $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
         $userId = $request->input('user_id');
 
-        return $this->pdfReportService->generateActivitiesReport($startDate, $endDate, $userId);
+        $query = \App\Models\ActiviteVente::query()
+            ->whereBetween('derniere_vente', [$startDate, $endDate]);
+        
+        if ($userId) {
+            $query->where('consultant_id', $userId);
+        }
+
+        $activities = $query->get();
+
+        return $this->pdfExportService->generateFromView('pdf.activities-report', [
+            'activities' => $activities,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'date' => now()->format('d/m/Y'),
+        ], "activities-report-{$startDate}-{$endDate}.pdf");
     }
 
     public function customReport(Request $request)
@@ -53,6 +79,6 @@ class PdfReportController extends Controller
         $data = $request->input('data', []);
         $filename = $request->input('filename', 'custom-report.pdf');
 
-        return $this->pdfReportService->generateCustomReport($view, $data, $filename);
+        return $this->pdfExportService->generateFromView($view, $data, $filename);
     }
 }
