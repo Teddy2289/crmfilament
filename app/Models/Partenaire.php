@@ -7,6 +7,7 @@ use App\Enums\OrganizationType;
 use App\Traits\HasDepartementLabel;
 use App\Traits\HasModelValidation;
 use App\Traits\HasInputSanitization;
+use App\Traits\HasMorphRelations;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,7 +15,7 @@ use Illuminate\Support\Str;
 
 class Partenaire extends Model
 {
-    use HasFactory, SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization;
+    use HasFactory, SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization, HasMorphRelations;
 
     protected static function boot()
     {
@@ -232,9 +233,14 @@ class Partenaire extends Model
     }
 
     /**
-     * @var array<string, array<int, static>>|null
+     * Cache key for Redis nomenclature index
      */
-    private static ?array $nomenclatureIndex = null;
+    private const NOMENCLATURE_CACHE_KEY = 'partenaire_nomenclature_index';
+
+    /**
+     * Cache duration in hours
+     */
+    private const NOMENCLATURE_CACHE_DURATION = 6;
 
     /**
      * Retrouve un partenaire à partir d'un nom importé (nomenclature libre,
@@ -276,12 +282,13 @@ class Partenaire extends Model
     }
 
     /**
-     * Invalide l'index en mémoire (utile après création/modification de
+     * Invalide l'index en cache (utile après création/modification de
      * partenaires dans le même run, ex: import en cours).
      */
     public static function oublierIndexNomenclature(): void
     {
         self::$nomenclatureIndex = null;
+        \Illuminate\Support\Facades\Cache::forget(self::NOMENCLATURE_CACHE_KEY);
     }
 
     /**
@@ -289,6 +296,13 @@ class Partenaire extends Model
      */
     protected static function nomenclatureIndex(): array
     {
+        // Try Redis cache first
+        $cachedIndex = \Illuminate\Support\Facades\Cache::get(self::NOMENCLATURE_CACHE_KEY);
+        if ($cachedIndex !== null) {
+            return $cachedIndex;
+        }
+
+        // Fallback to static property for in-memory caching
         if (self::$nomenclatureIndex !== null) {
             return self::$nomenclatureIndex;
         }
@@ -319,7 +333,16 @@ class Partenaire extends Model
                 }
             });
 
-        return self::$nomenclatureIndex = $index;
+        self::$nomenclatureIndex = $index;
+
+        // Store in Redis cache
+        \Illuminate\Support\Facades\Cache::put(
+            self::NOMENCLATURE_CACHE_KEY,
+            $index,
+            now()->addHours(self::NOMENCLATURE_CACHE_DURATION)
+        );
+
+        return $index;
     }
 
     /**
@@ -576,21 +599,6 @@ class Partenaire extends Model
     }
 
     // ✅ Relations existantes conservées ──────────────────────────────
-
-    public function appels()
-    {
-        return $this->morphMany(Appel::class, 'appelable');
-    }
-
-    public function rendezVous()
-    {
-        return $this->morphMany(RendezVous::class, 'rdvable');
-    }
-
-    public function documents()
-    {
-        return $this->morphMany(Document::class, 'documentable');
-    }
 
     public function clients()
     {

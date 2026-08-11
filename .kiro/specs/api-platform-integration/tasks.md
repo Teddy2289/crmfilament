@@ -227,7 +227,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: `date_fin` antérieure à `date_debut` → 422
     - _Requirements: 9.2, 9.4, 9.5_
 
-- [~] 10. Checkpoint — Vérifier que tous les tests de ressources passent
+- [-] 10. Checkpoint — Vérifier que tous les tests de ressources passent
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 11. Implémenter le contrôleur CampagnesPhoning + endpoint Appel
@@ -267,7 +267,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: admin révoque tous les tokens → requêtes suivantes 401
     - _Requirements: 14.2, 15.3_
 
-- [ ] 13. Implémenter le logging des événements token
+- [x] 13. Implémenter le logging des événements token
   - [x] 13.1 Ajouter le logging dans `AuthService` pour login, refresh, logout
     - Consigner user ID, adresse IP, horodatage dans les logs applicatifs
     - _Requirements: 15.4_
@@ -276,7 +276,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 19: Token events are logged**
     - **Validates: Requirements 15.4**
 
-  - [-] 13.3 Créer le middleware `EnsureTokenIsNotExpired` et l'appliquer sur les routes protégées
+  - [x] 13.3 Créer le middleware `EnsureTokenIsNotExpired` et l'appliquer sur les routes protégées
     - Retourner 401 avec code `token_expired` si le token d'accès est expiré
     - Retourner 401 avec code `refresh_token_invalid` si le refresh token est révoqué ou expiré
     - _Requirements: 2.4, 15.2_
@@ -292,14 +292,14 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: `GET /api/documentation` → 403 en environnement production simulé
     - _Requirements: 13.1, 13.5_
 
-- [ ] 15. Implémenter le support GraphQL optionnel (nuwave/lighthouse)
-  - [ ] 15.1 Installer `nuwave/lighthouse` et créer `graphql/schema.graphql`
+- [x] 15. Implémenter le support GraphQL optionnel (nuwave/lighthouse)
+  - [x] 15.1 Installer `nuwave/lighthouse` et créer `graphql/schema.graphql`
     - Conditionner l'activation sur `config('api.graphql_enabled')`
     - Exposer `/api/graphql` et `/api/graphql-playground` (non-production uniquement)
     - Définir les types `Prospect`, `Partenaire` et les queries paginées avec `@paginate @guard`
     - _Requirements: 16.1, 16.2_
 
-  - [~] 15.2 Créer le middleware Lighthouse appliquant les permissions Spatie aux requêtes GraphQL
+  - [x] 15.2 Créer le middleware Lighthouse appliquant les permissions Spatie aux requêtes GraphQL
     - Appliquer les mêmes règles d'autorisation qu'en REST
     - Appliquer les mêmes limites de rate limiting (`throttle:api`)
     - _Requirements: 16.3, 16.4_

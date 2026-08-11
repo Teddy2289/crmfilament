@@ -12,6 +12,8 @@ use App\Filament\Shared\Components\DuplicateWarning;
 use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Filament\Shared\Concerns\HasCustomFieldsForm;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
+use App\Traits\HasResponsiveForm;
+use App\Traits\HasResponsiveTable;
 use App\Mail\ConfirmationRdvCseMail;
 use App\Mail\InvitationAgendaResponsableMail;
 use App\Models\Prospect;
@@ -39,6 +41,8 @@ use Illuminate\Support\Facades\Mail;
 class ProspectResource extends Resource
 {
     use HasCustomFieldsForm;
+    use HasResponsiveForm;
+    use HasResponsiveTable;
     use UsesResourcePermissions;
 
     protected static ?string $model = Prospect::class;

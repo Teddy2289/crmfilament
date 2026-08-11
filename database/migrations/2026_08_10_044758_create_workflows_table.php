@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -28,6 +29,28 @@ return new class extends Migration
 
         // workflow_steps was already created in 2026_06_28_070806_create_workflow_steps_table.php
         // with a different schema. We recreate it here with the correct schema.
+        if (Schema::hasTable('workflow_instances') && Schema::hasColumn('workflow_instances', 'current_step_id')) {
+            Schema::table('workflow_instances', function (Blueprint $table) {
+                $table->dropForeign(['current_step_id']);
+            });
+
+            DB::table('workflow_instances')->whereNotNull('current_step_id')->update(['current_step_id' => null]);
+        }
+
+        if (Schema::hasTable('workflow_histories')) {
+            Schema::table('workflow_histories', function (Blueprint $table) {
+                if (Schema::hasColumn('workflow_histories', 'from_step_id')) {
+                    $table->dropForeign(['from_step_id']);
+                }
+                if (Schema::hasColumn('workflow_histories', 'to_step_id')) {
+                    $table->dropForeign(['to_step_id']);
+                }
+            });
+
+            DB::table('workflow_histories')->whereNotNull('from_step_id')->update(['from_step_id' => null]);
+            DB::table('workflow_histories')->whereNotNull('to_step_id')->update(['to_step_id' => null]);
+        }
+
         Schema::dropIfExists('workflow_steps');
         Schema::create('workflow_steps', function (Blueprint $table) {
             $table->id();
@@ -43,6 +66,23 @@ return new class extends Migration
             $table->index('workflow_id');
             $table->index('ordre');
         });
+
+        if (Schema::hasTable('workflow_instances') && Schema::hasColumn('workflow_instances', 'current_step_id')) {
+            Schema::table('workflow_instances', function (Blueprint $table) {
+                $table->foreign('current_step_id')->references('id')->on('workflow_steps')->nullOnDelete();
+            });
+        }
+
+        if (Schema::hasTable('workflow_histories')) {
+            Schema::table('workflow_histories', function (Blueprint $table) {
+                if (Schema::hasColumn('workflow_histories', 'from_step_id')) {
+                    $table->foreign('from_step_id')->references('id')->on('workflow_steps')->nullOnDelete();
+                }
+                if (Schema::hasColumn('workflow_histories', 'to_step_id')) {
+                    $table->foreign('to_step_id')->references('id')->on('workflow_steps')->nullOnDelete();
+                }
+            });
+        }
 
         Schema::create('workflow_approvals', function (Blueprint $table) {
             $table->id();

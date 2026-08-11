@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Widgets;
 use App\Enums\OrganizationStatus;
 use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Models\Partenaire;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Infolists\Infolist;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
@@ -13,6 +14,8 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class DirectionDerniersPartenairesWidget extends BaseWidget
 {
+    use WithCommonEagerLoading;
+
     protected static ?string $heading = '🤝 10 derniers partenaires signés';
 
     protected static ?int $sort = 3;
@@ -33,13 +36,15 @@ class DirectionDerniersPartenairesWidget extends BaseWidget
         return $table
             ->recordAction('voir')
             ->query(
-                Partenaire::query()
-                    ->whereIn('statut', [
-                        OrganizationStatus::SigneAccordCadre->value,
-                        OrganizationStatus::ConventionEngagement->value,
-                    ])
-                    ->latest('date_modification_statut')
-                    ->limit(10)
+                $this->loadCommonPartenaireRelations(
+                    Partenaire::query()
+                        ->whereIn('statut', [
+                            OrganizationStatus::SigneAccordCadre->value,
+                            OrganizationStatus::ConventionEngagement->value,
+                        ])
+                        ->latest('date_modification_statut')
+                        ->limit(10)
+                )
             )
             ->columns([
                 Tables\Columns\TextColumn::make('nom')

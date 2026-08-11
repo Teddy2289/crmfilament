@@ -10,6 +10,8 @@ use App\Filament\Shared\Actions\LancerAppelsAction;
 use App\Filament\Shared\Components\DuplicateWarning;
 use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Filament\Shared\Concerns\HasCustomFieldsForm;
+use App\Traits\HasResponsiveForm;
+use App\Traits\HasResponsiveTable;
 use App\Filament\Shared\RelationManagers\SentEmailsRelationManager;
 use App\Models\Consultant;
 use App\Models\Partenaire;
@@ -31,6 +33,8 @@ use Illuminate\Database\Eloquent\Builder;
 class PartenaireResource extends Resource
 {
     use HasCustomFieldsForm;
+    use HasResponsiveForm;
+    use HasResponsiveTable;
     use UsesResourcePermissions;
 
     protected static ?string $model = Partenaire::class;

@@ -5,12 +5,15 @@ namespace App\Filament\NsConseil\Widgets;
 use App\Enums\OrganizationStatus;
 use App\Filament\NsConseil\Resources\PartenaireResource;
 use App\Models\Partenaire;
+use App\Traits\WithCommonEagerLoading;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 
 class MesPartenairesRecentWidget extends BaseWidget
 {
+    use WithCommonEagerLoading;
+
     protected static ?string $heading = '🏢 Derniers partenaires modifiés';
 
     protected static ?int $sort = 4;
@@ -23,13 +26,15 @@ class MesPartenairesRecentWidget extends BaseWidget
 
         return $table
             ->query(
-                Partenaire::query()
-                    ->when(
-                        $user->hasRole('commercial'),
-                        fn ($q) => $q->where('commercial_id', $user->id)
-                    )
-                    ->orderBy('date_modification_statut', 'desc')
-                    ->limit(10)
+                $this->loadCommonPartenaireRelations(
+                    Partenaire::query()
+                        ->when(
+                            $user->hasRole('commercial'),
+                            fn ($q) => $q->where('commercial_id', $user->id)
+                        )
+                        ->orderBy('date_modification_statut', 'desc')
+                        ->limit(10)
+                )
             )
             ->columns([
                 Tables\Columns\TextColumn::make('nom')

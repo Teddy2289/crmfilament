@@ -12,7 +12,7 @@ trait HasResponsiveTable
     protected function configureResponsiveTable(Table $table): Table
     {
         return $table
-            ->columns($this->getResponsiveColumns())
+            ->columns($this->getResponsiveTableColumns())
             ->defaultPaginationPageOption(25)
             ->paginated([10, 25, 50, 100]);
     }
@@ -21,7 +21,7 @@ trait HasResponsiveTable
      * Définit les colonnes avec leur visibilité responsive
      * À surcharger dans les classes filles pour personnaliser
      */
-    protected function getResponsiveColumns(): array
+    protected function getResponsiveTableColumns(): array
     {
         return [];
     }

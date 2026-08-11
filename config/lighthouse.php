@@ -19,10 +19,16 @@ return [
     'route' => [
         /*
          * The URI the endpoint responds to.
-         * Since Lighthouse registers under the `api` prefix automatically,
-         * this resolves to /api/graphql.
+         * Since Lighthouse registers its own routes independently (not inside
+         * the api route group), we use the `prefix` option to place it under /api/graphql.
          */
         'uri' => '/graphql',
+
+        /*
+         * The `prefix` key places Lighthouse's route under the given path prefix,
+         * resulting in the full URL /api/graphql.
+         */
+        'prefix' => 'api',
 
         /*
          * Lighthouse creates a named route for convenient URL generation and redirects.
@@ -44,8 +50,13 @@ return [
             // middleware, this delegates auth and permission checks to the field level.
             Nuwave\Lighthouse\Http\Middleware\AttemptAuthentication::class,
 
-            // Apply the same rate limiting as the REST API.
+            // Apply the same rate limiting as the REST API (Requirement 16.4).
             'throttle:api',
+
+            // Apply the same Spatie permission rules as the REST API (Requirement 16.3).
+            // Checks authentication and baseline read permissions at the HTTP level.
+            // Fine-grained field-level auth is handled by @guard directives in the schema.
+            \App\Http\Middleware\GraphQL\ApplySpatiePermissions::class,
         ],
 
         /*

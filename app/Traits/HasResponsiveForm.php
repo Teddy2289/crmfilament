@@ -10,7 +10,7 @@ trait HasResponsiveForm
     protected function configureResponsiveForm(): array
     {
         return [
-            'columns' => $this->getResponsiveColumns(),
+            'columns' => $this->getResponsiveFormColumns(),
             'grid' => $this->getResponsiveGrid(),
         ];
     }
@@ -18,7 +18,7 @@ trait HasResponsiveForm
     /**
      * Définit le nombre de colonnes selon la taille d'écran
      */
-    protected function getResponsiveColumns(): int|array
+    protected function getResponsiveFormColumns(): int|array
     {
         return [
             'sm' => 1,
@@ -51,7 +51,7 @@ trait HasResponsiveForm
     {
         return \Filament\Forms\Components\Section::make($heading)
             ->icon($icon)
-            ->columns($this->getResponsiveColumns())
+            ->columns($this->getResponsiveFormColumns())
             ->schema($schema);
     }
 
@@ -61,6 +61,6 @@ trait HasResponsiveForm
     protected function makeResponsiveGroup(array $schema): \Filament\Forms\Components\Group
     {
         return \Filament\Forms\Components\Group::make($schema)
-            ->columns($this->getResponsiveColumns());
+            ->columns($this->getResponsiveFormColumns());
     }
 }

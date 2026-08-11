@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use App\Enums\OrganizationStatus;
-use App\Enums\OrganizationType;
+use App\Mail\ConfirmationRdvCseMail;
+use App\Mail\InvitationAgendaResponsableMail;
+use App\Services\ProspectConversionService;
 use App\Enums\ProspectStatut;
 use App\Traits\HasDepartementLabel;
 use App\Traits\HasModelValidation;
 use App\Traits\HasInputSanitization;
+use App\Traits\HasMorphRelations;
 use Database\Factories\ProspectFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 
 class Prospect extends Model
 {
-    use HasFactory, SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization;
+    use HasFactory, SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization, HasMorphRelations;
 
     protected $table = 'prospects';
 
@@ -787,16 +789,23 @@ class Prospect extends Model
     }
 
     /**
-     * Convertit un Prospect en Partenaire.
+     * Convertit ce prospect en partenaire.
      *
-     * Règle actuelle (implémentation):
-     * - Le prospect doit être qualifié (statut QF) et validé par un responsable d'équipe
-     * - Le partenaire créé a le statut "Signé accord cadre" (OrganizationStatus::SigneAccordCadre)
-     * - Les contacts (dirigeant, CSE, syndicat) sont automatiquement migrés vers ContactPartenaire
+     * Conditions requises (CDC §6) :
+     * - Statut QF (RDV qualifié)
+     * - Validé par un TL (qf_valide = true)
+     * - Pas déjà converti (converti_partenaire_id null)
      *
-     * Note CDC vs Implémentation:
-     * - CDC §4.4: "Conversion Prospect → Partenaire : responsable d'équipe uniquement | Statut = QF validé"
-     * - CDC mentionne également "Convention signée" comme condition ; la conversion crée donc
+     * Le partenaire est créé avec le statut "Signé accord cadre" car
+     * la conversion marque la signature effective de la convention.
+     *
+     * Les contacts sont migrés :
+     * - Dirigeant → ContactPartenaire (principal, décisionnaire)
+     * - Secrétaire CSE → ContactPartenaire
+     * - Trésorier CSE → ContactPartenaire
+     * - Responsable syndical → ContactPartenaire
+     *
+     * CDC mentionne également "Convention signée" comme condition ; la conversion crée donc
      *   directement le partenaire au statut "Signé accord cadre"
      *
      * @throws \Exception Si le prospect n'est pas qualifié (QF)
@@ -804,109 +813,7 @@ class Prospect extends Model
      */
     public function convertirEnPartenaire(): ?Partenaire
     {
-        if (! $this->est_convertible_en_partenaire) {
-            throw new \Exception('Seuls les prospects QF validés et non déjà convertis peuvent être convertis en partenaire.');
-        }
-
-        return DB::transaction(function (): Partenaire {
-            $partenaire = Partenaire::create([
-                // Infos de base
-                'nom' => $this->nom,
-                'type' => $this->type_pressenti ?? OrganizationType::EntrepriseDirecte->value,
-                'siret' => $this->siret,
-                'telephone' => $this->telephone,
-                'email' => $this->email,
-                'adresse' => $this->adresse,
-                'code_postal' => $this->code_postal,
-                'ville' => $this->ville,
-                'departement' => $this->departement,
-                'secteur_activite' => $this->secteur_activite,
-                'nb_salaries' => $this->nb_salaries,
-                'chiffre_affaires' => $this->chiffre_affaires,
-                'commercial_id' => $this->commercial_id,
-                'statut' => OrganizationStatus::SigneAccordCadre,
-                'prospect_id' => $this->id,
-                'notes' => "Converti depuis prospect #{$this->id}\n{$this->description}",
-            ]);
-
-            // Migrer le dirigeant vers ContactPartenaire
-            if ($this->dirigeant_nom || $this->dirigeant_prenom) {
-                ContactPartenaire::create([
-                    'partenaire_id' => $partenaire->id,
-                    'civilite' => 'M.',
-                    'nom' => $this->dirigeant_nom,
-                    'prenom' => $this->dirigeant_prenom,
-                    'fonction' => $this->dirigeant_fonction,
-                    'email' => $this->dirigeant_email,
-                    'telephone_direct' => $this->dirigeant_telephone,
-                    'est_principal' => true,
-                    'est_decisionnaire' => true,
-                    'niveau_influence' => 5,
-                    'notes' => 'Migré depuis prospect (dirigeant)',
-                ]);
-            }
-
-            // Migrer le secrétaire CSE vers ContactPartenaire
-            if ($this->cse_secretaire_nom || $this->cse_secretaire_prenom) {
-                ContactPartenaire::create([
-                    'partenaire_id' => $partenaire->id,
-                    'civilite' => 'Mme',
-                    'nom' => $this->cse_secretaire_nom,
-                    'prenom' => $this->cse_secretaire_prenom,
-                    'fonction' => 'Secrétaire CSE',
-                    'email' => $this->cse_secretaire_email_pro,
-                    'email_perso' => $this->cse_secretaire_email_perso,
-                    'telephone_direct' => $this->cse_secretaire_tel_direct,
-                    'telephone_perso' => $this->cse_secretaire_tel_perso,
-                    'est_principal' => false,
-                    'notes' => 'Migré depuis prospect (secrétaire CSE)',
-                ]);
-            }
-
-            // Migrer le trésorier CSE vers ContactPartenaire
-            if ($this->cse_tresorier_nom || $this->cse_tresorier_prenom) {
-                ContactPartenaire::create([
-                    'partenaire_id' => $partenaire->id,
-                    'civilite' => 'M.',
-                    'nom' => $this->cse_tresorier_nom,
-                    'prenom' => $this->cse_tresorier_prenom,
-                    'fonction' => 'Trésorier CSE',
-                    'email' => $this->cse_tresorier_email_pro,
-                    'email_perso' => $this->cse_tresorier_email_perso,
-                    'telephone_direct' => $this->cse_tresorier_tel_direct,
-                    'telephone_perso' => $this->cse_tresorier_tel_perso,
-                    'est_principal' => false,
-                    'notes' => 'Migré depuis prospect (trésorier CSE)',
-                ]);
-            }
-
-            // Migrer le responsable syndical vers ContactPartenaire
-            if ($this->syndicat_responsable_nom || $this->syndicat_responsable_prenom) {
-                ContactPartenaire::create([
-                    'partenaire_id' => $partenaire->id,
-                    'civilite' => 'M.',
-                    'nom' => $this->syndicat_responsable_nom,
-                    'prenom' => $this->syndicat_responsable_prenom,
-                    'fonction' => $this->syndicat_responsable_fonction ?: 'Délégué syndical',
-                    'nom_syndicat' => $this->syndicat_appartenance,
-                    'email' => $this->syndicat_email_pro,
-                    'email_perso' => $this->syndicat_email_perso,
-                    'telephone_direct' => $this->syndicat_tel_direct,
-                    'telephone_perso' => $this->syndicat_tel_perso,
-                    'est_principal' => false,
-                    'notes' => 'Migré depuis prospect (responsable syndical)',
-                ]);
-            }
-
-            $this->update([
-                'converti_partenaire_id' => $partenaire->id,
-                'description' => $this->description."\n[Conversion] Partenaire créé le ".now()->format('d/m/Y H:i'),
-            ]);
-
-            $this->delete();
-
-            return $partenaire;
-        });
+        return app(ProspectConversionService::class)->convertProspectToPartenaire($this);
     }
 
     // ── Relations ────────────────────────────────────────────────────
@@ -923,21 +830,6 @@ class Prospect extends Model
     public function validePar()
     {
         return $this->belongsTo(User::class, 'valide_par');
-    }
-
-    public function rendezVous()
-    {
-        return $this->morphMany(RendezVous::class, 'rdvable');
-    }
-
-    public function appels()
-    {
-        return $this->morphMany(Appel::class, 'appelable');
-    }
-
-    public function documents()
-    {
-        return $this->morphMany(Document::class, 'documentable');
     }
 
     public function opportunite()

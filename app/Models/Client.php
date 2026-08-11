@@ -5,13 +5,14 @@ namespace App\Models;
 use App\Traits\HasDepartementLabel;
 use App\Traits\HasModelValidation;
 use App\Traits\HasInputSanitization;
+use App\Traits\HasMorphRelations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Client extends Model
 {
-    use SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization;
+    use SoftDeletes, HasDepartementLabel, HasModelValidation, HasInputSanitization, HasMorphRelations;
 
     protected $table = 'clients';
 
@@ -635,16 +636,6 @@ class Client extends Model
     public function dossierFormations()
     {
         return $this->hasMany(DossierFormation::class, 'personne_id');
-    }
-
-    public function rendezVous()
-    {
-        return $this->morphMany(RendezVous::class, 'rdvable');
-    }
-
-    public function documents()
-    {
-        return $this->morphMany(Document::class, 'documentable');
     }
 
     public function historiqueModifications()

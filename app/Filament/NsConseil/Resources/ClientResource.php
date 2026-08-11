@@ -4,6 +4,8 @@ namespace App\Filament\NsConseil\Resources;
 
 use App\Filament\NsConseil\Actions\VerifierRattachementsAction;
 use App\Filament\Shared\Components\PhoneNumberInput;
+use App\Traits\HasResponsiveForm;
+use App\Traits\HasResponsiveTable;
 use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
 use App\Filament\NsConseil\Resources\ClientResource\Pages;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
@@ -31,6 +33,8 @@ use Illuminate\Database\Eloquent\Builder;
 class ClientResource extends Resource
 {
     use HasCustomFieldsForm;
+    use HasResponsiveForm;
+    use HasResponsiveTable;
     use UsesResourcePermissions;
 
     protected static ?string $model = Client::class;
