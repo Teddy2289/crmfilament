@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureSuperAdmin;
+use App\Http\Middleware\EnsureTokenIsNotExpired;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\RingoverRateLimit;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -34,6 +35,8 @@ use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Cache\RateLimiting\RateLimiter as RateLimiterService;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
@@ -94,9 +97,38 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // Ringover Rate Limiting
             'ringover.rate_limit' => RingoverRateLimit::class,
+
+            // Token expiry enforcement (placed after auth:sanctum in route groups)
+            'ensure.token.not.expired' => EnsureTokenIsNotExpired::class,
         ]);
 
         // ── Rate Limiters API ───────────────────────────────────────
+        // Les valeurs sont lues depuis config/api.php (env API_RATE_LIMIT,
+        // API_LOGIN_RATE_LIMIT) afin de pouvoir les surcharger par environnement.
+
+        app()->afterResolving(HttpKernel::class, function () {
+            $rateLimiter = app()->make(RateLimiterService::class);
+
+            $rateLimiter->for('api', function (Request $request) {
+                $limit = (int) config('api.rate_limiting.api_limit', 1000);
+
+                return Limit::perHour($limit)
+                    ->by($request->user()?->id ?: $request->ip())
+                    ->response(fn () => response()->json([
+                        'message' => 'Too Many Requests.',
+                    ], 429)->header('Retry-After', 3600));
+            });
+
+            $rateLimiter->for('login', function (Request $request) {
+                $limit = (int) config('api.rate_limiting.login_limit', 10);
+
+                return Limit::perMinute($limit)
+                    ->by($request->ip())
+                    ->response(fn () => response()->json([
+                        'message' => 'Too Many Attempts.',
+                    ], 429)->header('Retry-After', 60));
+            });
+        });
 
         // ── Redirection après auth ──────────────────────────────────
         // Filament gère ses propres redirections, mais on garde une

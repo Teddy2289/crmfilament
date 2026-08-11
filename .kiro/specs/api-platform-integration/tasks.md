@@ -230,13 +230,13 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
 - [~] 10. Checkpoint — Vérifier que tous les tests de ressources passent
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Implémenter le contrôleur CampagnesPhoning + endpoint Appel
+- [x] 11. Implémenter le contrôleur CampagnesPhoning + endpoint Appel
   - [x] 11.1 Créer `CampagnePhoningResource` et `CampagnePhoningController`
     - `index`, `show`
     - `prospects` : liste paginée des Prospects de la campagne, triée par priorité de phoning ; lecture seule si campagne `archivée`
     - _Requirements: 10.1, 10.2, 10.5_
 
-  - [~] 11.2 Créer `EnregistrerAppelRequest` et relier à `ProspectController::enregistrerAppel()`
+  - [x] 11.2 Créer `EnregistrerAppelRequest` et relier à `ProspectController::enregistrerAppel()`
     - Valider `statut_phoning_id` (existence dans `statut_phonings`) → 422 si invalide
     - Enregistrer l'appel, mettre à jour `ProspectStatut` selon les règles métier
     - _Requirements: 10.3, 10.4_
@@ -247,8 +247,8 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - Test: `statut_phoning_id` invalide → 422
     - _Requirements: 10.2, 10.4, 10.5_
 
-- [ ] 12. Configurer le Rate Limiting et les en-têtes de sécurité
-  - [~] 12.1 Configurer les rate limiters dans `bootstrap/app.php` (ou `RouteServiceProvider`)
+- [x] 12. Configurer le Rate Limiting et les en-têtes de sécurité
+  - [x] 12.1 Configurer les rate limiters dans `bootstrap/app.php` (ou `RouteServiceProvider`)
     - `api` : 1 000 requêtes/heure par token/IP → 429 avec `Retry-After`
     - `login` : 10 tentatives/minute par IP → 429 avec `Retry-After`
     - Inclure `X-RateLimit-Limit` et `X-RateLimit-Remaining` dans les réponses authentifiées
@@ -268,7 +268,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 14.2, 15.3_
 
 - [ ] 13. Implémenter le logging des événements token
-  - [~] 13.1 Ajouter le logging dans `AuthService` pour login, refresh, logout
+  - [x] 13.1 Ajouter le logging dans `AuthService` pour login, refresh, logout
     - Consigner user ID, adresse IP, horodatage dans les logs applicatifs
     - _Requirements: 15.4_
 
@@ -276,7 +276,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - **Property 19: Token events are logged**
     - **Validates: Requirements 15.4**
 
-  - [~] 13.3 Créer le middleware `EnsureTokenIsNotExpired` et l'appliquer sur les routes protégées
+  - [-] 13.3 Créer le middleware `EnsureTokenIsNotExpired` et l'appliquer sur les routes protégées
     - Retourner 401 avec code `token_expired` si le token d'accès est expiré
     - Retourner 401 avec code `refresh_token_invalid` si le refresh token est révoqué ou expiré
     - _Requirements: 2.4, 15.2_
@@ -293,7 +293,7 @@ Implémentation de la couche API REST (et optionnellement GraphQL) dans le CRM L
     - _Requirements: 13.1, 13.5_
 
 - [ ] 15. Implémenter le support GraphQL optionnel (nuwave/lighthouse)
-  - [~] 15.1 Installer `nuwave/lighthouse` et créer `graphql/schema.graphql`
+  - [ ] 15.1 Installer `nuwave/lighthouse` et créer `graphql/schema.graphql`
     - Conditionner l'activation sur `config('api.graphql_enabled')`
     - Exposer `/api/graphql` et `/api/graphql-playground` (non-production uniquement)
     - Définir les types `Prospect`, `Partenaire` et les queries paginées avec `@paginate @guard`

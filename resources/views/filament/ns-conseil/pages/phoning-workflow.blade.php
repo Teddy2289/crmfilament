@@ -416,10 +416,10 @@ $tentativesActuelles = $this->getTentativesAppel();
             :is-supervisor-mode="$isSupervisorMode"
         />
 
-        <div class="pw-layout">
+        <div class="pw-layout" style="display:grid; width:100%; grid-template-columns:minmax(0,1fr) minmax(300px,380px); gap:1.25rem; align-items:start; justify-items:stretch;">
 
             {{-- ── Colonne gauche : dossier prospect + résultat appel ──────── --}}
-            <div class="pw-col-main">
+            <div class="pw-col-main" style="min-width:0;">
 
                 {{-- Dossier prospect : onglets Contact/Interlocuteurs/Journal/RDV --}}
                 <x-phoning::dossier-prospect

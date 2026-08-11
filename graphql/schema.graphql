@@ -1,0 +1,46 @@
+"A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+type Query {
+    prospects(
+        statut: String @eq
+        search: String @scope
+        first: Int = 25
+        page: Int
+    ): ProspectPaginator! @paginate @guard(with: ["sanctum"])
+
+    prospect(id: ID! @eq): Prospect @find @guard(with: ["sanctum"])
+
+    partenaires(
+        first: Int = 25
+        page: Int
+    ): PartenairePaginator! @paginate @guard(with: ["sanctum"])
+
+    partenaire(id: ID! @eq): Partenaire @find @guard(with: ["sanctum"])
+}
+
+type Prospect {
+    id: ID!
+    nom: String!
+    statut: String!
+    siret: String
+    telephone: String
+    email: String
+    ville: String
+    departement: String
+    created_at: DateTime!
+    updated_at: DateTime!
+}
+
+type Partenaire {
+    id: ID!
+    nom: String!
+    statut: String
+    type_organisation: String
+    siret: String
+    telephone: String
+    email: String
+    ville: String
+    created_at: DateTime!
+    updated_at: DateTime!
+}

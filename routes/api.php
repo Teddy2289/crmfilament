@@ -15,6 +15,27 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+/*
+|--------------------------------------------------------------------------
+| GraphQL optionnel — activé via config('api.graphql_enabled')
+|--------------------------------------------------------------------------
+|
+| Lighthouse enregistre automatiquement la route /api/graphql via son
+| ServiceProvider (conditionné dans AppServiceProvider).
+|
+| Le playground GraphQL est exposé à /api/graphql-playground en
+| environnement non-production uniquement (Requirement 16.2).
+| Il nécessite le package mll-lab/laravel-graphql-playground ou équivalent.
+|
+*/
+if (config('api.graphql_enabled') && app()->environment() !== 'production') {
+    Route::get('graphql-playground', function () {
+        return response()->view('vendor.graphql-playground.index', [
+            'endpoint' => url('/api/graphql'),
+        ])->header('Content-Type', 'text/html');
+    })->name('graphql-playground');
+}
+
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // ── Authentification (non protégée, rate limiting strict) ──────
@@ -27,7 +48,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     )->middleware('throttle:login')->name('auth.refresh');
 
     // ── Routes protégées (Sanctum + rate limiting API) ─────────────
-    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+    // ensure.token.not.expired s'exécute après auth:sanctum et retourne
+    // des codes d'erreur explicites (token_expired / refresh_token_invalid).
+    Route::middleware(['auth:sanctum', 'throttle:api', 'ensure.token.not.expired'])->group(function () {
 
         // Auth
         Route::post('auth/logout',

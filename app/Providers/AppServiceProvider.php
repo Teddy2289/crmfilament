@@ -33,6 +33,24 @@ class AppServiceProvider extends ServiceProvider
             $this->app->register(TelescopeServiceProvider::class);
             $this->app->register(\App\Providers\TelescopeServiceProvider::class);
         }
+
+        // GraphQL optionnel — Lighthouse est dans dont-discover pour éviter
+        // qu'il ne s'enregistre automatiquement. On le charge uniquement si
+        // config('api.graphql_enabled') est vrai.
+        // Note: à ce stade du cycle d'application, les fichiers .env sont chargés
+        // mais config() est déjà disponible via le bootstrapper de configuration.
+        if (config('api.graphql_enabled')) {
+            $this->app->register(\Nuwave\Lighthouse\LighthouseServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\Async\AsyncServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\Auth\AuthServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\Bind\BindServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\Cache\CacheServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\GlobalId\GlobalIdServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\OrderBy\OrderByServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\Pagination\PaginationServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\SoftDeletes\SoftDeletesServiceProvider::class);
+            $this->app->register(\Nuwave\Lighthouse\Validation\ValidationServiceProvider::class);
+        }
     }
 
     /**

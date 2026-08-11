@@ -71,17 +71,29 @@ class ListEmails extends ListRecords
             Actions\Action::make('mailbox_switcher')
                 ->label(fn () => $this->getActiveMailboxLabel())
                 ->icon('heroicon-o-inbox')
+                ->disabled(fn () => $this->getAvailableMailboxCount() <= 1)
                 ->form([
                     Forms\Components\Select::make('mailbox_id')
                         ->label('Boîte mail active')
                         ->options(fn () => $this->getMailboxOptions())
                         ->default(fn () => session('active_mailbox_id'))
-                        ->disabled(fn () => $this->getAvailableMailboxCount() <= 1)
                         ->allowHtml()
                         ->required(),
                 ])
                 ->action(function (array $data) {
-                    app(MailboxSwitcherService::class)->switchMailbox((int) $data['mailbox_id']);
+                    $mailboxId = $data['mailbox_id'] ?? $this->mailboxSwitcherService->resolveActiveMailbox(Auth::id())?->id;
+
+                    if ($mailboxId === null) {
+                        Notification::make()
+                            ->title('Aucune boîte mail sélectionnée')
+                            ->warning()
+                            ->body('Veuillez sélectionner une boîte mail avant de changer la boîte active.')
+                            ->send();
+
+                        return;
+                    }
+
+                    app(MailboxSwitcherService::class)->switchMailbox((int) $mailboxId);
                     $this->resetPage();
                 }),
 

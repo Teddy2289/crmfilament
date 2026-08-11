@@ -96,7 +96,7 @@ class ReportGeneratorService
             'prospects' => [
                 'total' => Prospect::whereBetween('created_at', [$startDate, $endDate])->count(),
                 'converted' => Prospect::whereBetween('created_at', [$startDate, $endDate])
-                    ->whereHas('client')
+                    ->whereNotNull('converti_partenaire_id')
                     ->count(),
                 'conversion_rate' => $this->getConversionRate('prospect', $startDate, $endDate),
             ],
@@ -132,7 +132,7 @@ class ReportGeneratorService
     {
         $total = Prospect::whereBetween('created_at', [$startDate, $endDate])->count();
         $converted = Prospect::whereBetween('created_at', [$startDate, $endDate])
-            ->whereHas('client')
+            ->whereNotNull('converti_partenaire_id')
             ->count();
 
         if ($total === 0) {

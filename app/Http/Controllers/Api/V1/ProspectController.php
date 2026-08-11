@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\EventType;
+use App\Http\Requests\Api\V1\Prospect\EnregistrerAppelRequest;
 use App\Http\Requests\Api\V1\Prospect\StoreProspectRequest;
 use App\Http\Requests\Api\V1\Prospect\UpdateProspectRequest;
 use App\Http\Resources\Api\V1\ProspectResource;
@@ -114,42 +115,37 @@ class ProspectController extends ApiController
      * Records a phoning call for a prospect and updates its statut according
      * to the phoning workflow rules.
      *
+     * Validation is handled by EnregistrerAppelRequest:
+     *   - statut_phoning_id: required, integer, exists:statut_phonings,id → 422 if missing or invalid (Req 10.4)
+     *   - commentaire, duree_secondes, date_heure, enregistrement_audio: optional
+     *
      * Requirements: 10.3, 10.4
      */
-    public function enregistrerAppel(Request $request, Prospect $prospect): JsonResponse
+    public function enregistrerAppel(EnregistrerAppelRequest $request, Prospect $prospect): JsonResponse
     {
         $this->authorize('update', $prospect);
 
-        $validated = $request->validate([
-            'statut_phoning_id' => ['required', 'integer'],
-            'commentaire'       => ['nullable', 'string'],
-            'duree_secondes'    => ['nullable', 'integer', 'min:0'],
-        ]);
+        $validated = $request->validated();
 
-        // Validate that statut_phoning_id exists in statut_phonings table (Req 10.4)
-        $statutPhoning = StatutPhoning::find($validated['statut_phoning_id']);
-
-        if (! $statutPhoning) {
-            return $this->error('statut_phoning_id invalide', 422, [
-                'statut_phoning_id' => ['statut_phoning_id invalide'],
-            ]);
-        }
+        // statut_phoning_id existence is already guaranteed by EnregistrerAppelRequest
+        $statutPhoning = StatutPhoning::findOrFail($validated['statut_phoning_id']);
 
         // Record the call (polymorphic to Prospect)
         $appel = Appel::create([
-            'appelable_type'  => Prospect::class,
-            'appelable_id'    => $prospect->id,
-            'user_id'         => $request->user()->id,
-            'type'            => EventType::Appel,
-            'date_heure'      => now(),
-            'phoning_status'  => $statutPhoning->code,
-            'phoning_notes'   => $validated['commentaire'] ?? null,
-            'duree_secondes'  => $validated['duree_secondes'] ?? null,
-            'commentaire'     => $validated['commentaire'] ?? null,
-            'campagne_id'     => $prospect->campagne_id,
+            'appelable_type'       => Prospect::class,
+            'appelable_id'         => $prospect->id,
+            'user_id'              => $request->user()->id,
+            'type'                 => EventType::Appel,
+            'date_heure'           => $validated['date_heure'] ?? now(),
+            'phoning_status'       => $statutPhoning->code,
+            'phoning_notes'        => $validated['commentaire'] ?? null,
+            'duree_secondes'       => $validated['duree_secondes'] ?? null,
+            'commentaire'          => $validated['commentaire'] ?? null,
+            'enregistrement_audio' => $validated['enregistrement_audio'] ?? null,
+            'campagne_id'          => $prospect->campagne_id,
         ]);
 
-        // Update ProspectStatut according to pipeline_statut mapping if set
+        // Update ProspectStatut according to pipeline_statut mapping if set (Req 10.3)
         if ($statutPhoning->pipeline_statut) {
             $nouveauStatut = \App\Enums\ProspectStatut::tryFrom($statutPhoning->pipeline_statut);
             if ($nouveauStatut) {
