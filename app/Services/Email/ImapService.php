@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Webklex\PHPIMAP\Client;
 use Webklex\PHPIMAP\Message;
+use Webklex\PHPIMAP\Config;
 
 class ImapService
 {
@@ -23,7 +24,7 @@ class ImapService
         $this->user = $user ?? auth()->user();
         
         if (! $this->user) {
-            throw new \Exception('Utilisateur non authentifié');
+            Log::info("ImapService: aucun utilisateur authentifié, utilisation d'une configuration globale", ['config_id' => $this->config->id ?? null]);;
         }
 
         $this->config = $config ?? $this->getEmailConfiguration();
@@ -65,9 +66,12 @@ class ImapService
             
             // Récupérer les messages non lus ou récents
             $messages = $folder->messages()
-                ->unseen()
+                ->all()
                 ->limit($limit)
                 ->get();
+
+            // Filtrer les messages non lus si la méthode unseen() n'est pas disponible
+            $messages = collect($messages)->filter(fn($m) => ! $m->hasFlag('Seen'));
 
             foreach ($messages as $message) {
                 try {
@@ -80,7 +84,13 @@ class ImapService
             }
 
             // Marquer les messages comme lus sur le serveur
-            $folder->messages()->setFlag(['Seen'], 'Seen');
+            foreach ($messages as $m) {
+                try {
+                    $m->setFlag('Seen');
+                } catch (\Exception $e) {
+                    Log::warning('Impossible de marquer message comme lu: '.$e->getMessage());
+                }
+            }
             
             // Mettre à jour la dernière synchronisation
             $this->config->updateLastSync();
@@ -163,15 +173,25 @@ class ImapService
     /**
      * Formate les adresses email
      */
-    protected function formatAddresses(array $addresses): string
+    protected function formatAddresses($addresses): string
     {
-        return collect($addresses)
-            ->map(fn ($addr) => $addr->mail)
+        $items = [];
+
+        if (is_array($addresses)) {
+            $items = $addresses;
+        } elseif ($addresses instanceof \Traversable) {
+            $items = iterator_to_array($addresses);
+        } elseif (is_object($addresses)) {
+            $items = [$addresses];
+        }
+
+        return collect($items)
+            ->map(fn ($addr) => $addr->mail ?? null)
             ->filter()
             ->implode(',');
     }
 
-    /**
+    /****
      * Détecte la priorité d'un email
      */
     protected function detectPriority(Message $message): string
@@ -232,7 +252,17 @@ class ImapService
 
     protected function connect(): void
     {
-        $this->client = new Client($this->config->imap_connection_array);
+        // Construire un objet Config attendu par Webklex\PHPIMAP\Client
+        $imapArray = $this->config->getImapConnectionArray();
+
+        $config = Config::make([
+            'default' => 'default',
+            'accounts' => [
+                'default' => $imapArray,
+            ],
+        ]);
+
+        $this->client = new Client($config);
 
         try {
             $this->client->connect();
@@ -241,6 +271,8 @@ class ImapService
             throw new \Exception('Impossible de se connecter au serveur email');
         }
     }
+
+    /**    }
 
     /**
      * Déconnexion propre

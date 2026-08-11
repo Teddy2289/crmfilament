@@ -76,7 +76,7 @@ class TestEnvoiFiches extends Command
         if (! $send) {
             $this->newLine();
             $this->comment('Dry-run terminé. Relancez avec --send --to=votre@email.com pour recevoir les fiches jaune et verte par email.');
-            $this->comment("La fiche bleue (invitation commercial) n'est jamais envoyée par cette commande : InvitationAgendaResponsableMail met en copie fixe bruno@ns-conseil.com et nirina@ns-conseil.com (règle R4), donc un test réel enverrait un email à ces deux adresses de production. Vérifiez le .docx généré (chemin affiché ci-dessus) puis testez cet envoi manuellement si besoin.");
+            $this->comment("La fiche bleue (invitation commercial) n'est jamais envoyée par cette commande : InvitationAgendaResponsableMail met en copie fixe nirina.ramanamihamina@mbl-service.com (règle R4), donc un test réel enverrait un email à cette adresse de production. Vérifiez le .docx généré (chemin affiché ci-dessus) puis testez cet envoi manuellement si besoin.");
         }
 
         return self::SUCCESS;

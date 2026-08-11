@@ -1,0 +1,1 @@
+@livewire('google-event-modal')

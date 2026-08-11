@@ -1,0 +1,553 @@
+# Modele de projet - CRM AOPIA / LIKE Formation (Laravel + Filament)
+
+**Version**: 1.1
+**Date**: 26 Juin 2026
+**Sources**: CDC EspoCRM v1.0, comptes-rendus, fichiers Excel reels, implementation Laravel `crmfilament`
+
+---
+
+## 1. Objectif
+
+Le projet `crmfilament` est le CRM commercial AOPIA / LIKE Formation, implemente en Laravel/Filament a partir d'un cahier des charges EspoCRM initial.
+
+Le CRM couvre:
+
+- prospection CSE, syndicats, entreprises;
+- gestion des partenaires;
+- gestion des clients beneficiaires importes depuis Dolibarr;
+- appels, RDV, phoning, rappels, fiches recap et emails;
+- reporting et dashboards;
+- administration des roles, droits, statuts et dictionnaires.
+
+Hors perimetre CRM commercial:
+
+- facturation;
+- paiements;
+- suivi pedagogique formateur;
+- devis Dolibarr.
+
+---
+
+## 2. Stack actuelle
+
+| Element | Implementation |
+|---|---|
+| Backend | Laravel 12, PHP 8.3 |
+| Back-office | Filament 3.3 |
+| Permissions | Spatie Permission + catalogue AOPIA |
+| Etats metier | Enums Laravel + dictionnaires BDD |
+| Imports | PhpSpreadsheet |
+| PDF / fiches | Dompdf + services fiches |
+| Calendrier | Google Calendar, Microsoft Graph selon besoin |
+| Tests backend | PHPUnit / Pest via `php artisan test` |
+| Tests navigateur | Playwright (`tests/e2e`) |
+
+Le CDC EspoCRM reste une reference metier. Les chemins `custom/Espo/...` sont historiques et ne doivent pas etre utilises pour le developpement Laravel courant.
+
+---
+
+## 3. Panels Filament
+
+| Panel | URL | Perimetre |
+|---|---|---|
+| `ns-conseil` | `/ns-conseil` | CRM AOPIA / LIKE |
+| `allopro` | `/allopro` | Centre de contact artisans |
+| `admin` | `/admin` | Administration generale |
+| `super-admin` | `/super-admin` | Users, roles, permissions, profils, parametres, dictionnaires |
+
+Theme UI:
+
+- Le theme Filament natif est le theme par defaut des panels.
+- Le style EspoCRM historique reste disponible comme option de theme via `metadata.chrome = espo`, mais il ne doit plus etre injecte globalement.
+- Les couleurs personnalisees d'un theme ne sont appliquees que si `metadata.apply_colors = true`.
+- La configuration se fait depuis Super Admin > Themes.
+
+---
+
+## 4. Arborescence fonctionnelle
+
+```text
+CRM NS Conseil
+  Pipeline
+    Opportunites
+    Prospects
+    Partenaires
+  Contacts
+    Contacts partenaires
+    Autres interlocuteurs
+  Activites
+    Appels
+    Rendez-vous
+    Workflow phoning
+    Campagnes phoning
+  Clients & Formations
+    Clients beneficiaires
+    Propositions
+    Dossiers formation
+    Parrainage
+  Administration
+    Base de connaissances
+    Statuts phoning
+    Pipeline statuts
+    Groupes workflow
+    Imports
+    Templates
+  Droits
+    Roles
+    Permissions par module
+    Permissions par champ
+```
+
+---
+
+## 5. Entites principales
+
+### 5.1 Prospect
+
+Model: `App\Models\Prospect`
+Resource: `app/Filament/NsConseil/Resources/ProspectResource.php`
+
+Role: fiche de prospection avant conversion partenaire.
+
+Champs et concepts majeurs:
+
+- `nom`, `raison_sociale`, `type_pressenti`;
+- `telephone`, `telephone_alt`, `email`;
+- adresse, code postal, ville, departement;
+- `teleprospecteur_id`, `commercial_id`;
+- `statut` via `ProspectStatut`;
+- `campagne_id`;
+- champs interlocuteur standard, CSE, syndicat, dirigeant;
+- `qf_valide`, `valide_par`, `qf_valide_at`;
+- `motif_ko`, `rappel_planifie_at`.
+
+Statuts principaux:
+
+| Code | Sens |
+|---|---|
+| `AC` | A contacter |
+| `STD_NR` | Standard non repondu |
+| `STD_Joint` | Standard joint |
+| `CSE_NR` | CSE non joint |
+| `RP` | Rappel planifie |
+| `RPC` | RDV a planifier / contact qualifie |
+| `KO` | Hors cible ou refus |
+| `QF` | Qualifie apres validation |
+
+Conversion partenaire:
+
+- possible uniquement si le prospect est `QF` et `qf_valide`;
+- le partenaire cree conserve `prospect_id` vers la fiche source;
+- apres conversion, le prospect est archive par soft delete et reste consultable depuis le partenaire.
+
+Services et supports:
+
+- `app/Services/Aopia/AopiaProspectWorkflowService.php`
+- `app/Support/CsePhoningWorkflow.php`
+- `app/Filament/NsConseil/Pages/PhoningWorkflow.php`
+
+### 5.2 Partenaire
+
+Model: `App\Models\Partenaire`
+Resource: `app/Filament/NsConseil/Resources/PartenaireResource.php`
+
+Role: compte partenaire signe ou cible partenaire.
+
+Champs et concepts majeurs:
+
+- nom, entreprise, nom retenu;
+- `nomenclature_interne` generee au format CDC `[Type] [Entreprise ou nom] [Ville]` et utilisee pour les rapprochements exacts;
+- type via `OrganizationType`;
+- statut via `OrganizationStatus`;
+- commercial, conseiller, entite commerciale;
+- SIRET, adresse, departement;
+- date de signature, date de convention;
+- contacts partenaires;
+- tables satellites: adresse CSE, tarification, activite vente, activite permanence, remboursements, historique conseillers, autres interlocuteurs.
+
+Cycle courant:
+
+```text
+a_prospecter -> en_cours_prospection -> rdv_en_cours -> signe_accord_cadre -> convention_engagement
+```
+
+`refus` peut etre repris selon decision metier.
+
+### 5.3 Client
+
+Model: `App\Models\Client`
+Resource: `app/Filament/NsConseil/Resources/ClientResource.php`
+
+Role: beneficiaire importe depuis Dolibarr.
+
+Champs et concepts majeurs:
+
+- `ref_client`;
+- civilite, nom, prenom ou nom tiers;
+- date de naissance;
+- telephone, email, adresse;
+- entreprise;
+- partenaire rattache;
+- `ne_plus_contacter`;
+- propositions et dossiers formation;
+- parrainage.
+
+Deduplication:
+
+1. `ref_client` si present;
+2. fallback nom + prenom + date de naissance.
+
+### 5.4 Opportunite
+
+Model: `App\Models\Opportunite`
+Resource: `app/Filament/NsConseil/Resources/OpportuniteResource.php`
+
+Role: sas de detection avant prospection active.
+
+Fonctions principales:
+
+- creation d'une opportunite depuis un signal faible;
+- qualification;
+- conversion en prospect;
+- perte avec raison.
+
+Regles alignees CDC:
+
+- statuts proposes: `nouveau`, `en_cours_evaluation`, `qualifiee`, `converti`, `perdu`;
+- conversion possible uniquement depuis `qualifiee`;
+- la source, les details source et les notes sont reprises dans la description du Prospect converti;
+- apres conversion, l'opportunite passe a `converti`, est archivee par soft delete et reste visible dans l'onglet `Converties`;
+- la raison de perte est obligatoire pour passer au statut `perdu`.
+
+### 5.5 Appel
+
+Model: `App\Models\Appel`
+
+Role: historique d'appel polymorphe lie a Prospect, Partenaire, Opportunite ou Client.
+
+Points importants:
+
+- type et resultat;
+- date/heure et duree;
+- statut phoning;
+- audio;
+- lien Ringover;
+- campagne;
+- agent.
+
+### 5.6 Rendez-vous
+
+Model: `App\Models\RendezVous`
+Resource: `app/Filament/NsConseil/Resources/RendezVousResource.php`
+
+Role: RDV commercial ou activite planifiee.
+
+Points importants:
+
+- date/heure;
+- lieu structure;
+- interlocuteur;
+- commercial et teleprospecteur;
+- synchronisation calendrier;
+- fiches recap et invitations.
+
+### 5.7 Base de connaissances
+
+Model: `App\Models\DocumentKnowledge`
+Resource: `app/Filament/NsConseil/Resources/DocumentKnowledgeResource.php`
+
+Role: module Documents du CDC pour procedures, scripts, FAQ/objections, modeles mails et modeles de fiche recap.
+
+Regles d'acces CDC:
+
+- teleprospecteur: lecture uniquement;
+- Team Leader: lecture, creation, modification, suppression;
+- commercial: aucun acces;
+- administrateur/super-admin: acces total via le mode `Tout`.
+
+Le catalogue de droits utilise le prefixe `document_knowledges`.
+
+---
+
+## 6. Imports Excel
+
+### 6.1 Prospects Top 500
+
+Dossier:
+
+```text
+app/Filament/NsConseil/Resources/ProspectResource/Import/
+```
+
+Classes:
+
+- `ProspectImporter`
+- `ProspectImportResolver`
+
+Regles:
+
+- lit les fichiers Top 500 departementaux;
+- mappe conseiller, departement, etat, commentaires, coordonnees;
+- deduplication par telephone, puis nom + departement.
+
+### 6.2 Partenaires MAJ
+
+Dossier:
+
+```text
+app/Filament/NsConseil/Resources/PartenaireResource/Import/
+```
+
+Classe:
+
+- `PartenaireImportResolver`
+
+Regles:
+
+- feuille cible `MAJ`;
+- mappe entite, entreprise, nom retenu, statut, type, conseiller, mandataire, adresse CSE, contacts, ventes et permanences;
+- cree ou met a jour les tables satellites quand necessaire.
+
+### 6.3 Clients Dolibarr
+
+Dossier:
+
+```text
+app/Filament/NsConseil/Resources/ClientResource/Import/
+```
+
+Classes:
+
+- `BaseClientImporter`
+- `CrmLikeImporter`
+- `CrmAopiaAboImporter`
+- `Crm01FcImporter`
+- `ImportResolver`
+
+Feuilles reconnues:
+
+| Feuille | Usage |
+|---|---|
+| `CRM LIKE` | clients LIKE |
+| `CRM AOPIA-ABO` | clients AOPIA abonnement |
+| `CRM 01FC` | clients 01FC |
+
+Regles:
+
+- deduplication client par email, telephone, puis reference quand disponible;
+- rattachement automatique au partenaire quand la valeur source correspond exactement a `nomenclature_interne`, `nom` ou `nom_retenu`;
+- si aucun partenaire ne correspond, la valeur source est conservee dans `clients.extra_data.partenaire_import` avec le statut `partenaire_non_rattache`.
+- le filtre `Partenaire non rattache` de la liste clients isole ces dossiers pour traitement manuel.
+
+---
+
+## 7. Droits d'acces
+
+### 7.1 Interface
+
+Chemin:
+
+```text
+Super Admin > Roles & Permissions
+```
+
+Un role propose deux modes:
+
+| Mode | Effet |
+|---|---|
+| `Tout` | toutes les permissions du catalogue sont attribuees |
+| `Selectif par entite/module` | choix manuel des droits modules et champs |
+
+### 7.2 Droits module
+
+Source de verite:
+
+```text
+app/Support/AccessRightsCatalog.php::modules()
+```
+
+Modules couverts:
+
+| Module | Panel |
+|---|---|
+| prospects | Ns Conseil |
+| partenaires | Ns Conseil |
+| clients | Ns Conseil |
+| opportunites | Ns Conseil |
+| rendez_vous | Ns Conseil |
+| entreprises | Ns Conseil |
+| campagne_phonings | Ns Conseil |
+| dossier_formations | Ns Conseil |
+| activites | Ns Conseil |
+| rapports | Ns Conseil |
+| document_knowledges | Ns Conseil |
+| script_appels | Ns Conseil |
+| statut_phonings | Ns Conseil |
+| tickets | AlloPro |
+| fiche_p2 | AlloPro |
+| artisans | AlloPro |
+| reclamations | AlloPro |
+| rapports_satisfaction | AlloPro |
+| prospection_artisans | AlloPro |
+| dashboard | AlloPro |
+
+### 7.3 Droits par champ
+
+Source de verite:
+
+```text
+app/Support/AccessRightsCatalog.php::fieldModules()
+```
+
+Format:
+
+```text
+fields.{entity}.{field}.{action}
+```
+
+Actions:
+
+| Action | Sens |
+|---|---|
+| `show` | affichage / lecture |
+| `create` | saisie a la creation |
+| `edit` | modification |
+| `flux` | usage dans workflow ou flux |
+| `all` | toutes les actions |
+
+Entites actuellement exposees aux droits champ:
+
+| Entite | Panel |
+|---|---|
+| prospects | Ns Conseil |
+| partenaires | Ns Conseil |
+| clients | Ns Conseil |
+| opportunites | Ns Conseil |
+| rendez_vous | Ns Conseil |
+| entreprises | Ns Conseil |
+| campagne_phonings | Ns Conseil |
+| dossier_formations | Ns Conseil |
+| script_appels | Ns Conseil |
+| statut_phonings | Ns Conseil |
+| tickets | AlloPro |
+
+Comportement:
+
+- si aucun droit champ n'est configure pour une entite, le comportement module reste applique;
+- si des droits champ existent pour une entite, les champs non autorises sont filtres a la creation et a l'edition;
+- `show` masque les champs non autorises dans les tables et infolists sensibles;
+- les entrees relationnelles de type `commercial.nom` sont rattachees au champ FK catalogue, par exemple `commercial_id`;
+- `all` donne toutes les actions pour le champ;
+- `view` est normalise vers `show`, `update` vers `edit`.
+
+### 7.4 Tests
+
+Test principal:
+
+```text
+tests/Feature/RoleAccessRightsTest.php
+tests/e2e/role-field-visibility.spec.js
+```
+
+Commande:
+
+```powershell
+php artisan test --filter RoleAccessRightsTest
+npx playwright test tests/e2e/role-field-visibility.spec.js
+```
+
+Le test couvre:
+
+- acces complet;
+- acces selectif Ns Conseil;
+- acces selectif AlloPro;
+- generation du catalogue;
+- droits `show`, `create`, `edit`, `flux`, `all`;
+- filtrage des donnees interdites;
+- masquage `show` dans les tables, infolists et relations affichees.
+
+---
+
+## 8. Telephonie et calendrier
+
+### Ringover
+
+Implementation actuelle:
+
+- `app/Services/RingoverService.php`
+- `app/Services/RingoverCallSyncService.php`
+- `app/Services/RingoverTagService.php`
+- `app/Services/RingoverUserMapper.php`
+- `app/Http/Controllers/RingoverWebhookController.php`
+- `app/Console/Commands/SyncRingoverCalls.php`
+- widgets Ringover dans Ns Conseil
+- champs Ringover dans `app/Models/Appel.php`
+- route webhook `/api/ringover/webhook`
+
+La directive metier conserve la regle:
+
+```text
+DEP_XX + tag statut obligatoire par appel
+```
+
+Cette regle est stockee dans les settings CRM et controlee par `RingoverTagService`.
+
+### Calendrier
+
+Implementation principale:
+
+- `app/Services/GoogleCalendarService.php`
+- `app/Observers/RendezVousObserver.php`
+- `app/Services/CreneauPropositionService.php`
+
+---
+
+## 9. Workflows automatiques
+
+| Workflow | Implementation |
+|---|---|
+| Validation QF | `AopiaProspectWorkflowService` |
+| Email RDV | `AopiaMailTemplateService` |
+| ICS | `AopiaIcsService` |
+| Fiche PDF | `Aopia/FicheGenerationService` |
+| Fiche Word | `Crm/FicheWordService`, `GenerateFicheWordJob` |
+| Fiche jaune J+7 | `SendFicheJauneJ7Job` |
+| Rappel RP | `SendRappelRpJob` |
+| Rappel STD-NR J+2 | `SendRappelStdNrJob` |
+| Reporting hebdo | `SendWeeklyReport`, `SendWeeklyReportJob`, `WeeklyReportService` |
+
+La validation QF tient aussi compte des appels Ringover `RDV`: tags complets `DEP_XX + RDV` obligatoires si l'appel Ringover existe, et l'audio peut provenir du RDV ou de cet appel.
+
+---
+
+## 10. Documents source
+
+| Document | Statut |
+|---|---|
+| `CDC_CRM_EspoCRM_AOPIA (2).md` | Source historique CDC |
+| `Champs_Requis_Par_Entite.md` | Reference champs et droits |
+| `MANUEL_UTILISATION.md` | Manuel utilisateur courant |
+| `Manuel_Integration_Ringover.md` | Historique fonctionnel Ringover |
+| `Guide_Developpement_EspoCRM.md` | Historique EspoCRM |
+| `split-account-table.md` | Historique de decoupage Account, traduit en tables satellites Laravel |
+| `directive/archive/` | Archives et fichiers Excel source |
+
+---
+
+## 11. Backlog technique
+
+| Priorite | Sujet |
+|---|---|
+| P1 | Connecter le webhook Ringover au compte de production et renseigner `RINGOVER_WEBHOOK_SECRET` |
+| P2 | Completer la documentation avec captures apres validation UI |
+
+---
+
+## 12. Commandes utiles
+
+```powershell
+php artisan test --filter RoleAccessRightsTest
+php artisan test
+npm run e2e
+npm run build
+```

@@ -783,12 +783,29 @@ class AccessRightsCatalog
     public static function userCan(?Authenticatable $user, string $permission): bool
     {
         if (! $user instanceof User || ! $user->actif) {
+            try {
+                \Log::info('AccessRightsCatalog::userCan - denied (inactive or not user)', ['user' => $user?->id ?? null, 'permission' => $permission]);
+            } catch (\Throwable $e) {
+            }
+
             return false;
         }
 
         try {
-            return $user->can($permission);
+            $result = $user->can($permission);
+            try {
+                \Log::info('AccessRightsCatalog::userCan', ['user_id' => $user->id, 'permission' => $permission, 'result' => $result, 'current_panel' => \Filament\Facades\Filament::getCurrentPanel()?->id ?? null]);
+            } catch (\Throwable $e) {
+                // ignore logging errors
+            }
+
+            return $result;
         } catch (Throwable) {
+            try {
+                \Log::warning('AccessRightsCatalog::userCan - exception during can()', ['user_id' => $user->id ?? null, 'permission' => $permission]);
+            } catch (\Throwable $e) {
+            }
+
             return false;
         }
     }

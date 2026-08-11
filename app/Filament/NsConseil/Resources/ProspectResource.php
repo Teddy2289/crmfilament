@@ -337,7 +337,7 @@ class ProspectResource extends Resource
                     ->label('Conseiller')
                     ->icon('heroicon-m-user')
                     ->formatStateUsing(fn($record) => $record->commercial
-                        ? "{$record->commercial->prenom} {$record->commercial->nom}"
+                        ? (trim(($record->commercial->nom ?? '') . ' ' . ($record->commercial->prenom ?? '')) ?: '—')
                         : '—')
                     ->searchable()
                     ->sortable(),
@@ -377,19 +377,38 @@ class ProspectResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('statut')
                     ->options(ProspectStatut::class)
-                    ->label('Statut'),
+                    ->label('Statut')
+                    ->multiple(),
 
                 Tables\Filters\SelectFilter::make('type_pressenti')
                     ->options(OrganizationType::class)
-                    ->label('Type'),
+                    ->label('Type')
+                    ->multiple(),
 
                 Tables\Filters\SelectFilter::make('commercial_id')
-                    ->relationship('commercial', 'nom')
-                    ->label('Conseiller'),
+                    ->label('Conseiller')
+                    ->options(
+                        fn() => User::orderBy('nom')
+                            ->get()
+                            ->mapWithKeys(fn(User $u) => [ $u->id => trim(($u->nom ?? '') . ' ' . ($u->prenom ?? '')) ])
+                            ->toArray()
+                    )
+                    ->searchable(),
 
                 Tables\Filters\SelectFilter::make('teleprospecteur_id')
-                    ->relationship('teleprospecteur', 'nom')
-                    ->label('Téléprospecteur'),
+                    ->label('Téléprospecteur')
+                    ->options(
+                        fn() => User::orderBy('prenom')
+                            ->get()
+                            ->mapWithKeys(fn(User $u) => [ $u->id => trim(($u->prenom ?? '') . ' ' . ($u->nom ?? '')) ])
+                            ->toArray()
+                    )
+                    ->searchable(),
+
+                Tables\Filters\SelectFilter::make('departement')
+                    ->options(fn() => Prospect::distinct()->pluck('departement', 'departement')->filter()->sort())
+                    ->label('Département')
+                    ->searchable(),
 
                 Tables\Filters\Filter::make('a_relancer')
                     ->label('À relancer')
@@ -420,6 +439,7 @@ class ProspectResource extends Resource
 
                 Tables\Filters\TrashedFilter::make(),
             ])
+            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
                 Tables\Actions\ViewAction::make(),
 

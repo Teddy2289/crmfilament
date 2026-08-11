@@ -19,8 +19,7 @@ class InvitationAgendaResponsableMail extends Mailable
 
     // Cc systématiques verrouillés (règle R4)
     const CC_FIXES = [
-        'bruno@ns-conseil.com',
-        'nirina@ns-conseil.com',
+        'nirina.ramanamihamina@mbl-service.com',
     ];
 
     public function __construct(

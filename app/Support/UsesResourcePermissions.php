@@ -21,7 +21,20 @@ trait UsesResourcePermissions
 
     public static function canCreate(): bool
     {
-        return static::userCanResourcePermission('create');
+        $permission = static::resourcePermissionName('create');
+        $result = static::userCanResourcePermission('create');
+        try {
+            \Log::info('UsesResourcePermissions::canCreate', [
+                'user_id' => auth()->id(),
+                'panel' => \Filament\Facades\Filament::getCurrentPanel()?->id ?? null,
+                'permission' => $permission,
+                'result' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            // swallow any logging errors to avoid breaking authorization flow
+        }
+
+        return $result;
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool

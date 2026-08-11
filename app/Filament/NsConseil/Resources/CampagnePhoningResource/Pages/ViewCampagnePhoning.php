@@ -11,6 +11,7 @@ use App\Enums\EventType;
 use App\Models\CampagnePhoning;
 use App\Models\Client;
 use App\Models\ContactPartenaire;
+use App\Models\EmailConfiguration;
 use App\Models\Prospect;
 use App\Models\Appel;
 use App\Models\StatutPhoning;
@@ -21,6 +22,7 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Tabs;
 use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Tables;
@@ -28,10 +30,24 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+use Carbon\Carbon;
 
 class ViewCampagnePhoning extends ViewRecord implements HasTable
 {
     use InteractsWithTable;
+
+    // Filtre UI state
+    // Global (legacy) filter UI state — kept for backward compatibility
+    public ?string $filter_start_date = null;
+    public ?string $filter_end_date = null;
+    public ?int $filter_telepro_id = null;
+    public ?int $filter_agent_id = null;
+    public ?string $filter_type = null;
+    public ?string $filter_status = null;
+
+    // Per-tab filters: keyed by statut code
+    public array $tabFilters = [];
 
     protected static string $resource = CampagnePhoningResource::class;
 
@@ -78,9 +94,25 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                         ->formatStateUsing(fn($record) => $record->user
                             ? trim("{$record->user->prenom} {$record->user->nom}")
                             : 'Tous les agents'),
+                    TextEntry::make('groupeTelepro.nom')
+                        ->label('Groupe télépro')
+                        ->badge()
+                        ->color('secondary')
+                        ->placeholder('Tous'),
+                    TextEntry::make('entite.nom')
+                        ->label('Entité commerciale')
+                        ->badge()
+                        ->color('secondary')
+                        ->placeholder('—'),
                     TextEntry::make('date_debut')->label('Début')->date('d/m/Y')->placeholder('—'),
                     TextEntry::make('date_fin')->label('Fin')->date('d/m/Y')->placeholder('—'),
                     TextEntry::make('description')->label('Description')->columnSpanFull()->placeholder('—'),
+                    TextEntry::make('email_configuration')
+                        ->label('Configuration e-mail')
+                        ->getStateUsing(fn($record) => $this->getEmailUsageDescription())
+                        ->columnSpanFull()
+                        ->helperText('Configuration email active pour cette campagne.')
+                        ->placeholder('Aucune configuration trouvée.'),
                 ]),
 
             Section::make('Progression')
@@ -111,6 +143,14 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                             $record->getStats()['progression'] >= 40 => 'warning',
                             default => 'danger',
                         }),
+                ]),
+
+            Section::make('Contacts traités par statut')
+                ->icon('heroicon-o-list-bullet')
+                ->columnSpanFull()
+                ->schema([
+                    \Filament\Infolists\Components\ViewEntry::make('contacts_traites_par_statut')
+                        ->view('filament.infolists.entries.campagne-phoning-contacts-par-statut'),
                 ]),
 
             Section::make('Résultats des appels')
@@ -147,49 +187,15 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
             ->tabs(
                 collect($record->statutsUtilises())
                     ->map(function (string $code) use ($record) {
-                        $appels = $record->appelsParStatut($code);
+                        $appels = $this->getFilteredAppelsForStatut($record, $code);
 
                         return Tab::make($record->statutLabel($code))
                             ->badge($appels->count())
                             ->badgeColor($record->statutCouleur($code))
                             ->schema([
-                                RepeatableEntry::make('appels_' . $code)
-                                    ->hiddenLabel()
-                                    // Les entrées imbriquées ci-dessous lisent $record (l'Appel
-                                    // de la ligne courante) via getStateUsing plutôt que des
-                                    // noms en pointillés ("appelable.nom"), car la résolution de
-                                    // chemin absolu d'un RepeatableEntry lié à un état brut (pas
-                                    // une vraie relation Eloquent) ne traverse pas les relations.
-                                    ->state(fn() => $appels)
-                                    ->schema([
-                                        TextEntry::make('contact')
-                                            ->label('Contact')
-                                            ->getStateUsing(fn(Appel $record) => $this->appelContactNom($record))
-                                            ->weight('semibold'),
-                                        TextEntry::make('telephone')
-                                            ->label('Téléphone')
-                                            ->badge()
-                                            ->color('green')
-                                            ->icon('heroicon-o-phone')
-                                            ->getStateUsing(fn(Appel $record) => $this->appelContactTelephone($record))
-                                            ->placeholder('—'),
-                                        TextEntry::make('date_heure')
-                                            ->label("Date de l'appel")
-                                            ->getStateUsing(fn(Appel $record) => $record->date_heure)
-                                            ->dateTime('d/m/Y H:i')
-                                            ->placeholder('—'),
-                                        TextEntry::make('agent')
-                                            ->label('Agent')
-                                            ->getStateUsing(fn(Appel $record) => $record->user
-                                                ? trim("{$record->user->prenom} {$record->user->nom}")
-                                                : '—'),
-                                        TextEntry::make('commentaire')
-                                            ->label('Commentaire')
-                                            ->getStateUsing(fn(Appel $record) => $record->commentaire ?: $record->phoning_notes)
-                                            ->placeholder('—')
-                                            ->columnSpanFull(),
-                                    ])
-                                    ->columns(4),
+                                \Filament\Infolists\Components\ViewEntry::make('appels_table_'.$code)
+                                    ->view('filament.infolists.entries.statut-appels-table')
+                                    ->state($code),
                             ]);
                     })
                     ->all()
@@ -486,5 +492,150 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
             $record instanceof Client => ClientResource::getUrl('view', ['record' => $record]),
             default => null,
         };
+    }
+
+    private function getEmailUsageDescription(): string
+    {
+        $config = $this->resolveEmailConfigurationForCampaign($this->getRecord());
+
+        if (! $config) {
+            return 'Email utilisé : aucune configuration email active trouvée';
+        }
+
+        $sourceLabel = $config->is_global
+            ? 'Configuration globale'
+            : ('Configuration utilisateur : ' . trim((string) ($config->user?->prenom . ' ' . $config->user?->nom)));
+
+        $syncDate = $config->last_sync_at
+            ? $config->last_sync_at->format('d/m/Y H:i')
+            : 'Jamais synchronisée';
+
+        return sprintf(
+            '%s — %s (%s)',
+            $sourceLabel,
+            $config->email,
+            $syncDate,
+        );
+    }
+
+    private function resolveEmailConfigurationForCampaign(CampagnePhoning $campagne): ?EmailConfiguration
+    {
+        if ($campagne->user_id) {
+            return EmailConfiguration::forUser($campagne->user_id)
+                ->active()
+                ->first();
+        }
+
+        return EmailConfiguration::query()
+            ->active()
+            ->where('is_global', true)
+            ->first();
+    }
+
+    /*******************************
+     * Filters & helpers
+     *******************************/
+
+    protected function queryTeleprospecteurs()
+    {
+        $roles = app(\App\Services\Crm\CrmSettingsService::class)->get('roles.teleprospecteur_roles', ['teleprospecteur']);
+
+        return User::where(function ($q) use ($roles) {
+            $q->whereHas('roles', fn($r) => $r->whereIn('name', $roles));
+            foreach ($roles as $role) {
+                $q->orWhere('role_cache', $role);
+            }
+        })
+            ->where('actif', true)
+            ->orderBy('nom')
+            ->orderBy('prenom');
+    }
+
+    public function teleprospecteursOptions(): array
+    {
+        return $this->queryTeleprospecteurs()->get()->mapWithKeys(fn(User $u) => [$u->id => trim("{$u->prenom} {$u->nom}")])->toArray();
+    }
+
+    public function agentOptions(): array
+    {
+        return User::where('actif', true)->orderBy('nom')->orderBy('prenom')->get()->mapWithKeys(fn(User $u) => [$u->id => trim("{$u->prenom} {$u->nom}")])->toArray();
+    }
+
+    public function typeOptions(): array
+    {
+        return collect(\App\Enums\EventType::cases())->mapWithKeys(fn($t) => [$t->value => $t->label()])->toArray();
+    }
+
+    public function statusOptions(): array
+    {
+        $codes = $this->getRecord()->statutsUtilises();
+        return collect($codes)->mapWithKeys(fn($c) => [$c => $this->getRecord()->statutLabel($c)])->toArray();
+    }
+
+    public function resetFilters(): void
+    {
+        $this->filter_start_date = null;
+        $this->filter_end_date = null;
+        $this->filter_telepro_id = null;
+        $this->filter_agent_id = null;
+        $this->filter_type = null;
+        $this->filter_status = null;
+    }
+
+    public function resetTabFilters(string $statut): void
+    {
+        $this->tabFilters[$statut] = [];
+    }
+
+    public function getFilteredAppelsForStatut(CampagnePhoning $campagne, string $code)
+    {
+        $query = Appel::query()
+            ->where('campagne_id', $campagne->id)
+            ->where('phoning_status', $code);
+
+        $filters = $this->tabFilters[$code] ?? [];
+
+        // fallback to global filters for backward compatibility
+        $startDate = $filters['start_date'] ?? $this->filter_start_date ?? null;
+        $endDate = $filters['end_date'] ?? $this->filter_end_date ?? null;
+        $teleproId = $filters['telepro_id'] ?? $this->filter_telepro_id ?? null;
+        $agentId = $filters['agent_id'] ?? $this->filter_agent_id ?? null;
+        $type = $filters['type'] ?? $this->filter_type ?? null;
+        $status = $filters['status'] ?? $this->filter_status ?? null;
+
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        if ($agentId) {
+            $query->where(function($q) use ($agentId) {
+                $q->where('phoning_agent_id', $agentId)->orWhere('user_id', $agentId);
+            });
+        }
+
+        if ($status) {
+            $query->where('phoning_status', $status);
+        }
+
+        if ($startDate) {
+            $start = Carbon::parse($startDate)->startOfDay();
+            $query->where('date_heure', '>=', $start);
+        }
+
+        if ($endDate) {
+            $end = Carbon::parse($endDate)->endOfDay();
+            $query->where('date_heure', '<=', $end);
+        }
+
+        if ($teleproId) {
+            $prospectIds = Prospect::where('teleprospecteur_id', $teleproId)->pluck('id');
+            if ($prospectIds->isNotEmpty()) {
+                $query->where('appelable_type', Prospect::class)->whereIn('appelable_id', $prospectIds->toArray());
+            } else {
+                return collect([]);
+            }
+        }
+
+        return $query->with(['appelable', 'user'])->orderByDesc('date_heure')->get();
     }
 }

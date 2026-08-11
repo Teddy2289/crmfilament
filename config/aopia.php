@@ -8,7 +8,7 @@ return [
     'mail' => [
         'from_address' => env('AOPIA_MAIL_FROM', 'assistante-commerciale@ns-conseil.com'),
         'from_name' => env('AOPIA_MAIL_FROM_NAME', 'AOPIA Formation'),
-        'mail2_locked_cc' => array_filter(array_map('trim', explode(',', env('AOPIA_MAIL2_CC', 'bruno@ns-conseil.com,nirina@ns-conseil.com')))),
+        'mail2_locked_cc' => array_filter(array_map('trim', explode(',', env('AOPIA_MAIL2_CC', 'nirina.ramanamihamina@mbl-service.com')))),
         'send_deadline_minutes' => (int) env('AOPIA_MAIL_DEADLINE_MINUTES', 30),
     ],
 

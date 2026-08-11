@@ -5,6 +5,8 @@
         'fi-resource-record-' . $record->getKey(),
     ])
 >
+    {{-- Les filtres sont affichés par onglet pour chaque statut (voir la section Résultats des appels) --}}
+
     {{ $this->infolist }}
 
     {{ $this->table }}

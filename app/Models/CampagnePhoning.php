@@ -109,6 +109,16 @@ class CampagnePhoning extends Model
             ->pluck('total', 'phoning_status')
             ->toArray();
 
+        $contactsParStatut = $this->appels()
+            ->when(
+                $codesNonAboutis->isNotEmpty(),
+                fn (Builder $q) => $q->whereNotIn('phoning_status', $codesNonAboutis)
+            )
+            ->selectRaw('phoning_status, COUNT(DISTINCT appelable_id) as total')
+            ->groupBy('phoning_status')
+            ->pluck('total', 'phoning_status')
+            ->toArray();
+
         $progression = $totalContacts > 0
             ? round(($contactsTraites / $totalContacts) * 100, 1)
             : 0;
@@ -120,6 +130,7 @@ class CampagnePhoning extends Model
             'total_appels' => $totalAppels,
             'progression' => $progression,
             'par_statut' => $parStatut,
+            'contacts_par_statut' => $contactsParStatut,
         ];
     }
 
@@ -346,6 +357,13 @@ class CampagnePhoning extends Model
             );
         }
 
+        // Appliquer le filtre par statuts défini sur la campagne — en file
+        // de la campagne, on autorise aussi les fiches avec un rappel planifié
+        // échéant (elles doivent remonter même si leur statut diffère).
+        if (is_array($this->criteres['statuts'] ?? null) && count($this->criteres['statuts']) > 0) {
+            $this->addStatutsFilterToQuery($query, $this->criteres['statuts'], allowRappel: true);
+        }
+
         return $query;
     }
 
@@ -381,7 +399,7 @@ class CampagnePhoning extends Model
         }
 
         if (is_array($c['statuts'] ?? null) && count($c['statuts']) > 0) {
-            $q->whereIn('statut', $c['statuts']);
+            $this->addStatutsFilterToQuery($q, $c['statuts'], allowRappel: false);
         }
 
         // Filtres de dates : Rappel planifié
@@ -421,6 +439,27 @@ class CampagnePhoning extends Model
         }
 
         return $q;
+    }
+
+    /**
+     * Applique le filtre par statuts sur une requête Prospect.
+     *
+     * Si $allowRappel est true, on inclut aussi les prospects ayant un
+     * `rappel_planifie_at` inférieur ou égal à maintenant (ils remontent en
+     * priorité même si leur statut ne fait pas partie du filtre).
+     */
+    protected function addStatutsFilterToQuery(Builder $q, array $statuts, bool $allowRappel = false): void
+    {
+        $q->where(function (Builder $sub) use ($statuts, $allowRappel) {
+            $sub->whereIn('statut', $statuts);
+
+            if ($allowRappel) {
+                $sub->orWhere(function (Builder $r) {
+                    $r->whereNotNull('rappel_planifie_at')
+                      ->where('rappel_planifie_at', '<=', now());
+                });
+            }
+        });
     }
 
     protected function buildPartenairesQuery(array $c): Builder
