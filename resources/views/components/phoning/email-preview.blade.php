@@ -4,6 +4,10 @@
     'emailPreviewRecipient',
     'emailPreviewOriginalSubject' => null,
     'emailPreviewOriginalBody'    => null,
+    'showCcSelection'             => false,
+    'recipientReadonly'           => false,
+    'emailPreviewCcUsers'         => [],
+    'emailPreviewCcUserIds'       => [],
 ])
 
 {{--
@@ -86,7 +90,11 @@
                             @input="markDirty()"
                             class="pw-email-preview-input pw-email-preview-input-recipient"
                             autocomplete="off"
+                            @readonly($recipientReadonly)
                         />
+                        @if ($recipientReadonly)
+                            <div class="pw-email-preview-helper">Le destinataire principal est le commercial assigné au prospect.</div>
+                        @endif
                     </div>
 
                     {{-- Sujet --}}
@@ -101,6 +109,24 @@
                             autocomplete="off"
                         />
                     </div>
+
+                    @if ($showCcSelection)
+                        <div class="pw-email-preview-section">
+                            <label for="email-preview-cc-users" class="pw-email-preview-label">Copie à</label>
+                            <select
+                                id="email-preview-cc-users"
+                                wire:model="emailPreviewCcUserIds"
+                                multiple
+                                class="pw-email-preview-input"
+                                style="min-height: 7rem;"
+                            >
+                                @foreach ($emailPreviewCcUsers as $user)
+                                    <option value="{{ $user['id'] }}">{{ $user['label'] }}</option>
+                                @endforeach
+                            </select>
+                            <div class="pw-email-preview-helper">Sélectionnez les utilisateurs actifs à mettre en copie.</div>
+                        </div>
+                    @endif
 
                     {{-- Corps du message --}}
                     <div class="pw-email-preview-section" style="flex:1; display:flex; flex-direction:column; min-height:0;">

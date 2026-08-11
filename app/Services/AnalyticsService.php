@@ -182,9 +182,12 @@ class AnalyticsService
     {
         return [
             'prospects' => [
-                'total' => Prospect::whereBetween('created_at', [$startDate, $endDate])->count(),
-                'converted' => Prospect::whereBetween('created_at', [$startDate, $endDate])
-                    ->whereHas('client')
+                'total' => Prospect::withTrashed()
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->count(),
+                'converted' => Prospect::withTrashed()
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->whereNotNull('converti_partenaire_id')
                     ->count(),
                 'conversion_rate' => $this->getConversionRate('prospect', $startDate, $endDate),
             ],
@@ -218,9 +221,12 @@ class AnalyticsService
 
     private function getConversionRate($type, $startDate, $endDate): float
     {
-        $total = Prospect::whereBetween('created_at', [$startDate, $endDate])->count();
-        $converted = Prospect::whereBetween('created_at', [$startDate, $endDate])
-            ->whereHas('client')
+        $total = Prospect::withTrashed()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->count();
+        $converted = Prospect::withTrashed()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereNotNull('converti_partenaire_id')
             ->count();
 
         if ($total === 0) {

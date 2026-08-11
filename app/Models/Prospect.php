@@ -970,6 +970,11 @@ class Prospect extends Model
         return $this->morphMany(HistoriqueModification::class, 'model');
     }
 
+    public function notes()
+    {
+        return $this->hasMany(\App\Models\ProspectNote::class, 'prospect_id');
+    }
+
     public function workflowInstance()
     {
         return $this->morphOne(WorkflowInstance::class, 'instanceable');

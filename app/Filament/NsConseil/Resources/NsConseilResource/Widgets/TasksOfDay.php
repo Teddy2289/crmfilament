@@ -80,6 +80,9 @@ class TasksOfDay extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
+            ->query($this->getTableQuery())
+            ->columns($this->getTableColumns())
+            ->actions($this->getTableActions())
             ->defaultPaginationPageOption(5)
             ->paginated([5, 10, 25]);
     }

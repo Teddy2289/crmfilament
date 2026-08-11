@@ -470,6 +470,10 @@ $tentativesActuelles = $this->getTentativesAppel();
             :email-preview-recipient="$emailPreviewRecipient"
             :email-preview-original-subject="$emailPreviewOriginalSubject"
             :email-preview-original-body="$emailPreviewOriginalBody"
+            :show-cc-selection="$statut_resultat === 'ncse_50'"
+            :recipient-readonly="$statut_resultat === 'ncse_50'"
+            :email-preview-cc-users="$this->emailPreviewCcUsers"
+            :email-preview-cc-user-ids="$emailPreviewCcUserIds"
         />
         @endif
 
@@ -489,4 +493,3 @@ $tentativesActuelles = $this->getTentativesAppel();
 
     </div>{{-- /wire:poll.keep-alive.300000ms="renewCurrentContactLock" --}}
 </x-filament-panels::page>
-

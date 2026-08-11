@@ -2,7 +2,6 @@
 namespace App\Services;
 
 use App\Jobs\SendProspectionMailJob;
-use App\Mail\ContactSansCSEMail;
 use App\Mail\PriseContactBlocMail;
 use App\Mail\ConfirmationRdvProspectMail;
 use App\Mail\GenericProspectionMail;
@@ -120,11 +119,12 @@ class ProspectionMailService
 
     protected function envoyerNcse50(Prospect $prospect, array $contexte): void
     {
-        $email = $prospect->interlocuteur_email ?: $prospect->fallback_interlocuteur_email ?: $this->fallbackEmail();
+        $commercial = $prospect->commercial;
+        $email = $commercial?->email;
 
         Log::info("MAIL DEBUG: envoyerNcse50", [
+            'commercial_id' => $commercial?->id,
             'email_utilise' => $email,
-            'via_fallback' => ! $prospect->interlocuteur_email && (bool) $prospect->fallback_interlocuteur_email,
         ]);
 
         if (! $email) {
@@ -132,23 +132,59 @@ class ProspectionMailService
             return;
         }
 
-        $mailable = $this->wrapPreviewableMailable(new ContactSansCSEMail($prospect, [
-            'nom' => $prospect->interlocuteur_nom,
-            'fonction' => $prospect->interlocuteur_fonction,
-            'email' => $prospect->interlocuteur_email,
-            'telephone' => $prospect->interlocuteur_telephone,
-            'nb_salaries' => $prospect->nb_salaries,
-        ]), $contexte);
+        $mailable = $this->wrapPreviewableMailable(new GenericProspectionMail(
+            'interne.ncse_50_commercial',
+            $this->ncse50TemplateVariables($prospect, $commercial)
+        ), $contexte);
 
         dispatch(new SendProspectionMailJob(
             mailable: $mailable,
-            to: $this->resolveDestinataire($contexte, $email),
-            emailLabel: 'Contact sans CSE',
+            to: $email,
+            emailLabel: 'Notification commercial - NCSE-50',
             prospectId: $prospect->id,
             notifyUserId: Auth::id(),
             sourceEmail: $this->resolveSourceEmail(),
             emailConfigurationId: $this->resolveEmailConfigurationId(),
+            cc: $this->resolveCcUsers($contexte),
         ));
+    }
+
+    /** @return array<string, string> */
+    protected function ncse50TemplateVariables(Prospect $prospect, ?\App\Models\User $commercial): array
+    {
+        return [
+            'entreprise_nom' => $prospect->nom,
+            'nb_salaries' => (string) ($prospect->nb_salaries ?? ''),
+            'contact_prenom' => $prospect->interlocuteur_prenom ?? '',
+            'contact_nom' => $prospect->interlocuteur_nom ?? '',
+            'contact_fonction' => $prospect->interlocuteur_fonction ?? '',
+            'contact_email' => $prospect->interlocuteur_email ?? '',
+            'contact_telephone' => $prospect->interlocuteur_telephone ?? '',
+            'commercial_prenom_nom' => $commercial?->nom_complet ?? '',
+            'teleprospecteur_nom' => Auth::user()?->nom_complet ?? '',
+        ];
+    }
+
+    /** @return array<int, string> */
+    protected function resolveCcUsers(array $contexte): array
+    {
+        $ids = collect($contexte['email_preview_cc_user_ids'] ?? [])
+            ->filter(fn (mixed $id): bool => is_numeric($id))
+            ->map(fn (mixed $id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        return \App\Models\User::query()
+            ->actifs()
+            ->whereIn('id', $ids)
+            ->whereNotNull('email')
+            ->pluck('email')
+            ->all();
     }
 
     protected function envoyerHorsZone(Prospect $prospect, array $contexte): void

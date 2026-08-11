@@ -3,7 +3,6 @@
 namespace App\Services\Phoning;
 
 use App\Mail\ConfirmationRdvProspectMail;
-use App\Mail\ContactSansCSEMail;
 use App\Mail\GenericProspectionMail;
 use App\Mail\PriseContactBlocMail;
 use App\Models\Prospect;
@@ -61,12 +60,16 @@ class PhoningEmailPreviewService
                 'email'     => $fields['interlocuteur_email']    ?? $contact->interlocuteur_email,
                 'telephone' => $fields['interlocuteur_telephone'] ?? $contact->interlocuteur_telephone,
             ]),
-            'ncse_50' => new ContactSansCSEMail($contact, [
-                'nom'        => $fields['interlocuteur_nom']      ?? $contact->interlocuteur_nom,
-                'fonction'   => $fields['interlocuteur_fonction'] ?? $contact->interlocuteur_fonction,
-                'email'      => $fields['interlocuteur_email']    ?? $contact->interlocuteur_email,
-                'telephone'  => $fields['interlocuteur_telephone'] ?? $contact->interlocuteur_telephone,
-                'nb_salaries' => $contact->nb_salaries,
+            'ncse_50' => new GenericProspectionMail('interne.ncse_50_commercial', [
+                'entreprise_nom' => $contact->nom,
+                'nb_salaries' => (string) ($contact->nb_salaries ?? ''),
+                'contact_prenom' => $fields['interlocuteur_prenom'] ?? $contact->interlocuteur_prenom ?? '',
+                'contact_nom' => $fields['interlocuteur_nom'] ?? $contact->interlocuteur_nom ?? '',
+                'contact_fonction' => $fields['interlocuteur_fonction'] ?? $contact->interlocuteur_fonction ?? '',
+                'contact_email' => $fields['interlocuteur_email'] ?? $contact->interlocuteur_email ?? '',
+                'contact_telephone' => $fields['interlocuteur_telephone'] ?? $contact->interlocuteur_telephone ?? '',
+                'commercial_prenom_nom' => $contact->commercial?->nom_complet ?? '',
+                'teleprospecteur_nom' => Auth::user()?->nom_complet ?? '',
             ]),
             'cse_hz' => new GenericProspectionMail('interne.cse_hors_zone', [
                 'entreprise_nom'  => $contact->nom,
@@ -87,9 +90,10 @@ class PhoningEmailPreviewService
     public function resolveRecipient(string $statut, Prospect $contact): ?string
     {
         return match ($statut) {
-            'rdv', 'bloc', 'ncse_50' => $contact->interlocuteur_email
+            'rdv', 'bloc' => $contact->interlocuteur_email
                 ?: $contact->fallback_interlocuteur_email
                 ?: $this->fallbackEmail(),
+            'ncse_50' => $contact->commercial?->email,
             'cse_hz' => app()->environment('production')
                 ? config('aopia.mail.cse_hors_zone_email', 'bruno@ns-conseil.com')
                 : ($this->fallbackEmail() ?: config('aopia.mail.preview_fallback_email', 'bruno@ns-conseil.com')),

@@ -9,21 +9,21 @@ class RendezVousPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('view_rendez_vous');
+        return $user->hasPermissionTo('rendez_vous.view_any');
     }
 
     public function view(User $user, RendezVous $rendezVous): bool
     {
-        return $user->hasPermissionTo('view_rendez_vous');
+        return $user->hasPermissionTo('rendez_vous.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('create_rendez_vous');
+        return $user->hasPermissionTo('rendez_vous.create');
     }
 
     public function update(User $user, RendezVous $rendezVous): bool
     {
-        return $user->hasPermissionTo('edit_rendez_vous');
+        return $user->hasPermissionTo('rendez_vous.update');
     }
 }

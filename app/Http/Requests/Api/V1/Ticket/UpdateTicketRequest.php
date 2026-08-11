@@ -16,18 +16,21 @@ class UpdateTicketRequest extends FormRequest
     }
 
     /**
-     * All fields nullable for partial updates.
+     * All fields nullable/sometimes for partial (PATCH) semantics.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'statut'                 => ['nullable', 'string', Rule::enum(TicketStatut::class)],
-            'niveau_priorite'        => ['nullable', 'string', Rule::enum(NiveauPriorite::class)],
-            'corps_de_metier'        => ['nullable', 'string', Rule::enum(CorpsDeMetier::class)],
-            'notes'                  => ['nullable', 'string'],
-            'contact_particulier_id' => ['nullable', 'integer', 'exists:contact_particuliers,id'],
+            'statut'                 => ['sometimes', 'nullable', 'string', Rule::enum(TicketStatut::class)],
+            'niveau_priorite'        => ['sometimes', 'nullable', 'string', Rule::enum(NiveauPriorite::class)],
+            'corps_de_metier'        => ['sometimes', 'nullable', 'string', Rule::enum(CorpsDeMetier::class)],
+            'notes'                  => ['sometimes', 'nullable', 'string'],
+            'contact_particulier_id' => ['sometimes', 'nullable', 'integer', 'exists:contact_particuliers,id'],
+            'artisan_id'             => ['sometimes', 'nullable', 'integer', 'exists:artisans,id'],
+            'rdv_planifie_at'        => ['sometimes', 'nullable', 'date'],
+            'rappel_promise_at'      => ['sometimes', 'nullable', 'date'],
         ];
     }
 }

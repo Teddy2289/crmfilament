@@ -33,6 +33,7 @@ class SendProspectionMailJob implements ShouldQueue
         public ?int $notifyUserId = null,
         public ?string $sourceEmail = null,
         public ?int $emailConfigurationId = null,
+        public array $cc = [],
     ) {
     }
 
@@ -40,7 +41,20 @@ class SendProspectionMailJob implements ShouldQueue
     {
         try {
             $this->configureMailerFromEmailConfiguration();
-            Mail::mailer('smtp')->to($this->to)->send($this->mailable);
+            $cc = collect($this->cc)
+                ->filter(fn (mixed $email): bool => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL))
+                ->map(fn (string $email): string => trim($email))
+                ->reject(fn (string $email): bool => strcasecmp($email, $this->to) === 0)
+                ->unique(fn (string $email): string => mb_strtolower($email))
+                ->values()
+                ->all();
+
+            $pendingMail = Mail::mailer('smtp')->to($this->to);
+            if ($cc !== []) {
+                $pendingMail->cc($cc);
+            }
+
+            $pendingMail->send($this->mailable);
             $this->notifier(true);
         } catch (\Throwable $e) {
             Log::error("SendProspectionMailJob: échec envoi [{$this->emailLabel}] à {$this->to}" .

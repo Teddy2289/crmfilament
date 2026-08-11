@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
             FicheTemplateSeeder::class,
             TemplateFicheSeeder::class,
             EmailTemplateSeeder::class,
+            Ncse50CommercialEmailTemplateSeeder::class,
 
             // 6. Contenu de démonstration
             //    (DemoCustomFieldValuesSeeder dépend de TestCustomFieldsSeeder)

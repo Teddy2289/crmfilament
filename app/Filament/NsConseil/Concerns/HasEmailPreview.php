@@ -4,13 +4,13 @@ namespace App\Filament\NsConseil\Concerns;
 
 use App\Jobs\SendProspectionMailJob;
 use App\Mail\ConfirmationRdvProspectMail;
-use App\Mail\ContactSansCSEMail;
 use App\Mail\GenericProspectionMail;
 use App\Mail\PreviewableProspectionMail;
 use App\Mail\PriseContactBlocMail;
 use App\Models\EmailTemplate;
 use App\Models\Prospect;
 use App\Models\RendezVous;
+use App\Models\User;
 use Filament\Notifications\Notification;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Auth;
@@ -30,6 +30,8 @@ trait HasEmailPreview
     public ?string $emailPreviewBody              = null;
     public ?string $emailPreviewOriginalSubject   = null;
     public ?string $emailPreviewOriginalBody      = null;
+    /** @var array<int, int|string> */
+    public array $emailPreviewCcUserIds            = [];
 
     public string $emailPreviewMode               = 'status';
     public string $emailTemplateKey               = '';
@@ -343,6 +345,7 @@ trait HasEmailPreview
         $this->emailPreviewBody            = null;
         $this->emailPreviewOriginalSubject = null;
         $this->emailPreviewOriginalBody    = null;
+        $this->emailPreviewCcUserIds       = [];
     }
 
     /**
@@ -391,13 +394,7 @@ trait HasEmailPreview
                 'email'     => $prospect->interlocuteur_email,
                 'telephone' => $prospect->interlocuteur_telephone,
             ]),
-            'ncse_50' => new ContactSansCSEMail($prospect, [
-                'nom'        => $prospect->interlocuteur_nom,
-                'fonction'   => $prospect->interlocuteur_fonction,
-                'email'      => $prospect->interlocuteur_email,
-                'telephone'  => $prospect->interlocuteur_telephone,
-                'nb_salaries' => $prospect->nb_salaries,
-            ]),
+            'ncse_50' => new GenericProspectionMail('interne.ncse_50_commercial', $this->ncse50PreviewVariables($prospect)),
             'cse_hz'  => new GenericProspectionMail('interne.cse_hors_zone', [
                 'entreprise_nom' => $prospect->nom,
                 'elu_nom'        => $prospect->interlocuteur_nom,
@@ -450,9 +447,10 @@ trait HasEmailPreview
         }
 
         return match ($statut) {
-            'rdv', 'bloc', 'ncse_50' => $prospect->interlocuteur_email
+            'rdv', 'bloc' => $prospect->interlocuteur_email
                 ?: $prospect->fallback_interlocuteur_email
                 ?: $this->localPreviewFallbackEmail(),
+            'ncse_50' => $prospect->commercial?->email,
             'cse_hz' => app()->environment('production')
                 ? config('aopia.mail.cse_hors_zone_email', 'bruno@ns-conseil.com')
                 : ($this->localPreviewFallbackEmail() ?: config('aopia.mail.preview_fallback_email', 'bruno@ns-conseil.com')),
@@ -477,7 +475,43 @@ trait HasEmailPreview
             $context['email_preview_to'] = $this->emailPreviewRecipient;
         }
 
+        if ($this->emailPreviewConfirmed && $this->emailPreviewCcUserIds !== []) {
+            $context['email_preview_cc_user_ids'] = $this->emailPreviewCcUserIds;
+        }
+
         return $context;
+    }
+
+    /** @return array<int, array{id: int, label: string}> */
+    public function getEmailPreviewCcUsersProperty(): array
+    {
+        return User::query()
+            ->actifs()
+            ->whereNotNull('email')
+            ->orderBy('prenom')
+            ->orderBy('nom')
+            ->get(['id', 'prenom', 'nom', 'email'])
+            ->map(fn (User $user): array => [
+                'id' => $user->id,
+                'label' => trim("{$user->nom_complet} ({$user->email})"),
+            ])
+            ->all();
+    }
+
+    /** @return array<string, string> */
+    protected function ncse50PreviewVariables(Prospect $prospect): array
+    {
+        return [
+            'entreprise_nom' => $prospect->nom,
+            'nb_salaries' => (string) ($prospect->nb_salaries ?? ''),
+            'contact_prenom' => $prospect->interlocuteur_prenom ?? '',
+            'contact_nom' => $prospect->interlocuteur_nom ?? '',
+            'contact_fonction' => $prospect->interlocuteur_fonction ?? '',
+            'contact_email' => $prospect->interlocuteur_email ?? '',
+            'contact_telephone' => $prospect->interlocuteur_telephone ?? '',
+            'commercial_prenom_nom' => $prospect->commercial?->nom_complet ?? '',
+            'teleprospecteur_nom' => Auth::user()?->nom_complet ?? '',
+        ];
     }
 
     protected function localPreviewFallbackEmail(): ?string
