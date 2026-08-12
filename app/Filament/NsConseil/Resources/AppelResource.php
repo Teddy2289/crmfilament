@@ -173,7 +173,11 @@ class AppelResource extends Resource
 
                         Forms\Components\TextInput::make('fiche_word_path')
                             ->label('Fichier Word généré')
-                            ->disabled(),
+                            ->disabled()
+                            ->formatStateUsing(fn ($state): string => basename($state ?: ''))
+                            ->url(fn ($record): ?string => $record->fiche_word_path)
+                            ->openUrlInNewTab()
+                            ->visible(fn ($record): bool => filled($record->fiche_word_path)),
 
                         Forms\Components\DateTimePicker::make('fiche_word_generated_at')
                             ->label('Généré le')
@@ -371,6 +375,12 @@ class AppelResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\Action::make('download_fiche')
+                    ->label('Télécharger fiche')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->url(fn ($record) => $record->fiche_word_path)
+                    ->openUrlInNewTab()
+                    ->visible(fn ($record): bool => filled($record->fiche_word_path)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
