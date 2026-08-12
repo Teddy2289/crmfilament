@@ -5,6 +5,7 @@ namespace App\Filament\NsConseil\Resources;
 use App\Filament\Exports\AppelExporter;
 use App\Filament\NsConseil\Resources\AppelResource\Pages\ListAppels;
 use App\Filament\NsConseil\Resources\AppelResource\Pages\ViewAppel;
+use App\Filament\NsConseil\Resources\AppelResource\RelationManagers\HistoriqueModificationsRelationManager;
 use App\Models\Appel;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -96,6 +97,22 @@ class AppelResource extends Resource
 
                         Forms\Components\TextInput::make('ringover_status_tag')
                             ->label('Tag statut')
+                            ->disabled(),
+
+                        Forms\Components\Textarea::make('ringover_summary')
+                            ->label('Résumé Ringover')
+                            ->rows(3)
+                            ->disabled(),
+
+                        Forms\Components\Textarea::make('ringover_note')
+                            ->label('Note Ringover')
+                            ->rows(3)
+                            ->disabled(),
+
+                        Forms\Components\Textarea::make('ringover_qualifications')
+                            ->label('Qualifications Ringover')
+                            ->rows(4)
+                            ->formatStateUsing(fn ($state) => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $state)
                             ->disabled(),
 
                         Forms\Components\TagsInput::make('ringover_tags')
@@ -240,6 +257,28 @@ class AppelResource extends Resource
                     ->sortable()
                     ->description(fn ($record): string => $record->ringover_agent_nom ?? '-'),
 
+                Tables\Columns\TextColumn::make('ringover_summary')
+                    ->label('Résumé Ringover')
+                    ->limit(60)
+                    ->tooltip(fn ($record): ?string => $record->ringover_summary)
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('ringover_note')
+                    ->label('Note Ringover')
+                    ->limit(60)
+                    ->tooltip(fn ($record): ?string => $record->ringover_note)
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('ringover_qualifications')
+                    ->label('Qualifications Ringover')
+                    ->formatStateUsing(fn ($state): string => is_array($state) ? collect($state)->map(fn ($item) => data_get($item, 'label') ?: data_get($item, 'name') ?: data_get($item, 'value') ?: json_encode($item))->filter()->implode(' | ') : ($state ?? '-'))
+                    ->limit(80)
+                    ->tooltip(fn ($record): ?string => is_array($record->ringover_qualifications) ? json_encode($record->ringover_qualifications, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $record->ringover_qualifications)
+                    ->sortable()
+                    ->searchable(),
+
                 Tables\Columns\BadgeColumn::make('direction')
                     ->label('Direction')
                     ->formatStateUsing(fn ($state): string => match ($state) {
@@ -343,7 +382,7 @@ class AppelResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            HistoriqueModificationsRelationManager::class,
         ];
     }
 

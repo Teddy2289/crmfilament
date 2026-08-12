@@ -21,6 +21,9 @@ class Appel extends Model
         'fiche_jaune_j7_envoye_at' => 'datetime',
         'fiche_verte_envoyee_at' => 'datetime',
         'ringover_tags' => 'array',
+        'ringover_summary' => 'string',
+        'ringover_note' => 'string',
+        'ringover_qualifications' => 'array',
         'ringover_tag_validation' => 'array',
         'ringover_tag_is_complete' => 'boolean',
         'ringover_payload' => 'array',
@@ -47,6 +50,9 @@ class Appel extends Model
         'ringover_tags',
         'ringover_department_tag',
         'ringover_status_tag',
+        'ringover_summary',
+        'ringover_note',
+        'ringover_qualifications',
         'ringover_tag_validation',
         'ringover_tag_is_complete',
         'ringover_payload',
@@ -466,5 +472,15 @@ class Appel extends Model
     public function campagne()
     {
         return $this->belongsTo(CampagnePhoning::class, 'campagne_id');
+    }
+
+    public function historiqueModifications()
+    {
+        return $this->morphMany(HistoriqueModification::class, 'model');
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
     }
 }

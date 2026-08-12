@@ -24,6 +24,9 @@ class AppelExporter extends Exporter
             ExportColumn::make('appelable.nom')->label('Nom entité'),
             ExportColumn::make('ringover_call_id')->label('ID Ringover'),
             ExportColumn::make('ringover_agent_nom')->label('Agent Ringover'),
+            ExportColumn::make('ringover_summary')->label('Résumé Ringover'),
+            ExportColumn::make('ringover_note')->label('Note Ringover'),
+            ExportColumn::make('ringover_qualifications')->label('Qualifications Ringover'),
             ExportColumn::make('ringover_tags')->label('Tags Ringover'),
             ExportColumn::make('ringover_status_tag')->label('Statut Ringover'),
             ExportColumn::make('ringover_department_tag')->label('Département Ringover'),
@@ -32,6 +35,7 @@ class AppelExporter extends Exporter
             ExportColumn::make('commentaire')->label('Commentaire'),
             ExportColumn::make('enregistrement_audio')->label('Enregistrement audio'),
             ExportColumn::make('user.email')->label('Utilisateur'),
+            ExportColumn::make('created_at')->label('Créé le'),
         ];
     }
 
@@ -44,5 +48,10 @@ class AppelExporter extends Exporter
         }
 
         return $body;
+    }
+
+    public function getFileName(Export $export): string
+    {
+        return "appels-{$export->created_at->format('Y-m-d-His')}.xlsx";
     }
 }
