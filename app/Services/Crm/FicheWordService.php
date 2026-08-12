@@ -155,17 +155,29 @@ class FicheWordService
 
         $filename = basename($localPath);
 
-        // putFileAs() attend un objet File|UploadedFile, pas une string brute
-        // (une string est traitée comme le CONTENU du fichier, pas un chemin).
-        Storage::disk('public')->putFileAs(
-            'fiches/'.$destination,
-            new \Illuminate\Http\File($localPath),
-            $filename
+        // Utiliser le disque 'public' avec le chemin complet : fiches/YYYY/MM/filename.docx
+        $storagePath = 'fiches/'.$destination.'/'.$filename;
+        
+        // Créer le répertoire s'il n'existe pas
+        if (! Storage::disk('public')->exists('fiches/'.$destination)) {
+            Storage::disk('public')->makeDirectory('fiches/'.$destination, 0755, true);
+        }
+        
+        // Copier le fichier avec permissions publiques
+        $success = Storage::disk('public')->put(
+            $storagePath,
+            File::get($localPath),
+            ['visibility' => 'public']
         );
+
+        if (! $success) {
+            throw new \Exception("Impossible de copier le fichier vers le disque public : {$storagePath}");
+        }
 
         // Nettoyage du fichier temporaire une fois copié vers le disque public
         File::delete($localPath);
 
-        return Storage::disk('public')->url('fiches/'.$destination.'/'.$filename);
+        // Retourner l'URL publique accessible
+        return Storage::disk('public')->url($storagePath);
     }
 }

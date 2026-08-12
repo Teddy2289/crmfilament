@@ -50,6 +50,10 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     Route::get('/pdf/facture/{facture}', [PdfController::class, 'facture'])->name('factures.pdf');
     Route::get('/pdf/devis/{devis}', [PdfController::class, 'devis'])->name('devis.pdf');
+
+    // Téléchargement des fiches Word (avec régénération)
+    Route::get('/appel/{appel}/fiche/download', \App\Http\Controllers\AppelFicheController::class)
+        ->name('appel-fiche.download');
 });
 
 Route::get('/debug-calendar', function () {

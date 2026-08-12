@@ -191,16 +191,10 @@ class CampagnePhoning extends Model
 
     public function estTerminee(): bool
     {
-        $totalContacts = $this->countContacts();
-        if ($totalContacts === 0) {
-            return false;
-        }
-
-        $contactsTraites = $this->appels()
-            ->distinct('appelable_id')
-            ->count('appelable_id');
-
-        return $contactsTraites >= $totalContacts;
+        // Une campagne est terminée uniquement quand il n'y a plus de contacts
+        // à appeler dans la file de la campagne (après application de tous les
+        // filtres : refroidissement, max tentatives, statuts retirés, etc.)
+        return $this->countQueueContacts() === 0;
     }
 
     // ── Scopes ───────────────────────────────────────────────────────
