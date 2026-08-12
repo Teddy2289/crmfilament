@@ -59,7 +59,7 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Implement `src/utils/enum.utils.ts`: `EnumMeta` interface, `PROSPECT_STATUT_META`, `EVENT_RESULT_META`, `RENDEZ_VOUS_TYPE_META`, `RENDEZ_VOUS_STATUT_META`, `TICKET_STATUT_META`, `NIVEAU_PRIORITE_META`, `ORGANISATION_TYPE_META`, `ORGANISATION_STATUS_META`, `ORGANISATION_CATEGORY_META`, `STATUT_RECLAMATION_META`, `STATUT_DEVIS_META`, `STATUT_BON_DE_COMMANDE_META`, `STATUT_CAMPAGNE_META`, and the generic `getEnumMeta()` function
     - _Requirements: 3.10, 4.7, 5.4, 6.7, 7.4, 8.5, 10.5, 11.5_
 
-  - [ ]* 3.4 Write property test for enum completeness (Property 9)
+  - [x]* 3.4 Write property test for enum completeness (Property 9)
     - **Property 9: Complétude des labels d'enums**
     - Create `src/utils/__tests__/enum.property.test.ts`
     - Use `fc.constantFrom(...Object.values(EnumX))` for each enum; assert `getEnumMeta()` returns `label.length > 0 && color.length > 0`
@@ -71,7 +71,7 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Implement `src/utils/date.utils.ts`: `formatDateFR(date)`, `formatDateTimeFR(date)`, `parseISODate(s)` using `Intl.DateTimeFormat` with `fr-FR` locale
     - _Requirements: 17.2, 17.3, 17.4, 17.5, 22.4_
 
-  - [ ]* 3.6 Write property tests for validators (Properties 6, 7, 8, 10, 11)
+  - [x]* 3.6 Write property tests for validators (Properties 6, 7, 8, 10, 11)
     - Create `src/utils/__tests__/validators.property.test.ts`
     - **Property 7: SIRET validation** — assert 14-digit strings pass, all others fail (numRuns: 100)
     - **Property 8: Date range validation** — assert `date_fin <= date_debut` fails, `date_fin > date_debut` passes (numRuns: 100)
@@ -94,7 +94,7 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Implement `withRetry<T>(fn, maxAttempts=3, baseDelayMs=500)` with exponential backoff in `src/utils/retry.utils.ts` — skip retry for 4xx except 429
     - _Requirements: 2.1, 2.5, 2.6, 26.1, 26.2, 26.4, 26.5_
 
-  - [ ]* 5.2 Write property test for exponential retry (Property 16)
+  - [x]* 5.2 Write property test for exponential retry (Property 16)
     - Create `src/utils/__tests__/retry.property.test.ts`
     - **Property 16: Retry exponentiel sur erreurs réseau**
     - Use fast-check to generate failing functions with 5xx/network errors; assert `withRetry()` calls the function at most 3 times and delays follow the 500ms/1000ms/2000ms pattern
@@ -106,12 +106,12 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Handle Laravel 422 error mapping (extract `errors` field from response)
     - _Requirements: 2.2, 2.3, 2.4, 26.3_
 
-- [ ] 6. Implement Pinia stores
+- [x] 6. Implement Pinia stores
   - [x] 6.1 Implement auth store
     - Create `src/stores/auth.store.ts` as designed: `user`, `accessToken`, `refreshToken` refs; `isAuthenticated` computed; `setTokens()`, `clearAuth()`, `login()`, `logout()`, `refreshAccessToken()`, `initializeFromStorage()` actions; localStorage persistence with `crm_access_token` / `crm_refresh_token` keys
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.7, 2.8_
 
-  - [ ]* 6.2 Write property tests for auth store (Properties 3, 4)
+  - [x]* 6.2 Write property tests for auth store (Properties 3, 4)
     - Create `src/stores/__tests__/auth.store.property.test.ts`
     - **Property 3: Logout vide complètement l'état d'authentification** — generate random token pairs, call `clearAuth()`, assert all state fields null and localStorage empty (numRuns: 100)
     - **Property 4: Round-trip persistance auth localStorage** — generate random token pairs, call `setTokens()`, assert localStorage values equal originals (numRuns: 100)
@@ -121,7 +121,7 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Create `src/stores/ui.store.ts`: `theme` ref (init from localStorage or `prefers-color-scheme`), `sidebarOpen` ref, `notifications` ref; `toggleTheme()` (updates localStorage + `.dark` class on `<html>`), `addNotification()`, `removeNotification()`
     - _Requirements: 16.1, 16.2, 16.3, 15.6, 15.7_
 
-  - [ ]* 6.4 Write property test for theme persistence (Property 13)
+  - [x]* 6.4 Write property test for theme persistence (Property 13)
     - Create `src/stores/__tests__/ui.store.property.test.ts`
     - **Property 13: Persistance du thème dans localStorage**
     - Use fast-check to set theme to arbitrary value, call `toggleTheme()`, assert `localStorage.getItem('crm_theme')` equals the new toggled value (numRuns: 100)
@@ -132,7 +132,7 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Repeat pattern for `partenaires.store.ts`, `rendezVous.store.ts`, `tickets.store.ts`, `reclamations.store.ts`, `clients.store.ts` (read-only: `fetchList`, `fetchOne` only), `campagnes.store.ts` (read-only)
     - _Requirements: 3.1–3.4, 4.1–4.2, 6.1–6.3, 7.1, 7.5, 8.1–8.2, 9.1–9.4, 11.1–11.3, 23.3, 23.7_
 
-  - [ ]* 6.6 Write property test for cache idempotence (Property 17)
+  - [x]* 6.6 Write property test for cache idempotence (Property 17)
     - Create `src/stores/__tests__/prospects.store.property.test.ts`
     - **Property 17: Idempotence du cache (TTL)**
     - Mock `prospectsService.list()`; call `fetchList()` once, then call again within 30s without `forceRefresh`; assert `prospectsService.list()` was called exactly once (numRuns: 100)
@@ -145,7 +145,7 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Add `meta: { permission: '...' }` to all resource routes matching the design
     - _Requirements: 2.9, 20.1, 20.5, 23.2_
 
-  - [ ]* 7.2 Write property test for route guard (Property 5)
+  - [x]* 7.2 Write property test for route guard (Property 5)
     - Create `src/router/__tests__/router.guard.property.test.ts`
     - **Property 5: Route guard redirige les utilisateurs non authentifiés**
     - Use fast-check to generate arbitrary protected route paths; assert unauthenticated navigation results in redirect to `login` with `redirect` query param preserving original path (numRuns: 100)
@@ -160,7 +160,7 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Create `src/composables/usePermissions.ts`: `hasPermission(permission: string): boolean` (reads from `auth.user.permissions`), `hasRole(role: string): boolean`, `canView(resource)`, `canCreate(resource)`, `canEdit(resource)`, `canDelete(resource)` helpers
     - _Requirements: 20.1, 20.2, 20.3, 20.4_
 
-  - [ ]* 8.3 Write property test for permission guard (Property 14)
+  - [x]* 8.3 Write property test for permission guard (Property 14)
     - Create `src/composables/__tests__/usePermissions.property.test.ts`
     - **Property 14: Permission guard cache les éléments non autorisés**
     - Use fast-check to generate user permission sets and arbitrary permission strings; assert `hasPermission(p)` returns `true` iff `p` is in the user's permissions array (numRuns: 100)
@@ -170,7 +170,7 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Create `src/composables/useDataTable.ts`: manage `page`, `perPage`, `sortBy`, `sortDir`, `filters` state; `buildQueryParams()` to create `TableQueryParams`; sync state to/from URL query params via `vue-router`; `resetPagination()` on filter change
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.8_
 
-  - [ ]* 8.5 Write property test for table state URL round-trip (Property 12)
+  - [x]* 8.5 Write property test for table state URL round-trip (Property 12)
     - Create `src/composables/__tests__/useDataTable.property.test.ts`
     - **Property 12: Round-trip état tableau dans l'URL**
     - Use fast-check to generate arbitrary `TableQueryParams` objects; encode to URL query params, decode back, assert equality (modulo string coercion of numbers) (numRuns: 100)
@@ -186,11 +186,11 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Create `src/composables/useOffline.ts` as designed: `isOffline` ref, `online`/`offline` window event listeners, failed request queue with retry on reconnect
     - _Requirements: 16.1, 16.2, 16.3, 23.8, 24.1, 24.2, 24.3, 24.4, 24.5_
 
-- [~] 9. Checkpoint — Core infrastructure
+- [x] 9. Checkpoint — Core infrastructure
   - Ensure all tests pass (run `npm run test`). Ensure TypeScript compiles without errors (`npm run build`). Ask the user if questions arise before continuing.
 
 - [ ] 10. Implement resource services
-  - [~] 10.1 Implement all API services
+  - [x] 10.1 Implement all API services
     - Create `src/services/prospects.service.ts`: `list(params)`, `get(id)`, `create(payload)`, `update(id, payload)`, `delete(id)`, `recordCall(id, payload)`
     - Create `src/services/partenaires.service.ts`: `list(params)`, `get(id)`, `create(payload)`, `update(id, payload)`, `getContacts(id)`, `getRendezVous(id)`
     - Create `src/services/rendezVous.service.ts`: `list(params)`, `get(id)`, `create(payload)`, `update(id, payload)`
@@ -201,47 +201,47 @@ All code targets **TypeScript + Vue 3 Composition API** with PrimeVue 4, Pinia, 
     - Create `src/services/search.service.ts`: `globalSearch(query)` — parallel requests to prospects/partenaires/clients/rendezVous/tickets endpoints
     - _Requirements: 3.1–3.4, 4.1–4.5, 5.1, 6.1–6.3, 7.1, 8.1–8.2, 9.1–9.4, 10.1–10.2, 11.1–11.3, 14.1, 21.1_
 
-  - [~] 10.2 Implement export service
+  - [x] 10.2 Implement export service
     - Create `src/services/export.service.ts`: `exportResource(resource, format, params)` — sends export request to backend, triggers `window.URL.createObjectURL()` browser download on response
     - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5_
 
-- [ ] 11. Implement theme system and global CSS
-  - [~] 11.1 Configure PrimeVue theme and CSS variables
+- [x] 11. Implement theme system and global CSS
+  - [x] 11.1 Configure PrimeVue theme and CSS variables
     - Configure `src/main.ts`: register `PrimeVue` with Lara preset, `darkModeSelector: '.dark'`, `cssLayer: true`; register `ToastService`, `ConfirmationService`, `DialogService`
     - Create `src/assets/styles/main.css` with CSS custom properties from design: `--crm-primary`, `--crm-secondary`, `--crm-success`, `--crm-warning`, `--crm-danger`, `--crm-surface`, `--crm-text`, `--crm-border`, and dark mode overrides under `.dark`
     - Import `primeicons/primeicons.css` and `primevue/resources/themes/lara-light-blue/theme.css` in `main.css`
     - _Requirements: 16.1, 16.4, 16.5, 16.6_
 
 - [ ] 12. Implement layout components
-  - [~] 12.1 Implement AppLayout
+  - [x] 12.1 Implement AppLayout
     - Create `src/components/layout/AppLayout.vue`: responsive grid layout with `AppSidebar` and `AppTopbar`; `<router-view>` as main content slot; apply dark/light theme class on `<html>`
     - Apply responsive breakpoints: sidebar hidden on mobile (<768px), hamburger menu visible
     - _Requirements: 13.1, 13.4, 19.1, 19.2_
 
-  - [~] 12.2 Implement AppSidebar
+  - [x] 12.2 Implement AppSidebar
     - Create `src/components/layout/AppSidebar.vue`: navigation items grouped by section (Prospection: Prospects, Appels, Campagnes; Commercial: Partenaires, Rendez-vous, Devis, Bons de commande; Support: Tickets, Réclamations, Clients; Administration); use `usePermissions()` to hide items user cannot access; highlight active route via `useRoute()`; collapsible via `ui.store.sidebarOpen`
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 20.3, 20.4_
 
-  - [~] 12.3 Implement AppTopbar
+  - [x] 12.3 Implement AppTopbar
     - Create `src/components/layout/AppTopbar.vue`: hamburger/expand button for sidebar; global search input (calls `search.service.ts` with 300ms debounce); user profile dropdown (Mon profil / Paramètres / Déconnexion); theme toggle button; notifications icon (badge count)
     - _Requirements: 13.5, 13.6, 14.1, 16.1_
 
-  - [~] 12.4 Implement AppBreadcrumb
+  - [x] 12.4 Implement AppBreadcrumb
     - Create `src/components/layout/AppBreadcrumb.vue`: reads route meta `breadcrumb` array and renders PrimeVue `Breadcrumb` component; use `useRoute()` to generate breadcrumb items dynamically
     - _Requirements: 13.7_
 
 - [ ] 13. Implement shared UI components
-  - [~] 13.1 Implement AppDataTable
+  - [-] 13.1 Implement AppDataTable
     - Create `src/components/common/AppDataTable.vue`: wraps PrimeVue `DataTable`; accepts `columns`, `items`, `meta`, `loading` props; emits `page-change`, `sort-change`, `filter-change` events; renders pagination controls (first/prev/pages/next/last + total count); renders column filter controls (text input, select dropdown, date range picker); displays sort indicator arrows; shows active filter badges with clear buttons; supports virtual scrolling when `items.length > 100`
     - Use `useDataTable()` composable internally
     - Add `aria-sort` attributes and announce sort/filter changes via `aria-live`
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.8, 23.4, 25.4_
 
-  - [~] 13.2 Implement AppModal
+  - [x] 13.2 Implement AppModal
     - Create `src/components/common/AppModal.vue`: wraps PrimeVue `Dialog`; props: `visible`, `title`, `size`; emits `close`; traps focus within dialog; returns focus to trigger on close; ARIA `role="dialog"`, `aria-modal="true"`, `aria-labelledby`
     - _Requirements: 25.3_
 
-  - [~] 13.3 Implement AppConfirm, AppBadge, AppLoading
+  - [ ] 13.3 Implement AppConfirm, AppBadge, AppLoading
     - Create `src/components/common/AppConfirm.vue`: wraps PrimeVue `ConfirmDialog` for delete confirmations
     - Create `src/components/common/AppBadge.vue`: renders colored badge using `getEnumMeta()` for color; props: `value`, `enumMeta`; WCAG AA contrast colors
     - Create `src/components/common/AppLoading.vue`: skeleton loader and full-screen overlay spinner variants; props: `type: 'skeleton' | 'spinner' | 'overlay'`, `visible`
