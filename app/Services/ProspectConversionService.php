@@ -82,7 +82,7 @@ class ProspectConversionService
      */
     protected function migrateDirigeant(Prospect $prospect, Partenaire $partenaire): void
     {
-        if (! $prospect->dirigeant_nom && ! $prospect->dirigeant_prenom) {
+        if (! $prospect->dirigeant_nom) {
             return;
         }
 
@@ -106,7 +106,7 @@ class ProspectConversionService
      */
     protected function migrateCseSecretaire(Prospect $prospect, Partenaire $partenaire): void
     {
-        if (! $prospect->cse_secretaire_nom && ! $prospect->cse_secretaire_prenom) {
+        if (! $prospect->cse_secretaire_nom) {
             return;
         }
 
@@ -130,7 +130,7 @@ class ProspectConversionService
      */
     protected function migrateCseTresorier(Prospect $prospect, Partenaire $partenaire): void
     {
-        if (! $prospect->cse_tresorier_nom && ! $prospect->cse_tresorier_prenom) {
+        if (! $prospect->cse_tresorier_nom) {
             return;
         }
 
@@ -154,7 +154,7 @@ class ProspectConversionService
      */
     protected function migrateSyndicatResponsable(Prospect $prospect, Partenaire $partenaire): void
     {
-        if (! $prospect->syndicat_responsable_nom && ! $prospect->syndicat_responsable_prenom) {
+        if (! $prospect->syndicat_responsable_nom) {
             return;
         }
 

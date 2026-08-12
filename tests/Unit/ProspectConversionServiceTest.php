@@ -9,7 +9,7 @@ use App\Models\Prospect;
 use App\Services\ProspectConversionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(\Tests\TestCase::class, RefreshDatabase::class);
 
 test('it converts a qualified prospect to partner', function () {
     $prospect = Prospect::factory()->create([
@@ -33,7 +33,7 @@ test('it converts a qualified prospect to partner', function () {
     expect($partenaire)
         ->toBeInstanceOf(Partenaire::class)
         ->and($partenaire->nom)->toBe('Test Company')
-        ->and($partenaire->type)->toBe(OrganizationType::CSE->value)
+        ->and($partenaire->type)->toBe(OrganizationType::CSE)
         ->and($partenaire->siret)->toBe('12345678901234')
         ->and($partenaire->statut)->toBe(OrganizationStatus::SigneAccordCadre)
         ->and($partenaire->prospect_id)->toBe($prospect->id);
@@ -142,6 +142,15 @@ test('it handles missing contact data gracefully', function () {
         'statut' => ProspectStatut::QF,
         'qf_valide' => true,
         'nom' => 'Simple Company',
+        // Explicitly null all contact fields so no contacts are migrated
+        'dirigeant_nom' => null,
+        'dirigeant_prenom' => null,
+        'cse_secretaire_nom' => null,
+        'cse_secretaire_prenom' => null,
+        'cse_tresorier_nom' => null,
+        'cse_tresorier_prenom' => null,
+        'syndicat_responsable_nom' => null,
+        'syndicat_responsable_prenom' => null,
     ]);
 
     $service = new ProspectConversionService();
@@ -156,17 +165,29 @@ test('it rolls back transaction on failure', function () {
         'statut' => ProspectStatut::QF,
         'qf_valide' => true,
         'nom' => 'Test Company',
+        // Force a contact with a name so migrateDirigeant will run,
+        // but we'll make it fail via a DB constraint below
+        'dirigeant_nom' => null,
+        'dirigeant_prenom' => null,
+        'cse_secretaire_nom' => null,
+        'cse_tresorier_nom' => null,
+        'syndicat_responsable_nom' => null,
     ]);
 
-    // Mock the Partenaire::create to throw an exception
-    Partenaire::spy();
-    Partenaire::shouldReceive('create')->andThrow(new \Exception('Database error'));
+    // Use a partial mock on the service to make finalizeConversion throw
+    $mock = $this->getMockBuilder(ProspectConversionService::class)
+        ->onlyMethods(['finalizeConversion'])
+        ->getMock();
 
-    $service = new ProspectConversionService();
+    $mock->expects($this->once())
+        ->method('finalizeConversion')
+        ->willThrowException(new \Exception('Database error'));
 
-    expect(fn () => $service->convertProspectToPartenaire($prospect))
-        ->toThrow(\Exception::class);
+    expect(fn () => $mock->convertProspectToPartenaire($prospect))
+        ->toThrow(\Exception::class, 'Database error');
 
+    // Verify no Partenaire was persisted (transaction rolled back)
+    expect(Partenaire::where('prospect_id', $prospect->id)->exists())->toBeFalse();
     // Verify the prospect was not modified
     $prospect->refresh();
     expect($prospect->converti_partenaire_id)->toBeNull();

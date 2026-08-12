@@ -70,8 +70,11 @@ class RingoverCallSyncService
                     ?? data_get($call, 'record.url')
             ),
             'commentaire' => $this->extractComment($call),
+            'ringover_summary' => $this->extractSummary($call),
+            'ringover_note' => $this->extractNote($call),
+            'ringover_qualifications' => $this->extractQualifications($call),
             'ringover_tags' => $tagValidation['tags'],
-            'ringover_department_tag' => $tagValidation['department_tag'], 
+            'ringover_department_tag' => $tagValidation['department_tag'],
             'ringover_status_tag' => $tagValidation['status_tag'],
             'ringover_tag_validation' => $tagValidation,
             'ringover_tag_is_complete' => $tagValidation['complete'],
@@ -257,12 +260,100 @@ class RingoverCallSyncService
 
     private function extractComment(array $call): ?string
     {
-        $comment = data_get($call, 'comments.0.content')
+        return $this->extractNote($call);
+    }
+
+    private function extractSummary(array $call): ?string
+    {
+        $summary = data_get($call, 'summary')
+            ?? data_get($call, 'resume')
+            ?? data_get($call, 'call_summary')
+            ?? data_get($call, 'description')
+            ?? data_get($call, 'analysis.summary')
+            ?? data_get($call, 'call.summary');
+
+        return $this->stringValue($summary);
+    }
+
+    private function extractNote(array $call): ?string
+    {
+        $note = data_get($call, 'comments.0.content')
             ?? data_get($call, 'comments.0.text')
             ?? data_get($call, 'comment')
+            ?? data_get($call, 'note')
+            ?? data_get($call, 'notes.0.content')
+            ?? data_get($call, 'notes.0.text')
+            ?? data_get($call, 'call.notes.0.content')
+            ?? data_get($call, 'call.notes.0.text')
             ?? data_get($call, 'notes');
 
-        return $this->stringValue($comment);
+        return $this->stringValue($this->normalizeTextValue($note));
+    }
+
+    private function extractQualifications(array $call): ?array
+    {
+        $qualifications = data_get($call, 'qualifications')
+            ?? data_get($call, 'qualification')
+            ?? data_get($call, 'call.qualifications')
+            ?? data_get($call, 'call.qualification')
+            ?? data_get($call, 'analysis.qualifications');
+
+        if (! is_array($qualifications) || $qualifications === []) {
+            return null;
+        }
+
+        return $this->normalizeQualifications($qualifications);
+    }
+
+    private function normalizeTextValue(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            $flat = [];
+
+            foreach ($value as $item) {
+                if (is_array($item)) {
+                    foreach (['content', 'text', 'value', 'label', 'name'] as $key) {
+                        if (filled($item[$key] ?? null)) {
+                            $flat[] = (string) $item[$key];
+                            break;
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (filled($item)) {
+                    $flat[] = (string) $item;
+                }
+            }
+
+            return $flat === [] ? null : implode(' ', $flat);
+        }
+
+        return $value;
+    }
+
+    private function normalizeQualifications(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                $normalized[] = $item;
+
+                continue;
+            }
+
+            if (is_string($item) || is_numeric($item)) {
+                $normalized[] = ['value' => (string) $item];
+            }
+        }
+
+        return $normalized;
     }
 
     private function extractPhoneNumber(array $call): ?string
