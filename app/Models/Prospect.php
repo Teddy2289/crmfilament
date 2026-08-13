@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\OrganizationStatus;
 use App\Enums\OrganizationType;
 use App\Enums\ProspectStatut;
+use App\Support\PhoneFormatter;
 use App\Traits\HasModelValidation;
 use App\Traits\HasInputSanitization;
 use Database\Factories\ProspectFactory;
@@ -381,6 +382,86 @@ class Prospect extends Model
         }
 
         return '⭐';
+    }
+
+    public function getDernierAppelRingoverAttribute(): ?array
+    {
+        // Récupère le dernier appel Ringover
+        $appel = $this->appels()
+            ->whereNotNull('ringover_call_id')
+            ->orderByDesc('date_heure')
+            ->first();
+
+        if (!$appel) {
+            return null;
+        }
+
+        return [
+            'id' => $appel->id,
+            'date_heure' => $appel->date_heure,
+            'date_heure_formatee' => $appel->date_heure->format('d/m/Y H:i'),
+            'date_seulement' => $appel->date_heure->format('d/m/Y'),
+            'heure_seulement' => $appel->date_heure->format('H:i'),
+            'duree_secondes' => $appel->duree_secondes ?? 0,
+            'duree_formatee' => $appel->duree_formatee ?? '0 sec',
+            'direction' => $appel->direction,
+            'ringover_call_id' => $appel->ringover_call_id,
+            'numero_national' => $appel->numero_appelant ? PhoneFormatter::toNationalFrench($appel->numero_appelant) : null,
+            'numero_international' => $appel->numero_appelant ? PhoneFormatter::toInternational($appel->numero_appelant) : null,
+            'numero_dual' => $appel->numero_appelant ? PhoneFormatter::formatDual($appel->numero_appelant) : null,
+            'enregistrement_audio' => $appel->enregistrement_audio,
+            'resume_ia' => $appel->ringover_payload['note'] ?? null,
+            'notes_ringover' => data_get($appel->ringover_payload, 'comments.0.content')
+                ?? data_get($appel->ringover_payload, 'comments.0.text')
+                ?? data_get($appel->ringover_payload, 'comment')
+                ?? data_get($appel->ringover_payload, 'notes')
+                ?? $appel->commentaire,
+            'phoning_notes' => $appel->phoning_notes ?? $appel->commentaire,
+        ];
+    }
+
+    /**
+     * Alias method for the accessor - used in ContactResolver
+     */
+    public function getDernierAppelRingover(): ?array
+    {
+        return $this->getDernierAppelRingoverAttribute();
+    }
+
+    /**
+     * Get all Ringover calls for this prospect
+     */
+    public function getTousAppelsRingover(): array
+    {
+        $appels = $this->appels()
+            ->whereNotNull('ringover_call_id')
+            ->orderByDesc('date_heure')
+            ->get();
+
+        return $appels->map(function($appel) {
+            return [
+                'id' => $appel->id,
+                'date_heure' => $appel->date_heure,
+                'date_heure_formatee' => $appel->date_heure->format('d/m/Y H:i'),
+                'date_seulement' => $appel->date_heure->format('d/m/Y'),
+                'heure_seulement' => $appel->date_heure->format('H:i'),
+                'duree_secondes' => $appel->duree_secondes ?? 0,
+                'duree_formatee' => $appel->duree_formatee ?? '0 sec',
+                'direction' => $appel->direction,
+                'ringover_call_id' => $appel->ringover_call_id,
+                'numero_national' => $appel->numero_appelant ? PhoneFormatter::toNationalFrench($appel->numero_appelant) : null,
+                'numero_international' => $appel->numero_appelant ? PhoneFormatter::toInternational($appel->numero_appelant) : null,
+                'numero_dual' => $appel->numero_appelant ? PhoneFormatter::formatDual($appel->numero_appelant) : null,
+                'enregistrement_audio' => $appel->enregistrement_audio,
+                'resume_ia' => $appel->ringover_payload['note'] ?? null,
+                'notes_ringover' => data_get($appel->ringover_payload, 'comments.0.content')
+                    ?? data_get($appel->ringover_payload, 'comments.0.text')
+                    ?? data_get($appel->ringover_payload, 'comment')
+                    ?? data_get($appel->ringover_payload, 'notes')
+                    ?? $appel->commentaire,
+                'phoning_notes' => $appel->phoning_notes ?? $appel->commentaire,
+            ];
+        })->toArray();
     }
 
     // ── Méthodes métier ─────────────────────────────────────────────

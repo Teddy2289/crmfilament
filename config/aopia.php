@@ -24,5 +24,6 @@ return [
         'cse_ni_reminder_days' => (int) env('AOPIA_CSE_NI_REMINDER_DAYS', 7),
         'bloc_reminder_days' => (int) env('AOPIA_BLOC_REMINDER_DAYS', 2),
         'ringover_rule' => 'DEP_XX + tag statut obligatoires par appel',
+        'show_ringover_history' => (bool) env('AOPIA_SHOW_RINGOVER_HISTORY', true),
     ],
 ];

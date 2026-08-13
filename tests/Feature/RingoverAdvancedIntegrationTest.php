@@ -22,17 +22,19 @@ class RingoverAdvancedIntegrationTest extends TestCase
     {
         parent::setUp();
 
-        StatutPhoning::create([
+        StatutPhoning::firstOrCreate([
             'model_type' => 'prospect',
             'code' => 'rdv',
+        ], [
             'label' => 'RDV',
             'pipeline_statut' => 'RPC',
             'actif' => true,
         ]);
 
-        StatutPhoning::create([
+        StatutPhoning::firstOrCreate([
             'model_type' => 'prospect',
             'code' => 'cse_ni',
+        ], [
             'label' => 'CSE-NI',
             'pipeline_statut' => 'RP',
             'actif' => true,
@@ -89,6 +91,63 @@ class RingoverAdvancedIntegrationTest extends TestCase
         $this->assertSame('RPC', $prospect->refresh()->statut->value);
         $this->assertSame('ring-user-1', $user->refresh()->ringover_user_id);
         $this->assertSame('agent@example.test', $user->ringover_email);
+    }
+
+    #[Test]
+    public function ringover_sync_extracts_recording_url_from_record_field(): void
+    {
+        $result = app(RingoverCallSyncService::class)->sync([
+            'id' => 'call-record-456',
+            'started_at' => now()->timestamp,
+            'duration' => 110,
+            'direction' => 'outbound',
+            'status' => 'answered',
+            'raw_digits' => '+33612345678',
+            'record' => 'https://cdn.ringover.com/records/call-record-456.mp3',
+            'user' => [
+                'id' => 'ring-user-2',
+                'email' => 'agent2@example.test',
+                'name' => 'Agent 2',
+            ],
+            'tags' => [
+                ['name' => 'DEP_75'],
+            ],
+        ]);
+
+        $this->assertSame('https://cdn.ringover.com/records/call-record-456.mp3', $result['appel']->enregistrement_audio);
+        $this->assertDatabaseHas('appels', [
+            'ringover_call_id' => 'call-record-456',
+            'enregistrement_audio' => 'https://cdn.ringover.com/records/call-record-456.mp3',
+        ]);
+    }
+
+    #[Test]
+    public function ringover_accessors_expose_call_notes_and_summary(): void
+    {
+        $prospect = Prospect::create([
+            'nom' => 'Prospect Notes',
+            'telephone' => '06 12 34 56 78',
+            'departement' => '45',
+        ]);
+
+        $prospect->appels()->create([
+            'ringover_call_id' => 'call-note-789',
+            'date_heure' => now(),
+            'direction' => 'out',
+            'numero_appelant' => '+33612345678',
+            'duree_secondes' => 80,
+            'ringover_payload' => [
+                'note' => 'Résumé IA généré par Ringover.',
+                'comments' => [
+                    ['content' => 'Note de l’agent Ringover'],
+                ],
+            ],
+        ]);
+
+        $latest = $prospect->getDernierAppelRingover();
+
+        $this->assertSame('Résumé IA généré par Ringover.', $latest['resume_ia']);
+        $this->assertSame('Note de l’agent Ringover', $latest['notes_ringover']);
     }
 
     #[Test]

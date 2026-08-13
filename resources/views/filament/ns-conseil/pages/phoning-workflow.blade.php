@@ -2195,9 +2195,22 @@ $tentativesActuelles = $this->getTentativesAppel();
                         </button>
                         @if (($info['type'] ?? '') !== 'client')
                         <button class="pw-info-tab" data-tab="rdv" onclick="switchInfoTab('rdv')">
-                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0121 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
                             RDV
                         </button>
+                        @endif
+                        @if (!empty($info['dernier_appel_ringover']))
+                        <button class="pw-info-tab" data-tab="appels-ringover" onclick="switchInfoTab('appels-ringover')">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 11.622 9.128 21 20.25 21s20.25-9.378 20.25-21S41.625 3.75 30.375 3.75c-1.898 0-3.750.189-5.551.564m-5.552 15.6c0 2.268-.18 4.505-.584 6.702m-5.5-13.402C3.964 18.017 3 21.25 3 25.5" /></svg>
+                            Appel Ringover
+                        </button>
+                        @if (config('aopia.prospection.show_ringover_history') && count($info['tous_appels_ringover'] ?? []) > 1)
+                        <button class="pw-info-tab" data-tab="historique-ringover" onclick="switchInfoTab('historique-ringover')">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Historique Ringover
+                            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.25rem;height:1.25rem;padding:0 0.25rem;border-radius:9999px;background:rgb(99 102 241);color:white;font-size:0.65rem;font-weight:700;">{{ count($info['tous_appels_ringover'] ?? []) }}</span>
+                        </button>
+                        @endif
                         @endif
                     </div>
 
@@ -2535,6 +2548,186 @@ $tentativesActuelles = $this->getTentativesAppel();
                             </div>
                         </div>
                     </div>
+
+                    <div class="pw-info-panel" data-tab="appels-ringover" style="display:none;">
+                        <div class="pw-info-grid">
+                            @if (!empty($info['dernier_appel_ringover']))
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Date et heure</div>
+                                    <div style="padding:0.5rem; background:rgb(249 250 251); border-radius:0.375rem; font-weight:500;">
+                                        {{ $info['dernier_appel_ringover']['date_seulement'] }} à {{ $info['dernier_appel_ringover']['heure_seulement'] }}
+                                    </div>
+                                </div>
+
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Numéro appelant</div>
+                                    <div style="padding:0.5rem; background:rgb(249 250 251); border-radius:0.375rem; font-weight:500;">
+                                        {{ $info['dernier_appel_ringover']['numero_dual'] }}
+                                    </div>
+                                </div>
+
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Direction</div>
+                                    <div style="padding:0.5rem; background:rgb(249 250 251); border-radius:0.375rem; font-weight:500;">
+                                        @if ($info['dernier_appel_ringover']['direction'] === 'out')
+                                            <span style="display:inline-block; padding:0.25rem 0.5rem; background:rgb(34 197 94); color:white; border-radius:0.25rem; font-size:0.875rem;">📞 Appel sortant</span>
+                                        @elseif ($info['dernier_appel_ringover']['direction'] === 'in')
+                                            <span style="display:inline-block; padding:0.25rem 0.5rem; background:rgb(99 102 241); color:white; border-radius:0.25rem; font-size:0.875rem;">📞 Appel entrant</span>
+                                        @else
+                                            {{ $info['dernier_appel_ringover']['direction'] }}
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Durée</div>
+                                    <div style="padding:0.5rem; background:rgb(249 250 251); border-radius:0.375rem; font-weight:500;">
+                                        {{ $info['dernier_appel_ringover']['duree_formatee'] }}
+                                    </div>
+                                </div>
+
+                                @if (!empty($info['dernier_appel_ringover']['resume_ia']) || !empty($info['dernier_appel_ringover']['notes_ringover']) || !empty($info['dernier_appel_ringover']['enregistrement_audio']))
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Détails de l'appel</div>
+                                        <div style="display:flex; flex-direction:column; gap:0.875rem; padding:0.875rem; background:rgb(248 250 252); border:1px solid rgb(226 232 240); border-radius:0.75rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.45);">
+                                            @if (!empty($info['dernier_appel_ringover']['enregistrement_audio']))
+                                                <div style="padding:0.75rem 0.875rem; background:rgb(255 255 255); border:1px solid rgb(191 219 254); border-radius:0.625rem;">
+                                                    <div style="font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(30 64 175); font-weight:700; margin-bottom:0.5rem;">🎵 Enregistrement audio</div>
+                                                    <audio controls preload="none" style="width:100%; max-width:360px; height:2rem;">
+                                                        <source src="{{ $info['dernier_appel_ringover']['enregistrement_audio'] }}" type="audio/mpeg">
+                                                        Votre navigateur ne supporte pas l'élément audio.
+                                                    </audio>
+                                                    <a href="{{ $info['dernier_appel_ringover']['enregistrement_audio'] }}"
+                                                        download
+                                                        style="display:inline-block; margin-top:0.5rem; padding:0.375rem 0.75rem; background:rgb(37 99 235); color:white; border-radius:0.375rem; font-size:0.875rem; text-decoration:none; font-weight:500; text-align:center; width:fit-content; transition:background-color 0.2s;"
+                                                        onmouseover="this.style.backgroundColor='rgb(29 78 216)'"
+                                                        onmouseout="this.style.backgroundColor='rgb(37 99 235)'"
+                                                    >
+                                                        📥 Télécharger
+                                                    </a>
+                                                </div>
+                                            @endif
+
+                                            @if (!empty($info['dernier_appel_ringover']['notes_ringover']))
+                                                <div style="padding:0.75rem 0.875rem; background:rgb(248 250 252); border:1px solid rgb(203 213 225); border-left:3px solid rgb(148 163 184); border-radius:0.625rem;">
+                                                    <div style="font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(71 85 105); font-weight:700; margin-bottom:0.5rem;">📝 Notes Ringover</div>
+                                                    <div style="font-size:0.9375rem; line-height:1.5; color:rgb(71 85 105); white-space:pre-wrap; word-wrap:break-word;">
+                                                        {!! nl2br(e(trim($info['dernier_appel_ringover']['notes_ringover']))) !!}
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            @if (!empty($info['dernier_appel_ringover']['resume_ia']))
+                                                <div style="padding:0.75rem 0.875rem; background:rgb(239 246 255); border:1px solid rgb(191 219 254); border-left:4px solid rgb(37 99 235); border-radius:0.625rem;">
+                                                    <div style="font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(30 64 175); font-weight:800; margin-bottom:0.5rem;">✨ Résumé IA</div>
+                                                    <div style="font-size:0.965rem; line-height:1.55; color:rgb(30 64 175); font-weight:500; white-space:pre-wrap; word-wrap:break-word;">
+                                                        {!! nl2br(e(trim($info['dernier_appel_ringover']['resume_ia']))) !!}
+                                                    </div>
+                                                    <div style="margin-top:0.5rem; font-size:0.75rem; color:rgb(71 85 105); font-style:italic;">
+                                                        ℹ️ Résumé généré automatiquement par IA Ringover
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
+
+                    @if (config('aopia.prospection.show_ringover_history') && count($info['tous_appels_ringover'] ?? []) > 1)
+                    <div class="pw-info-panel" data-tab="historique-ringover" style="display:none;">
+                        <div class="pw-info-grid">
+                            <div class="pw-field-full">
+                                <div class="pw-field-label">Historique des appels Ringover ({{ count($info['tous_appels_ringover']) }})</div>
+                                <div style="margin-top:0.75rem; overflow-x:auto;">
+                                    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+                                        <thead>
+                                            <tr style="border-bottom:2px solid rgb(229 231 235); background:rgb(249 250 251);">
+                                                <th style="text-align:left; padding:0.75rem; font-weight:600; color:rgb(55 65 81);">Date & Heure</th>
+                                                <th style="text-align:center; padding:0.75rem; font-weight:600; color:rgb(55 65 81);">Direction</th>
+                                                <th style="text-align:center; padding:0.75rem; font-weight:600; color:rgb(55 65 81);">Durée</th>
+                                                <th style="text-align:center; padding:0.75rem; font-weight:600; color:rgb(55 65 81);">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($info['tous_appels_ringover'] as $index => $appel)
+                                            <tr class="ringover-history-row" style="border-bottom:1px solid rgb(229 231 235);">
+                                                <td style="padding:0.75rem; color:rgb(55 65 81);">
+                                                    <div style="font-weight:500;">{{ $appel['date_seulement'] }}</div>
+                                                    <div style="font-size:0.8125rem; color:rgb(107 114 128);">{{ $appel['heure_seulement'] }}</div>
+                                                </td>
+                                                <td style="padding:0.75rem; text-align:center;">
+                                                    @if ($appel['direction'] === 'out')
+                                                        <span style="display:inline-block; padding:0.25rem 0.5rem; background:rgb(34 197 94); color:white; border-radius:0.25rem; font-size:0.75rem; font-weight:600;">📞 Sortant</span>
+                                                    @elseif ($appel['direction'] === 'in')
+                                                        <span style="display:inline-block; padding:0.25rem 0.5rem; background:rgb(99 102 241); color:white; border-radius:0.25rem; font-size:0.75rem; font-weight:600;">📞 Entrant</span>
+                                                    @else
+                                                        <span style="font-size:0.75rem;">{{ $appel['direction'] }}</span>
+                                                    @endif
+                                                </td>
+                                                <td style="padding:0.75rem; text-align:center; color:rgb(107 114 128);">
+                                                    {{ $appel['duree_formatee'] }}
+                                                </td>
+                                                <td style="padding:0.75rem; text-align:center;">
+                                                    @if (!empty($appel['resume_ia']) || !empty($appel['notes_ringover']) || !empty($appel['enregistrement_audio']))
+                                                        <button type="button" style="padding:0.25rem 0.5rem; background:rgb(219 234 254); color:rgb(30 64 175); border:none; border-radius:0.25rem; font-size:0.75rem; font-weight:600; cursor:pointer;" onclick="this.closest('table').querySelectorAll('.ringover-detail-row').forEach(r => r.style.display = 'none'); document.getElementById('detail-{{ $index }}').style.display = 'table-row';" title="Cliquer pour voir les détails">
+                                                            ➤ Détails
+                                                        </button>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            @if (!empty($appel['resume_ia']) || !empty($appel['notes_ringover']) || !empty($appel['enregistrement_audio']))
+                                            <tr class="ringover-detail-row" id="detail-{{ $index }}" style="display:none; border-bottom:2px solid rgb(229 231 235); background:rgb(255 255 255);">
+                                                <td colspan="4" style="padding:1rem;">
+                                                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:1px solid rgb(226 232 240);">
+                                                        <div style="font-weight:700; color:rgb(30 64 175);">Détails de l'appel</div>
+                                                        <button type="button" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:rgb(107 114 128);" onclick="this.closest('table').querySelectorAll('.ringover-detail-row').forEach(r => r.style.display = 'none');" title="Fermer">
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                    <div style="display:flex; flex-direction:column; gap:0.875rem;">
+                                                        @if (!empty($appel['enregistrement_audio']))
+                                                        <div style="padding:0.75rem 0.875rem; background:rgb(255 255 255); border:1px solid rgb(191 219 254); border-radius:0.625rem;">
+                                                            <div style="font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(30 64 175); font-weight:700; margin-bottom:0.5rem;">🎵 Enregistrement audio</div>
+                                                            <audio controls style="width:100%; max-width:400px; height:2rem;">
+                                                                <source src="{{ $appel['enregistrement_audio'] }}" type="audio/mpeg">
+                                                                Votre navigateur ne supporte pas l'élément audio.
+                                                            </audio>
+                                                            <a href="{{ $appel['enregistrement_audio'] }}" download style="display:inline-block; margin-left:0.75rem; padding:0.375rem 0.75rem; background:rgb(37 99 235); color:white; border-radius:0.375rem; font-size:0.875rem; text-decoration:none; font-weight:500; vertical-align:middle;" onmouseover="this.style.backgroundColor='rgb(29 78 216)'" onmouseout="this.style.backgroundColor='rgb(37 99 235)'">
+                                                                📥 Télécharger
+                                                            </a>
+                                                        </div>
+                                                        @endif
+                                                        @if (!empty($appel['notes_ringover']))
+                                                        <div style="padding:0.75rem 0.875rem; background:rgb(248 250 252); border:1px solid rgb(203 213 225); border-left:3px solid rgb(148 163 184); border-radius:0.625rem;">
+                                                            <div style="font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(71 85 105); font-weight:700; margin-bottom:0.5rem;">📝 Notes Ringover</div>
+                                                            <div style="color:rgb(71 85 105); line-height:1.5; white-space:pre-wrap; word-wrap:break-word;">
+                                                                {{ trim($appel['notes_ringover']) }}
+                                                            </div>
+                                                        </div>
+                                                        @endif
+                                                        @if (!empty($appel['resume_ia']))
+                                                        <div style="padding:0.75rem 0.875rem; background:rgb(239 246 255); border:1px solid rgb(191 219 254); border-left:4px solid rgb(37 99 235); border-radius:0.625rem;">
+                                                            <div style="font-size:0.6875rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(30 64 175); font-weight:800; margin-bottom:0.5rem;">✨ Résumé IA</div>
+                                                            <div style="color:rgb(30 64 175); line-height:1.55; font-weight:500; white-space:pre-wrap; word-wrap:break-word;">
+                                                                {{ trim($appel['resume_ia']) }}
+                                                            </div>
+                                                            <div style="font-size:0.75rem; color:rgb(71 85 105); margin-top:0.5rem;">ℹ️ Résumé généré automatiquement par IA Ringover</div>
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endif
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 {{-- ── RÉSULTAT DE L'APPEL (en second, sous forme d'onglets par cas) ── --}}

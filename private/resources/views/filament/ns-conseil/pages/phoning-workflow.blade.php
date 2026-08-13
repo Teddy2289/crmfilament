@@ -1,5 +1,5 @@
 @php
-$rappelCodes = ['rdv', 'rapl_elu', 'rapl_std', 'cse_ni', 'rp', 'rpc', 'bloc'];
+$rappelCodes = $this->getRappelStatusCodes();
 $maxTentatives = app(\App\Services\Crm\CrmSettingsService::class)->get('prospection.max_standard_attempts', 3);
 $tentativesActuelles = $this->getTentativesAppel();
 @endphp
@@ -325,9 +325,68 @@ $tentativesActuelles = $this->getTentativesAppel();
             color: rgb(30 64 175);
         }
 
-        .pw-badge-gray {
-            background: rgb(243 244 246);
-            color: rgb(55 65 81);
+        .pw-badge-qf {
+            background: rgb(220 252 231);
+            color: rgb(20 83 45);
+        }
+
+        .pw-pipeline-link {
+            margin: 0.875rem 0 0;
+            padding: 0.875rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgb(191 219 254);
+            background: rgb(239 246 255);
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .dark .pw-pipeline-link {
+            background: rgb(15 23 42);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-pipeline-link-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgb(30 64 175);
+        }
+
+        .pw-pipeline-link-flow {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            flex-wrap: wrap;
+        }
+
+        .pw-pipeline-link-step {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .pw-pipeline-link-arrow {
+            color: rgb(100 116 139);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .pw-pipeline-link-note {
+            font-size: 0.75rem;
+            color: rgb(75 85 99);
+        }
+
+        .pw-chip-pipeline {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            opacity: 0.85;
         }
 
         .pw-timer {
@@ -722,11 +781,13 @@ $tentativesActuelles = $this->getTentativesAppel();
             border-top: none;
             border-left: none;
             border-right: none;
+            transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
         }
 
         .pw-info-tab.active {
             color: rgb(37 99 235);
             border-bottom-color: rgb(37 99 235);
+            background: rgb(219 234 254);
         }
 
         .pw-info-panel {
@@ -1127,6 +1188,512 @@ $tentativesActuelles = $this->getTentativesAppel();
             background: rgb(55 65 81);
             color: rgb(209 213 219);
         }
+
+        .pw-email-preview-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .pw-email-preview-modal {
+            width: min(100%, 1100px);
+            max-height: 95vh;
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 30px 70px rgba(15, 23, 42, 0.35);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark .pw-email-preview-modal {
+            background: rgb(17 24 39);
+            color: white;
+        }
+
+        .pw-email-preview-header {
+            padding: 1rem 1.25rem;
+            font-weight: 700;
+            font-size: 1.05rem;
+            border-bottom: 1px solid rgb(229 231 235);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .pw-email-preview-header-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgb(107 114 128);
+        }
+
+        .pw-email-preview-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            background: rgb(219 234 254);
+            color: rgb(29 78 216);
+            font-weight: 600;
+        }
+
+        .dark .pw-email-preview-badge {
+            background: rgb(30 58 138 / 0.45);
+            color: rgb(191 219 254);
+        }
+
+        .dark .pw-email-preview-header {
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-content {
+            padding: 1rem 1.25rem;
+            overflow: hidden;
+            flex: 1;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .pw-email-preview-split {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: 1fr;
+            min-height: 0;
+        }
+
+        @media (min-width: 900px) {
+            .pw-email-preview-split {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                align-items: stretch;
+            }
+
+            .pw-email-preview-tabs {
+                display: none !important;
+            }
+
+            .pw-email-preview-editor-pane,
+            .pw-email-preview-preview-pane {
+                display: flex !important;
+            }
+        }
+
+        @media (max-width: 899px) {
+            .pw-email-preview-editor-pane.is-hidden-mobile,
+            .pw-email-preview-preview-pane.is-hidden-mobile {
+                display: none !important;
+            }
+        }
+
+        .pw-email-preview-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.25rem;
+            background: rgb(243 244 246);
+            border-radius: 0.75rem;
+        }
+
+        .dark .pw-email-preview-tabs {
+            background: rgb(31 41 55);
+        }
+
+        .pw-email-preview-tab {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: rgb(75 85 99);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.55rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .pw-email-preview-tab.active {
+            background: white;
+            color: rgb(17 24 39);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        }
+
+        .dark .pw-email-preview-tab.active {
+            background: rgb(17 24 39);
+            color: white;
+        }
+
+        .pw-email-preview-preview-pane {
+            background: rgb(248 250 252);
+            border: 1px solid rgb(203 213 225);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            box-shadow: inset 0 0 0 1px rgb(226 232 240);
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow: hidden;
+        }
+
+        .pw-email-preview-editor-pane {
+            background: rgb(241 245 249);
+            border: 1px solid rgb(216 229 242);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow: hidden;
+        }
+
+        .dark .pw-email-preview-preview-pane,
+        .dark .pw-email-preview-editor-pane {
+            border-color: rgb(55 65 81);
+        }
+
+        .dark .pw-email-preview-preview-pane {
+            background: rgb(17 24 39);
+        }
+
+        .dark .pw-email-preview-editor-pane {
+            background: rgb(15 23 42);
+        }
+
+        .dark .pw-email-preview-preview-pane,
+        .dark .pw-email-preview-editor-pane {
+            background: rgb(15 23 42);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-preview-pane {
+            min-height: 240px;
+        }
+
+        .pw-email-preview-preview-frame {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border: 1px solid rgb(209 213 219);
+            border-radius: 0.85rem;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .dark .pw-email-preview-preview-frame {
+            background: rgb(17 24 39);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-preview-frame-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.65rem 0.85rem;
+            background: rgb(248 250 252);
+            border-bottom: 1px solid rgb(229 231 235);
+        }
+
+        .dark .pw-email-preview-preview-frame-bar {
+            background: rgb(31 41 55);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-preview-dot {
+            width: 0.65rem;
+            height: 0.65rem;
+            border-radius: 9999px;
+            background: rgb(203 213 225);
+        }
+
+        .pw-email-preview-preview-dot:nth-child(1) { background: rgb(248 113 113); }
+        .pw-email-preview-preview-dot:nth-child(2) { background: rgb(251 191 36); }
+        .pw-email-preview-preview-dot:nth-child(3) { background: rgb(74 222 128); }
+
+        .pw-email-preview-preview-meta {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid rgb(241 245 249);
+            display: grid;
+            gap: 0.35rem;
+            font-size: 0.875rem;
+        }
+
+        .dark .pw-email-preview-preview-meta {
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-preview-meta-row {
+            display: grid;
+            grid-template-columns: 4.5rem 1fr;
+            gap: 0.5rem;
+            align-items: start;
+        }
+
+        .pw-email-preview-preview-meta-label {
+            color: rgb(107 114 128);
+            font-weight: 600;
+        }
+
+        .pw-email-preview-preview-meta-value {
+            color: rgb(17 24 39);
+            overflow-wrap: anywhere;
+        }
+
+        .dark .pw-email-preview-preview-meta-value {
+            color: rgb(226 232 240);
+        }
+
+        .pw-email-preview-preview-header {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .pw-email-preview-preview-title {
+            font-size: 0.95rem;
+            color: rgb(17 24 39);
+            font-weight: 700;
+        }
+
+        .pw-email-preview-preview-subject,
+        .pw-email-preview-preview-recipient {
+            display: none;
+        }
+
+        .pw-email-preview-preview-body {
+            flex: 1;
+            padding: 1rem 1.1rem 1.25rem;
+            overflow: auto;
+            color: rgb(17 24 39);
+            line-height: 1.65;
+            font-size: 0.9375rem;
+        }
+
+        .dark .pw-email-preview-preview-body {
+            background: rgb(17 24 39);
+            border-color: rgb(55 65 81);
+            color: rgb(226 232 240);
+        }
+
+        .pw-email-preview-section {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .pw-email-preview-label {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-weight: 700;
+            color: rgb(31 41 55);
+        }
+
+        .pw-email-preview-input,
+        .pw-email-preview-textarea {
+            width: 100%;
+            min-height: 3rem;
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.75rem;
+            padding: 0.85rem 1rem;
+            font-size: 0.9375rem;
+            color: rgb(17 24 39);
+            background: white;
+        }
+
+        .pw-email-preview-input:focus,
+        .pw-email-preview-textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgb(59 130 246 / 0.25);
+            border-color: rgb(59 130 246);
+        }
+
+        .dark .pw-email-preview-input,
+        .dark .pw-email-preview-textarea {
+            background: rgb(17 24 39);
+            color: rgb(226 232 240);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-bottom: 0.75rem;
+            padding: 0.35rem;
+            background: white;
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.75rem;
+        }
+
+        .dark .pw-email-preview-toolbar {
+            background: rgb(17 24 39);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-toolbar-divider {
+            width: 1px;
+            align-self: stretch;
+            background: rgb(229 231 235);
+            margin: 0.25rem 0.15rem;
+        }
+
+        .dark .pw-email-preview-toolbar-divider {
+            background: rgb(55 65 81);
+        }
+
+        .pw-email-preview-toolbar-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.25rem;
+            min-height: 2.25rem;
+            padding: 0 0.65rem;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgb(31 41 55);
+            font-weight: 700;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .pw-email-preview-toolbar-button:hover,
+        .pw-email-preview-toolbar-button:focus {
+            background: rgb(241 245 249);
+            border-color: rgb(226 232 240);
+        }
+
+        .pw-email-preview-toolbar-button.active {
+            background: rgb(219 234 254);
+            color: rgb(29 78 216);
+            border-color: rgb(191 219 254);
+        }
+
+        .dark .pw-email-preview-toolbar-button {
+            color: rgb(226 232 240);
+        }
+
+        .dark .pw-email-preview-toolbar-button:hover,
+        .dark .pw-email-preview-toolbar-button:focus {
+            background: rgb(31 41 55);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-toolbar-button.is-reset {
+            margin-left: auto;
+            color: rgb(107 114 128);
+            font-weight: 600;
+        }
+
+        .pw-email-preview-editor {
+            flex: 1;
+            min-height: 200px;
+            max-height: none;
+            overflow: auto;
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            background: rgb(255 255 255);
+            color: rgb(17 24 39);
+            font-size: 0.95rem;
+            line-height: 1.65;
+            outline: none;
+        }
+
+        .pw-email-preview-editor:focus {
+            border-color: rgb(59 130 246);
+            box-shadow: 0 0 0 2px rgb(59 130 246 / 0.18);
+        }
+
+        .pw-email-preview-hidden-input {
+            display: none;
+        }
+
+        .pw-email-preview-helper {
+            margin-top: 0.35rem;
+            font-size: 0.82rem;
+            color: rgb(107 114 128);
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .pw-email-preview-stats {
+            color: rgb(107 114 128);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pw-email-preview-stats.is-dirty {
+            color: rgb(217 119 6);
+            font-weight: 600;
+        }
+
+        .pw-email-preview-input-recipient {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.875rem;
+        }
+
+        .pw-email-preview-field-label {
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+            color: rgb(31 41 55);
+        }
+
+        .pw-email-preview-field-value {
+            padding: 0.75rem 1rem;
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.75rem;
+            background: rgb(249 250 251);
+            color: rgb(17 24 39);
+        }
+
+        .dark .pw-email-preview-editor,
+        .dark .pw-email-preview-field-value {
+            background: rgb(17 24 39);
+            color: rgb(226 232 240);
+            border-color: rgb(55 65 81);
+        }
+
+        .pw-email-preview-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            padding: 1rem 1.25rem 1.25rem;
+            border-top: 1px solid rgb(229 231 235);
+        }
+
+        .pw-email-preview-close {
+            border: none;
+            background: transparent;
+            color: rgb(75 85 99);
+            font-size: 1.35rem;
+            line-height: 1;
+            padding: 0.5rem;
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+
+        .pw-email-preview-close:hover {
+            background: rgb(243 244 246);
+            color: rgb(17 24 39);
+        }
+
+        .dark .pw-email-preview-close:hover {
+            background: rgb(55 65 81);
+        }
+
+        .dark .pw-email-preview-actions {
+            border-color: rgb(55 65 81);
+        }
     </style>
 
     <script>
@@ -1148,6 +1715,129 @@ $tentativesActuelles = $this->getTentativesAppel();
         }
 
         const pwRappelCodes = @json($rappelCodes);
+
+        function phoningEmailPreview(initial) {
+            return {
+                activeTab: 'edit',
+                subject: initial.subject || '',
+                recipient: initial.recipient || '',
+                body: initial.body || '',
+                originalSubject: initial.originalSubject || initial.subject || '',
+                originalBody: initial.originalBody || initial.body || '',
+                isDirty: false,
+
+                init() {
+                    this.$nextTick(() => this.syncEditorFromState());
+                },
+
+                get plainTextLength() {
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = this.body || '';
+                    return (tmp.textContent || tmp.innerText || '').trim().length;
+                },
+
+                markDirty() {
+                    this.isDirty = this.subject !== this.originalSubject
+                        || this.body !== this.originalBody
+                        || this.recipient !== initial.recipient;
+                },
+
+                syncEditorFromState() {
+                    const editor = this.$refs.editor;
+                    if (editor && editor.innerHTML !== this.body) {
+                        editor.innerHTML = this.body || '';
+                    }
+                    this.markDirty();
+                },
+
+                syncBodyFromEditor() {
+                    const editor = this.$refs.editor;
+                    if (!editor) {
+                        return;
+                    }
+                    this.body = editor.innerHTML;
+                    this.markDirty();
+                },
+
+                format(command, value = null) {
+                    const editor = this.$refs.editor;
+                    if (!editor) {
+                        return;
+                    }
+                    editor.focus();
+                    if (command === 'createLink') {
+                        const url = window.prompt('URL du lien', 'https://');
+                        if (!url) {
+                            return;
+                        }
+                        document.execCommand(command, false, url);
+                    } else {
+                        document.execCommand(command, false, value);
+                    }
+                    this.syncBodyFromEditor();
+                },
+
+                resetTemplate() {
+                    if (this.isDirty && !window.confirm('Réinitialiser le message au modèle d’origine ?')) {
+                        return;
+                    }
+                    this.subject = this.originalSubject;
+                    this.body = this.originalBody;
+                    this.recipient = initial.recipient || '';
+                    this.syncEditorFromState();
+                },
+
+                switchTab(tab) {
+                    this.activeTab = tab;
+                    if (tab === 'edit') {
+                        this.$nextTick(() => this.syncEditorFromState());
+                    }
+                },
+
+                async confirmSend() {
+                    this.syncBodyFromEditor();
+                    if (!this.subject.trim() || this.plainTextLength === 0) {
+                        window.alert('Le sujet et le corps du message sont obligatoires.');
+                        return;
+                    }
+                    await this.$wire.syncEmailPreviewContent(this.subject, this.body, this.recipient);
+                    await this.$wire.confirmEmailPreview();
+                },
+
+                handleEditorInput() {
+                    this.syncBodyFromEditor();
+                },
+
+                handleEditorPaste(event) {
+                    event.preventDefault();
+                    const text = (event.clipboardData || window.clipboardData).getData('text/html')
+                        || (event.clipboardData || window.clipboardData).getData('text/plain');
+                    if (text) {
+                        document.execCommand('insertHTML', false, text);
+                    }
+                    this.syncBodyFromEditor();
+                },
+
+                handleEditorKeydown(event) {
+                    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+                        event.preventDefault();
+                        this.format('bold');
+                    }
+                    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') {
+                        event.preventDefault();
+                        this.format('italic');
+                    }
+                    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'u') {
+                        event.preventDefault();
+                        this.format('underline');
+                    }
+                },
+            };
+        }
+
+        document.addEventListener('livewire:navigated', () => {
+            // noop — Alpine gère le modal email
+        });
 
         function toggleRappel(val) {
             const box = document.getElementById('pw-rappel-box');
@@ -1196,6 +1886,11 @@ $tentativesActuelles = $this->getTentativesAppel();
             if (!phoneNumber) return;
 
             const cleanedPhone = phoneNumber.replace(/[^0-9+]/g, '');
+            if (!cleanedPhone) {
+                return;
+            }
+
+            Livewire.dispatch('ringover-call', { phone: cleanedPhone });
 
             if (window.ringoverPhone && typeof window.ringoverPhone.dial === 'function') {
                 window.ringoverPhone.show();
@@ -1206,7 +1901,15 @@ $tentativesActuelles = $this->getTentativesAppel();
             }
         }
 
+        function rechercherAppelEntrant(numero) {
+            if (!numero) return;
+            const normalized = String(numero).replace(/[^0-9+]/g, '');
+            if (!normalized) return;
+            Livewire.dispatch('search-incoming-call', { phone: normalized });
+        }
+
         window.appelerAvecRingover = appelerAvecRingover;
+        window.rechercherAppelEntrant = rechercherAppelEntrant;
     </script>
     @endpush
 
@@ -1219,11 +1922,13 @@ $tentativesActuelles = $this->getTentativesAppel();
     $statutsGroupes = $this->getStatutsPhoningGroupes();
     $options = $this->getStatutsPhoning();
     $callHistory = $this->getCallHistory();
-    $statutCls = 'pw-badge-' . ($info['statut'] ?? 'ac');
-    if (!isset($info['statut'])) {
+    $statutCls = 'pw-badge-' . strtolower($info['statut_code'] ?? $info['statut'] ?? 'ac');
+    if (!isset($info['statut']) && !isset($info['statut_code'])) {
     $statutCls = 'pw-badge-gray';
     }
     $statutLabel = $info['statut_label'] ?? ($info['statut'] ?? 'AC');
+    $statutBadgeStyle = $info['statut_badge_style'] ?? null;
+    $pipelinePreview = $this->getPipelineTransitionPreview();
     $notes = $info['notes'] ?? null;
     $noteLines = [];
     if ($notes) {
@@ -1322,6 +2027,7 @@ $tentativesActuelles = $this->getTentativesAppel();
             <div style="font-size:0.875rem;">Aucun contact trouvé pour "{{ $searchQuery }}"</div>
         </div>
         @endif
+
         @if ($currentContact)
 
         {{-- ── CARD ENTREPRISE ── --}}
@@ -1338,7 +2044,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                             <h2 class="pw-summary-name">
                                 {{ Str::upper(trim(($info['prenom'] ?? '') . ' ' . ($info['nom'] ?? ''))) ?: 'CONTACT SANS NOM' }}
                             </h2>
-                            <span class="pw-badge {{ $statutCls }}">{{ $statutLabel }}</span>
+                            <span class="pw-badge {{ $statutCls }}" @if($statutBadgeStyle) style="{{ $statutBadgeStyle }}" @endif>{{ $statutLabel }}</span>
                             @if (!empty($info['rappel_en_retard']) && $info['rappel_en_retard'])
                             <span class="pw-alert-badge pw-alert-badge-red">
                                 <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
@@ -1441,30 +2147,37 @@ $tentativesActuelles = $this->getTentativesAppel();
                             </span>
                             Dossier Prospect
                         </span>
-                        @if (!empty($info['id']) && $info['type'] === 'prospect')
-                        <a href="{{ route('filament.ns-conseil.resources.prospects.view', $info['id']) }}"
-                            target="_blank"
-                            style="font-size:0.75rem; color:rgb(37 99 235); text-decoration:underline;">
-                            Ouvrir le dossier complet →
-                        </a>
-                        @endif
+                        @php
+                            $editActionRoute = null;
+                            if (!empty($info['id'])) {
+                                match ($info['type'] ?? '') {
+                                    'prospect' => $editActionRoute = \App\Filament\NsConseil\Resources\ProspectResource::getUrl('edit', ['record' => $info['id']]),
+                                    'partenaire' => $editActionRoute = \App\Filament\NsConseil\Resources\PartenaireResource::getUrl('edit', ['record' => $info['id']]),
+                                    'client' => $editActionRoute = \App\Filament\NsConseil\Resources\ClientResource::getUrl('edit', ['record' => $info['id']]),
+                                    default => null,
+                                };
+                            }
+                        @endphp
+                        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                            @if ($editActionRoute)
+                            <a href="{{ $editActionRoute }}"
+                                target="_blank"
+                                style="font-size:0.75rem; color:rgb(14 116 144); text-decoration:underline;">
+                                Accéder à la fiche →
+                            </a>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="pw-info-tabs">
-                        <button class="pw-info-tab active" data-tab="contact" onclick="switchInfoTab('contact')">
+                        <button class="pw-info-tab {{ ($info['type'] ?? '') === 'prospect' ? '' : 'active' }}" data-tab="contact" onclick="switchInfoTab('contact')">
                             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                             Contact
                         </button>
-                        @if (!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur']))
-                        <button class="pw-info-tab" data-tab="interlocuteur" onclick="switchInfoTab('interlocuteur')">
-                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            Interlocuteur
-                        </button>
-                        @endif
                         @if (($info['type'] ?? '') === 'prospect')
-                        <button class="pw-info-tab" data-tab="standard-cse" onclick="switchInfoTab('standard-cse')">
-                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
-                            Standard / CSE
+                        <button class="pw-info-tab active" data-tab="interlocuteur" onclick="switchInfoTab('interlocuteur')">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            Interlocuteurs
                         </button>
                         @endif
                         @if (($info['type'] ?? '') === 'prospect' && !empty($info['notes']))
@@ -1482,9 +2195,22 @@ $tentativesActuelles = $this->getTentativesAppel();
                         </button>
                         @if (($info['type'] ?? '') !== 'client')
                         <button class="pw-info-tab" data-tab="rdv" onclick="switchInfoTab('rdv')">
-                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0121 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
                             RDV
                         </button>
+                        @endif
+                        @if (!empty($info['dernier_appel_ringover']))
+                        <button class="pw-info-tab" data-tab="appels-ringover" onclick="switchInfoTab('appels-ringover')">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 11.622 9.128 21 20.25 21s20.25-9.378 20.25-21S41.625 3.75 30.375 3.75c-1.898 0-3.750.189-5.551.564m-5.552 15.6c0 2.268-.18 4.505-.584 6.702m-5.5-13.402C3.964 18.017 3 21.25 3 25.5" /></svg>
+                            Appel Ringover
+                        </button>
+                        @if (config('aopia.prospection.show_ringover_history') && count($info['tous_appels_ringover'] ?? []) > 1)
+                        <button class="pw-info-tab" data-tab="historique-ringover" onclick="switchInfoTab('historique-ringover')">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Historique Ringover
+                            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.25rem;height:1.25rem;padding:0 0.25rem;border-radius:9999px;background:rgb(99 102 241);color:white;font-size:0.65rem;font-weight:700;">{{ count($info['tous_appels_ringover'] ?? []) }}</span>
+                        </button>
+                        @endif
                         @endif
                     </div>
 
@@ -1552,8 +2278,8 @@ $tentativesActuelles = $this->getTentativesAppel();
                         </div>
                         <div class="pw-info-grid">
                             <div>
-                                <div class="pw-field-label">Statut actuel</div>
-                                <span class="pw-badge {{ $statutCls }}" style="font-size:0.8125rem; padding:0.25rem 0.625rem;">
+                                <div class="pw-field-label">Statut pipeline actuel</div>
+                                <span class="pw-badge {{ $statutCls }}" style="font-size:0.8125rem; padding:0.25rem 0.625rem; {{ $statutBadgeStyle ?? '' }}">
                                     {{ $statutLabel }}
                                 </span>
                             </div>
@@ -1564,21 +2290,6 @@ $tentativesActuelles = $this->getTentativesAppel();
                             <div>
                                 <div class="pw-field-label">Commercial</div>
                                 <div class="pw-field-value">{{ $info['commercial'] ?? '—' }}</div>
-                            </div>
-                            <div class="pw-field-full">
-                                <div class="pw-field-label">CC (utilisateurs du CRM)</div>
-                                <select
-                                    wire:model="emailCcUserIds"
-                                    multiple
-                                    size="6"
-                                    class="pw-field-input"
-                                    style="min-height:9rem;"
-                                >
-                                    @foreach ($this->ccUserOptions as $option)
-                                        <option value="{{ $option['id'] }}">{{ $option['label'] }} — {{ $option['email'] }}</option>
-                                    @endforeach
-                                </select>
-                                <div style="font-size:0.8125rem; color:rgb(107 114 128); margin-top:0.35rem;">Sélectionnez un ou plusieurs utilisateurs à mettre en copie lors des envois.</div>
                             </div>
                             <div>
                                 <div class="pw-field-label">1er contact</div>
@@ -1610,104 +2321,121 @@ $tentativesActuelles = $this->getTentativesAppel();
                         @endif
                     </div>
 
-                    @if (!empty($info['interlocuteur_nom']) || !empty($info['interlocuteur']))
+                    @if (($info['type'] ?? '') === 'prospect')
                     <div class="pw-info-panel" data-tab="interlocuteur" style="display:none;">
                         <div>
-                            <div class="pw-field-label" style="margin-bottom:0.5rem;">Nouveau contact identifié à l'appel</div>
-                            <div class="pw-info-grid">
-                                <div>
-                                    <div class="pw-field-label">Prénom</div>
-                                    <input type="text" class="pw-field-input" placeholder="Prénom">
+                            <div class="pw-field-label" style="margin-bottom:0.75rem;">Nouveau contact identifié à l'appel</div>
+
+                            <div style="margin-bottom:1rem; padding:0.875rem; background:rgb(248 250 252); border:1px solid rgb(226 232 240); border-radius:0.75rem;">
+                                <div style="font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:rgb(100 116 139); font-weight:700; margin-bottom:0.5rem;">Interlocuteur principal</div>
+                                <div class="pw-info-grid">
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Prénom / Nom</div>
+                                        <input type="text" wire:model="interlocuteur_nom"
+                                            class="pw-field-input" placeholder="Prénom Nom du responsable CSE">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Fonction</div>
+                                        <input type="text" wire:model="interlocuteur_fonction"
+                                            class="pw-field-input" placeholder="Fonction du contact">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Téléphone</div>
+                                        <input type="tel" wire:model="interlocuteur_telephone"
+                                            class="pw-field-input" placeholder="06 XX XX XX XX">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Email</div>
+                                        <input type="email" wire:model="interlocuteur_email"
+                                            class="pw-field-input" placeholder="cse@entreprise.fr">
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="pw-field-label">Nom</div>
-                                    <input type="text" class="pw-field-input" placeholder="Nom">
+                            </div>
+
+                            <div style="margin-bottom:1rem; padding:0.875rem; background:rgb(249 250 251); border:1px solid rgb(209 213 219); border-radius:0.75rem;">
+                                <div style="font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:rgb(100 116 139); font-weight:700; margin-bottom:0.5rem;">Interlocuteur supplémentaire</div>
+                                <div class="pw-info-grid">
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Prénom / Nom</div>
+                                        <input type="text" wire:model="interlocuteur_add_nom"
+                                            class="pw-field-input" placeholder="Prénom Nom de l'autre interlocuteur">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Fonction</div>
+                                        <input type="text" wire:model="interlocuteur_add_fonction"
+                                            class="pw-field-input" placeholder="Fonction du contact complémentaire">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Téléphone</div>
+                                        <input type="tel" wire:model="interlocuteur_add_telephone"
+                                            class="pw-field-input" placeholder="06 XX XX XX XX">
+                                    </div>
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Email</div>
+                                        <input type="email" wire:model="interlocuteur_add_email"
+                                            class="pw-field-input" placeholder="contact@entreprise.fr">
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="pw-field-label">Fonction</div>
-                                    <input type="text" class="pw-field-input" placeholder="Fonction">
+                            </div>
+
+                            <div style="margin-bottom:1rem; padding:0.75rem; background:rgb(249 250 251); border:1px solid rgb(209 213 219); border-radius:0.75rem;">
+                                <div style="font-weight:700; margin-bottom:0.5rem;">Données déjà enregistrées</div>
+                                @php
+                                    $existingContacts = [];
+                                    if (!empty($info['interlocuteur_nom'])) { $existingContacts[] = ['label' => 'Principal', 'value' => $info['interlocuteur_nom']]; }
+                                    if (!empty($info['interlocuteur_fonction'])) { $existingContacts[] = ['label' => 'Fonction', 'value' => $info['interlocuteur_fonction']]; }
+                                    if (!empty($info['interlocuteur_telephone'])) { $existingContacts[] = ['label' => 'Téléphone', 'value' => $info['interlocuteur_telephone']]; }
+                                    if (!empty($info['interlocuteur_email'])) { $existingContacts[] = ['label' => 'Email', 'value' => $info['interlocuteur_email']]; }
+                                    if (!empty($info['interlocuteur_add_nom'])) { $existingContacts[] = ['label' => 'Suppl.', 'value' => $info['interlocuteur_add_nom']]; }
+                                    if (!empty($info['interlocuteur_add_fonction'])) { $existingContacts[] = ['label' => 'Fonction suppl.', 'value' => $info['interlocuteur_add_fonction']]; }
+                                    if (!empty($info['interlocuteur_add_telephone'])) { $existingContacts[] = ['label' => 'Téléphone suppl.', 'value' => $info['interlocuteur_add_telephone']]; }
+                                    if (!empty($info['interlocuteur_add_email'])) { $existingContacts[] = ['label' => 'Email suppl.', 'value' => $info['interlocuteur_add_email']]; }
+                                    if (!empty($info['nom_interlocuteur_standard'])) { $existingContacts[] = ['label' => 'Standard', 'value' => $info['nom_interlocuteur_standard']]; }
+                                    if (!empty($info['creneaux_permanence_cse'])) { $existingContacts[] = ['label' => 'Créneaux', 'value' => $info['creneaux_permanence_cse']]; }
+                                    if (!empty($info['email_general_standard'])) { $existingContacts[] = ['label' => 'Email standard', 'value' => $info['email_general_standard']]; }
+                                @endphp
+                                @if (!empty($existingContacts))
+                                <div style="display:grid; gap:0.35rem; font-size:0.875rem;">
+                                    @foreach ($existingContacts as $entry)
+                                    <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+                                        <span style="font-weight:700; color:rgb(71 85 105); min-width:5rem;">{{ $entry['label'] }} :</span>
+                                        <span style="color:rgb(15 23 42);">{{ $entry['value'] }}</span>
+                                    </div>
+                                    @endforeach
                                 </div>
-                                <div>
-                                    <div class="pw-field-label">Téléphone</div>
-                                    <input type="text" class="pw-field-input" placeholder="Téléphone">
+                                @else
+                                <div style="color:rgb(107 114 128);">Aucune donnée d’interlocuteur enregistrée précédemment.</div>
+                                @endif
+                            </div>
+
+                            @if (count($callHistory) > 0)
+                            <div style="margin-bottom:1rem; padding:0.75rem; background:rgb(255 255 255); border:1px solid rgb(209 213 219); border-radius:0.75rem;">
+                                <div style="font-weight:700; margin-bottom:0.5rem;">Derniers appels</div>
+                                <div style="display:grid; gap:0.5rem; font-size:0.85rem; color:rgb(55 65 81);">
+                                    @foreach (array_slice($callHistory, 0, 4) as $appel)
+                                    <div style="display:flex; justify-content:space-between; gap:0.75rem;">
+                                        <div>
+                                            <strong>{{ $appel['statut_label'] }}</strong>
+                                            @if ($appel['notes'])
+                                            — {{ \Illuminate\Support\Str::limit($appel['notes'], 50) }}
+                                            @endif
+                                        </div>
+                                        <span style="color:rgb(107 114 128); white-space:nowrap;">{{ $appel['date'] }}</span>
+                                    </div>
+                                    @endforeach
                                 </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Email</div>
-                                    <input type="email" class="pw-field-input" placeholder="email@domaine.fr">
-                                </div>
+                            </div>
+                            @endif
+
+                            <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+                                <button type="button" wire:click="saveInterlocuteur" class="pw-btn-secondary" style="padding:0.75rem 1rem;">
+                                    Enregistrer contact/interlocuteur
+                                </button>
                             </div>
                         </div>
                     </div>
                     @endif
 
-                    @if (($info['type'] ?? '') === 'prospect')
-                    <div class="pw-info-panel" data-tab="standard-cse" style="display:none;">
-                        <div style="margin-bottom:1rem;">
-                            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgb(100 116 139); margin-bottom:0.625rem; padding-bottom:0.375rem; border-bottom:1px solid rgb(241 245 249); display:flex; align-items:center; gap:0.375rem;">
-                                <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                                Interlocuteur Standard
-                            </div>
-                            <div class="pw-info-grid">
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Nom interlocuteur standard</div>
-                                    <input type="text" wire:model="nom_interlocuteur_standard"
-                                        class="pw-field-input" placeholder="Nom obtenu au standard">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Créneaux de permanence CSE</div>
-                                    <input type="text" wire:model="creneaux_permanence_cse"
-                                        class="pw-field-input" placeholder="ex : Lundi 14h-16h">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Email général (si obtenu au standard)</div>
-                                    <input type="email" wire:model="email_general_standard"
-                                        class="pw-field-input" placeholder="contact@entreprise.fr">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgb(100 116 139); margin-bottom:0.625rem; padding-bottom:0.375rem; border-bottom:1px solid rgb(241 245 249); display:flex; align-items:center; gap:0.375rem;">
-                                <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
-                                Interlocuteur CSE
-                                <span style="font-size:0.6rem; color:rgb(239 68 68); font-weight:700;">* Obligatoire QF</span>
-                            </div>
-                            <div class="pw-info-grid">
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">
-                                        Prénom / Nom du CSE
-                                        <span style="color:rgb(239 68 68);">*</span>
-                                    </div>
-                                    <input type="text" wire:model="interlocuteur_nom"
-                                        class="pw-field-input" placeholder="Prénom Nom du responsable CSE">
-                                </div>
-                                <div class="pw-field-full">
-                                    <div class="pw-field-label">Fonction du CSE</div>
-                                    <select wire:model="interlocuteur_fonction" class="pw-field-input">
-                                        <option value="">— Sélectionner —</option>
-                                        <option value="Secrétaire">Secrétaire</option>
-                                        <option value="Trésorier">Trésorier</option>
-                                        <option value="Président">Président</option>
-                                        <option value="Élu">Élu</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <div class="pw-field-label">Téléphone direct CSE</div>
-                                    <input type="tel" wire:model="interlocuteur_telephone"
-                                        class="pw-field-input" placeholder="06 XX XX XX XX">
-                                </div>
-                                <div>
-                                    <div class="pw-field-label">
-                                        Email CSE
-                                        <span style="font-size:0.6rem; color:rgb(100 116 139);">Déclenche Mail 1</span>
-                                    </div>
-                                    <input type="email" wire:model="interlocuteur_email"
-                                        class="pw-field-input" placeholder="cse@entreprise.fr">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
 
                     @if (!empty($noteLines))
                     <div class="pw-info-panel" data-tab="notes" style="display:none;">
@@ -1733,46 +2461,17 @@ $tentativesActuelles = $this->getTentativesAppel();
                         @else
                         <div style="display:flex; flex-direction:column; gap:0.625rem;">
                             @foreach ($callHistory as $appel)
-                            @php
-                            $jColor = match ($appel['statut'] ?? '') {
-                            'std_nr', 'cse_nr' => [
-                            'bg' => 'rgb(243 244 246)',
-                            'border' => 'rgb(209 213 219)',
-                            'badge' => 'rgb(107 114 128)',
-                            ],
-                            'std_joint' => [
-                            'bg' => 'rgb(239 246 255)',
-                            'border' => 'rgb(147 197 253)',
-                            'badge' => 'rgb(59 130 246)',
-                            ],
-                            'rp' => [
-                            'bg' => 'rgb(240 253 244)',
-                            'border' => 'rgb(134 239 172)',
-                            'badge' => 'rgb(22 163 74)',
-                            ],
-                            'rpc' => [
-                            'bg' => 'rgb(240 253 250)',
-                            'border' => 'rgb(94 234 212)',
-                            'badge' => 'rgb(13 148 136)',
-                            ],
-                            'ko' => [
-                            'bg' => 'rgb(255 241 242)',
-                            'border' => 'rgb(252 165 165)',
-                            'badge' => 'rgb(220 38 38)',
-                            ],
-                            default => [
-                            'bg' => 'rgb(248 250 252)',
-                            'border' => 'rgb(226 232 240)',
-                            'badge' => 'rgb(100 116 139)',
-                            ],
-                            };
-                            @endphp
-                            <div style="border-radius:0.625rem; border:1px solid {{ $jColor['border'] }}; background:{{ $jColor['bg'] }}; padding:0.625rem 0.75rem;">
+                            <div style="border-radius:0.625rem; border:1px solid rgb(226 232 240); background:rgb(248 250 252); padding:0.625rem 0.75rem;">
                                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.375rem;">
                                     <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                                        <span style="font-size:0.7rem; font-weight:700; padding:0.125rem 0.5rem; border-radius:9999px; background:{{ $jColor['badge'] }}; color:white; text-transform:uppercase; letter-spacing:0.05em;">
+                                        <span style="font-size:0.7rem; font-weight:700; padding:0.125rem 0.5rem; border-radius:9999px; color:white; text-transform:uppercase; letter-spacing:0.05em; {{ $appel['statut_bar'] ?? 'background:rgb(107 114 128)' }}">
                                             {{ $appel['statut_label'] }}
                                         </span>
+                                        @if ($appel['pipeline_label'] ?? null)
+                                        <span style="font-size:0.65rem; font-weight:600; padding:0.125rem 0.45rem; border-radius:9999px; {{ $appel['pipeline_badge_style'] ?? 'background:rgb(243 244 246); color:rgb(55 65 81);' }}">
+                                            Pipeline · {{ $appel['pipeline_label'] }}
+                                        </span>
+                                        @endif
                                         @if ($appel['campagne'] ?? null)
                                         <span style="font-size:0.7rem; padding:0.125rem 0.375rem; border-radius:9999px; background:rgb(238 242 255); color:rgb(79 70 229); border:1px solid rgb(199 210 254);">
                                             {{ $appel['campagne'] }}
@@ -1785,7 +2484,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                                     <span style="font-weight:600;">{{ $appel['agent'] }}</span>
                                 </div>
                                 @if ($appel['notes'])
-                                <div style="font-size:0.75rem; color:rgb(75 85 99); background:rgba(255,255,255,0.6); border-radius:0.375rem; padding:0.25rem 0.5rem; margin-top:0.25rem; border-left:2px solid {{ $jColor['badge'] }};">
+                                <div style="font-size:0.75rem; color:rgb(75 85 99); background:rgba(255,255,255,0.6); border-radius:0.375rem; padding:0.25rem 0.5rem; margin-top:0.25rem; border-left:2px solid rgb(148 163 184);">
                                     {{ $appel['notes'] }}
                                 </div>
                                 @endif
@@ -1794,6 +2493,40 @@ $tentativesActuelles = $this->getTentativesAppel();
                         </div>
                         @endif
                     </div>
+
+                    @if ($incomingCallPhone || $incomingCallMatches)
+                    <div style="margin:1rem 0 0; background:rgb(239 246 255); border:1px solid rgb(191 219 254); border-radius:0.75rem; padding:0.875rem 1rem;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                            <div>
+                                <div style="font-size:0.625rem; text-transform:uppercase; letter-spacing:0.08em; color:rgb(30 64 175); font-weight:700;">Appel entrant détecté</div>
+                                <div style="font-size:1rem; font-weight:700; color:rgb(30 41 59); margin-top:0.25rem;">{{ $incomingCallPhone ?? 'Numéro inconnu' }}</div>
+                            </div>
+                            @if ($incomingCallMatches)
+                            <button type="button" onclick="rechercherAppelEntrant('{{ $incomingCallPhone }}')" style="padding:0.5rem 0.875rem; border:none; border-radius:0.5rem; background:rgb(37 99 235); color:white; font-weight:600; cursor:pointer;">
+                                Rechercher la fiche
+                            </button>
+                            @endif
+                        </div>
+
+                        @if ($incomingCallMatches)
+                        <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
+                            @foreach ($incomingCallMatches as $match)
+                            <button type="button" wire:click="selectSearchResult({{ $match['id'] }}, '{{ $match['type'] }}')" style="text-align:left; padding:0.625rem 0.75rem; border:1px solid rgb(191 219 254); border-radius:0.625rem; background:white; cursor:pointer;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+                                    <div>
+                                        <div style="font-weight:700; color:rgb(17 24 39);">{{ $match['nom'] }}</div>
+                                        <div style="font-size:0.75rem; color:rgb(75 85 99); margin-top:0.125rem;">{{ $match['type_entite'] }} · {{ $match['telephone'] ?? '—' }}</div>
+                                    </div>
+                                    @if ($match['statut'])
+                                    <span style="font-size:0.625rem; padding:0.15rem 0.45rem; border-radius:9999px; background:rgb(243 244 246); color:rgb(55 65 81); font-weight:600;">{{ $match['statut'] }}</span>
+                                    @endif
+                                </div>
+                            </button>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                    @endif
 
                     <div class="pw-info-panel" data-tab="rdv" style="display:none;">
                         <div class="pw-info-grid">
@@ -1815,6 +2548,169 @@ $tentativesActuelles = $this->getTentativesAppel();
                             </div>
                         </div>
                     </div>
+
+                    <div class="pw-info-panel" data-tab="appels-ringover" style="display:none;">
+                        <div class="pw-info-grid">
+                            @if (!empty($info['dernier_appel_ringover']))
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Date et heure</div>
+                                    <div style="padding:0.5rem; background:rgb(249 250 251); border-radius:0.375rem; font-weight:500;">
+                                        {{ $info['dernier_appel_ringover']['date_seulement'] }} à {{ $info['dernier_appel_ringover']['heure_seulement'] }}
+                                    </div>
+                                </div>
+
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Numéro appelant</div>
+                                    <div style="padding:0.5rem; background:rgb(249 250 251); border-radius:0.375rem; font-weight:500;">
+                                        {{ $info['dernier_appel_ringover']['numero_dual'] }}
+                                    </div>
+                                </div>
+
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Direction</div>
+                                    <div style="padding:0.5rem; background:rgb(249 250 251); border-radius:0.375rem; font-weight:500;">
+                                        @if ($info['dernier_appel_ringover']['direction'] === 'out')
+                                            <span style="display:inline-block; padding:0.25rem 0.5rem; background:rgb(34 197 94); color:white; border-radius:0.25rem; font-size:0.875rem;">📞 Appel sortant</span>
+                                        @elseif ($info['dernier_appel_ringover']['direction'] === 'in')
+                                            <span style="display:inline-block; padding:0.25rem 0.5rem; background:rgb(99 102 241); color:white; border-radius:0.25rem; font-size:0.875rem;">📞 Appel entrant</span>
+                                        @else
+                                            {{ $info['dernier_appel_ringover']['direction'] }}
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="pw-field-full">
+                                    <div class="pw-field-label">Durée</div>
+                                    <div style="padding:0.5rem; background:rgb(249 250 251); border-radius:0.375rem; font-weight:500;">
+                                        {{ $info['dernier_appel_ringover']['duree_formatee'] }}
+                                    </div>
+                                </div>
+
+                                @if (!empty($info['dernier_appel_ringover']['resume_ia']) || !empty($info['dernier_appel_ringover']['enregistrement_audio']))
+                                    <div class="pw-field-full">
+                                        <div class="pw-field-label">Détails de l'appel</div>
+                                        <div style="display:flex; flex-direction:column; gap:0.75rem; padding:0.75rem; background:rgb(248 250 252); border:1px solid rgb(226 232 240); border-radius:0.625rem;">
+                                            @if (!empty($info['dernier_appel_ringover']['enregistrement_audio']))
+                                                <div>
+                                                    <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:rgb(30 64 175); font-weight:700; margin-bottom:0.375rem;">🎵 Enregistrement</div>
+                                                    <audio controls preload="none" style="width:100%; max-width:360px; height:2rem;">
+                                                        <source src="{{ $info['dernier_appel_ringover']['enregistrement_audio'] }}" type="audio/mpeg">
+                                                        Votre navigateur ne supporte pas l'élément audio.
+                                                    </audio>
+                                                    <a href="{{ $info['dernier_appel_ringover']['enregistrement_audio'] }}"
+                                                        download
+                                                        style="display:inline-block; margin-top:0.5rem; padding:0.375rem 0.75rem; background:rgb(59 130 246); color:white; border-radius:0.375rem; font-size:0.875rem; text-decoration:none; font-weight:500; text-align:center; width:fit-content; transition:background-color 0.2s;"
+                                                        onmouseover="this.style.backgroundColor='rgb(37 99 235)'"
+                                                        onmouseout="this.style.backgroundColor='rgb(59 130 246)'"
+                                                    >
+                                                        📥 Télécharger
+                                                    </a>
+                                                </div>
+                                            @endif
+
+                                            @if (!empty($info['dernier_appel_ringover']['resume_ia']))
+                                                <div>
+                                                    <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:rgb(180 83 9); font-weight:700; margin-bottom:0.375rem;">📝 Résumé IA</div>
+                                                    <div style="padding:0.75rem; background:rgb(254 252 232); border-left:3px solid rgb(217 119 6); border-radius:0.375rem; font-size:0.9375rem; line-height:1.5; color:rgb(78 22 0); white-space:pre-wrap; word-wrap:break-word;">
+                                                        {!! nl2br(e(trim($info['dernier_appel_ringover']['resume_ia']))) !!}
+                                                    </div>
+                                                    <div style="margin-top:0.5rem; font-size:0.75rem; color:rgb(107 114 128); font-style:italic;">
+                                                        ℹ️ Résumé généré automatiquement par IA Ringover
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
+
+                    @if (config('aopia.prospection.show_ringover_history') && count($info['tous_appels_ringover'] ?? []) > 1)
+                    <div class="pw-info-panel" data-tab="historique-ringover" style="display:none;">
+                        <div class="pw-info-grid">
+                            <div class="pw-field-full">
+                                <div class="pw-field-label">Historique des appels Ringover ({{ count($info['tous_appels_ringover']) }})</div>
+                                <div style="margin-top:0.75rem; overflow-x:auto;">
+                                    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+                                        <thead>
+                                            <tr style="border-bottom:2px solid rgb(229 231 235); background:rgb(249 250 251);">
+                                                <th style="text-align:left; padding:0.75rem; font-weight:600; color:rgb(55 65 81);">Date & Heure</th>
+                                                <th style="text-align:center; padding:0.75rem; font-weight:600; color:rgb(55 65 81);">Direction</th>
+                                                <th style="text-align:center; padding:0.75rem; font-weight:600; color:rgb(55 65 81);">Durée</th>
+                                                <th style="text-align:center; padding:0.75rem; font-weight:600; color:rgb(55 65 81);">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($info['tous_appels_ringover'] as $index => $appel)
+                                            <tr class="ringover-history-row" style="border-bottom:1px solid rgb(229 231 235);">
+                                                <td style="padding:0.75rem; color:rgb(55 65 81);">
+                                                    <div style="font-weight:500;">{{ $appel['date_seulement'] }}</div>
+                                                    <div style="font-size:0.8125rem; color:rgb(107 114 128);">{{ $appel['heure_seulement'] }}</div>
+                                                </td>
+                                                <td style="padding:0.75rem; text-align:center;">
+                                                    @if ($appel['direction'] === 'out')
+                                                        <span style="display:inline-block; padding:0.25rem 0.5rem; background:rgb(34 197 94); color:white; border-radius:0.25rem; font-size:0.75rem; font-weight:600;">📞 Sortant</span>
+                                                    @elseif ($appel['direction'] === 'in')
+                                                        <span style="display:inline-block; padding:0.25rem 0.5rem; background:rgb(99 102 241); color:white; border-radius:0.25rem; font-size:0.75rem; font-weight:600;">📞 Entrant</span>
+                                                    @else
+                                                        <span style="font-size:0.75rem;">{{ $appel['direction'] }}</span>
+                                                    @endif
+                                                </td>
+                                                <td style="padding:0.75rem; text-align:center; color:rgb(107 114 128);">
+                                                    {{ $appel['duree_formatee'] }}
+                                                </td>
+                                                <td style="padding:0.75rem; text-align:center;">
+                                                    @if (!empty($appel['resume_ia']) || !empty($appel['enregistrement_audio']))
+                                                        <button type="button" style="padding:0.25rem 0.5rem; background:rgb(219 234 254); color:rgb(37 99 235); border:none; border-radius:0.25rem; font-size:0.75rem; font-weight:600; cursor:pointer;" onclick="this.closest('table').querySelectorAll('.ringover-detail-row').forEach(r => r.style.display = 'none'); document.getElementById('detail-{{ $index }}').style.display = 'table-row';" title="Cliquer pour voir les détails">
+                                                            ➤ Détails
+                                                        </button>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            @if (!empty($appel['resume_ia']) || !empty($appel['enregistrement_audio']))
+                                            <tr class="ringover-detail-row" id="detail-{{ $index }}" style="display:none; border-bottom:2px solid rgb(229 231 235); background:rgb(249 250 251);">
+                                                <td colspan="4" style="padding:1rem;">
+                                                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
+                                                        <div style="font-weight:600; color:rgb(55 65 81);">Détails de l'appel</div>
+                                                        <button type="button" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:rgb(107 114 128);" onclick="this.closest('table').querySelectorAll('.ringover-detail-row').forEach(r => r.style.display = 'none');" title="Fermer">
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                    <div style="margin-bottom:1rem;">
+                                                        @if (!empty($appel['enregistrement_audio']))
+                                                        <div style="margin-bottom:1rem;">
+                                                            <div style="font-weight:600; color:rgb(55 65 81); margin-bottom:0.5rem;">🎵 Enregistrement</div>
+                                                            <audio controls style="width:100%; max-width:400px; height:2rem;">
+                                                                <source src="{{ $appel['enregistrement_audio'] }}" type="audio/mpeg">
+                                                                Votre navigateur ne supporte pas l'élément audio.
+                                                            </audio>
+                                                            <a href="{{ $appel['enregistrement_audio'] }}" download style="display:inline-block; margin-left:0.75rem; padding:0.375rem 0.75rem; background:rgb(59 130 246); color:white; border-radius:0.375rem; font-size:0.875rem; text-decoration:none; font-weight:500; vertical-align:middle;" onmouseover="this.style.backgroundColor='rgb(37 99 235)'" onmouseout="this.style.backgroundColor='rgb(59 130 246)'">
+                                                                📥 Télécharger
+                                                            </a>
+                                                        </div>
+                                                        @endif
+                                                        @if (!empty($appel['resume_ia']))
+                                                        <div>
+                                                            <div style="font-weight:600; color:rgb(55 65 81); margin-bottom:0.5rem;">📝 Résumé IA</div>
+                                                            <div style="padding:0.75rem; background:rgb(254 252 232); border-left:3px solid rgb(217 119 6); border-radius:0.375rem; color:rgb(92 64 51); line-height:1.5; white-space:pre-wrap; word-wrap:break-word;">
+                                                                {{ trim($appel['resume_ia']) }}
+                                                            </div>
+                                                            <div style="font-size:0.75rem; color:rgb(107 114 128); margin-top:0.5rem;">ℹ️ Résumé généré automatiquement par IA Ringover</div>
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endif
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 {{-- ── RÉSULTAT DE L'APPEL (en second, sous forme d'onglets par cas) ── --}}
@@ -1866,6 +2762,11 @@ $tentativesActuelles = $this->getTentativesAppel();
                                         <span class="pw-chip-sub" style="{{ $isActive ? 'color:rgba(255,255,255,.85);' : '' }}">
                                             {{ $option['sub'] }}{{ $option['action'] ? ' → '.$option['action'] : '' }}
                                         </span>
+                                        @if (!empty($option['pipeline_label']))
+                                        <span class="pw-chip-pipeline" style="{{ $isActive ? 'color:rgba(255,255,255,.9);' : 'color:rgb(100 116 139);' }}">
+                                            Pipeline : {{ $option['pipeline_label'] }}
+                                        </span>
+                                        @endif
                                     </span>
                                     <input type="radio" wire:model="statut_resultat" value="{{ $option['value'] }}" style="display:none;">
                                 </label>
@@ -1874,6 +2775,36 @@ $tentativesActuelles = $this->getTentativesAppel();
                         </div>
                     </div>
                     @endforeach
+
+                    @if ($pipelinePreview)
+                    <div class="pw-pipeline-link" wire:key="pipeline-preview-{{ $statut_resultat }}">
+                        <div class="pw-pipeline-link-title">Lien statut d'appel → statut pipeline</div>
+                        <div class="pw-pipeline-link-flow">
+                            @if ($pipelinePreview['current'])
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['current']['badge_style'] }}">
+                                Pipeline actuel · {{ $pipelinePreview['current']['label'] }}
+                            </span>
+                            @endif
+                            <span class="pw-pipeline-link-arrow">→</span>
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['call_status']['bar'] ?? '' }}; color:white;">
+                                {{ $pipelinePreview['call_status']['icon'] ?? '•' }} Appel · {{ $pipelinePreview['call_status']['label'] }}
+                            </span>
+                            @if ($pipelinePreview['next'])
+                            <span class="pw-pipeline-link-arrow">→</span>
+                            <span class="pw-pipeline-link-step" style="{{ $pipelinePreview['next']['badge_style'] }}">
+                                Pipeline après qualification · {{ $pipelinePreview['next']['label'] }}
+                            </span>
+                            @endif
+                        </div>
+                        <div class="pw-pipeline-link-note">
+                            @if ($pipelinePreview['unchanged'])
+                                Le statut pipeline reste inchangé après enregistrement de cet appel.
+                            @else
+                                Le statut pipeline du prospect passera automatiquement à « {{ $pipelinePreview['next']['label'] ?? '—' }} » lors de l'enregistrement.
+                            @endif
+                        </div>
+                    </div>
+                    @endif
 
                     <div id="pw-rappel-box"
                         class="pw-rappel-box {{ in_array($statut_resultat, $rappelCodes) ? 'visible' : '' }}">
@@ -1994,6 +2925,45 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </div>
                     @endif
 
+                    @if (
+                        $nom_interlocuteur_standard || $creneaux_permanence_cse || $email_general_standard ||
+                        $interlocuteur_nom || $interlocuteur_fonction || $interlocuteur_telephone || $interlocuteur_email ||
+                        $commentaires
+                    )
+                    <div class="pw-fiche-recap" style="background:rgb(249 250 251); border-color:rgb(209 213 219); margin-top:1rem;">
+                        <div class="pw-fiche-recap-header" style="background:rgb(55 65 81); color:white;">
+                            <svg class="pw-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            Récapitulatif de saisie
+                        </div>
+                        <div style="padding:0.875rem; font-size:0.85rem; color:rgb(30 41 59); display:grid; gap:0.5rem;">
+                            @if ($nom_interlocuteur_standard)
+                            <div><strong>Standard :</strong> {{ $nom_interlocuteur_standard }}</div>
+                            @endif
+                            @if ($creneaux_permanence_cse)
+                            <div><strong>Créneaux CSE :</strong> {{ $creneaux_permanence_cse }}</div>
+                            @endif
+                            @if ($email_general_standard)
+                            <div><strong>Email standard :</strong> {{ $email_general_standard }}</div>
+                            @endif
+                            @if ($interlocuteur_nom)
+                            <div><strong>Interlocuteur CSE :</strong> {{ $interlocuteur_nom }}</div>
+                            @endif
+                            @if ($interlocuteur_fonction)
+                            <div><strong>Fonction :</strong> {{ $interlocuteur_fonction }}</div>
+                            @endif
+                            @if ($interlocuteur_telephone)
+                            <div><strong>Téléphone CSE :</strong> {{ $interlocuteur_telephone }}</div>
+                            @endif
+                            @if ($interlocuteur_email)
+                            <div><strong>Email CSE :</strong> {{ $interlocuteur_email }}</div>
+                            @endif
+                            @if ($commentaires)
+                            <div><strong>Compte rendu :</strong> {{ \Illuminate\Support\Str::limit($commentaires, 140) }}</div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
                     <textarea wire:model="commentaires" rows="4"
                         placeholder="Compte rendu : interlocuteur joint, objections, décision, prochaine étape..." class="pw-textarea"></textarea>
 
@@ -2009,8 +2979,26 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </div>
                     @endif
 
+                    @if ($errors->has('statut_resultat') || $errors->has('commentaires'))
+                    <div style="font-size:0.875rem; color:rgb(190 35 50); margin-top:0.75rem; background:rgb(254 226 226); border:1px solid rgb(248 113 113); border-radius:0.75rem; padding:0.75rem;">
+                        <div style="font-weight:700; margin-bottom:0.5rem;">Erreur de validation</div>
+                        @error('statut_resultat')
+                        <div>Statut : {{ $message }}</div>
+                        @enderror
+                        @error('commentaires')
+                        <div>Commentaires : {{ $message }}</div>
+                        @enderror
+                    </div>
+                    @endif
+
+                    @error('commentaires')
+                    <div style="font-size:0.75rem; color:rgb(190 35 50); margin-top:0.5rem;">
+                        {{ $message }}
+                    </div>
+                    @enderror
+
                     <div class="pw-actions">
-                        <button wire:click="submitResult" class="pw-btn-primary"
+                        <button wire:click="submitResult" wire:loading.attr="disabled" class="pw-btn-primary"
                             {{ !$statut_resultat ? 'disabled style=opacity:.5;cursor:not-allowed' : '' }}>
                             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                             Enregistrer &amp; suivant
@@ -2020,6 +3008,15 @@ $tentativesActuelles = $this->getTentativesAppel();
                             Passer
                         </button>
                     </div>
+                    @if (!$statut_resultat || ($statut_resultat && $this->commentaireRequis() && !$commentaires))
+                    <div style="margin-top:0.75rem; color:rgb(190 35 50); font-size:.875rem;">
+                        @if (!$statut_resultat)
+                            Sélectionnez un statut dans le résultat d'appel pour activer l'enregistrement.
+                        @elseif ($this->commentaireRequis() && !$commentaires)
+                            Un commentaire est requis pour ce statut avant de pouvoir enregistrer.
+                        @endif
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -2073,7 +3070,141 @@ $tentativesActuelles = $this->getTentativesAppel();
         </div>
     </div>
     @endif
-    </div>
+
+    @if ($showEmailPreview)
+        <div
+            class="pw-email-preview-overlay"
+            wire:key="email-preview-modal"
+            x-data="phoningEmailPreview(@js([
+                'subject' => $emailPreviewSubject,
+                'recipient' => $emailPreviewRecipient,
+                'body' => $emailPreviewBody,
+                'originalSubject' => $emailPreviewOriginalSubject ?? $emailPreviewSubject,
+                'originalBody' => $emailPreviewOriginalBody ?? $emailPreviewBody,
+            ]))"
+            @keydown.escape.window="$wire.cancelEmailPreview()"
+        >
+            <div class="pw-email-preview-modal" @click.outside.stop>
+                <div class="pw-email-preview-header">
+                    <div>
+                        <span>Aperçu du mail avant envoi</span>
+                        <div class="pw-email-preview-header-meta">
+                            <span class="pw-email-preview-badge" x-show="isDirty" x-cloak>Modifié</span>
+                            <span x-text="plainTextLength + ' caractères'"></span>
+                        </div>
+                    </div>
+                    <button type="button" class="pw-email-preview-close" wire:click="cancelEmailPreview" aria-label="Fermer">
+                        ×
+                    </button>
+                </div>
+                <div class="pw-email-preview-content">
+                    <div class="pw-email-preview-tabs" role="tablist" aria-label="Mode d'affichage">
+                        <button type="button" class="pw-email-preview-tab" :class="{ 'active': activeTab === 'edit' }" @click="switchTab('edit')">Éditer</button>
+                        <button type="button" class="pw-email-preview-tab" :class="{ 'active': activeTab === 'preview' }" @click="switchTab('preview')">Aperçu live</button>
+                    </div>
+
+                    <div class="pw-email-preview-split">
+                        <div
+                            class="pw-email-preview-editor-pane"
+                            :class="{ 'is-hidden-mobile': activeTab !== 'edit' }"
+                        >
+                            <div class="pw-email-preview-preview-header">
+                                <div class="pw-email-preview-preview-title">Composer le message</div>
+                                <div class="pw-email-preview-helper">Modifiez le destinataire, le sujet et le contenu. L’aperçu se met à jour en temps réel.</div>
+                            </div>
+
+                            <div class="pw-email-preview-section">
+                                <label for="email-preview-recipient" class="pw-email-preview-label">Destinataire</label>
+                                <input
+                                    id="email-preview-recipient"
+                                    type="email"
+                                    x-model="recipient"
+                                    @input="markDirty()"
+                                    class="pw-email-preview-input pw-email-preview-input-recipient"
+                                    autocomplete="off"
+                                />
+                            </div>
+
+                            <div class="pw-email-preview-section">
+                                <label for="email-preview-subject" class="pw-email-preview-label">Sujet</label>
+                                <input
+                                    id="email-preview-subject"
+                                    type="text"
+                                    x-model="subject"
+                                    @input="markDirty()"
+                                    class="pw-email-preview-input"
+                                    autocomplete="off"
+                                />
+                            </div>
+
+                            <div class="pw-email-preview-section" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                                <div class="pw-email-preview-label">Corps du message</div>
+                                <div class="pw-email-preview-toolbar" role="toolbar" aria-label="Barre d'outils de mise en forme">
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Gras (Ctrl+B)" @click.prevent="format('bold')"><strong>B</strong></button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Italique (Ctrl+I)" @click.prevent="format('italic')"><em>I</em></button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Souligné (Ctrl+U)" @click.prevent="format('underline')"><span style="text-decoration:underline;">U</span></button>
+                                    <span class="pw-email-preview-toolbar-divider"></span>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Liste à puces" @click.prevent="format('insertUnorderedList')">• Liste</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Liste numérotée" @click.prevent="format('insertOrderedList')">1. Liste</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Insérer un lien" @click.prevent="format('createLink')">Lien</button>
+                                    <span class="pw-email-preview-toolbar-divider"></span>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Annuler" @click.prevent="format('undo')">↶</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Rétablir" @click.prevent="format('redo')">↷</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button" title="Effacer la mise en forme" @click.prevent="format('removeFormat')">Tx</button>
+                                    <button type="button" class="pw-email-preview-toolbar-button is-reset" title="Réinitialiser le modèle" @click.prevent="resetTemplate()">Réinitialiser</button>
+                                </div>
+                                <div
+                                    x-ref="editor"
+                                    class="pw-email-preview-editor"
+                                    contenteditable="true"
+                                    spellcheck="true"
+                                    @input="handleEditorInput()"
+                                    @paste="handleEditorPaste($event)"
+                                    @keydown="handleEditorKeydown($event)"
+                                ></div>
+                                <div class="pw-email-preview-helper">
+                                    <span>Raccourcis : Ctrl+B, Ctrl+I, Ctrl+U · collage texte ou HTML supporté</span>
+                                    <span class="pw-email-preview-stats" :class="{ 'is-dirty': isDirty }" x-text="isDirty ? 'Modifications non enregistrées' : 'Modèle d’origine'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="pw-email-preview-preview-pane"
+                            :class="{ 'is-hidden-mobile': activeTab !== 'preview' }"
+                        >
+                            <div class="pw-email-preview-preview-header">
+                                <div class="pw-email-preview-preview-title">Aperçu destinataire</div>
+                                <div class="pw-email-preview-helper">Rendu approximatif du mail tel qu’il sera reçu.</div>
+                            </div>
+                            <div class="pw-email-preview-preview-frame">
+                                <div class="pw-email-preview-preview-frame-bar" aria-hidden="true">
+                                    <span class="pw-email-preview-preview-dot"></span>
+                                    <span class="pw-email-preview-preview-dot"></span>
+                                    <span class="pw-email-preview-preview-dot"></span>
+                                </div>
+                                <div class="pw-email-preview-preview-meta">
+                                    <div class="pw-email-preview-preview-meta-row">
+                                        <span class="pw-email-preview-preview-meta-label">À</span>
+                                        <span class="pw-email-preview-preview-meta-value" x-text="recipient || '—'"></span>
+                                    </div>
+                                    <div class="pw-email-preview-preview-meta-row">
+                                        <span class="pw-email-preview-preview-meta-label">Objet</span>
+                                        <span class="pw-email-preview-preview-meta-value" x-text="subject || '(sans sujet)'"></span>
+                                    </div>
+                                </div>
+                                <div class="pw-email-preview-preview-body" x-html="body || '<p style=&quot;color:#9ca3af&quot;>Le corps du message apparaîtra ici…</p>'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pw-email-preview-actions">
+                    <button type="button" wire:click="cancelEmailPreview" class="pw-btn-secondary">Annuler</button>
+                    <button type="button" @click="confirmSend()" class="pw-btn-primary">Confirmer et envoyer</button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @push('scripts')
     <script>
@@ -2205,11 +3336,75 @@ $tentativesActuelles = $this->getTentativesAppel();
             window.appelerAvecRingover = function(numero) {
                 if (!numero) return;
                 const e164 = toE164Fr(numero);
+                Livewire.dispatch('ringover-call', { phone: e164 });
+                const nowIso = new Date().toISOString();
+                const lifecycle = {
+                    callId: null,
+                    startedAt: nowIso,
+                    endedAt: null,
+                };
+
+                const captureLifecycle = (payload = null, type = 'generic', phone = null) => {
+                    const rawStarted = payload && (payload.started_at || payload.startedAt || payload.start_time || payload.startTime || payload.started || payload.begin_at || payload.beginAt);
+                    const rawEnded = payload && (payload.ended_at || payload.endedAt || payload.end_time || payload.endTime || payload.ended || payload.end_at || payload.endAt);
+
+                    if (rawStarted) {
+                        lifecycle.startedAt = new Date(rawStarted).toISOString();
+                    }
+
+                    if (rawEnded) {
+                        lifecycle.endedAt = new Date(rawEnded).toISOString();
+                    }
+
+                    const payloadCallId = payload && (payload.call_id || payload.callId || payload.uuid || payload.id || payload.call_uuid || payload.uuid_call);
+                    if (payloadCallId) {
+                        lifecycle.callId = String(payloadCallId);
+                    }
+
+                    const normalizedPhone = phone
+                        || (payload && (payload.from_number || payload.fromNumber || payload.caller_number || payload.callerNumber || payload.from || payload.caller || payload.to_number || payload.toNumber || payload.callee_number || payload.calleeNumber || payload.to || payload.callee));
+
+                    Livewire.dispatch('ringover-call-lifecycle', {
+                        callId: lifecycle.callId,
+                        startedAt: lifecycle.startedAt,
+                        endedAt: lifecycle.endedAt,
+                        type,
+                        phone: normalizedPhone ? String(normalizedPhone).replace(/[^0-9+]/g, '') : null,
+                    });
+                };
+
                 const lancerAppel = () => {
                     if (!window.ringoverPhone) return;
                     window.ringoverPhone.show();
+                    if (typeof window.ringoverPhone.getCallId === 'function') {
+                        lifecycle.callId = window.ringoverPhone.getCallId();
+                    }
+                    if (typeof window.ringoverPhone.on === 'function') {
+                        ['callStarted', 'call:started', 'started', 'call.started'].forEach((eventName) => {
+                            try {
+                                window.ringoverPhone.on(eventName, (payload) => {
+                                    const direction = payload && (payload.direction || payload.type || payload.call_direction || payload.callDirection);
+                                    const caller = payload && (payload.from_number || payload.fromNumber || payload.caller_number || payload.callerNumber || payload.from || payload.caller);
+                                            const called = payload && (payload.to_number || payload.toNumber || payload.callee_number || payload.calleeNumber || payload.to || payload.callee);
+                                            const isInbound = direction === 'inbound' || String(direction).toLowerCase().includes('inbound') || String(direction).toLowerCase().includes('incoming');
+                                            const phone = isInbound ? caller : called || caller;
+                                            captureLifecycle(payload, eventName, phone);
+                        });
+
+                        ['callEnded', 'call:ended', 'ended', 'call.ended', 'hangup'].forEach((eventName) => {
+                            try {
+                                window.ringoverPhone.on(eventName, (payload) => {
+                                    if (!payload || !payload.endedAt && !payload.ended_at && !payload.endTime && !payload.end_time && !payload.ended) {
+                                        lifecycle.endedAt = new Date().toISOString();
+                                    }
+                                    captureLifecycle(payload, eventName);
+                                });
+                            } catch (e) {}
+                        });
+                    }
                     window.ringoverPhone.dial(e164);
                 };
+                Livewire.dispatch('ringover-call-lifecycle', { callId: null, startedAt: lifecycle.startedAt, endedAt: null });
                 if (window.ringoverPhone && window.ringoverPhone.__ready) {
                     lancerAppel();
                 } else if (window.ringoverPhone) {

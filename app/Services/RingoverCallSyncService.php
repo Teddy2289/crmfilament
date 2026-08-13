@@ -68,6 +68,7 @@ class RingoverCallSyncService
                 data_get($call, 'recording')
                     ?? data_get($call, 'recording_url')
                     ?? data_get($call, 'record.url')
+                    ?? data_get($call, 'record')
             ),
             'commentaire' => $this->extractComment($call),
             'ringover_tags' => $tagValidation['tags'],

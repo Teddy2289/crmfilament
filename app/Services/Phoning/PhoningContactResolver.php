@@ -89,6 +89,8 @@ class PhoningContactResolver
                 'notes' => $model->description,
                 'motif_ko' => $model->motif_ko,
                 'qf_valide' => $model->qf_valide,
+                'dernier_appel_ringover' => $model->getDernierAppelRingover(),
+                'tous_appels_ringover' => $model->getTousAppelsRingover(),
                 'id' => $model->id,
                 'type' => 'prospect',
             ],
