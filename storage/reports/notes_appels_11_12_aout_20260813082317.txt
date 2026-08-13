@@ -1,0 +1,58 @@
+RAPPORT DES APPELS RINGOVER - 11 ET 12 AOÛT 2026
+=======================================================================
+Date généré: 13/08/2026 08:23:17
+Total appels: 100
+
+--------------------------------------------------------------------------------
+ID APPEL: 41 | Ringover ID: 10777050466392994082
+HEURE: 12/08/2026 12:02:26
+PROSPECT: NATIONAL ELECTRONIQUE SERVICE
+RÉSULTAT: —
+DURÉE: N/A
+
+📝 NOTES PROSPECT:
+[06/08/2026 14:12] ⏱️ RAPL-STD — STDR : pas dispo// Secrétaire du SCE : M. CHAMPAGNOL, email : cse.nes@nes-france.com 
+
+--------------------------------------------------------------------------------
+ID APPEL: 86 | Ringover ID: 9193340921292247441
+HEURE: 12/08/2026 09:33:07
+PROSPECT: CAMSO FRANCE SAS
+RÉSULTAT: —
+DURÉE: N/A
+
+📝 NOTES PROSPECT:
+[07/08/2026 07:56] ⏱️ RAPL-STD — La secrétaire n'est pas disponible, mais le standard m'a communiqué son nom ainsi que sa ligne directe afin que je la rappelle.
+
+Madame Laetitia GALLET : 02 38 32 72 02
+
+--------------------------------------------------------------------------------
+ID APPEL: 89 | Ringover ID: 3590393976149403564
+HEURE: 12/08/2026 09:29:51
+PROSPECT: CAMSO FRANCE SAS
+RÉSULTAT: —
+DURÉE: N/A
+
+📝 NOTES PROSPECT:
+[07/08/2026 07:56] ⏱️ RAPL-STD — La secrétaire n'est pas disponible, mais le standard m'a communiqué son nom ainsi que sa ligne directe afin que je la rappelle.
+
+Madame Laetitia GALLET : 02 38 32 72 02
+
+--------------------------------------------------------------------------------
+ID APPEL: 90 | Ringover ID: 10015325119695364867
+HEURE: 12/08/2026 09:29:20
+PROSPECT: CAMSO FRANCE SAS
+RÉSULTAT: —
+DURÉE: N/A
+
+📝 NOTES PROSPECT:
+[07/08/2026 07:56] ⏱️ RAPL-STD — La secrétaire n'est pas disponible, mais le standard m'a communiqué son nom ainsi que sa ligne directe afin que je la rappelle.
+
+Madame Laetitia GALLET : 02 38 32 72 02
+
+
+================================================================================
+RÉSUMÉ
+=======================================================================
+✓ Appels avec notes: 4
+✗ Appels sans notes: 96
+TOTAL: 100

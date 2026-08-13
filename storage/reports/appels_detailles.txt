@@ -1,0 +1,850 @@
+RAPPORT COMPLET - APPELS RINGOVER DU 11-12 AOÛT 2026
+============================================================================
+
+
+📱 PROSPECT: TRAVAUX PUBLICS LE CLECH (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:37:09
+    • ID Ringover: 7748399117227731026
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: LA FERME DE LA GOUSSARDIERE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:36:23
+    • ID Ringover: 17516870966884858552
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SAS DEMOSPEC (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:35:27
+    • ID Ringover: 7355221094995757518
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: LUCAS LE MANS (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:34:47
+    • ID Ringover: 967429478866229508
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 12:33:23
+    • ID Ringover: 1006256550436704855
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: MC VET CONSEIL (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:34:41
+    • ID Ringover: 16505926339547335368
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: DELABOUDINIERE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:34:00
+    • ID Ringover: 11262859649083802297
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: MICHARD PAYS DE LOIRE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:31:47
+    • ID Ringover: 526851432461727561
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: INTERNATIONAL ELECTRIC EXPORT (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:30:35
+    • ID Ringover: 4657849470732875542
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: BILURIENNE DE DISTRIBUTION (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:29:01
+    • ID Ringover: 8510016005184750114
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: TECHNICAPS PACKAGING (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:28:37
+    • ID Ringover: 6920875300268559884
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: PASDELOU GALVA (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:27:20
+    • ID Ringover: 17051326283910158929
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: PROVINCES ET TRADITIONS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:27:04
+    • ID Ringover: 6807747395270286806
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ITSAP (INNOVATION ET TECHNOLOGIE DES SERVICES A LA PERSONNE) (4 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:25:13
+    • ID Ringover: 7387164703683449363
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 12:24:51
+    • ID Ringover: 18345993543937355227
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #3:
+    • Heure: 12/08/2026 12:01:41
+    • ID Ringover: 3058980081856293021
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #4:
+    • Heure: 12/08/2026 12:01:27
+    • ID Ringover: 2924061697725137807
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ETS JOUVET (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:24:42
+    • ID Ringover: 1905514052610557949
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: CLINIQUE MEDICALE VICTOR HUGO (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:24:29
+    • ID Ringover: 15924510942311373479
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: LE MANS SUD AUTO (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:21:24
+    • ID Ringover: 581821626467366743
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: AGROPITHIVIERS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:20:49
+    • ID Ringover: 7346168855486835216
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: LE MAINE LIBRE STE (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:19:07
+    • ID Ringover: 14965892956580167070
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 11:58:52
+    • ID Ringover: 7485758318320907908
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: FLOWSERVE POMPES SAS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:17:36
+    • ID Ringover: 13373506986009606066
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: EPSILON + (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:17:14
+    • ID Ringover: 4911594532432298819
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SOCIETE D'ETUDE ET DE RECHERCHE EN INGENIERIE PHARMACEUTIQUE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:17:10
+    • ID Ringover: 5436367769559906162
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: AGRI NEGOCE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:15:11
+    • ID Ringover: 10298501114056450712
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: A.S. POOL (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:12:49
+    • ID Ringover: 2802611277706164535
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: N/A (7 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:10:26
+    • ID Ringover: 16360379665205221252
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 12:08:56
+    • ID Ringover: 14284110219303895270
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #3:
+    • Heure: 12/08/2026 12:07:56
+    • ID Ringover: 16317149179609066736
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #4:
+    • Heure: 12/08/2026 12:04:40
+    • ID Ringover: 16343246237043158240
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #5:
+    • Heure: 12/08/2026 11:52:56
+    • ID Ringover: 15098788712541388609
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #6:
+    • Heure: 12/08/2026 09:20:46
+    • ID Ringover: 5611159436824996759
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #7:
+    • Heure: 12/08/2026 09:16:29
+    • ID Ringover: 9732512009935410853
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: HOWMET FIXATIONS SIMMONDS SAS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:10:10
+    • ID Ringover: 11746342550455655058
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SOFANE Super U (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:10:05
+    • ID Ringover: 3955620599997297445
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: HAVA 3D (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:09:18
+    • ID Ringover: 18377294287929730340
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SARREL (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:08:46
+    • ID Ringover: 6860976336322267687
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: LECLUSE AUTOMOBILES LE MANS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:05:28
+    • ID Ringover: 3039645945004585765
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ACO SECURITE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:04:55
+    • ID Ringover: 16047833004215033792
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: FPGDIS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:04:32
+    • ID Ringover: 13609759243941142399
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ADEKMA OUEST (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:03:53
+    • ID Ringover: 10432518005725339914
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SOMTP OUEST (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:03:07
+    • ID Ringover: 2646167632671621482
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: FIMUREX MANCELLES (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:02:44
+    • ID Ringover: 8481134528035445798
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ALPHACAN (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 12:02:30
+    • ID Ringover: 16439067908611150697
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 12:01:16
+    • ID Ringover: 8815711997288866431
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: NATIONAL ELECTRONIQUE SERVICE (1 appels)
+--------------------------------------------------------------------------------
+📝 NOTES PROSPECT:
+[06/08/2026 14:12] ⏱️ RAPL-STD — STDR : pas dispo// Secrétaire du SCE : M. CHAMPAGNOL, email : cse.nes@nes-france.com 
+
+  Appel #1:
+    • Heure: 12/08/2026 12:02:26
+    • ID Ringover: 10777050466392994082
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: TRANSPORTS EVENISSE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:59:33
+    • ID Ringover: 10118271350903131308
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ODYSSEE ENVIRONNEMENT (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:58:07
+    • ID Ringover: 12897502826403189666
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 11:51:42
+    • ID Ringover: 9203288189684192767
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ACCORD IMMOBILIER (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:56:13
+    • ID Ringover: 775335676111210810
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: GALERIES DU LIVRE DOUCET (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:55:42
+    • ID Ringover: 16505479462332205200
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: MEILLEURTAUX SOLUTIONS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:53:20
+    • ID Ringover: 11705050365264877364
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ADEQUAT 142 (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:52:41
+    • ID Ringover: 10629106036113548768
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: PASTEAU (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:52:41
+    • ID Ringover: 6871259316414320733
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: L'ATELIER 72 (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:50:05
+    • ID Ringover: 3625684181669496999
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SETRAD (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:49:22
+    • ID Ringover: 4723089905626062535
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: CHESNEAU AGRI-OUEST (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:47:54
+    • ID Ringover: 8106889705807123109
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: COMPAGNIE FERMIERE DE SERVICES PUBLICS (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:47:17
+    • ID Ringover: 13121760266303101753
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 09:44:49
+    • ID Ringover: 17854466641724784664
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: PRECISION MECAN APPLIQUEE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:46:39
+    • ID Ringover: 1611761213523861181
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: GERAMA (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 11:46:34
+    • ID Ringover: 3754167700534943643
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: BOLLEDIS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:59:18
+    • ID Ringover: 16079796787343104619
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: HANNECARD FRANCE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:58:41
+    • ID Ringover: 3303138840758774491
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SOCIETE ELECTROMECANIQUE DIVERSIFIEE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:57:04
+    • ID Ringover: 11995559547923790110
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: GALAXY (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:56:52
+    • ID Ringover: 16630549421498668623
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: MAINE COLLECTE VALORISATION (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:56:34
+    • ID Ringover: 9404491034308732828
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 09:54:42
+    • ID Ringover: 12687063896704204943
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ALENSPORT (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:55:48
+    • ID Ringover: 5249490413632407893
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SOBELDIS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:55:05
+    • ID Ringover: 18262466740836852994
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: COLIDIS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:51:31
+    • ID Ringover: 720080788412546395
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: GROUPE ALQUENRY (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:49:55
+    • ID Ringover: 3936773457147840873
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 09:47:27
+    • ID Ringover: 6996598430730119040
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: MB LOG (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:48:27
+    • ID Ringover: 13717925340178201202
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: CLINIQUE DU TERTRE ROUGE (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:48:13
+    • ID Ringover: 11354529824336025651
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: NEXECUR PROTECTION (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:48:02
+    • ID Ringover: 16513163282330599954
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ALLIANCE PR (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:43:40
+    • ID Ringover: 137747339102305922
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 09:32:37
+    • ID Ringover: 4789360354660360518
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: BIGOT FLEURS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:42:53
+    • ID Ringover: 17281163331701601014
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: PIGEON TP CENTRE ILE-DE-FRANCE (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:42:02
+    • ID Ringover: 8503129175917729412
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 09:18:07
+    • ID Ringover: 8556996185373305936
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: L.M. MANUTENTION (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:41:29
+    • ID Ringover: 5898023104885729179
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SAINT REMY DISTRIBUTION (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:40:54
+    • ID Ringover: 4538295924059644489
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: MERAL (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:40:19
+    • ID Ringover: 11648614620073476520
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: PONTHOU UTILITAIRES (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:37:48
+    • ID Ringover: 16576539800531716218
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: STMICROELECTRONICS (GRAND OUEST) SAS (2 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:36:06
+    • ID Ringover: 15364867433194853678
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 09:31:46
+    • ID Ringover: 10827021337060995268
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: LOEUF (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:35:38
+    • ID Ringover: 3736315589066140905
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: PLASTOLOIR (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:33:13
+    • ID Ringover: 5921964437135212857
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: CAMSO FRANCE SAS (3 appels)
+--------------------------------------------------------------------------------
+📝 NOTES PROSPECT:
+[07/08/2026 07:56] ⏱️ RAPL-STD — La secrétaire n'est pas disponible, mais le standard m'a communiqué son nom ainsi que sa ligne directe afin que je la rappelle.
+
+Madame Laetitia GALLET : 02 38 32 72 02
+
+  Appel #1:
+    • Heure: 12/08/2026 09:33:07
+    • ID Ringover: 9193340921292247441
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #2:
+    • Heure: 12/08/2026 09:29:51
+    • ID Ringover: 3590393976149403564
+    • Durée: N/A
+    • Résultat: —
+
+  Appel #3:
+    • Heure: 12/08/2026 09:29:20
+    • ID Ringover: 10015325119695364867
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: G2L (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:28:59
+    • ID Ringover: 11141845881713150038
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: FIFERDIS (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:28:01
+    • ID Ringover: 8601341218827679510
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: STEPHILDOM (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:27:39
+    • ID Ringover: 10912912189568109387
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: SOCIETE DE POSE BOIS ET METAL (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:26:55
+    • ID Ringover: 9575082691064244650
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: LES VERGERS JACQUES TIMMERMAN (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:26:38
+    • ID Ringover: 7491206506894579029
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: BAHIER (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:21:33
+    • ID Ringover: 7823890156753561189
+    • Durée: N/A
+    • Résultat: —
+
+
+📱 PROSPECT: ALLECDIS (E.Leclerc) (1 appels)
+--------------------------------------------------------------------------------
+  Appel #1:
+    • Heure: 12/08/2026 09:19:01
+    • ID Ringover: 11946995815917304030
+    • Durée: N/A
+    • Résultat: —
+
+
+================================================================================
