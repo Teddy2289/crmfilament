@@ -461,6 +461,81 @@ class RendezVousResource extends Resource
                     ->columnSpanFull()
                     ->html(),
             ]),
+
+            Infolists\Components\Section::make('Contact lié')->schema([
+                Infolists\Components\TextEntry::make('rdvable_nom')
+                    ->label('Nom du contact')
+                    ->getStateUsing(function ($record) {
+                        return match ($record->rdvable_type) {
+                            'App\Models\Prospect' => $record->prospect?->nom ?? '—',
+                            'App\Models\Partenaire' => $record->partenaire?->nom ?? '—',
+                            'App\Models\Client' => $record->rdvable?->nom ?? $record->rdvable?->prenom . ' ' . $record->rdvable?->nom ?? '—',
+                            'App\Models\ContactParticulier' => $record->rdvable?->nom ?? '—',
+                            default => '—',
+                        };
+                    })
+                    ->url(function ($record) {
+                        return match ($record->rdvable_type) {
+                            'App\Models\Prospect' => route('filament.ns-conseil.resources.prospects.view', ['record' => $record->prospect?->id]),
+                            'App\Models\Partenaire' => route('filament.ns-conseil.resources.partenaires.view', ['record' => $record->partenaire?->id]),
+                            'App\Models\Client' => route('filament.ns-conseil.resources.clients.view', ['record' => $record->rdvable?->id]),
+                            default => null,
+                        };
+                    })
+                    ->openUrlInNewTab(),
+
+                Infolists\Components\TextEntry::make('rdvable_type_label')
+                    ->label('Type')
+                    ->getStateUsing(function ($record) {
+                        return match ($record->rdvable_type) {
+                            'App\Models\Prospect' => 'Prospect',
+                            'App\Models\Partenaire' => 'Partenaire',
+                            'App\Models\Client' => 'Client',
+                            'App\Models\ContactParticulier' => 'Particulier',
+                            default => 'Inconnu',
+                        };
+                    })
+                    ->badge(),
+            ])->columns(2)->visible(fn($record) => $record->rdvable_id !== null),
+
+            Infolists\Components\Section::make('Fiches concernées')->schema([
+                Infolists\Components\RepeatableEntry::make('fiches_associees')
+                    ->label('')
+                    ->relationship()
+                    ->getStateUsing(function ($record) {
+                        // Récupérer les fiches Word générées pour le contact lié
+                        if ($record->rdvable_type === 'App\Models\Prospect' && $record->prospect_id) {
+                            return \App\Models\Appel::where('appelable_type', 'App\Models\Prospect')
+                                ->where('appelable_id', $record->prospect_id)
+                                ->whereNotNull('fiche_word_path')
+                                ->latest('fiche_word_generated_at')
+                                ->get();
+                        }
+                        return collect();
+                    })
+                    ->schema([
+                        Infolists\Components\TextEntry::make('fiche_type')
+                            ->label('Type')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'bleue' => 'blue',
+                                'jaune' => 'yellow',
+                                'verte' => 'green',
+                                default => 'gray',
+                            }),
+
+                        Infolists\Components\TextEntry::make('fiche_word_generated_at')
+                            ->label('Générée le')
+                            ->dateTime('d/m/Y H:i'),
+
+                        Infolists\Components\TextEntry::make('fiche_word_path')
+                            ->label('Télécharger')
+                            ->formatStateUsing(fn ($state) => 'Télécharger la fiche')
+                            ->url(fn ($state) => $state)
+                            ->openUrlInNewTab()
+                            ->color('primary'),
+                    ])->columns(3),
+            ])->visible(fn($record) => $record->rdvable_type === 'App\Models\Prospect' && $record->prospect_id !== null),
         ]));
     }
 

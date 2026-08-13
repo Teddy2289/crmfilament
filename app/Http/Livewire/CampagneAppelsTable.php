@@ -4,6 +4,9 @@ namespace App\Http\Livewire;
 
 use Livewire\Component;
 use App\Models\Appel;
+use App\Models\Client;
+use App\Models\ContactPartenaire;
+use App\Models\Prospect;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
@@ -15,9 +18,7 @@ class CampagneAppelsTable extends Component
     public string $statut;
 
     public ?int $teleprospecteurId = null;
-    public ?int $agentId = null;
     public ?string $type = null;
-    public ?string $status = null;
     public ?string $dateFrom = null;
     public ?string $dateUntil = null;
 
@@ -58,9 +59,7 @@ class CampagneAppelsTable extends Component
             ->where('campagne_id', $this->campagneId)
             ->when($this->statut, fn(Builder $query) => $query->where('phoning_status', $this->statut))
             ->when($this->teleprospecteurId, fn(Builder $query) => $query->whereHas('appelable', fn(Builder $q) => $q->where('teleprospecteur_id', $this->teleprospecteurId)))
-            ->when($this->agentId, fn(Builder $query) => $query->where('user_id', $this->agentId))
             ->when($this->type, fn(Builder $query) => $query->where('type', $this->type))
-            ->when($this->status, fn(Builder $query) => $query->where('phoning_status', $this->status))
             ->when($this->dateFrom, fn(Builder $query) => $query->whereDate('date_heure', '>=', $this->dateFrom))
             ->when($this->dateUntil, fn(Builder $query) => $query->whereDate('date_heure', '<=', $this->dateUntil));
     }
@@ -69,16 +68,6 @@ class CampagneAppelsTable extends Component
     {
         return User::whereHas('roles', fn($query) => $query->where('name', 'teleprospecteur'))
             ->where('actif', true)
-            ->orderBy('nom')
-            ->orderBy('prenom')
-            ->get()
-            ->mapWithKeys(fn(User $user) => [$user->id => trim("{$user->prenom} {$user->nom}")])
-            ->toArray();
-    }
-
-    public function getAgentOptionsProperty(): array
-    {
-        return User::where('actif', true)
             ->orderBy('nom')
             ->orderBy('prenom')
             ->get()
@@ -95,25 +84,53 @@ class CampagneAppelsTable extends Component
         ];
     }
 
-    public function getStatusOptionsProperty(): array
-    {
-        return Appel::query()
-            ->where('campagne_id', $this->campagneId)
-            ->distinct()
-            ->pluck('phoning_status')
-            ->filter()
-            ->mapWithKeys(fn($value) => [$value => strtoupper($value)])
-            ->toArray();
-    }
-
     public function resetFilters(): void
     {
         $this->teleprospecteurId = null;
-        $this->agentId = null;
         $this->type = null;
-        $this->status = null;
         $this->dateFrom = null;
         $this->dateUntil = null;
+    }
+
+    public function downloadCsv()
+    {
+        $filename = sprintf('appels-%d-%s.csv', $this->campagneId, Str::slug($this->statut));
+
+        return response()->streamDownload(function () {
+            echo $this->buildCsv();
+        }, $filename, ['Content-Type' => 'text/csv; charset=utf-8']);
+    }
+
+    protected function buildCsv(): string
+    {
+        $headers = ['Contact', 'Téléphone', 'Date', 'Téléprospecteur', 'Statut'];
+        $lines = [implode(';', $headers)];
+
+        foreach ($this->getAppelsQuery()->orderByDesc('date_heure')->get() as $appel) {
+            $contact = $appel->appelable?->nom ?? sprintf('Contact #%s', $appel->appelable_id);
+            $phone = $appel->appelable?->telephone ?? $appel->numero_appelant;
+            $date = optional($appel->date_heure)->format('d/m/Y H:i');
+            $telepro = trim(($appel->user?->prenom ?? '') . ' ' . ($appel->user?->nom ?? ''));
+            $status = strtoupper($appel->phoning_status instanceof \BackedEnum ? $appel->phoning_status->value : ($appel->phoning_status ?? ''));
+
+            $row = [
+                $this->csvEscape($contact),
+                $this->csvEscape($phone),
+                $this->csvEscape($date),
+                $this->csvEscape($telepro),
+                $this->csvEscape($status),
+            ];
+
+            $lines[] = implode(';', $row);
+        }
+
+        return implode("\n", $lines);
+    }
+
+    protected function csvEscape(?string $value): string
+    {
+        $escaped = str_replace('"', '""', trim((string) $value));
+        return sprintf('"%s"', $escaped);
     }
 
     public function render()

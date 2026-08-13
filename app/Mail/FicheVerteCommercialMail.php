@@ -7,6 +7,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class FicheVerteCommercialMail extends Mailable
 {
@@ -34,14 +36,28 @@ class FicheVerteCommercialMail extends Mailable
             ->with([
                 'appel' => $this->appel,
             ])
-            ->attach(storage_path('app/public/' . $this->fichePathRelatif()), [
+            ->attach($this->getLocalFichePath(), [
                 'as' => 'Fiche_Verte_' . $this->appel->id . '_' . now()->format('Ymd') . '.docx',
                 'mime' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ]);
     }
 
-    protected function fichePathRelatif(): string
+    /**
+     * Récupère le chemin local du fichier fiche Word.
+     * L'URL stockée est du type: /storage/fiches/2026/08/fiche-verte-*.docx
+     * On doit retourner le chemin complet: storage/app/public/fiches/2026/08/fiche-verte-*.docx
+     */
+    protected function getLocalFichePath(): string
     {
-        return \Illuminate\Support\Str::after($this->appel->fiche_word_path, '/storage/');
+        // Extraire le chemin relatif du disque public depuis l'URL
+        // URL exemple: https://domain.com/storage/fiches/2026/08/fiche.docx
+        // ou: /storage/fiches/2026/08/fiche.docx
+        $url = $this->appel->fiche_word_path;
+        
+        // Extraire la partie après /storage/
+        $relativePath = Str::after($url, '/storage/');
+        
+        // Retourner le chemin complet dans le disque public
+        return Storage::disk('public')->path($relativePath);
     }
 }
