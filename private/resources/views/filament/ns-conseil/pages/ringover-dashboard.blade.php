@@ -1,5 +1,9 @@
 <x-filament-panels::page>
 
+    <div class="space-y-4">
+        @livewire(\App\Filament\NsConseil\Widgets\RingoverStatsOverview::class)
+    </div>
+
     {{-- ── Bandeau de statut de connexion ──────────────────────────── --}}
     <div @class([ 'flex items-center gap-3 rounded-xl px-4 py-3 ring-1' , 'bg-success-50 ring-success-600/10 dark:bg-success-400/10 dark:ring-success-400/20'=> $this->connexionOk,
         'bg-danger-50 ring-danger-600/10 dark:bg-danger-400/10 dark:ring-danger-400/20' => ! $this->connexionOk,

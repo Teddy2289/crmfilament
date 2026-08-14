@@ -25,6 +25,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class ClientResource extends Resource
 {
@@ -287,6 +288,18 @@ class ClientResource extends Resource
                     ->tooltip(fn($state) => Client::etatDescription($state))
                     ->toggleable(),
 
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Type')
+                    ->badge()
+                    ->formatStateUsing(fn($state) => $state)
+                    ->color(fn($state) => match($state) {
+                        'Partenaire' => 'primary',
+                        'Prospect' => 'warning',
+                        'Client' => 'success',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('montant_cpf')
                     ->label('CPF')
                     ->money('EUR')
@@ -326,6 +339,18 @@ class ClientResource extends Resource
                         'abandonne' => 'Abandonné',
                     ])
                     ->placeholder('Tous les états'),
+
+                Tables\Filters\Filter::make('type_partenaire')
+                    ->label('Partenaires (clients associés à un partenaire)')
+                    ->query(fn(Builder $query): Builder => $query->whereNotNull('partenaire_id'))
+                    ->toggle()
+                    ->badge(fn() => Client::whereNotNull('partenaire_id')->count()),
+
+                Tables\Filters\Filter::make('type_prospect')
+                    ->label('Prospects')
+                    ->query(fn(Builder $query): Builder => $query->where('etat', 'prospect'))
+                    ->toggle()
+                    ->badge(fn() => Client::where('etat', 'prospect')->count()),
 
                 // 🤝 Filtres relations
                 Tables\Filters\SelectFilter::make('partenaire_id')
@@ -383,12 +408,38 @@ class ClientResource extends Resource
                                 $q->whereNotNull('email')->orWhereNotNull('telephone');
                             })
                     )
-                    ->toggle(),
+                    ->toggle()
+                    ->badge(fn() => Client::contactables()->count()),
 
                 Tables\Filters\Filter::make('avec_cpf')
                     ->label('Avec CPF')
                     ->query(fn(Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
-                    ->toggle(),
+                    ->toggle()
+                    ->badge(fn() => Client::avecCPF()->count()),
+
+                Tables\Filters\Filter::make('avec_dossier_formation')
+                    ->label('Avec dossier de formation')
+                    ->query(fn(Builder $query): Builder => $query->avecDossierFormation())
+                    ->toggle()
+                    ->badge(fn() => Client::avecDossierFormation()->count()),
+
+                Tables\Filters\Filter::make('avec_proposition')
+                    ->label('Avec proposition')
+                    ->query(fn(Builder $query): Builder => $query->avecPropositions())
+                    ->toggle()
+                    ->badge(fn() => Client::avecPropositions()->count()),
+
+                Tables\Filters\Filter::make('sans_contact_30j')
+                    ->label('Sans contact depuis 30 jours')
+                    ->query(fn(Builder $query): Builder => $query->sansContactDepuis(30))
+                    ->toggle()
+                    ->badge(fn() => Client::sansContactDepuis(30)->count()),
+
+                Tables\Filters\Filter::make('actifs')
+                    ->label('Clients actifs (en cours de formation)')
+                    ->query(fn(Builder $query): Builder => $query->actifs())
+                    ->toggle()
+                    ->badge(fn() => Client::actifs()->count()),
 
                 Tables\Filters\Filter::make('sans_proposition')
                     ->label('Sans proposition')
@@ -418,8 +469,63 @@ class ClientResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    // 🗑️ Actions de suppression
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
+
+                    // 🤝 Assigner un partenaire
+                    Tables\Actions\BulkAction::make('assign_partner')
+                        ->label('Assigner un partenaire')
+                        ->icon('heroicon-o-user-plus')
+                        ->form([
+                            Forms\Components\Select::make('partenaire_id')
+                                ->label('Partenaire')
+                                ->relationship('partenaire', 'nom')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(function (Client $record) use ($data) {
+                                $record->update(['partenaire_id' => $data['partenaire_id']]);
+                            });
+                        })
+                        ->successNotificationTitle('Partenaire assigé'),
+
+                    // 🔄 Changer l'état
+                    Tables\Actions\BulkAction::make('change_state')
+                        ->label('Changer l\'état')
+                        ->icon('heroicon-o-arrow-path')
+                        ->form([
+                            Forms\Components\Select::make('etat')
+                                ->label('État')
+                                ->options(Client::etatOptions())
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(function (Client $record) use ($data) {
+                                $record->update(['etat' => $data['etat']]);
+                            });
+                        })
+                        ->successNotificationTitle('État mis à jour'),
+
+                    // 👥 Assigner un parrain
+                    Tables\Actions\BulkAction::make('assign_parrain')
+                        ->label('Assigner un parrain')
+                        ->icon('heroicon-o-heart')
+                        ->form([
+                            Forms\Components\Select::make('parrain_id')
+                                ->label('Parrain')
+                                ->relationship('parrain', 'nom_prenom')
+                                ->searchable()
+                                ->preload(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(function (Client $record) use ($data) {
+                                $record->update(['parrain_id' => $data['parrain_id'] ?? null]);
+                            });
+                        })
+                        ->successNotificationTitle('Parrain assigé'),
                 ]),
             ])
             ->headerActions([

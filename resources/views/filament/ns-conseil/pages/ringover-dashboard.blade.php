@@ -2,6 +2,11 @@
 
     <div class="ringover-dashboard-wrapper">
 
+        <div class="ringover-widget-stack">
+            @livewire(\App\Filament\NsConseil\Widgets\RingoverAINoteWidget::class)
+            @livewire(\App\Filament\NsConseil\Widgets\RingoverStatsOverview::class)
+        </div>
+
         {{-- ═══════════════════════════════════════════════════════════ --}}
         {{-- SECTION 1: Statut de Connexion & Alerte --}}
         {{-- ═══════════════════════════════════════════════════════════ --}}
@@ -151,6 +156,12 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+        }
+
+        .ringover-widget-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
         /* ─── Status Alert ─── */

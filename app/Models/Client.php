@@ -283,6 +283,20 @@ class Client extends Model
         return $this->extra_data['partenaire_import']['nomenclature'] ?? null;
     }
 
+    /**
+     * Détermine le type du client : Partenaire, Prospect ou Client
+     */
+    public function getTypeAttribute(): string
+    {
+        if ($this->partenaire_id) {
+            return 'Partenaire';
+        }
+        if ($this->etat === 'prospect') {
+            return 'Prospect';
+        }
+        return 'Client';
+    }
+
     // ── Méthodes métier ─────────────────────────────────────────────
 
     public function marquerNePlusContacter(?string $motif = null): void
@@ -488,6 +502,32 @@ class Client extends Model
     public function scopeAvecCPF(Builder $query): Builder
     {
         return $query->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0);
+    }
+
+    public function scopeAvecDossierFormation(Builder $query): Builder
+    {
+        return $query->has('dossierFormations');
+    }
+
+    public function scopeSansContactDepuis(Builder $query, int $jours): Builder
+    {
+        $dateLimit = now()->subDays($jours);
+        return $query->where(function (Builder $q) use ($dateLimit) {
+            $q->doesntHave('propositions', 'and', function (Builder $subQ) use ($dateLimit) {
+                    $subQ->where('date_lancement', '>=', $dateLimit);
+                })
+                ->doesntHave('rendezVous', 'and', function (Builder $subQ) use ($dateLimit) {
+                    $subQ->where('date_heure', '>=', $dateLimit);
+                })
+                ->doesntHave('appels', 'and', function (Builder $subQ) use ($dateLimit) {
+                    $subQ->where('date_heure', '>=', $dateLimit);
+                });
+        });
+    }
+
+    public function scopeActifs(Builder $query): Builder
+    {
+        return $query->where('etat', 'en_cours');
     }
 
     public function scopePartenaireNonRattaches(Builder $query): Builder
