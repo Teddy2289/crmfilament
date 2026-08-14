@@ -356,6 +356,13 @@ class CampagnePhoning extends Model
         // échéant (elles doivent remonter même si leur statut diffère).
         if (is_array($this->criteres['statuts'] ?? null) && count($this->criteres['statuts']) > 0) {
             $this->addStatutsFilterToQuery($query, $this->criteres['statuts'], allowRappel: true);
+        } else {
+            // Si aucun filtre de statuts, au moins filtrer les rappels planifiés par date
+            // pour ne remonter que les rappels dont la date est dépassée
+            $query->where(function (Builder $r) {
+                $r->whereNull('rappel_planifie_at')
+                  ->orWhere('rappel_planifie_at', '<=', now());
+            });
         }
 
         return $query;
@@ -454,6 +461,16 @@ class CampagnePhoning extends Model
                 });
             }
         });
+
+        // 🔒 IMPORTANT: Peu importe les statuts, exclure les rappels futurs.
+        // Cela s'ajoute en AND à la condition précédente pour assurer que même
+        // les prospects AC avec rappel futur sont exclus de la file.
+        if ($allowRappel) {
+            $q->where(function (Builder $reminderFilter) {
+                $reminderFilter->whereNull('rappel_planifie_at')
+                  ->orWhere('rappel_planifie_at', '<=', now());
+            });
+        }
     }
 
     protected function buildPartenairesQuery(array $c): Builder

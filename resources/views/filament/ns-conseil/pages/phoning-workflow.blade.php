@@ -2028,7 +2028,25 @@ $tentativesActuelles = $this->getTentativesAppel();
         </div>
         @endif
 
-        @if ($currentContact)
+        @if ($this->currentContact ?? null)
+
+        {{-- ── FICHE VERROUILLÉE ── --}}
+        @if ($this->ficheIsLocked ?? false)
+        <div data-fiche-lock-modal style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000;">
+            <div style="background:white; border-radius:0.75rem; padding:2rem; max-width:400px; box-shadow:0 20px 25px rgba(0,0,0,0.15); text-align:center;">
+                <svg style="width:3rem;height:3rem;margin:0 auto 1rem;color:rgb(239 68 68);" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <h3 style="margin:0 0 0.5rem;font-size:1.125rem;font-weight:700;">Fiche verrouillée</h3>
+                <p style="margin:0 0 1.5rem;color:rgb(107 114 128);font-size:0.875rem;">
+                    Cette fiche est actuellement en cours de traitement par <strong>{{ $this->ficheLockedByUserName ?? 'un autre utilisateur' }}</strong>.
+                </p>
+                <button wire:click="loadNextContact" style="background:rgb(59 130 246);color:white;padding:0.5rem 1rem;border:none;border-radius:0.5rem;font-weight:600;cursor:pointer;font-size:0.875rem;">
+                    Passer au contact suivant
+                </button>
+            </div>
+        </div>
+        @else
 
         {{-- ── CARD ENTREPRISE ── --}}
         <div class="pw-summary-card">
@@ -3059,7 +3077,10 @@ $tentativesActuelles = $this->getTentativesAppel();
             </div>
         </div>
     </div>
-    @else
+    @endif
+    @endif
+
+    @if (!($this->currentContact ?? null))
     <div style="display:flex; align-items:center; justify-content:center; min-height:60vh;">
         <div style="text-align:center;">
             <div style="width:5rem; height:5rem; border-radius:9999px; background:rgb(243 244 246); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem auto;">
@@ -3402,10 +3423,12 @@ $tentativesActuelles = $this->getTentativesAppel();
                                 window.ringoverPhone.on(eventName, (payload) => {
                                     const direction = payload && (payload.direction || payload.type || payload.call_direction || payload.callDirection);
                                     const caller = payload && (payload.from_number || payload.fromNumber || payload.caller_number || payload.callerNumber || payload.from || payload.caller);
-                                            const called = payload && (payload.to_number || payload.toNumber || payload.callee_number || payload.calleeNumber || payload.to || payload.callee);
-                                            const isInbound = direction === 'inbound' || String(direction).toLowerCase().includes('inbound') || String(direction).toLowerCase().includes('incoming');
-                                            const phone = isInbound ? caller : called || caller;
-                                            captureLifecycle(payload, eventName, phone);
+                                    const called = payload && (payload.to_number || payload.toNumber || payload.callee_number || payload.calleeNumber || payload.to || payload.callee);
+                                    const isInbound = direction === 'inbound' || String(direction).toLowerCase().includes('inbound') || String(direction).toLowerCase().includes('incoming');
+                                    const phone = isInbound ? caller : called || caller;
+                                    captureLifecycle(payload, eventName, phone);
+                                });
+                            } catch (e) {}
                         });
 
                         ['callEnded', 'call:ended', 'ended', 'call.ended', 'hangup'].forEach((eventName) => {
@@ -3437,6 +3460,67 @@ $tentativesActuelles = $this->getTentativesAppel();
             document.addEventListener('livewire:navigating', destroyRingoverWidget);
         })();
     </script>
+
+    <!-- ============= LOGGING POUR LE VERROU ============= -->
+    <script>
+        // Observer les changements de propriétés Livewire
+        document.addEventListener('livewire:update', (e) => {
+            console.log('🔄 [Livewire] Update event:', e.detail);
+        });
+
+        // Observer spécifiquement le composant PhoningWorkflow
+        const livewireComponent = @this;
+        
+        // Log initial
+        console.log('📋 [INIT] ficheIsLocked state on page load:', {
+            ficheIsLocked: livewireComponent.ficheIsLocked,
+            ficheLockedByUserId: livewireComponent.ficheLockedByUserId,
+            ficheLockedByUserName: livewireComponent.ficheLockedByUserName,
+        });
+
+        // Utiliser un MutationObserver pour surveiller le modal dans le DOM
+        const modalObserver = new MutationObserver((mutations) => {
+            const modal = document.querySelector('[data-fiche-lock-modal]');
+            if (modal) {
+                console.log('🔒 [MODAL] Lock modal found in DOM:', {
+                    isVisible: modal.offsetParent !== null,
+                    display: window.getComputedStyle(modal).display,
+                    ficheLockedByUserName: livewireComponent.ficheLockedByUserName,
+                });
+            }
+        });
+
+        // Commencer à observer le body
+        modalObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'style', 'data-fiche-lock-modal'],
+        });
+
+        // Log tous les appels à loadNextContact
+        const originalLoadNextContact = livewireComponent.loadNextContact;
+        if (originalLoadNextContact) {
+            livewireComponent.loadNextContact = function() {
+                console.log('📞 [loadNextContact] Appelé avec ficheIsLocked:', this.ficheIsLocked);
+                const result = originalLoadNextContact.call(this);
+                console.log('📞 [loadNextContact] Après appel, ficheIsLocked:', this.ficheIsLocked);
+                return result;
+            };
+        }
+
+        // Écouter les changements de state de Livewire
+        window.addEventListener('livewire:call', (e) => {
+            if (e.detail.method === 'loadNextContact') {
+                console.log('🎯 [loadNextContact] Method called');
+                setTimeout(() => {
+                    console.log('🎯 [loadNextContact] After call - ficheIsLocked:', livewireComponent.ficheIsLocked);
+                }, 100);
+            }
+        });
+    </script>
+    <!-- ============= FIN LOGGING VERROU ============= -->
+
     @endpush
 
 
