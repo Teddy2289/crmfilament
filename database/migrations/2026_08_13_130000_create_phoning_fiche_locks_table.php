@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('phoning_fiche_locks', function (Blueprint $table) {
-            $table->id();
-            $table->morphs('lockable'); // lockable_type, lockable_id
-            $table->foreignId('locked_by_user_id')->constrained('users')->onDelete('cascade');
-            $table->dateTime('locked_at')->useCurrent();
-            $table->dateTime('heartbeat_at')->useCurrent();
-            $table->timestamps();
+        if (! Schema::hasTable('phoning_fiche_locks')) {
+            Schema::create('phoning_fiche_locks', function (Blueprint $table) {
+                $table->id();
+                $table->morphs('lockable'); // lockable_type, lockable_id
+                $table->foreignId('locked_by_user_id')->constrained('users')->onDelete('cascade');
+                $table->dateTime('locked_at')->useCurrent();
+                $table->dateTime('heartbeat_at')->useCurrent();
+                $table->timestamps();
 
-            // Index pour recherche rapide par utilisateur et par fiche
-            $table->index(['lockable_type', 'lockable_id']);
-            $table->index('locked_by_user_id');
-        });
+                // `morphs('lockable')` crée déjà l'index sur (lockable_type, lockable_id).
+                // On garde uniquement l'index sur l'utilisateur qui verrouille la fiche.
+                $table->index('locked_by_user_id');
+            });
+        }
     }
 
     /**

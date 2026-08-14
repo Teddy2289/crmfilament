@@ -12,6 +12,15 @@ enum ProspectStatut: string
     case RPC = 'RPC';
     case KO = 'KO';
     case QF = 'QF';
+    case REPONDEUR = 'Répondeur';
+    case NRP = 'NRP';
+    case FAX = 'FAX';
+    case SUPP = 'SUPP';
+    case CSE_NI = 'CSE-NI';
+    case RAPL_ELU = 'RAPL-ELU';
+    case RAPL_STD = 'RAPL-STD';
+    case BLOC2 = 'BLOC2';
+    case NCSE_50 = 'NCSE+50';
 
     public function label(): string
     {
@@ -24,6 +33,15 @@ enum ProspectStatut: string
             self::RPC => 'RDV à planifier / Contact qualifié',
             self::KO => 'Hors cible / Refus',
             self::QF => 'RDV qualifié',
+            self::REPONDEUR => 'Répondeur',
+            self::NRP => 'Pas de réponse/Prompt',
+            self::FAX => 'Fax',
+            self::SUPP => 'Supprimé',
+            self::CSE_NI => 'CSE non intéressé',
+            self::RAPL_ELU => 'Rappel - Élu',
+            self::RAPL_STD => 'Rappel - Standard',
+            self::BLOC2 => 'Bloqué 2',
+            self::NCSE_50 => 'Non-CSE +50 ans',
         };
     }
 
@@ -44,6 +62,15 @@ enum ProspectStatut: string
             self::RPC => 'teal',
             self::KO => 'red',
             self::QF => 'green',
+            self::REPONDEUR => 'purple',
+            self::NRP => 'rose',
+            self::FAX => 'fuchsia',
+            self::SUPP => 'slate',
+            self::CSE_NI => 'cyan',
+            self::RAPL_ELU => 'lime',
+            self::RAPL_STD => 'sky',
+            self::BLOC2 => 'violet',
+            self::NCSE_50 => 'emerald',
         };
     }
 
@@ -58,6 +85,15 @@ enum ProspectStatut: string
             self::RPC => 'heroicon-o-calendar-days',
             self::KO => 'heroicon-o-x-circle',
             self::QF => 'heroicon-o-check-circle',
+            self::REPONDEUR => 'heroicon-o-speaker-wave',
+            self::NRP => 'heroicon-o-minus-circle',
+            self::FAX => 'heroicon-o-document',
+            self::SUPP => 'heroicon-o-trash',
+            self::CSE_NI => 'heroicon-o-hand-raised',
+            self::RAPL_ELU => 'heroicon-o-users',
+            self::RAPL_STD => 'heroicon-o-arrow-path',
+            self::BLOC2 => 'heroicon-o-stop-circle',
+            self::NCSE_50 => 'heroicon-o-chart-bar',
         };
     }
 
@@ -77,6 +113,15 @@ enum ProspectStatut: string
             self::RPC => 'Contact qualifié : un rendez-vous reste à planifier.',
             self::KO => 'Hors cible ou refus : ce prospect ne sera pas poursuivi.',
             self::QF => 'Rendez-vous qualifié, prêt à être traité par un commercial.',
+            self::REPONDEUR => 'Le prospect a un répondeur activé.',
+            self::NRP => 'Pas de réponse ou invitation à laisser un message.',
+            self::FAX => 'Le numéro contacté est un fax.',
+            self::SUPP => 'Le prospect a été supprimé de la base.',
+            self::CSE_NI => 'Le CSE a indiqué ne pas être intéressé.',
+            self::RAPL_ELU => 'Rappel prévu avec un élu ou représentant.',
+            self::RAPL_STD => 'Rappel auprès du standard pour relancer le contact.',
+            self::BLOC2 => 'Le prospect est bloqué (deuxième blocage).',
+            self::NCSE_50 => 'Non-CSE de plus de 50 ans.',
         };
     }
 

@@ -26,6 +26,8 @@ class Appel extends Model
         'ringover_payload' => 'array',
         'ringover_synced_at' => 'datetime',
         'ringover_webhook_received_at' => 'datetime',
+        'note_ia' => 'integer',
+        'ia_generated_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -69,6 +71,11 @@ class Appel extends Model
         'fiche_word_generated_at',
         'fiche_jaune_j7_envoye_at',
         'fiche_verte_envoyee_at',
+        // Champs IA
+        'resume_ia',
+        'note_ia',
+        'sentiment_ia',
+        'ia_generated_at',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────

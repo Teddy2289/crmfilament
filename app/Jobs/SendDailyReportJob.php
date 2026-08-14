@@ -38,7 +38,7 @@ class SendDailyReportJob implements ShouldQueue
                 default => $service->pourTeamLeader($user),
             };
 
-            Mail::mailer('smtp')->to($user->email)->send(new DailyReportMail($rapport));
+            Mail::to('admin@ns-conseil.com')->send(new DailyReportMail($rapport));
             $envoyes++;
         }
 

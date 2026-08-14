@@ -101,23 +101,25 @@ return new class extends Migration
             }
         });
 
-        // Indexes pour propositions
-        Schema::table('propositions', function (Blueprint $table) {
-            // Index composé etat + date_lancement
-            if (! Schema::hasIndex('propositions', 'propositions_etat_date_lancement')) {
-                $table->index(['etat', 'date_lancement'], 'propositions_etat_date_lancement');
-            }
+        // Indexes pour propositions (si la table existe)
+        if (Schema::hasTable('propositions')) {
+            Schema::table('propositions', function (Blueprint $table) {
+                // Index composé etat + date_lancement
+                if (! Schema::hasIndex('propositions', 'propositions_etat_date_lancement')) {
+                    $table->index(['etat', 'date_lancement'], 'propositions_etat_date_lancement');
+                }
 
-            // Index composé etat + date_vente
-            if (! Schema::hasIndex('propositions', 'propositions_etat_date_vente')) {
-                $table->index(['etat', 'date_vente'], 'propositions_etat_date_vente');
-            }
+                // Index composé etat + date_vente
+                if (! Schema::hasIndex('propositions', 'propositions_etat_date_vente')) {
+                    $table->index(['etat', 'date_vente'], 'propositions_etat_date_vente');
+                }
 
-            // Index pour date_debut_formation
-            if (! Schema::hasIndex('propositions', 'propositions_date_debut_formation')) {
-                $table->index('date_debut_formation', 'propositions_date_debut_formation');
-            }
-        });
+                // Index pour date_debut_formation
+                if (! Schema::hasIndex('propositions', 'propositions_date_debut_formation')) {
+                    $table->index('date_debut_formation', 'propositions_date_debut_formation');
+                }
+            });
+        }
     }
 
     /**

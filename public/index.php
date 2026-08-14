@@ -5,6 +5,10 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Set custom temp directory to avoid permission issues with system /tmp
+@putenv('TMPDIR=' . realpath(__DIR__.'/../storage/tmp'));
+ini_set('upload_tmp_dir', realpath(__DIR__.'/../storage/tmp'));
+
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;
