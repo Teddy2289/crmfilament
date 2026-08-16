@@ -343,14 +343,12 @@ class ClientResource extends Resource
                 Tables\Filters\Filter::make('type_partenaire')
                     ->label('Partenaires (clients associés à un partenaire)')
                     ->query(fn(Builder $query): Builder => $query->whereNotNull('partenaire_id'))
-                    ->toggle()
-                    ->badge(fn() => Client::whereNotNull('partenaire_id')->count()),
+                    ->toggle(),
 
                 Tables\Filters\Filter::make('type_prospect')
                     ->label('Prospects')
                     ->query(fn(Builder $query): Builder => $query->where('etat', 'prospect'))
-                    ->toggle()
-                    ->badge(fn() => Client::where('etat', 'prospect')->count()),
+                    ->toggle(),
 
                 // 🤝 Filtres relations
                 Tables\Filters\SelectFilter::make('partenaire_id')
@@ -408,38 +406,32 @@ class ClientResource extends Resource
                                 $q->whereNotNull('email')->orWhereNotNull('telephone');
                             })
                     )
-                    ->toggle()
-                    ->badge(fn() => Client::contactables()->count()),
+                    ->toggle(),
 
                 Tables\Filters\Filter::make('avec_cpf')
                     ->label('Avec CPF')
                     ->query(fn(Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
-                    ->toggle()
-                    ->badge(fn() => Client::avecCPF()->count()),
+                    ->toggle(),
 
                 Tables\Filters\Filter::make('avec_dossier_formation')
                     ->label('Avec dossier de formation')
                     ->query(fn(Builder $query): Builder => $query->avecDossierFormation())
-                    ->toggle()
-                    ->badge(fn() => Client::avecDossierFormation()->count()),
+                    ->toggle(),
 
                 Tables\Filters\Filter::make('avec_proposition')
                     ->label('Avec proposition')
                     ->query(fn(Builder $query): Builder => $query->avecPropositions())
-                    ->toggle()
-                    ->badge(fn() => Client::avecPropositions()->count()),
+                    ->toggle(),
 
                 Tables\Filters\Filter::make('sans_contact_30j')
                     ->label('Sans contact depuis 30 jours')
                     ->query(fn(Builder $query): Builder => $query->sansContactDepuis(30))
-                    ->toggle()
-                    ->badge(fn() => Client::sansContactDepuis(30)->count()),
+                    ->toggle(),
 
                 Tables\Filters\Filter::make('actifs')
                     ->label('Clients actifs (en cours de formation)')
                     ->query(fn(Builder $query): Builder => $query->actifs())
-                    ->toggle()
-                    ->badge(fn() => Client::actifs()->count()),
+                    ->toggle(),
 
                 Tables\Filters\Filter::make('sans_proposition')
                     ->label('Sans proposition')

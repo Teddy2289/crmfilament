@@ -9,7 +9,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class ProspectStatutsOverviewWidget extends BaseWidget
 {
-    protected static ?string $heading = '📊 Distribution complète des statuts';
+    protected ?string $heading = '📊 Distribution complète des statuts';
 
     protected static ?int $sort = 2;
 
@@ -36,24 +36,25 @@ class ProspectStatutsOverviewWidget extends BaseWidget
         $statuts = ProspectStatut::cases();
         $stats = [];
 
-        $colorMap = [
-            'AC' => 'info',
-            'STD_NR' => 'warning',
-            'STD_Joint' => 'primary',
-            'CSE_NR' => 'warning',
-            'RP' => 'info',
-            'RPC' => 'success',
-            'KO' => 'danger',
-            'QF' => 'success',
-            'Répondeur' => 'gray',
-            'NRP' => 'warning',
-            'FAX' => 'gray',
-            'SUPP' => 'gray',
-            'CSE-NI' => 'danger',
-            'RAPL-ELU' => 'info',
-            'RAPL-STD' => 'info',
-            'BLOC2' => 'danger',
-            'NCSE+50' => 'gray',
+        // Couleurs et icônes plus appropriées par statut
+        $statusConfig = [
+            'AC' => ['color' => 'info', 'icon' => 'heroicon-o-document'],
+            'STD_NR' => ['color' => 'warning', 'icon' => 'heroicon-o-phone-missed-call'],
+            'STD_Joint' => ['color' => 'primary', 'icon' => 'heroicon-o-phone'],
+            'CSE_NR' => ['color' => 'warning', 'icon' => 'heroicon-o-user-minus'],
+            'RP' => ['color' => 'info', 'icon' => 'heroicon-o-calendar-days'],
+            'RPC' => ['color' => 'success', 'icon' => 'heroicon-o-check-circle'],
+            'KO' => ['color' => 'danger', 'icon' => 'heroicon-o-x-circle'],
+            'QF' => ['color' => 'success', 'icon' => 'heroicon-o-star'],
+            'Répondeur' => ['color' => 'warning', 'icon' => 'heroicon-o-volume-2'],
+            'NRP' => ['color' => 'warning', 'icon' => 'heroicon-o-exclamation-circle'],
+            'FAX' => ['color' => 'gray', 'icon' => 'heroicon-o-document-text'],
+            'SUPP' => ['color' => 'gray', 'icon' => 'heroicon-o-trash'],
+            'CSE-NI' => ['color' => 'danger', 'icon' => 'heroicon-o-hand-raised'],
+            'RAPL-ELU' => ['color' => 'info', 'icon' => 'heroicon-o-sparkles'],
+            'RAPL-STD' => ['color' => 'info', 'icon' => 'heroicon-o-arrow-path'],
+            'BLOC2' => ['color' => 'danger', 'icon' => 'heroicon-o-lock-closed'],
+            'NCSE+50' => ['color' => 'gray', 'icon' => 'heroicon-o-users'],
         ];
 
         foreach ($statuts as $statut) {
@@ -68,14 +69,14 @@ class ProspectStatutsOverviewWidget extends BaseWidget
 
             // Affiche que les statuts avec données
             if ($count > 0) {
+                $label = $statut->label();
                 $description = $statut->description();
-                $color = $colorMap[$statut->label()] ?? 'gray';
-                $icon = 'heroicon-o-check-circle';
+                $config = $statusConfig[$label] ?? ['color' => 'gray', 'icon' => 'heroicon-o-check-circle'];
 
-                $stats[] = Stat::make($statut->label(), $count)
+                $stats[] = Stat::make($label, $count)
                     ->description($description)
-                    ->icon($icon)
-                    ->color($color);
+                    ->icon($config['icon'])
+                    ->color($config['color']);
             }
         }
 

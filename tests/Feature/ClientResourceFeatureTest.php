@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\NsConseil\Resources\ClientResource\Pages\ListClients;
+use App\Filament\NsConseil\Widgets\ImportProgressWidget;
 use App\Models\Client;
 use App\Models\User;
 use App\Support\AccessRightsCatalog;
@@ -25,6 +26,17 @@ class ClientResourceFeatureTest extends TestCase
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         AccessRightsCatalog::ensurePermissionsExist();
         Filament::setCurrentPanel(Filament::getPanel('ns-conseil'));
+    }
+
+    #[Test]
+    public function list_clients_uses_the_import_progress_widget(): void
+    {
+        $method = new \ReflectionMethod(ListClients::class, 'getHeaderWidgets');
+        $method->setAccessible(true);
+
+        $this->assertSame([
+            ImportProgressWidget::class,
+        ], $method->invoke(new ListClients()));
     }
 
     #[Test]

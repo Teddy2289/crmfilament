@@ -62,7 +62,7 @@ class TeamLeaderRappelsWidget extends BaseWidget
             ->columns([
                 Tables\Columns\TextColumn::make('teleprospecteur.nom')
                     ->label('Téléprospecteur')
-                    ->formatStateUsing(fn ($state, $record) => $record->teleprospecteur
+                    ->getStateUsing(fn ($record) => $record->teleprospecteur
                         ? trim("{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}")
                         : '—')
                     ->searchable(),

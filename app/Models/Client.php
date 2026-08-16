@@ -137,6 +137,17 @@ class Client extends Model
      * la fiche et le Kanban Client pour éviter que le même état n'ait
      * un libellé ou une couleur différente selon l'écran.
      */
+    public static function etatOptions(): array
+    {
+        return [
+            'prospect' => 'Prospect',
+            'en_cours' => 'En cours',
+            'termine' => 'Terminé',
+            'certifie' => 'Certifié',
+            'abandonne' => 'Abandonné',
+        ];
+    }
+
     public static function etatLabel(?string $etat): string
     {
         return match ($etat) {
