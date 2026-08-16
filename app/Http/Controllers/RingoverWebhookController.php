@@ -3,22 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessRingoverWebhook;
+use App\Services\RingoverCallSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class RingoverWebhookController extends Controller
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request, RingoverCallSyncService $sync): JsonResponse
     {
         if (! $this->isAuthorized($request)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        ProcessRingoverWebhook::dispatch($request->all(), source: 'webhook');
+        $payload = $request->all();
+
+        $result = $sync->sync($payload, source: 'webhook');
 
         return response()->json([
-            'status' => 'queued',
-            'message' => 'Webhook received and queued for processing',
+            'status' => 'ok',
+            'created' => $result['created'],
+            'ringover_call_id' => $result['appel']->ringover_call_id,
+            'tags_complete' => $result['tag_validation']['complete'],
+            'message' => 'Webhook processed successfully',
         ]);
     }
 

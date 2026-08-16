@@ -69,6 +69,17 @@ class FicheTemplate extends Model
         '${CSE_SECRETAIRE}' => 'Secrétaire CSE',
         '${CSE_TRESORIER}' => 'Trésorier CSE',
         '${CSE_NB_ELUS}' => "Nombre d'élus CSE",
+        // Champs spécifiques fiche bleue
+        '${BESOINS_EXPRIMES}' => 'Besoins exprimés par le CSE',
+        '${OBJECTIONS_SOULEVEES}' => 'Objections soulevées',
+        '${POINTS_ATTENTION_RDV}' => 'Points d\'attention pour le RDV',
+        '${INVITATION_AGENDA_ENVOYEE}' => 'Invitation agenda envoyée',
+        // Champs spécifiques fiche verte
+        '${PRESENCE_CSE}' => 'Présence CSE dans l\'entreprise',
+        '${JOUR_DISPO_APPEL}' => 'Jour disponible pour appel',
+        // Champs spécifiques fiche jaune
+        '${MOTIF_REFUS}' => 'Motif de refus du CSE',
+        '${DATE_RAPPEL_J7}' => 'Date de rappel J+7',
     ];
 
     public function getTypeLabelAttribute(): string

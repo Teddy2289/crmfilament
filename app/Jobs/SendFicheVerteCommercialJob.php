@@ -5,8 +5,7 @@ namespace App\Jobs;
 use App\Mail\FicheVerteCommercialMail;
 use App\Models\Appel;
 use App\Models\Prospect;
-use App\Models\TemplateFiche;
-use App\Services\Crm\FicheWordService;
+use App\Services\Phoning\FichePdfGenerationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
@@ -25,7 +24,7 @@ class SendFicheVerteCommercialJob implements ShouldQueue
 
     private const CODES_FICHE_VERTE = ['bloc2', 'ncse_50'];
 
-    public function handle(FicheWordService $service): void
+    public function handle(FichePdfGenerationService $pdfService): void
     {
         $appels = Appel::whereIn('phoning_status', self::CODES_FICHE_VERTE)
             ->where('fiche_type', 'verte')
@@ -43,22 +42,21 @@ class SendFicheVerteCommercialJob implements ShouldQueue
         foreach ($appels as $appel) {
             try {
                 if (! $appel->fiche_word_path) {
-                    $template = TemplateFiche::actifs()->parType('verte')->first();
-
-                    if ($template) {
-                        $localPath = $service->generer($template, $appel->fiche_data);
-                        $publicUrl = $service->stocker($localPath, now()->format('Y/m'));
+                    $prospect = $appel->appelable;
+                    if ($prospect) {
+                        $filename = $pdfService->genererNomFichier('verte', $prospect);
+                        $data = $pdfService->preparerDonneesFicheVerte($prospect, $appel->fiche_data ?? []);
+                        $pdfUrl = $pdfService->generer('verte', $data, $filename);
 
                         $appel->update([
-                            'fiche_word_path' => $publicUrl,
+                            'fiche_word_path' => $pdfUrl,
                             'fiche_word_generated_at' => now(),
                         ]);
                     }
                 }
 
                 if (! $appel->fiche_word_path) {
-                    // Pas de template actif pour le type 'verte' : on retentera
-                    // au prochain passage plutôt que d'envoyer un mail sans pièce jointe.
+                    // Pas de PDF généré : on retentera au prochain passage
                     continue;
                 }
 

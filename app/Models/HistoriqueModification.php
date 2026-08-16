@@ -135,7 +135,20 @@ class HistoriqueModification extends Model
             return $currentUserId;
         }
 
-        return User::query()->value('id');
+        // Fallback: get first user, or create a system user for tests
+        $userId = User::query()->value('id');
+        
+        if ($userId === null && app()->isLocal()) {
+            // In local/test environments, create a system user if none exists
+            $user = User::create([
+                'name' => 'System User',
+                'email' => 'system@example.local',
+                'password' => bcrypt('system-password'),
+            ]);
+            return $user->id;
+        }
+
+        return $userId;
     }
 
     public static function enregistrerModification(

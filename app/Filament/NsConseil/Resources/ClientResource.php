@@ -8,6 +8,7 @@ use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
 use App\Filament\NsConseil\Resources\ClientResource\Pages;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DossierFormationsRelationManager;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\NotesCommentairesRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\PropositionsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\Exports\ClientExporter;
@@ -727,6 +728,7 @@ class ClientResource extends Resource
             PropositionsRelationManager::class,
             DocumentsRelationManager::class,
             RendezVousRelationManager::class,
+            NotesCommentairesRelationManager::class,
             DossierFormationsRelationManager::class,
         ];
     }

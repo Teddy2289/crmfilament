@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Models\Appel;
 use App\Models\Prospect;
 use App\Models\User;
-use App\Services\Crm\FicheWordService;
+use App\Services\Phoning\FichePdfGenerationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
@@ -17,7 +17,7 @@ class SendFicheJauneJ7Job implements ShouldQueue
 {
     use Dispatchable, Queueable;
 
-    public function handle(FicheWordService $service): void
+    public function handle(FichePdfGenerationService $pdfService): void
     {
         // Chercher les appels de J-7 avec statut "CSE-NI" (CSE pas intéressé)
         $dateJMoins7 = now()->subDays(7)->startOfDay();
@@ -25,7 +25,7 @@ class SendFicheJauneJ7Job implements ShouldQueue
 
         $appels = Appel::whereBetween('date_heure', [$dateJMoins7, $dateJMoins7Fin])
             ->where('phoning_status', 'cse_ni')
-            ->whereNotNull('fiche_word_path') // S'assurer que la fiche word a déjà été générée
+            ->whereNotNull('fiche_word_path') // Utiliser le même champ pour le PDF
             ->with('appelable')
             ->get();
 
@@ -43,35 +43,23 @@ class SendFicheJauneJ7Job implements ShouldQueue
                     continue;
                 }
 
-                // Générer l'URL publique de la fiche word si ce n'est pas déjà fait
+                // Générer le PDF si ce n'est pas déjà fait
                 if (! $appel->fiche_word_path) {
-                    // Générer la fiche jaune si elle n'existe pas encore
-                    $template = \App\Models\TemplateFiche::actifs()
-                        ->parType('jaune')
-                        ->first();
+                    $prospect = $appel->appelable instanceof Prospect ? $appel->appelable : null;
+                    if ($prospect) {
+                        $filename = $pdfService->genererNomFichier('jaune', $prospect);
+                        $data = $pdfService->preparerDonneesFicheJaune($prospect, $appel->fiche_data ?? []);
+                        $pdfUrl = $pdfService->generer('jaune', $data, $filename);
 
-                    if ($template) {
-                        $localPath = $service->generer($template, $appel->fiche_data);
-                        if ($localPath) {
-                            $destination = now()->format('Y/m');
-                            $publicUrl = $service->stocker($localPath, $destination);
-
-                            $appel->update([
-                                'fiche_word_path' => $publicUrl,
-                                'fiche_word_generated_at' => now(),
-                            ]);
-                        }
+                        $appel->update([
+                            'fiche_word_path' => $pdfUrl,
+                            'fiche_word_generated_at' => now(),
+                        ]);
                     }
                 }
 
-                // Envoyer l'email avec la fiche jaune en pièce jointe
+                // Envoyer l'email avec la fiche PDF en pièce jointe
                 if ($appel->fiche_word_path) {
-                    // Le rappel J+7 est porté par le Responsable de Secteur
-                    // assigné au prospect (cf. fiche jaune : "Responsable de
-                    // Secteur assigné"), pas par le téléprospecteur qui a
-                    // passé l'appel initial. On ne retombe sur ce dernier que
-                    // si aucun commercial n'est encore assigné, pour ne pas
-                    // perdre le rappel.
                     $prospect = $appel->appelable instanceof Prospect ? $appel->appelable : null;
                     $destinataire = $prospect?->commercial ?: ($appel->user ?: $appel->phoning_agent);
 

@@ -118,6 +118,7 @@ class Prospect extends Model
         'mail1_envoye_at' => 'datetime',
         'mail2_envoye' => 'boolean',
         'mail2_envoye_at' => 'datetime',
+        'invitation_agenda_envoyee' => 'boolean',
     ];
 
     protected $fillable = [
@@ -152,6 +153,13 @@ class Prospect extends Model
         'interlocuteur_add_telephone',
         'interlocuteur_add_email',
         'description',
+        // Champs pour fiches de prospection
+        'besoins_exprimes',
+        'objections_soulevees',
+        'points_attention_rdv',
+        'invitation_agenda_envoyee',
+        'presence_cse',
+        'jour_dispo_appel',
         'motif_ko',
         'qf_valide',
         'valide_par',
@@ -1046,5 +1054,10 @@ class Prospect extends Model
     public function historiqueInteractions()
     {
         return $this->morphMany(HistoriqueInteractionUser::class, 'interactable');
+    }
+
+    public function notesCommentaires()
+    {
+        return $this->morphMany(NoteCommentaire::class, 'notable');
     }
 }

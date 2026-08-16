@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('historique_modifications', function (Blueprint $table) {
             $table->id();
             $table->morphs('model');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('champ')->nullable()->comment('Champ modifié ou null pour création/suppression');
             $table->json('ancienne_valeur')->nullable()->comment('Valeur avant modification');
             $table->json('nouvelle_valeur')->nullable()->comment('Valeur après modification');

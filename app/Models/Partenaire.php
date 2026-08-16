@@ -600,4 +600,9 @@ class Partenaire extends Model
     {
         return $this->morphMany(HistoriqueInteractionUser::class, 'interactable');
     }
+
+    public function notesCommentaires()
+    {
+        return $this->morphMany(NoteCommentaire::class, 'notable');
+    }
 }

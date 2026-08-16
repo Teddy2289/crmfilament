@@ -682,4 +682,9 @@ class Client extends Model
     {
         return $this->morphMany(Document::class, 'documentable');
     }
+
+    public function notesCommentaires()
+    {
+        return $this->morphMany(NoteCommentaire::class, 'notable');
+    }
 }

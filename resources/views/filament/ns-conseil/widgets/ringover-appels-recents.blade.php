@@ -3,15 +3,15 @@
 
         <div class="grid gap-3 mb-4 lg:grid-cols-[repeat(4,minmax(0,1fr))]">
             <div class="flex items-center gap-2">
-                <button wire:click="setDirection('')"
+                <button type="button" wire:click="setDirection('')"
                     class="px-3 py-1 text-sm rounded-md {{ $filterDirection === '' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
                     Tous
                 </button>
-                <button wire:click="setDirection('in')"
+                <button type="button" wire:click="setDirection('in')"
                     class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'in' ? 'bg-success-600 text-white' : 'bg-gray-100 text-gray-700' }}">
                     Entrants
                 </button>
-                <button wire:click="setDirection('out')"
+                <button type="button" wire:click="setDirection('out')"
                     class="px-3 py-1 text-sm rounded-md {{ $filterDirection === 'out' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">
                     Sortants
                 </button>
@@ -44,7 +44,7 @@
                     <input type="checkbox" wire:model="filterHasRecording" class="form-checkbox" />
                     Avec enregistrement
                 </label>
-                <button wire:click="clearFilters"
+                <button type="button" wire:click="clearFilters"
                     class="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">
                     Réinitialiser
                 </button>
@@ -146,11 +146,11 @@
         <div class="flex items-center justify-between mt-4 text-sm text-gray-500">
             <span>Page {{ $page }}</span>
             <div class="flex gap-2">
-                <button wire:click="prevPage" @if ($page <= 1) disabled @endif
+                <button type="button" wire:click="prevPage" @if ($page <= 1) disabled @endif
                     class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
                     Precedent
                 </button>
-                <button wire:click="nextPage" @if (count($calls) < $perPage) disabled @endif
+                <button type="button" wire:click="nextPage" @if (count($calls) < $perPage) disabled @endif
                     class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
                     Suivant
                 </button>

@@ -526,4 +526,9 @@ class Opportunite extends Model
     {
         return $this->morphMany(RendezVous::class, 'rdvable');
     }
+
+    public function notesCommentaires()
+    {
+        return $this->morphMany(NoteCommentaire::class, 'notable');
+    }
 }

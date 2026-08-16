@@ -6,6 +6,7 @@ use App\Enums\OrganizationType;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
 use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
 use App\Filament\NsConseil\Resources\OpportuniteResource\Pages;
+use App\Filament\NsConseil\Resources\OpportuniteResource\RelationManagers\NotesCommentairesRelationManager;
 use App\Filament\NsConseil\Resources\ProspectResource\RelationManagers\AppelsRelationManager;
 use App\Filament\Shared\Components\PhoneNumberInput;
 use App\Models\Opportunite;
@@ -491,6 +492,7 @@ class OpportuniteResource extends Resource
             AppelsRelationManager::class,
             RendezVousRelationManager::class,
             DocumentsRelationManager::class,
+            NotesCommentairesRelationManager::class,
         ];
     }
 

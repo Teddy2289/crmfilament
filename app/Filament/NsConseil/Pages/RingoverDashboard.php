@@ -4,6 +4,8 @@ namespace App\Filament\NsConseil\Pages;
 
 use App\Filament\NsConseil\Widgets\RingoverAppelsRecents;
 use App\Filament\NsConseil\Widgets\RingoverStatsOverview;
+use AppFilamentNsConseilWidgetsRingoverCallsTrendWidget;
+use AppFilamentNsConseilWidgetsRingoverAgentPerformanceWidget;
 use App\Models\EnvSetting;
 use App\Services\EnvSettingsService;
 use App\Services\RingoverTagService;
@@ -139,11 +141,11 @@ class RingoverDashboard extends Page
 
     protected function getHeaderWidgets(): array
     {
-        return [RingoverStatsOverview::class];
+        return [RingoverStatsOverview::class, RingoverCallsTrendWidget::class];
     }
 
     protected function getFooterWidgets(): array
     {
-        return [RingoverAppelsRecents::class];
+        return [RingoverAppelsRecents::class, RingoverAgentPerformanceWidget::class];
     }
 }

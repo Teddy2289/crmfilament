@@ -3017,6 +3017,62 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </div>
                     @endif
 
+                    <!-- Section Notes/Commentaires multiples -->
+                    @if(count($notesList) > 0)
+                    <div style="margin-bottom:1rem;">
+                        <div style="font-size:0.875rem; font-weight:600; color:rgb(55 65 81); margin-bottom:0.5rem;">
+                            Notes et commentaires précédents
+                        </div>
+                        @foreach($notesList as $note)
+                        <div style="background:rgb(249 250 251); border:1px solid rgb(229 231 235); border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.375rem;">
+                                <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <span style="font-size:0.75rem; font-weight:600; color:rgb(37 99 235); background:rgb(239 246 255); padding:0.125rem 0.5rem; border-radius:0.25rem;">
+                                        {{ ucfirst($note['type_note']) }}
+                                    </span>
+                                    @if($note['is_prive'])
+                                    <span style="font-size:0.75rem; color:rgb(239 68 68);">🔒 Privé</span>
+                                    @endif
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <span style="font-size:0.75rem; color:rgb(107 114 128);">{{ $note['user_name'] }}</span>
+                                    <span style="font-size:0.75rem; color:rgb(156 163 175);">{{ $note['created_at'] }}</span>
+                                    <button wire:click="deleteNote({{ $note['id'] }})" style="background:none; border:none; color:rgb(239 68 68); cursor:pointer; padding:0.125rem;">
+                                        <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="font-size:0.875rem; color:rgb(31 41 55); line-height:1.5;">
+                                {{ nl2br(e($note['contenu'])) }}
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+
+                    <!-- Formulaire d'ajout de note -->
+                    <div style="background:rgb(239 246 255); border:1px solid rgb(219 234 254); border-radius:0.5rem; padding:0.75rem; margin-bottom:1rem;">
+                        <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items:center;">
+                            <select wire:model="newNoteType" style="padding:0.375rem 0.5rem; border:1px solid rgb(209 213 219); border-radius:0.375rem; font-size:0.875rem;">
+                                <option value="note">Note</option>
+                                <option value="commentaire">Commentaire</option>
+                                <option value="suivi">Suivi</option>
+                                <option value="phoning">Note Phoning</option>
+                                <option value="fiche">Note Fiche</option>
+                            </select>
+                            <label style="display:flex; align-items:center; gap:0.375rem; font-size:0.875rem; color:rgb(55 65 81); cursor:pointer;">
+                                <input type="checkbox" wire:model="newNoteIsPrive" style="width:1rem; height:1rem;">
+                                Privé
+                            </label>
+                        </div>
+                        <textarea wire:model="newNoteContent" rows="2"
+                            placeholder="Ajouter une note ou un commentaire..." class="pw-textarea" style="margin-bottom:0.5rem;"></textarea>
+                        <button wire:click="addNote" wire:loading.attr="disabled" style="background:rgb(37 99 235); color:white; border:none; padding:0.375rem 0.75rem; border-radius:0.375rem; font-size:0.875rem; cursor:pointer; display:flex; align-items:center; gap:0.375rem;">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                            Ajouter
+                        </button>
+                    </div>
+
                     <textarea wire:model="commentaires" rows="4"
                         placeholder="Compte rendu : interlocuteur joint, objections, décision, prochaine étape..." class="pw-textarea"></textarea>
 

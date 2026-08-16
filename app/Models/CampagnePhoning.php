@@ -399,7 +399,7 @@ class CampagnePhoning extends Model
                 WHERE appels.appelable_id = prospects.id 
                 AND appels.appelable_type = ? 
                 AND appels.compte_comme_tentative = 1
-            ) < ?', [Prospect::class, $max]);
+            ) < ?', ['App\\Models\\Prospect', $max]);
         }
 
         if (is_array($c['statuts'] ?? null) && count($c['statuts']) > 0) {

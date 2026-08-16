@@ -122,6 +122,17 @@ class FicheGenerationService
             'rdv_lieu' => $rdv ? ($rdv->lieu ?: $rdv->adresse_lieu) : '',
             'cse_secretaire_complet' => trim(($prospect->cse_secretaire_prenom ?? '').' '.($prospect->cse_secretaire_nom ?? '')),
             'cse_tresorier_complet' => trim(($prospect->cse_tresorier_prenom ?? '').' '.($prospect->cse_tresorier_nom ?? '')),
+            // Champs spécifiques fiche bleue
+            'besoins_exprimes' => $prospect->besoins_exprimes ?? '',
+            'objections_soulevees' => $prospect->objections_soulevees ?? '',
+            'points_attention_rdv' => $prospect->points_attention_rdv ?? '',
+            'invitation_agenda_envoyee' => $prospect->invitation_agenda_envoyee ? 'Oui' : 'Non',
+            // Champs spécifiques fiche verte
+            'presence_cse' => $prospect->presence_cse ?? '',
+            'jour_dispo_appel' => $prospect->jour_dispo_appel ?? '',
+            // Champs spécifiques fiche jaune
+            'motif_refus' => $prospect->motif_ko ?? '',
+            'date_rappel_j7' => $prospect->date_premier_contact ? $prospect->date_premier_contact->addDays(7)->format('d/m/Y') : '',
             default => $prospect->{$field} ?? '',
         };
     }
@@ -163,6 +174,17 @@ class FicheGenerationService
             '${CSE_SECRETAIRE}' => 'cse_secretaire_complet',
             '${CSE_TRESORIER}' => 'cse_tresorier_complet',
             '${CSE_NB_ELUS}' => 'cse_nb_elus',
+            // Champs spécifiques fiche bleue
+            '${BESOINS_EXPRIMES}' => 'besoins_exprimes',
+            '${OBJECTIONS_SOULEVEES}' => 'objections_soulevees',
+            '${POINTS_ATTENTION_RDV}' => 'points_attention_rdv',
+            '${INVITATION_AGENDA_ENVOYEE}' => 'invitation_agenda_envoyee',
+            // Champs spécifiques fiche verte
+            '${PRESENCE_CSE}' => 'presence_cse',
+            '${JOUR_DISPO_APPEL}' => 'jour_dispo_appel',
+            // Champs spécifiques fiche jaune
+            '${MOTIF_REFUS}' => 'motif_refus',
+            '${DATE_RAPPEL_J7}' => 'date_rappel_j7',
         ];
     }
 }
