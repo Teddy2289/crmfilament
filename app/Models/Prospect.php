@@ -530,14 +530,36 @@ class Prospect extends Model
         $this->changerStatut(ProspectStatut::STD_Joint, 'Standard joint');
     }
 
-    public function programmerRappel(\DateTime $date): void
+    public function programmerRappel(\DateTime $date, bool $manual = false): void
     {
+        $dateRappel = $this->normaliserDateRappel($date, $manual);
+
         $this->update([
-            'rappel_planifie_at' => $date,
+            'rappel_planifie_at' => $dateRappel,
             'statut' => in_array($this->statut, [ProspectStatut::AC, ProspectStatut::KO])
                 ? ProspectStatut::AC
                 : $this->statut,
         ]);
+    }
+
+    protected function normaliserDateRappel(\DateTime $date, bool $manual = false): \DateTime
+    {
+        if ($manual || ! $this->estWeekEnd($date)) {
+            return $date;
+        }
+
+        $dateCarbon = \Carbon\Carbon::instance($date);
+
+        while ($dateCarbon->isWeekend()) {
+            $dateCarbon->addDay();
+        }
+
+        return $dateCarbon->toDateTime();
+    }
+
+    protected function estWeekEnd(\DateTime $date): bool
+    {
+        return \Carbon\Carbon::instance($date)->isWeekend();
     }
 
     public function annulerRappel(): void

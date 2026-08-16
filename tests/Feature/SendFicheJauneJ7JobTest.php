@@ -22,8 +22,8 @@ class SendFicheJauneJ7JobTest extends TestCase
         Mail::fake();
 
         $service = $this->createMock(\App\Services\Crm\FicheWordService::class);
-        $user = User::factory()->create(['email' => 'test@example.com']);
-        $prospect = Prospect::factory()->create();
+        $user = User::factory()->create(['email' => fake()->unique()->safeEmail()]);
+        $prospect = Prospect::factory()->create(['commercial_id' => $user->id]);
 
         $appel = Appel::create([
             'appelable_type' => Prospect::class,
@@ -54,7 +54,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         Mail::fake();
 
         $service = $this->createMock(\App\Services\Crm\FicheWordService::class);
-        $user = User::factory()->create(['email' => 'test@example.com']);
+        $user = User::factory()->create(['email' => fake()->unique()->safeEmail()]);
         $prospect = Prospect::factory()->create();
 
         $appel = Appel::create([
@@ -111,7 +111,7 @@ class SendFicheJauneJ7JobTest extends TestCase
         Mail::fake();
 
         $service = $this->createMock(\App\Services\Crm\FicheWordService::class);
-        $user = User::factory()->create(['email' => 'test@example.com']);
+        $user = User::factory()->create(['email' => fake()->unique()->safeEmail()]);
         $prospect = Prospect::factory()->create();
 
         $appel = Appel::create([

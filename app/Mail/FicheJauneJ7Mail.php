@@ -33,27 +33,54 @@ class FicheJauneJ7Mail extends Mailable
     {
         $objet = "Fiche Jaune J+7 - Rappel Commercial pour l'appel du {$this->appel->date_heure->format('d/m/Y')}";
 
-        return $this->subject($objet)
+        $mail = $this->subject($objet)
             ->markdown('emails.fiche-jaune-j7')
             ->with([
                 'appel' => $this->appel,
                 'destinataire' => $this->destinataire,
-            ])
-            ->attach($this->fichePathAbsolu(), [
+            ]);
+
+        $fichePath = $this->fichePathAbsolu();
+        if ($fichePath && file_exists($fichePath)) {
+            $mail->attach($fichePath, [
                 'as' => 'Fiche_Jaune_J+7_' . $this->appel->id . '_' . now()->format('Ymd') . '.docx',
                 'mime' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ]);
+        }
+
+        return $mail;
     }
 
     /**
-     * fiche_word_path est une URL publique (Storage::disk('public')->url()),
-     * pas un chemin disque : il faut retirer le préfixe /storage/ avant de
-     * retrouver le fichier sur le disque local.
+     * Accepte les chemins de stockage public de type:
+     * - /storage/fiches/2026/08/fiche.docx
+     * - https://domain.com/storage/fiches/2026/08/fiche.docx
+     * - fiches/2026/08/fiche.docx
      */
-    protected function fichePathAbsolu(): string
+    protected function fichePathAbsolu(): ?string
     {
-        $relatif = \Illuminate\Support\Str::after($this->appel->fiche_word_path, '/storage/');
+        $path = $this->appel->fiche_word_path;
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->path($relatif);
+        if (blank($path)) {
+            return null;
+        }
+
+        $normalized = trim((string) $path);
+
+        if (str_contains($normalized, '://')) {
+            $normalized = parse_url($normalized, PHP_URL_PATH) ?: $normalized;
+        }
+
+        if (str_starts_with($normalized, '/storage/')) {
+            $normalized = \Illuminate\Support\Str::after($normalized, '/storage/');
+        } elseif (str_starts_with($normalized, 'storage/')) {
+            $normalized = \Illuminate\Support\Str::after($normalized, 'storage/');
+        }
+
+        if (! str_starts_with($normalized, 'fiches/')) {
+            $normalized = ltrim($normalized, '/');
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->path($normalized);
     }
 }

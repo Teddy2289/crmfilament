@@ -347,6 +347,13 @@ class ProspectResource extends Resource
                     ->alignCenter()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('nb_salaries')
+                    ->label('Nb salariés')
+                    ->numeric()
+                    ->sortable()
+                    ->placeholder('—')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('ville')
                     ->label('Ville')
                     ->toggleable(),
@@ -409,6 +416,46 @@ class ProspectResource extends Resource
                     ->options(fn() => Prospect::distinct()->pluck('departement', 'departement')->filter()->sort())
                     ->label('Département')
                     ->searchable(),
+
+                Tables\Filters\Filter::make('nb_salaries_range')
+                    ->label('Nb salariés')
+                    ->form([
+                        Forms\Components\TextInput::make('min')
+                            ->label('Minimum')
+                            ->numeric()
+                            ->minValue(0),
+                        Forms\Components\TextInput::make('max')
+                            ->label('Maximum')
+                            ->numeric()
+                            ->minValue(0),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $min = $data['min'] ?? null;
+                        $max = $data['max'] ?? null;
+
+                        if (filled($min)) {
+                            $query->where('nb_salaries', '>=', (int) $min);
+                        }
+
+                        if (filled($max)) {
+                            $query->where('nb_salaries', '<=', (int) $max);
+                        }
+
+                        return $query;
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if (filled($data['min'] ?? null)) {
+                            $indicators[] = 'Nb salariés ≥ ' . $data['min'];
+                        }
+
+                        if (filled($data['max'] ?? null)) {
+                            $indicators[] = 'Nb salariés ≤ ' . $data['max'];
+                        }
+
+                        return $indicators;
+                    }),
 
                 Tables\Filters\Filter::make('a_relancer')
                     ->label('À relancer')

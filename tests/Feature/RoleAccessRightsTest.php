@@ -227,6 +227,41 @@ class RoleAccessRightsTest extends TestCase
     }
 
     #[Test]
+    public function campagne_phoning_limit_and_script_sections_are_visible_by_default(): void
+    {
+        $livewire = new class implements \Filament\Forms\Contracts\HasForms {
+            public function dispatchFormEvent(mixed ...$args): void {}
+            public function getActiveFormsLocale(): ?string { return null; }
+            public function makeFilamentTranslatableContentDriver(): ?\Filament\Support\Contracts\TranslatableContentDriver { return null; }
+            public function getForm(string $name): ?\Filament\Forms\Form { return null; }
+            public function getFormComponentFileAttachment(string $statePath): ?\Livewire\Features\SupportFileUploads\TemporaryUploadedFile { return null; }
+            public function getFormComponentFileAttachmentUrl(string $statePath): ?string { return null; }
+            public function getFormSelectOptionLabels(string $statePath): array { return []; }
+            public function getFormSelectOptionLabel(string $statePath): ?string { return null; }
+            public function getFormSelectOptions(string $statePath): array { return []; }
+            public function getFormSelectSearchResults(string $statePath, string $search): array { return []; }
+            public function getFormUploadedFiles(string $statePath): ?array { return null; }
+            public function getOldFormState(string $statePath): mixed { return null; }
+            public function isCachingForms(): bool { return false; }
+            public function removeFormUploadedFile(string $statePath, string $fileKey): void {}
+            public function reorderFormUploadedFiles(string $statePath, array $fileKeys): void {}
+            public function validate($rules = null, $messages = [], $attributes = []) { return []; }
+            public function currentlyValidatingForm(?\Filament\Forms\ComponentContainer $form): void {}
+        };
+
+        $form = \Filament\Forms\Form::make($livewire);
+        $sections = CampagnePhoningResource::form($form)->getComponents();
+
+        $importantSections = collect($sections)
+            ->filter(fn ($section) => in_array($section->getHeading(), ['Exclusions & Limites', 'Script & Consignes'], true))
+            ->values();
+
+        $this->assertCount(2, $importantSections);
+        $this->assertFalse($importantSections[0]->isCollapsed());
+        $this->assertFalse($importantSections[1]->isCollapsed());
+    }
+
+    #[Test]
     public function field_permissions_support_show_create_edit_flux_and_all_actions(): void
     {
         $role = Role::create(['name' => 'test_field_rights', 'guard_name' => 'web']);

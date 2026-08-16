@@ -331,7 +331,7 @@ class CampagnePhoningResource extends Resource
                 ->icon('heroicon-o-shield-exclamation')
                 ->columns(2)
                 ->collapsible()
-                ->collapsed()
+                ->collapsed(false)
                 ->schema([
                     Forms\Components\TextInput::make('max_tentatives')
                         ->label('Nombre max de tentatives par contact')
@@ -365,7 +365,7 @@ class CampagnePhoningResource extends Resource
                 ->description('Guide d\'appel et pitch pour les téléprospecteurs')
                 ->icon('heroicon-o-document-text')
                 ->collapsible()
-                ->collapsed()
+                ->collapsed(false)
                 ->schema([
                     Forms\Components\RichEditor::make('script_appel')
                         ->label('Script d\'appel / Guide d\'entretien')

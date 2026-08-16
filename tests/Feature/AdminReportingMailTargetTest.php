@@ -27,7 +27,7 @@ class AdminReportingMailTargetTest extends TestCase
     }
 
     #[Test]
-    public function daily_report_job_sends_to_admin_email_instead_of_each_user(): void
+    public function daily_report_job_sends_to_each_user(): void
     {
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-06-29 09:00:00'));
         Mail::fake();
@@ -41,13 +41,15 @@ class AdminReportingMailTargetTest extends TestCase
 
         $this->assertSame(4, $envoyes);
         Mail::assertSent(DailyReportMail::class, 4);
-        Mail::assertSent(DailyReportMail::class, fn (DailyReportMail $mail) => $mail->hasTo('admin@ns-conseil.com'));
-        Mail::assertNotSent(DailyReportMail::class, fn (DailyReportMail $mail) => $mail->hasTo('tp@test.com'));
-        Mail::assertNotSent(DailyReportMail::class, fn (DailyReportMail $mail) => $mail->hasTo('commercial@test.com'));
+        Mail::assertSent(DailyReportMail::class, fn (DailyReportMail $mail) => $mail->hasTo('tp@test.com'));
+        Mail::assertSent(DailyReportMail::class, fn (DailyReportMail $mail) => $mail->hasTo('commercial@test.com'));
+        Mail::assertSent(DailyReportMail::class, fn (DailyReportMail $mail) => $mail->hasTo('superviseur@test.com'));
+        Mail::assertSent(DailyReportMail::class, fn (DailyReportMail $mail) => $mail->hasTo('team@test.com'));
+        Mail::assertNotSent(DailyReportMail::class, fn (DailyReportMail $mail) => $mail->hasTo('admin@ns-conseil.com'));
     }
 
     #[Test]
-    public function weekly_report_job_sends_to_admin_email_instead_of_each_user(): void
+    public function weekly_report_job_sends_to_each_user(): void
     {
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-06-29 09:00:00'));
         Mail::fake();
@@ -66,9 +68,11 @@ class AdminReportingMailTargetTest extends TestCase
 
         $this->assertSame(4, $envoyes);
         Mail::assertSent(WeeklyReportMail::class, 4);
-        Mail::assertSent(WeeklyReportMail::class, fn (WeeklyReportMail $mail) => $mail->hasTo('admin@ns-conseil.com'));
-        Mail::assertNotSent(WeeklyReportMail::class, fn (WeeklyReportMail $mail) => $mail->hasTo('tp@test.com'));
-        Mail::assertNotSent(WeeklyReportMail::class, fn (WeeklyReportMail $mail) => $mail->hasTo('commercial@test.com'));
+        Mail::assertSent(WeeklyReportMail::class, fn (WeeklyReportMail $mail) => $mail->hasTo('tp@test.com'));
+        Mail::assertSent(WeeklyReportMail::class, fn (WeeklyReportMail $mail) => $mail->hasTo('commercial@test.com'));
+        Mail::assertSent(WeeklyReportMail::class, fn (WeeklyReportMail $mail) => $mail->hasTo('superviseur@test.com'));
+        Mail::assertSent(WeeklyReportMail::class, fn (WeeklyReportMail $mail) => $mail->hasTo('team@test.com'));
+        Mail::assertNotSent(WeeklyReportMail::class, fn (WeeklyReportMail $mail) => $mail->hasTo('admin@ns-conseil.com'));
     }
 
     private function user(string $email, string $role, bool $actif = true): User

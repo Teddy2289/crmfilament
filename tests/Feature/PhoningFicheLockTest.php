@@ -15,17 +15,19 @@ class PhoningFicheLockTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Créer la table des verrous
-        \Schema::create('phoning_fiche_locks', function (\Illuminate\Database\Schema\Blueprint $table) {
-            $table->id();
-            $table->morphs('lockable');
-            $table->foreignId('locked_by_user_id')->constrained('users')->onDelete('cascade');
-            $table->dateTime('locked_at')->useCurrent();
-            $table->dateTime('heartbeat_at')->useCurrent();
-            $table->timestamps();
-            $table->index(['lockable_type', 'lockable_id']);
-            $table->index('locked_by_user_id');
-        });
+        // Créer la table des verrous si elle n'existe pas (la migration devrait l'avoir créée)
+        if (! \Schema::hasTable('phoning_fiche_locks')) {
+            \Schema::create('phoning_fiche_locks', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->id();
+                $table->morphs('lockable');
+                $table->foreignId('locked_by_user_id')->constrained('users')->onDelete('cascade');
+                $table->dateTime('locked_at')->useCurrent();
+                $table->dateTime('heartbeat_at')->useCurrent();
+                $table->timestamps();
+                $table->index(['lockable_type', 'lockable_id']);
+                $table->index('locked_by_user_id');
+            });
+        }
     }
 
     public function test_user_can_acquire_lock_on_fiche()

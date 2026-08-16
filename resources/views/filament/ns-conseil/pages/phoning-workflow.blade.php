@@ -1846,6 +1846,24 @@ $tentativesActuelles = $this->getTentativesAppel();
             }
         }
 
+        function isWeekendDate(dateString) {
+            if (!dateString) {
+                return false;
+            }
+
+            const date = new Date(dateString + 'T12:00:00');
+            return isNaN(date.getTime()) ? false : [0, 6].includes(date.getDay());
+        }
+
+        function confirmManualReminderDate(input) {
+            const dateValue = input && input.value ? input.value : '';
+            if (!dateValue || !isWeekendDate(dateValue)) {
+                return true;
+            }
+
+            return window.confirm('Le rappel manuel est programmé un week-end. Confirmez-vous cette date ?');
+        }
+
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 Livewire.dispatch('notify', {
@@ -2550,7 +2568,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                         <div class="pw-info-grid">
                             <div>
                                 <div class="pw-field-label">Date RDV</div>
-                                <input type="date" wire:model="rappel_date" class="pw-field-input">
+                                <input type="date" wire:model="rappel_date" class="pw-field-input" onchange="if (!confirmManualReminderDate(this)) { this.value = ''; }">
                             </div>
                             <div>
                                 <div class="pw-field-label">Heure RDV</div>
@@ -2865,7 +2883,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
                             <div>
                                 <div class="pw-field-label">Date</div>
-                                <input type="date" wire:model="rappel_date" class="pw-field-input">
+                                <input type="date" wire:model="rappel_date" class="pw-field-input" onchange="if (!confirmManualReminderDate(this)) { this.value = ''; }">
                             </div>
                             <div>
                                 <div class="pw-field-label">Heure</div>

@@ -32,13 +32,18 @@ class SendDailyReportJob implements ShouldQueue
         ]);
 
         foreach ($destinataires as $user) {
+            if (! filled($user->email)) {
+                Log::warning("Rapport quotidien ignoré pour utilisateur #{$user->id} sans email valide");
+                continue;
+            }
+
             $rapport = match ($user->role_cache) {
                 User::ROLE_TELEPROSPECTEUR => $service->pourTeleprospecteur($user),
                 User::ROLE_COMMERCIAL => $service->pourCommercial($user),
                 default => $service->pourTeamLeader($user),
             };
 
-            Mail::to('admin@ns-conseil.com')->send(new DailyReportMail($rapport));
+            Mail::to($user->email)->send(new DailyReportMail($rapport));
             $envoyes++;
         }
 

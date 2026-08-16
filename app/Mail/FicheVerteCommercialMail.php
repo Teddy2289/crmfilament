@@ -31,33 +31,52 @@ class FicheVerteCommercialMail extends Mailable
     {
         $objet = "Fiche Verte - RDV à conclure pour l'appel du {$this->appel->date_heure->format('d/m/Y')}";
 
-        return $this->subject($objet)
+        $mail = $this->subject($objet)
             ->markdown('emails.fiche-verte-commercial')
             ->with([
                 'appel' => $this->appel,
-            ])
-            ->attach($this->getLocalFichePath(), [
+            ]);
+
+        $fichePath = $this->getLocalFichePath();
+        if ($fichePath && file_exists($fichePath)) {
+            $mail->attach($fichePath, [
                 'as' => 'Fiche_Verte_' . $this->appel->id . '_' . now()->format('Ymd') . '.docx',
                 'mime' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ]);
+        }
+
+        return $mail;
     }
 
     /**
      * Récupère le chemin local du fichier fiche Word.
-     * L'URL stockée est du type: /storage/fiches/2026/08/fiche-verte-*.docx
-     * On doit retourner le chemin complet: storage/app/public/fiches/2026/08/fiche-verte-*.docx
+     * Accepte les chemins publics URL, les chemins de disque public relatifs
+     * et les chemins localhost de tests.
      */
-    protected function getLocalFichePath(): string
+    protected function getLocalFichePath(): ?string
     {
-        // Extraire le chemin relatif du disque public depuis l'URL
-        // URL exemple: https://domain.com/storage/fiches/2026/08/fiche.docx
-        // ou: /storage/fiches/2026/08/fiche.docx
-        $url = $this->appel->fiche_word_path;
-        
-        // Extraire la partie après /storage/
-        $relativePath = Str::after($url, '/storage/');
-        
-        // Retourner le chemin complet dans le disque public
-        return Storage::disk('public')->path($relativePath);
+        $path = $this->appel->fiche_word_path;
+
+        if (blank($path)) {
+            return null;
+        }
+
+        $normalized = trim((string) $path);
+
+        if (str_contains($normalized, '://')) {
+            $normalized = parse_url($normalized, PHP_URL_PATH) ?: $normalized;
+        }
+
+        if (str_starts_with($normalized, '/storage/')) {
+            $normalized = Str::after($normalized, '/storage/');
+        } elseif (str_starts_with($normalized, 'storage/')) {
+            $normalized = Str::after($normalized, 'storage/');
+        }
+
+        if (! str_starts_with($normalized, 'fiches/')) {
+            $normalized = ltrim($normalized, '/');
+        }
+
+        return Storage::disk('public')->path($normalized);
     }
 }

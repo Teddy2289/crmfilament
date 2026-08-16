@@ -7,6 +7,7 @@ use App\Enums\ProspectStatut;
 use App\Models\Partenaire;
 use App\Models\Prospect;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -17,6 +18,16 @@ class ProspectFeatureTest extends TestCase
 
     private function createProspect(array $overrides = []): Prospect
     {
+        $user = User::first() ?: User::create([
+            'nom' => 'Test',
+            'prenom' => 'User',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password'),
+            'actif' => true,
+        ]);
+
+        $this->actingAs($user);
+
         return Prospect::create(array_merge([
             'nom' => 'Entreprise Test',
             'statut' => ProspectStatut::AC,
@@ -109,6 +120,34 @@ class ProspectFeatureTest extends TestCase
 
         $fresh = $prospect->fresh();
         $this->assertNotNull($fresh->rappel_planifie_at);
+    }
+
+    #[Test]
+    public function programmer_rappel_automatique_ajuste_au_lundi_vendredi(): void
+    {
+        $prospect = $this->createProspect(['statut' => ProspectStatut::STD_NR]);
+        $date = Carbon::create(2026, 8, 15, 10, 0, 0); // samedi
+
+        $prospect->programmerRappel($date);
+
+        $fresh = $prospect->fresh();
+        $this->assertNotNull($fresh->rappel_planifie_at);
+        $this->assertSame('2026-08-17', $fresh->rappel_planifie_at->format('Y-m-d'));
+        $this->assertFalse($fresh->rappel_planifie_at->isWeekend());
+    }
+
+    #[Test]
+    public function programmer_rappel_manuel_conserve_la_date_saisie(): void
+    {
+        $prospect = $this->createProspect(['statut' => ProspectStatut::STD_NR]);
+        $date = Carbon::create(2026, 8, 15, 10, 0, 0); // samedi
+
+        $prospect->programmerRappel($date, manual: true);
+
+        $fresh = $prospect->fresh();
+        $this->assertNotNull($fresh->rappel_planifie_at);
+        $this->assertSame('2026-08-15', $fresh->rappel_planifie_at->format('Y-m-d'));
+        $this->assertTrue($fresh->rappel_planifie_at->isWeekend());
     }
 
     #[Test]

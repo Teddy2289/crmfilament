@@ -24,7 +24,7 @@ class ProspectTest extends TestCase
         $prospect = new Prospect;
         $prospect->statut = ProspectStatut::KO;
 
-        $this->assertEquals('danger', $prospect->statut_color);
+        $this->assertEquals('red', $prospect->statut_color);
     }
 
     #[Test]

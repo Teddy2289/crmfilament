@@ -89,12 +89,24 @@ class SendInvitationAgendaJob implements ShouldQueue
             ->latest('date_heure')
             ->first();
 
-        if (! $appel) {
+        if (! $appel || blank($appel->fiche_word_path)) {
             return null;
         }
 
-        $relative = Str::after($appel->fiche_word_path, '/storage/');
-        $absolutePath = Storage::disk('public')->path($relative);
+        $urlOrPath = trim((string) $appel->fiche_word_path);
+        $relative = $urlOrPath;
+
+        if (str_contains($urlOrPath, '://')) {
+            $relative = parse_url($urlOrPath, PHP_URL_PATH) ?: $relative;
+        }
+
+        if (str_starts_with($relative, '/storage/')) {
+            $relative = Str::after($relative, '/storage/');
+        } elseif (str_starts_with($relative, 'storage/')) {
+            $relative = Str::after($relative, 'storage/');
+        }
+
+        $absolutePath = Storage::disk('public')->path(ltrim($relative, '/'));
 
         return file_exists($absolutePath) ? $absolutePath : null;
     }
