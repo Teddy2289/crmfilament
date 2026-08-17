@@ -16,7 +16,6 @@ class RingoverWebhookController extends Controller
         }
 
         $payload = $request->all();
-
         $result = $sync->sync($payload, source: 'webhook');
 
         return response()->json([

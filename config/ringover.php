@@ -2,20 +2,19 @@
 
 return [
     'api_token' => env('RINGOVER_API_TOKEN'),
-    'auth_scheme' => env('RINGOVER_AUTH_SCHEME', 'Bearer'),
+    'auth_scheme' => env('RINGOVER_AUTH_SCHEME') ?: 'Bearer',
     'region' => env('RINGOVER_REGION', 'europe'),
     'base_urls' => [
         'europe' => 'https://public-api.ringover.com/v2',
         'us' => 'https://public-api-us.ringover.com/v2',
     ],
-    'base_url' => env(
-        'RINGOVER_BASE_URL',
+    'base_url' => env('RINGOVER_BASE_URL') ?: (
         env('RINGOVER_REGION', 'europe') === 'us'
             ? 'https://public-api-us.ringover.com/v2'
             : 'https://public-api.ringover.com/v2'
     ),
     'timeout' => env('RINGOVER_TIMEOUT', 10),
-    'dial_url_template' => env('RINGOVER_DIAL_URL_TEMPLATE', 'tel:{phone}'),
+    'dial_url_template' => env('RINGOVER_DIAL_URL_TEMPLATE') ?: 'tel:{phone}',
     'webhook_secret' => env('RINGOVER_WEBHOOK_SECRET'),
     'monitoring_enabled' => env('RINGOVER_MONITORING_ENABLED', false),
     'status_tags' => [
