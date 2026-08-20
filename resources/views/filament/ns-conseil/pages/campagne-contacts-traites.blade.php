@@ -1,0 +1,52 @@
+<div class="fi-page-content">
+    <div class="space-y-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-950 dark:text-white">Prospects et contacts traités</h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Détail des contacts correspondant à la carte sélectionnée.</p>
+            </div>
+            <a href="{{ url('/ns-conseil/campagne-phonings') }}" class="fi-btn fi-btn-size-md fi-color-gray inline-flex items-center">Retour aux campagnes</a>
+        </div>
+        <form method="get" class="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+            <input type="hidden" name="statut" value="{{ request("statut") }}">
+            <label class="flex min-w-64 flex-col gap-1 text-sm font-medium text-gray-700 dark:text-gray-300">Statut du prospect
+                <select name="prospect_statut" class="fi-select rounded-lg border-gray-300">
+                    <option value="">Tous les statuts</option>
+                    @foreach($prospectStatuts as $value => $label)<option value="{{ $value }}" @selected($prospectStatut === $value)>{{ $label }}</option>@endforeach
+                </select>
+            </label>
+            <button type="submit" class="fi-btn fi-btn-color-primary inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white">Filtrer</button>
+            <a href="{{ route("ns-conseil.campagnes.contacts-traites", array_filter(["statut" => request("statut"), "prospect_statut" => request("prospect_statut"), "export" => 1])) }}" class="fi-btn inline-flex items-center rounded-lg bg-gray-700 px-4 py-2 text-sm font-semibold text-white">Exporter CSV</a>
+        </form>
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"><p class="text-xs uppercase tracking-wide text-gray-500">Résultats</p><p class="mt-1 text-2xl font-semibold text-gray-950 dark:text-white">{{ $appels->count() }}</p></div>
+            <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"><p class="text-xs uppercase tracking-wide text-gray-500">Statut</p><p class="mt-1 text-lg font-semibold text-gray-950 dark:text-white">{{ $statutLabel ?: 'Tous les statuts' }}</p></div>
+            
+        </div>
+        <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-white/5 dark:text-gray-400"><tr><th class="px-4 py-3">Prospect / contact</th><th class="px-4 py-3">Téléphone</th><th class="px-4 py-3">Ville</th><th class="px-4 py-3">Campagne</th><th class="px-4 py-3">Agent</th><th class="px-4 py-3">Dernier appel</th><th class="px-4 py-3">Statut</th><th class="px-4 py-3">Commentaire / note</th><th class="px-4 py-3"></th></tr></thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-white/10">
+                    @forelse($appels as $appel)
+                        @php($contact = $appel->appelable)
+                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
+                            <td class="px-4 py-3 font-medium text-gray-950 dark:text-white">{{ $contact?->nom ?? $contact?->raison_sociale ?? 'Contact #'.$appel->appelable_id }}<span class="block text-xs font-normal text-gray-500">{{ class_basename((string) $appel->appelable_type) }}</span></td>
+                            <td class="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">{{ $contact?->telephone ?? $appel->numero_appelant ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ $contact?->ville ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ $appel->campagne?->nom ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ trim(($appel->user?->prenom ?? '').' '.($appel->user?->nom ?? '')) ?: '—' }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">{{ optional($appel->date_heure)->format('d/m/Y H:i') }}</td>
+                            <td class="px-4 py-3"><x-filament::badge color="gray">{{ strtoupper(is_object($appel->phoning_status) ? ($appel->phoning_status->value ?? $appel->phoning_status->name ?? "") : (string) $appel->phoning_status) }}</x-filament::badge></td>
+                            <td class="max-w-sm px-4 py-3 text-gray-600 dark:text-gray-300"><span class="block whitespace-pre-line">{{ $appel->commentaire ?: $appel->phoning_notes ?: "—" }}</span></td>
+                            <td class="px-4 py-3">@if(str_ends_with((string) $appel->appelable_type, '\\Prospect'))<a class="font-medium text-primary-600 hover:underline" href="{{ url('/ns-conseil/prospects/'.$appel->appelable_id) }}">Voir la fiche</a>@endif</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="9" class="px-4 py-12 text-center text-gray-500">Aucun prospect ou contact ne correspond à cette carte.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -3,6 +3,7 @@
 namespace App\Filament\NsConseil\Widgets\Crm;
 
 use App\Models\Prospect;
+use App\Filament\NsConseil\Resources\ProspectResource;
 use App\Models\Opportunite;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Tables;
@@ -16,9 +17,7 @@ class CrmActionRequiredWidget extends BaseWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $pollingInterval = '120s';
 
-    protected static bool $isLazy = true;
 
     public ?string $errorMessage = null;
 
@@ -102,7 +101,8 @@ class CrmActionRequiredWidget extends BaseWidget
         return [
             Tables\Actions\Action::make('voir')
                 ->label('Voir')
-                ->url(fn ($record) => "/ns-conseil/prospects/{$record->id}")
+                ->url(fn ($record) => ProspectResource::getUrl('view', ['record' => $record], panel: 'ns-conseil'))
+                ->openUrlInNewTab()
                 ->icon('heroicon-o-eye')
                 ->color('primary'),
         ];

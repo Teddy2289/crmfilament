@@ -213,6 +213,7 @@ class ClientResource extends Resource
 
                 // 📞 Contact
                 Tables\Columns\TextColumn::make('telephone')
+                    ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
                     ->label('Téléphone')
                     ->copyable()
                     ->badge()
@@ -578,6 +579,7 @@ class ClientResource extends Resource
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('telephone')
+                    ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
                     ->label('Téléphone')
                     ->badge()
                     ->color('green')
@@ -640,6 +642,7 @@ class ClientResource extends Resource
             Infolists\Components\Section::make('Coordonnées')
                 ->schema([
                     Infolists\Components\TextEntry::make('telephone')
+                        ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
                         ->label('Téléphone')
                         ->badge()
                         ->icon('heroicon-o-phone')

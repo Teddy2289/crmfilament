@@ -7,12 +7,9 @@ use App\Models\GoogleToken;
 use App\Models\RendezVous;
 use App\Models\User;
 use Carbon\Carbon;
-use GuzzleHttp\Client;
-use GuzzleHttp\Pool;
-use GuzzleHttp\Promise\Utils;
-use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Client;
 use League\OAuth2\Client\Provider\Google;
 
 class GoogleCalendarService
@@ -121,6 +118,35 @@ class GoogleCalendarService
         return GoogleToken::where('user_id', $user->id)->exists();
     }
 
+    /**
+     * Retourne tous les calendriers Google accessibles au compte connecté.
+     * La pagination et le cache sont centralisés dans fetchCalendarMetadata().
+     */
+    public function getCalendars(User $user): array
+    {
+        try {
+            $token = $this->getValidToken($user);
+
+            return Cache::remember(
+                "gcal_calendars_{$user->id}",
+                now()->addMinutes(10),
+                fn (): array => $this->fetchCalendarMetadata($token)
+            );
+        } catch (\Throwable $e) {
+            if (str_contains(strtolower($e->getMessage()), "invalid_grant")) {
+                GoogleToken::where("user_id", $user->id)->delete();
+                $this->clearEventsCache($user);
+                Cache::forget("gcal_calendars_{$user->id}");
+                Log::warning("GoogleCalendar: invalid authorization removed; reconnect required", ["user_id" => $user->id]);
+            }
+            Log::warning("GoogleCalendar: calendar list unavailable", [
+                "user_id" => $user->id,
+                "error" => $e->getMessage(),
+            ]);
+            return [];
+        }
+    }
+
     // ── Events CRUD ───────────────────────────────────────────────────
 
     /**
@@ -135,7 +161,7 @@ class GoogleCalendarService
 
         try {
             $token = $this->getValidToken($user);
-            $calendarId = $token->calendar_id ?? 'primary';
+            $calendarId = $rdv->calendar_id ?: ($token->calendar_id ?? 'primary');
             $body = $this->buildEventBody($rdv);
 
             $response = $this->makeRequest(
@@ -178,7 +204,7 @@ class GoogleCalendarService
 
         try {
             $token = $this->getValidToken($user);
-            $calendarId = $token->calendar_id ?? 'primary';
+            $calendarId = $rdv->calendar_id ?: ($token->calendar_id ?? 'primary');
             $body = $this->buildEventBody($rdv);
 
             $this->makeRequest(
@@ -216,7 +242,7 @@ class GoogleCalendarService
 
         try {
             $token = $this->getValidToken($user);
-            $calendarId = $token->calendar_id ?? 'primary';
+            $calendarId = $rdv->calendar_id ?: ($token->calendar_id ?? 'primary');
 
             $this->makeRequest(
                 'DELETE',
@@ -251,7 +277,7 @@ class GoogleCalendarService
         $weekKey = (new Carbon($start))->format('Y-W');
         $cacheKey = "gcal_events_{$user->id}_{$weekKey}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($user, $start, $end) {
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $start, $end) {
             return $this->fetchAllCalendarEvents($user, $start, $end);
         });
     }
@@ -272,121 +298,23 @@ class GoogleCalendarService
     /**
      * Fetch réel — appelé uniquement si cache manquant
      */
+    /**
+     * Fetch réel — appelé uniquement si cache manquant.
+     */
     private function fetchAllCalendarEvents(User $user, \DateTime $start, \DateTime $end): array
     {
-        try {
-            $token = $this->getValidToken($user);
-            $timeMin = (new Carbon($start))->toRfc3339String();
-            $timeMax = (new Carbon($end))->toRfc3339String();
+        $token = $this->getValidToken($user);
+        $timeMin = (new Carbon($start))->toRfc3339String();
+        $timeMax = (new Carbon($end))->toRfc3339String();
 
-            // 1. Liste des calendriers — elle aussi mise en cache 1h
-            $calendarMeta = Cache::remember(
-                "gcal_calendars_{$user->id}",
-                now()->addHour(24),
-                function () use ($token) {
-                    $calList = $this->makeRequest(
-                        'GET',
-                        'https://www.googleapis.com/calendar/v3/users/me/calendarList',
-                        $token
-                    );
-                    $meta = [];
-                    foreach ($calList['items'] ?? [] as $cal) {
-                        $meta[$cal['id']] = [
-                            'name' => $cal['summary'] ?? $cal['id'],
-                            'color' => $cal['backgroundColor'] ?? '#6b7280',
-                        ];
-                    }
+        // La liste peut évoluer dans Google Workspace : cache court et paginé.
+        $calendarMeta = Cache::remember(
+            "gcal_calendars_{$user->id}",
+            now()->addMinutes(10),
+            fn (): array => $this->fetchCalendarMetadata($token)
+        );
 
-                    return empty($meta)
-                        ? ['primary' => ['name' => 'Principal', 'color' => '#6b7280']]
-                        : $meta;
-                }
-            );
-
-            // 2. Requêtes événements en parallèle via Guzzle Pool
-            $client = new Client(['timeout' => 8, 'connect_timeout' => 5]);
-            $requests = [];
-
-            foreach ($calendarMeta as $calendarId => $meta) {
-                $requests[$calendarId] = new Request(
-                    'GET',
-                    'https://www.googleapis.com/calendar/v3/calendars/'.urlencode($calendarId).'/events'
-                        .'?'.http_build_query([
-                            'timeMin' => $timeMin,
-                            'timeMax' => $timeMax,
-                            'singleEvents' => 'true',
-                            'orderBy' => 'startTime',
-                            'maxResults' => 250,
-                        ]),
-                    [
-                        'Authorization' => "Bearer {$token->access_token}",
-                        'Accept' => 'application/json',
-                    ]
-                );
-            }
-
-            // Exécution parallèle — toutes les requêtes partent en même temps
-            $pool = new Pool($client, (function () use ($requests) {
-                foreach ($requests as $calId => $request) {
-                    yield $calId => $request;
-                }
-            })(), [
-                'concurrency' => 6,  // 6 requêtes simultanées max
-                'fulfilled' => function ($response, $calId) use (&$allEvents, &$seenIds) {},
-                'rejected' => function ($reason, $calId) {},
-            ]);
-
-            // Utilisation de Pool::promise() pour récupérer les réponses
-            // Alternative plus simple : requêtes async avec promises
-            $promises = [];
-            foreach ($requests as $calId => $request) {
-                $promises[$calId] = $client->sendAsync($request);
-            }
-
-            $allEvents = [];
-            $seenIds = [];
-            $results = Utils::settle(
-                Utils::unwrap($promises)
-            );
-        } catch (\Throwable $e) {
-            // settle() ne lève pas, mais unwrap() peut lever — fallback séquentiel
-            Log::warning('GoogleCalendar: parallel fetch failed, falling back to sequential', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return $this->fetchSequential($token ?? null, $calendarMeta ?? [], $timeMin ?? '', $timeMax ?? '');
-        }
-
-        // Traiter les réponses
-        foreach ($requests as $calId => $_) {
-            try {
-                $body = $promises[$calId]->wait()->getBody()->getContents();
-                $data = json_decode($body, true);
-                $meta = $calendarMeta[$calId];
-
-                foreach ($data['items'] ?? [] as $event) {
-                    if (! isset($seenIds[$event['id']])) {
-                        $event['_calendar_id'] = $calId;
-                        $event['_calendar_name'] = $meta['name'];
-                        $event['_calendar_color'] = $meta['color'];
-                        $allEvents[] = $event;
-                        $seenIds[$event['id']] = true;
-                    }
-                }
-            } catch (\Throwable) {
-                continue;
-            }
-        }
-
-        return $allEvents;
-    }
-
-    /**
-     * Fallback séquentiel si les promises échouent
-     */
-    private function fetchSequential(?GoogleToken $token, array $calendarMeta, string $timeMin, string $timeMax): array
-    {
-        if (! $token) {
+        if ($calendarMeta === []) {
             return [];
         }
 
@@ -394,28 +322,110 @@ class GoogleCalendarService
         $seenIds = [];
 
         foreach ($calendarMeta as $calendarId => $meta) {
+            $pageToken = null;
+
             try {
-                $response = $this->makeRequest(
-                    'GET',
-                    'https://www.googleapis.com/calendar/v3/calendars/'.urlencode($calendarId).'/events',
-                    $token,
-                    ['query' => ['timeMin' => $timeMin, 'timeMax' => $timeMax, 'singleEvents' => 'true', 'orderBy' => 'startTime', 'maxResults' => 250]]
-                );
-                foreach ($response['items'] ?? [] as $event) {
-                    if (! isset($seenIds[$event['id']])) {
+                do {
+                    $query = [
+                        'timeMin' => $timeMin,
+                        'timeMax' => $timeMax,
+                        'singleEvents' => 'true',
+                        'orderBy' => 'startTime',
+                        'maxResults' => 250,
+                    ];
+
+                    if ($pageToken) {
+                        $query['pageToken'] = $pageToken;
+                    }
+
+                    $response = $this->makeRequest(
+                        'GET',
+                        'https://www.googleapis.com/calendar/v3/calendars/'.urlencode($calendarId).'/events',
+                        $token,
+                        ['query' => $query]
+                    );
+
+                    foreach ($response['items'] ?? [] as $event) {
+                        $eventId = $event['id'] ?? null;
+                        if (! $eventId || isset($seenIds[$eventId])) {
+                            continue;
+                        }
+
                         $event['_calendar_id'] = $calendarId;
                         $event['_calendar_name'] = $meta['name'];
                         $event['_calendar_color'] = $meta['color'];
                         $allEvents[] = $event;
-                        $seenIds[$event['id']] = true;
+                        $seenIds[$eventId] = true;
                     }
-                }
-            } catch (\Throwable) {
-                continue;
+
+                    $pageToken = $response['nextPageToken'] ?? null;
+                } while ($pageToken);
+            } catch (\Throwable $e) {
+                // Un agenda peut être partagé puis retiré sans invalider les autres.
+                Log::warning('GoogleCalendar: calendar events fetch failed', [
+                    'user_id' => $user->id,
+                    'calendar_id' => $calendarId,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
         return $allEvents;
+    }
+
+    /**
+     * Récupère tous les calendriers accessibles au compte Google connecté.
+     */
+    private function fetchCalendarMetadata(\App\Models\GoogleToken $token): array
+    {
+        $meta = [];
+        $pageToken = null;
+
+        do {
+            $query = [
+                'maxResults' => 250,
+                'showHidden' => 'true',
+            ];
+
+            if ($pageToken) {
+                $query['pageToken'] = $pageToken;
+            }
+
+            $calList = $this->makeRequest(
+                'GET',
+                'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+                $token,
+                ['query' => $query]
+            );
+
+            foreach ($calList['items'] ?? [] as $cal) {
+                if (($cal['deleted'] ?? false) || empty($cal['id'])) {
+                    continue;
+                }
+
+                $meta[$cal['id']] = [
+                    'name' => $cal['summary'] ?? $cal['id'],
+                    'color' => $cal['backgroundColor'] ?? '#6b7280',
+                    'access_role' => $cal['accessRole'] ?? null,
+                ];
+            }
+
+            $pageToken = $calList['nextPageToken'] ?? null;
+        } while ($pageToken);
+
+        Log::info('GoogleCalendar: calendars loaded', [
+            'calendar_count' => count($meta),
+        ]);
+
+        return $meta;
+    }
+
+    public function getAvailableCalendars(User $user): array
+    {
+        $token = $this->getValidToken($user);
+        if (! $token) return [];
+        $meta = Cache::remember("gcal_calendars_{$user->id}", now()->addMinutes(10), fn () => $this->fetchCalendarMetadata($token));
+        return collect($meta)->mapWithKeys(fn (array $calendar, string $id) => [$id => $calendar['name'] . (! empty($calendar['access_role']) ? ' — ' . $calendar['access_role'] : '')])->all();
     }
 
     // ── Event body builder ────────────────────────────────────────────
@@ -525,9 +535,29 @@ class GoogleCalendarService
             ],
         ]);
 
-        $response = $client->request($method, $url, $options);
-        $body = $response->getBody()->getContents();
+        try {
+            $response = $client->request($method, $url, $options);
+            $body = $response->getBody()->getContents();
 
-        return $body ? json_decode($body, true) : [];
+            return $body ? json_decode($body, true) : [];
+        } catch (\Throwable $e) {
+            $details = $e->getMessage();
+            if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
+                $details .= ' ' . (string) $e->getResponse()->getBody();
+            }
+
+            if (str_contains(strtolower($details), 'invalid_grant')) {
+                $user = User::find($token->user_id);
+                $token->delete();
+                if ($user) {
+                    $this->clearEventsCache($user);
+                }
+                Cache::forget("gcal_calendars_{$token->user_id}");
+                Log::warning('GoogleCalendar: API rejected token; reconnect required', ['user_id' => $token->user_id]);
+                throw new \RuntimeException('L’autorisation Google Calendar a été révoquée ou est invalide. Veuillez reconnecter votre compte Google.');
+            }
+
+            throw $e;
+        }
     }
 }

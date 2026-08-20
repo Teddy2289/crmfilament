@@ -17,9 +17,7 @@ class CrmRecentActivityWidget extends BaseWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $pollingInterval = '60s';
 
-    protected static bool $isLazy = true;
 
     public ?string $errorMessage = null;
 

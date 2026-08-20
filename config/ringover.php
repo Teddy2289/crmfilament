@@ -2,7 +2,7 @@
 
 return [
     'api_token' => env('RINGOVER_API_TOKEN'),
-    'auth_scheme' => env('RINGOVER_AUTH_SCHEME') ?: 'Bearer',
+    'auth_scheme' => env('RINGOVER_AUTH_SCHEME', ''),
     'region' => env('RINGOVER_REGION', 'europe'),
     'base_urls' => [
         'europe' => 'https://public-api.ringover.com/v2',

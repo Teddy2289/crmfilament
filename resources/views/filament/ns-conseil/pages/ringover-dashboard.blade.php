@@ -1,4 +1,23 @@
 <x-filament-panels::page>
+    <div class="ringover-filter-panel" aria-label="Filtres Ringover">
+        <div>
+            <label for="ringover-start-date">Du</label>
+            <input id="ringover-start-date" type="date">
+        </div>
+        <div>
+            <label for="ringover-end-date">Au</label>
+            <input id="ringover-end-date" type="date">
+        </div>
+        <div>
+            <label for="ringover-user-id">Utilisateur</label>
+            <select id="ringover-user-id"><option value="">Tous les utilisateurs</option></select>
+        </div>
+        <div class="ringover-filter-actions">
+            <button type="button" id="ringover-apply-filters">Appliquer</button>
+            <button type="button" id="ringover-reset-filters">Réinitialiser</button>
+        </div>
+    </div>
+
     <div id="ringover-dashboard-root" class="ringover-dashboard-loading">
         <div class="loading-spinner">
             <div class="spinner"></div>
@@ -6,10 +25,33 @@
         </div>
     </div>
 
+    @push("scripts")
     <script type="module">
+        function ringoverFilterParams() {
+            const params = new URLSearchParams(window.location.search);
+            const startDate = document.getElementById('ringover-start-date')?.value;
+            const endDate = document.getElementById('ringover-end-date')?.value;
+            const userId = document.getElementById('ringover-user-id')?.value;
+            if (startDate) params.set('startDate', startDate); else params.delete('startDate');
+            if (endDate) params.set('endDate', endDate); else params.delete('endDate');
+            if (userId) params.set('userId', userId); else params.delete('userId');
+            return params;
+        }
+
+        function loadRingoverFilters() {
+            const params = new URLSearchParams(window.location.search);
+            const start = document.getElementById('ringover-start-date');
+            const end = document.getElementById('ringover-end-date');
+            if (start && params.get('startDate')) start.value = params.get('startDate');
+            if (end && params.get('endDate')) end.value = params.get('endDate');
+            const userSelect = document.getElementById('ringover-user-id');
+            if (userSelect && params.get('userId')) userSelect.dataset.selected = params.get('userId');
+        }
+
         async function initDashboard() {
             try {
-                const response = await fetch('{{ route('api.ringover.dashboard') }}', {
+                const params = ringoverFilterParams();
+                const response = await fetch('{{ route('api.ringover.dashboard') }}?' + params.toString(), {
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
@@ -31,6 +73,7 @@
         }
 
         function renderDashboard(data) {
+            syncRingoverUsers(data.users || []);
             const root = document.getElementById('ringover-dashboard-root');
             root.className = 'ringover-dashboard-wrapper';
             
@@ -91,6 +134,20 @@
                         <strong>${data.diagnostic?.unmapped_users ?? 0}</strong>
                         <small>À corriger</small>
                     </div>
+                </div>
+
+                <div class="ringover-calls-section">
+                    <div class="ringover-section-heading ringover-calls-heading">
+                        <div>
+                            <span class="ringover-analytics-kicker">Journal opérationnel</span>
+                            <span>Derniers appels synchronisés</span>
+                        </div>
+                        <div class="ringover-calls-toolbar">
+                            <input id="ringover-call-search" type="search" placeholder="Rechercher un numéro, agent ou fiche…" aria-label="Rechercher dans les appels">
+                            <select id="ringover-call-status-filter" aria-label="Filtrer par statut"><option value="">Tous les statuts</option></select>
+                        </div>
+                    </div>
+                    <div id="ringover-calls-table" class="ringover-calls-table"></div>
                 </div>
 
                 <div class="ringover-analytics-panel">
@@ -176,6 +233,54 @@
                     ` : ''}
                 </div>
             `;
+            renderCalls(data.calls || []);
+        }
+
+        function escapeRingoverHtml(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','\"':'&quot;'}[char]));
+        }
+        function formatRingoverPhone(value) {
+            const raw = String(value ?? '').trim();
+            const digits = raw.replace(/\D+/g, '');
+            if (!digits) return raw;
+            let national = digits;
+            if (national.startsWith('0033')) national = '0' + national.slice(4);
+            else if (national.startsWith('33') && national.length >= 11) national = '0' + national.slice(2);
+            if (/^0\d{9}$/.test(national)) return national.replace(/(\d{2})(?=\d)/g, '$1 ').trim();
+            return raw;
+        }
+
+        function renderCalls(calls) {
+            const container = document.getElementById('ringover-calls-table');
+            if (!container) return;
+            const search = document.getElementById('ringover-call-search');
+            const status = document.getElementById('ringover-call-status-filter');
+            const statuses = [...new Set(calls.map(call => call.status).filter(Boolean))];
+            if (status) status.innerHTML = '<option value="">Tous les statuts</option>' + statuses.map(value => `<option value="${escapeRingoverHtml(value)}">${escapeRingoverHtml(value)}</option>`).join('');
+
+            const draw = () => {
+                const rawNeedle = (search?.value || '').trim();
+                const needle = /^\+?[\d\s().-]+$/.test(rawNeedle) ? rawNeedle.replace(/\D+/g, '') : rawNeedle.toLowerCase();
+                const selectedStatus = status?.value || '';
+                const filtered = calls.filter(call => {
+                    const haystack = [call.phone, call.phone_normalized, call.agent, call.target?.name, call.direction, call.status, call.status_code].filter(Boolean).join(' ').toLowerCase();
+                    return (!needle || haystack.includes(needle)) && (!selectedStatus || call.status === selectedStatus || call.status_code === selectedStatus);
+                });
+                if (!filtered.length) {
+                    container.innerHTML = '<div class="ringover-calls-empty">Aucun appel correspondant aux filtres.</div>';
+                    return;
+                }
+                container.innerHTML = `<div class="ringover-calls-scroll"><table><thead><tr><th>Date</th><th>Agent</th><th>Direction</th><th>Numéro</th><th>Statut</th><th>Durée</th><th>Fiche CRM</th><th>Actions</th></tr></thead><tbody>${filtered.map(call => {
+                    const target = call.target;
+                    const fiche = target?.url ? `<a class="ringover-record-link" href="${escapeRingoverHtml(target.url)}">${escapeRingoverHtml(target.name)}</a><small>${escapeRingoverHtml(target.type)}</small>` : '<span class="ringover-unmatched">Non identifié</span>';
+                    const actions = target?.phoning_url ? `<a class="ringover-action-link" href="${escapeRingoverHtml(target.phoning_url)}">Ouvrir le phoning</a>` : '<span class="ringover-action-muted">Rechercher dans Prospects</span>';
+                    const dialNumber = call.phone_normalized || call.phone || '';
+                    return `<tr><td>${escapeRingoverHtml(call.date)}</td><td>${escapeRingoverHtml(call.agent)}</td><td>${escapeRingoverHtml(call.direction)}</td><td><a href="tel:${escapeRingoverHtml(dialNumber)}">${escapeRingoverHtml(formatRingoverPhone(call.phone || call.phone_normalized || '—'))}</a></td><td><span class="ringover-call-status">${escapeRingoverHtml(call.status || 'Non renseigné')}</span></td><td>${escapeRingoverHtml(call.duration)}</td><td>${fiche}</td><td>${actions}</td></tr>`;
+                }).join('')}</tbody></table></div><div class="ringover-calls-count">${filtered.length} appel(s) affiché(s) sur ${calls.length}</div>`;
+            };
+            search?.addEventListener('input', draw);
+            status?.addEventListener('change', draw);
+            draw();
         }
 
         function renderStats(diagnostic) {
@@ -201,6 +306,29 @@
             `).join('');
         }
 
+        function syncRingoverUsers(users) {
+            const select = document.getElementById('ringover-user-id');
+            if (!select) return;
+            const selected = select.dataset.selected || new URLSearchParams(window.location.search).get('userId') || '';
+            select.innerHTML = '<option value="">Tous les utilisateurs</option>' + users.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
+            select.value = selected;
+        }
+
+        function bindRingoverFilters() {
+            document.getElementById('ringover-apply-filters')?.addEventListener('click', () => {
+                const params = ringoverFilterParams();
+                window.history.replaceState({}, '', window.location.pathname + '?' + params.toString());
+                initDashboard();
+            });
+            document.getElementById('ringover-reset-filters')?.addEventListener('click', () => {
+                ['ringover-start-date', 'ringover-end-date'].forEach(id => { const input = document.getElementById(id); if (input) input.value = ''; });
+                const select = document.getElementById('ringover-user-id');
+                if (select) { select.value = ''; delete select.dataset.selected; }
+                window.history.replaceState({}, '', window.location.pathname);
+                initDashboard();
+            });
+        }
+
         window.RingoverDashboard = {
             getIcon(name) {
                 const icons = {
@@ -223,13 +351,24 @@
         };
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initDashboard);
+            document.addEventListener('DOMContentLoaded', () => { loadRingoverFilters(); bindRingoverFilters(); initDashboard(); });
         } else {
+            loadRingoverFilters();
+            bindRingoverFilters();
             initDashboard();
         }
     </script>
+    @endpush
 
+    @push("styles")
     <style>
+        .ringover-filter-panel { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; padding: 1rem 1.1rem; border: 1px solid rgb(226 232 240); border-radius: 1rem; background: rgba(255,255,255,0.96); box-shadow: 0 8px 24px rgba(15,23,42,0.04); }
+        .ringover-filter-panel label { display: block; margin-bottom: 0.35rem; color: rgb(71 85 105); font-size: 0.75rem; font-weight: 700; }
+        .ringover-filter-panel input, .ringover-filter-panel select { min-width: 11rem; border: 1px solid rgb(203 213 225); border-radius: 0.65rem; padding: 0.55rem 0.7rem; background: white; color: rgb(15 23 42); }
+        .ringover-filter-actions { display: flex; gap: 0.6rem; }
+        .ringover-filter-actions button { border: 0; border-radius: 0.65rem; padding: 0.6rem 0.9rem; font-weight: 700; cursor: pointer; }
+        #ringover-apply-filters { background: rgb(37 99 235); color: white; }
+        #ringover-reset-filters { background: rgb(241 245 249); color: rgb(51 65 85); }
         .ringover-dashboard-loading { display: flex; align-items: center; justify-content: center; min-height: 400px; }
         .loading-spinner { text-align: center; }
         .spinner { width: 40px; height: 40px; margin: 0 auto 1rem; border: 4px solid rgb(226 232 240); border-top-color: rgb(59 130 246); border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -262,6 +401,22 @@
         .ringover-summary-trend--alert { background: rgba(239, 68, 68, 0.08); color: rgb(220 38 38); }
         .ringover-summary-card strong { font-size: clamp(1.5rem, 2vw, 2rem); line-height: 1.1; color: rgb(15 23 42); }
         .ringover-summary-card small { color: rgb(100 116 139); font-size: 0.78rem; }
+        .ringover-calls-section { background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96)); border: 1px solid rgb(226 232 240); border-radius: 1rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03); padding: 1rem 1.1rem 0.9rem; }
+        .ringover-calls-heading { justify-content: space-between; margin-bottom: 1rem; }
+        .ringover-calls-toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .ringover-calls-toolbar input, .ringover-calls-toolbar select { min-width: 12rem; border: 1px solid rgb(203 213 225); border-radius: 0.6rem; padding: 0.5rem 0.65rem; background: white; color: rgb(15 23 42); font-size: 0.8rem; }
+        .ringover-calls-scroll { overflow-x: auto; }
+        .ringover-calls-table table { width: 100%; min-width: 930px; border-collapse: collapse; font-size: 0.78rem; }
+        .ringover-calls-table th { padding: 0.7rem 0.55rem; border-bottom: 1px solid rgb(226 232 240); color: rgb(100 116 139); text-align: left; font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+        .ringover-calls-table td { padding: 0.75rem 0.55rem; border-bottom: 1px solid rgb(241 245 249); color: rgb(51 65 85); vertical-align: middle; }
+        .ringover-calls-table tr:hover td { background: rgb(248 250 252); }
+        .ringover-record-link, .ringover-action-link { display: inline-block; color: rgb(37 99 235); font-weight: 700; text-decoration: none; }
+        .ringover-record-link:hover, .ringover-action-link:hover { text-decoration: underline; }
+        .ringover-calls-table small { display: block; margin-top: 0.2rem; color: rgb(100 116 139); text-transform: capitalize; }
+        .ringover-call-status { display: inline-flex; padding: 0.25rem 0.5rem; border-radius: 9999px; background: rgba(59,130,246,0.08); color: rgb(37 99 235); font-weight: 700; white-space: nowrap; }
+        .ringover-unmatched, .ringover-action-muted { color: rgb(100 116 139); font-style: italic; }
+        .ringover-calls-count { margin-top: 0.75rem; color: rgb(100 116 139); font-size: 0.75rem; }
+        .ringover-calls-empty { padding: 2rem 1rem; color: rgb(100 116 139); text-align: center; }
         .ringover-analytics-panel { background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.96)); border: 1px solid rgb(226 232 240); border-radius: 1rem; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.02); padding: 1rem 1.1rem 0.75rem; }
         .ringover-analytics-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
         .ringover-analytics-kicker { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(100 116 139); }
@@ -299,5 +454,6 @@
         @media (max-width: 1024px) { .ringover-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 768px) { .ringover-status-alert { flex-direction: column; align-items: center; text-align: center; } .ringover-summary-grid { grid-template-columns: 1fr; } .ringover-stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } .ringover-config-card { min-height: 7rem; } }
     </style>
+    @endpush
 
 </x-filament-panels::page>

@@ -4,8 +4,8 @@ namespace App\Filament\NsConseil\Pages;
 
 use App\Filament\NsConseil\Widgets\RingoverAppelsRecents;
 use App\Filament\NsConseil\Widgets\RingoverStatsOverview;
-use AppFilamentNsConseilWidgetsRingoverCallsTrendWidget;
-use AppFilamentNsConseilWidgetsRingoverAgentPerformanceWidget;
+use App\Filament\NsConseil\Widgets\RingoverCallsTrendWidget;
+use App\Filament\NsConseil\Widgets\RingoverAgentPerformanceWidget;
 use App\Models\EnvSetting;
 use App\Services\EnvSettingsService;
 use App\Services\RingoverTagService;

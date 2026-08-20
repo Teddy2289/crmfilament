@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Actions;
 
+use App\Models\Email;
 use App\Models\EmailTemplate;
 use App\Models\SentEmail;
 use Filament\Forms;
@@ -124,7 +125,25 @@ class SendEmailAction
                     }
                 });
 
-                // Log de l'envoi
+                // Historique de la boîte Envoyés.
+                Email::create([
+                    'emailable_type' => get_class($record),
+                    'emailable_id' => $record->id,
+                    'type' => Email::TYPE_SENT,
+                    'folder' => Email::FOLDER_SENT,
+                    'from_email' => config('mail.from.address'),
+                    'from_name' => config('mail.from.name'),
+                    'to_email' => $destinataire,
+                    'cc_email' => !empty($cc) ? implode(', ', $cc) : null,
+                    'subject' => $sujet,
+                    'body_text' => $corpsText,
+                    'body_html' => $corpsHtml,
+                    'sent_at' => now(),
+                    'user_id' => auth()->id(),
+                    'priority' => Email::PRIORITY_NORMAL,
+                ]);
+
+                // Log de l'envoi métier existant.
                 SentEmail::create([
                     'emailable_type' => get_class($record),
                     'emailable_id'   => $record->id,

@@ -130,7 +130,7 @@ class NsConseilPanelProvider extends PanelProvider
             ->authGuard('web')
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications()
-            ->databaseNotificationsPolling('60s')
+            ->databaseNotificationsPolling(null)
             ->globalSearch()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->spa()

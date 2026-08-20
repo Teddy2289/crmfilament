@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use App\Models\PipelineStatut;
 
 use App\Traits\HasModelValidation;
 use App\Traits\HasInputSanitization;
@@ -139,7 +140,8 @@ class Client extends Model
      */
     public static function etatOptions(): array
     {
-        return [
+        $options = PipelineStatut::optionsFor('client');
+        return $options ?: [
             'prospect' => 'Prospect',
             'en_cours' => 'En cours',
             'termine' => 'Terminé',
@@ -150,6 +152,9 @@ class Client extends Model
 
     public static function etatLabel(?string $etat): string
     {
+        if ($statut = PipelineStatut::findFor('client', (string) $etat)) {
+            return $statut->label;
+        }
         return match ($etat) {
             'prospect' => 'Prospect',
             'en_cours' => 'En cours',
@@ -167,6 +172,9 @@ class Client extends Model
      */
     public static function etatColor(?string $etat): string
     {
+        if ($statut = PipelineStatut::findFor('client', (string) $etat)) {
+            return $statut->couleur ?: 'gray';
+        }
         return match ($etat) {
             'prospect' => 'gray',
             'en_cours' => 'blue',
@@ -184,6 +192,9 @@ class Client extends Model
      */
     public static function etatDescription(?string $etat): string
     {
+        if ($statut = PipelineStatut::findFor('client', (string) $etat)) {
+            return (string) ($statut->description ?? '');
+        }
         return match ($etat) {
             'prospect' => "N'a pas encore commencé de formation.",
             'en_cours' => 'La formation est en cours.',

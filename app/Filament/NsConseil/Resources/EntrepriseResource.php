@@ -172,8 +172,9 @@ class EntrepriseResource extends Resource
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('telephone')
+                    ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
                     ->label('Téléphone')
-                    ->searchable()
+                    ->searchable(query: fn ($query, $search) => \App\Support\PhoneNumber::applySearch($query, 'telephone', $search))
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('email')
@@ -276,6 +277,7 @@ class EntrepriseResource extends Resource
                             ->label('Pays')
                             ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('telephone')
+                        ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
                             ->label('Téléphone')
                             ->placeholder('Non renseigné'),
                         Infolists\Components\TextEntry::make('email')

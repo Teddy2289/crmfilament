@@ -39,13 +39,30 @@ class TeamLeaderPerformanceWidget extends BaseWidget
     {
         $roles = app(CrmSettingsService::class)->get('roles.teleprospecteur_roles', ['teleprospecteur', 'commercial']);
 
-        $startDate = ! empty($this->filters['startDate'])
-            ? Carbon::parse($this->filters['startDate'])->startOfDay()
+        // Filament transmet normalement les filtres en camelCase. Le repli
+        // snake_case + query string rend le filtre robuste aux liens directs
+        // du type ?filters[startDate]=YYYY-MM-DD&filters[endDate]=YYYY-MM-DD.
+        $filterStart = data_get($this->filters, 'startDate')
+            ?? data_get($this->filters, 'start_date')
+            ?? request()->input('filters.startDate')
+            ?? request()->input('filters.start_date');
+        $filterEnd = data_get($this->filters, 'endDate')
+            ?? data_get($this->filters, 'end_date')
+            ?? request()->input('filters.endDate')
+            ?? request()->input('filters.end_date');
+
+        $startDate = filled($filterStart)
+            ? Carbon::parse($filterStart)->startOfDay()
             : now()->startOfMonth();
 
-        $endDate = ! empty($this->filters['endDate'])
-            ? Carbon::parse($this->filters['endDate'])->endOfDay()
+        $endDate = filled($filterEnd)
+            ? Carbon::parse($filterEnd)->endOfDay()
             : now()->endOfMonth();
+
+        $selectedUserId = data_get($this->filters, 'userId')
+            ?? data_get($this->filters, 'user_id')
+            ?? request()->input('filters.userId')
+            ?? request()->input('filters.user_id');
 
         return $table
             ->query(
@@ -57,6 +74,7 @@ class TeamLeaderPerformanceWidget extends BaseWidget
                         }
                     })
                     ->where('actif', true)
+                    ->when(filled($selectedUserId), fn ($query) => $query->whereKey($selectedUserId))
                     ->orderBy('nom')
             )
             ->columns([
@@ -173,6 +191,60 @@ class TeamLeaderPerformanceWidget extends BaseWidget
                     ->alignCenter()
                     ->badge()
                     ->color('warning'),
+
+                Tables\Columns\TextColumn::make('appels_par_statut')
+                    ->label('Appels par statut')
+                    ->state(function (User $record) use ($startDate, $endDate): string {
+                        $labels = [
+                            'ac' => 'AC',
+                            'std_nr' => 'STD NR',
+                            'std_joint' => 'STD Joint',
+                            'cse_nr' => 'CSE NR',
+                            'cse_ni' => 'CSE NI',
+                            'rdv' => 'RDV',
+                            'rapl_elu' => 'Rappel élu',
+                            'rp' => 'RP',
+                            'rpc' => 'RPC',
+                            'ko' => 'KO',
+                            'qf' => 'QF',
+                        ];
+
+                        $counts = Appel::where('user_id', $record->id)
+                            ->where('appelable_type', Prospect::class)
+                            ->whereBetween('date_heure', [$startDate, $endDate])
+                            ->selectRaw('phoning_status, COUNT(*) as total')
+                            ->groupBy('phoning_status')
+                            ->pluck('total', 'phoning_status');
+
+                        foreach ($counts as $status => $count) {
+                            $status = (string) $status;
+                            if (! array_key_exists($status, $labels)) {
+                                $labels[$status] = $status === ''
+                                    ? 'Non renseigné'
+                                    : ucwords(str_replace('_', ' ', $status));
+                            }
+                        }
+
+                        return collect($labels)
+                            ->map(fn (string $label, string $status): string => $label . ': ' . (int) ($counts[$status] ?? 0))
+                            ->implode(' · ');
+                    })
+                    ->description(fn () => 'Appels du ' . $startDate->format('d/m/Y') . ' au ' . $endDate->format('d/m/Y'))
+                    ->wrap()
+                    ->alignCenter()
+                    ->color('info')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('qualifications_periode')
+                    ->label('Qualifications')
+                    ->state(fn (User $record) => Prospect::where('teleprospecteur_id', $record->id)
+                        ->where('statut', ProspectStatut::QF->value)
+                        ->whereBetween('qf_valide_at', [$startDate, $endDate])
+                        ->count())
+                    ->description(fn () => 'QF validées du ' . $startDate->format('d/m/Y') . ' au ' . $endDate->format('d/m/Y'))
+                    ->alignCenter()
+                    ->badge()
+                    ->color('success'),
 
                 Tables\Columns\TextColumn::make('taux_conversion')
                     ->label('Taux (Filtre)')

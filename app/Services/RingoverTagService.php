@@ -91,7 +91,7 @@ class RingoverTagService
     /**
      * @return array<string, mixed>
      */
-    public function diagnostic(): array
+    public function diagnostic(?string $startDate = null, ?string $endDate = null, ?int $userId = null): array
     {
         if (! Schema::hasTable('appels') || ! Schema::hasColumn('appels', 'ringover_tag_is_complete')) {
             return [
@@ -107,6 +107,9 @@ class RingoverTagService
         }
 
         $ringoverCalls = Appel::query()->whereNotNull('ringover_call_id');
+        if (filled($startDate)) { $ringoverCalls->whereDate('created_at', '>=', $startDate); }
+        if (filled($endDate)) { $ringoverCalls->whereDate('created_at', '<=', $endDate); }
+        if ($userId) { $ringoverCalls->where('user_id', $userId); }
 
         return [
             'schema_ready' => true,

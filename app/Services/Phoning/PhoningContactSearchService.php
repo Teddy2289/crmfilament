@@ -21,6 +21,13 @@ class PhoningContactSearchService
     public function search(string $query): array
     {
         $results = [];
+        $phoneDigits = preg_replace('/\D+/', '', $query) ?: '';
+        if (in_array(strlen($phoneDigits), [10, 11, 13], true)) {
+            $phoneResults = $this->findByPhone($query);
+            if ($phoneResults !== []) {
+                return $phoneResults;
+            }
+        }
 
         // Recherche dans les prospects
         $prospects = Prospect::where(function ($q) use ($query) {
@@ -30,7 +37,7 @@ class PhoningContactSearchService
                 ->orWhere('ville', 'LIKE', "%{$query}%")
                 ->orWhere('email', 'LIKE', "%{$query}%");
         })
-            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
+            ->whereNotIn('statut', [ProspectStatut::KO->value])
             ->whereNull('deleted_at')
             ->limit(20)
             ->get();
@@ -219,6 +226,10 @@ class PhoningContactSearchService
 
         $digits = preg_replace('/\D+/', '', (string) $phone) ?: '';
 
+        if (str_starts_with($digits, '00') && strlen($digits) > 4) {
+            $digits = substr($digits, 2);
+        }
+
         if ($digits === '') {
             return null;
         }
@@ -228,6 +239,33 @@ class PhoningContactSearchService
         }
 
         return $digits;
+    }
+
+    /** @return list<string> */
+    private function phoneVariants(string $normalized): array
+    {
+        $variants = [$normalized];
+        if (str_starts_with($normalized, '0') && strlen($normalized) === 10) {
+            $national = substr($normalized, 1);
+            $variants[] = '33' . $national;
+            $variants[] = '0033' . $national;
+        } elseif (str_starts_with($normalized, '33') && strlen($normalized) === 11) {
+            $national = substr($normalized, 2);
+            $variants[] = '0' . $national;
+            $variants[] = '0033' . $national;
+        }
+        return array_values(array_unique($variants));
+    }
+
+    /** Apply phone matching in SQL so large result sets are not loaded into PHP. */
+    private function wherePhoneVariants($query, array $columns, array $variants): void
+    {
+        $query->where(function ($phoneQuery) use ($columns, $variants): void {
+            foreach ($columns as $column) {
+                $normalizedColumn = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(`{$column}`, ''), ' ', ''), '.', ''), '-', ''), '(', ''), ')', '')";
+                $phoneQuery->orWhereIn(\Illuminate\Support\Facades\DB::raw($normalizedColumn), $variants);
+            }
+        });
     }
 
     private function matchesPhone(?string $candidate, string $needle): bool
@@ -258,63 +296,35 @@ class PhoningContactSearchService
 
     private function searchMatchesForProspects(string $normalized): array
     {
-        $prospects = Prospect::query()
-            ->whereNull('deleted_at')
-            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value])
-            ->get();
-
-        return $prospects->filter(function ($prospect) use ($normalized) {
-            return $this->matchesPhone($prospect->telephone, $normalized)
-                || $this->matchesPhone($prospect->telephone_alt, $normalized)
-                || $this->matchesPhone($prospect->interlocuteur_telephone, $normalized);
-        })->values()->all();
+        $query = Prospect::query()->whereNull('deleted_at')->whereNotIn('statut', [ProspectStatut::KO->value]);
+        $this->wherePhoneVariants($query, ['telephone', 'telephone_alt', 'interlocuteur_telephone'], $this->phoneVariants($normalized));
+        return $query->get()->all();
     }
-
     private function searchMatchesForClients(string $normalized): array
     {
-        $clients = Client::query()
-            ->whereNull('deleted_at')
-            ->where(function ($query) {
-                $query->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false);
-            })
-            ->get();
-
-        return $clients->filter(function ($client) use ($normalized) {
-            return $this->matchesPhone($client->telephone, $normalized);
-        })->values()->all();
+        $query = Client::query()->whereNull('deleted_at')->where(function ($query) {
+            $query->whereNull('ne_plus_contacter')->orWhere('ne_plus_contacter', false);
+        });
+        $this->wherePhoneVariants($query, ['telephone'], $this->phoneVariants($normalized));
+        return $query->get()->all();
     }
-
     private function searchMatchesForPartenaires(string $normalized): array
     {
-        $partenaires = Partenaire::query()
-            ->whereNull('deleted_at')
-            ->get();
-
-        return $partenaires->filter(function ($partenaire) use ($normalized) {
-            return $this->matchesPhone($partenaire->telephone, $normalized);
-        })->values()->all();
+        $query = Partenaire::query()->whereNull('deleted_at');
+        $this->wherePhoneVariants($query, ['telephone'], $this->phoneVariants($normalized));
+        return $query->get()->all();
     }
-
     private function searchMatchesForContactsPartenaire(string $normalized): array
     {
-        $contacts = \App\Models\ContactPartenaire::query()
-            ->whereNull('deleted_at')
-            ->with('partenaire')
-            ->get();
-
-        return $contacts->filter(function ($contact) use ($normalized) {
-            return $this->matchesPhone($contact->telephone_direct, $normalized)
-                || $this->matchesPhone($contact->telephone_mobile, $normalized)
-                || $this->matchesPhone($contact->telephone_perso, $normalized);
-        })->values()->all();
+        $query = ContactPartenaire::query()->whereNull('deleted_at')->with('partenaire');
+        $this->wherePhoneVariants($query, ['telephone_direct', 'telephone_mobile', 'telephone_perso'], $this->phoneVariants($normalized));
+        return $query->get()->all();
     }
-
     private function searchMatchesForContactsParticuliers(string $normalized): array
     {
-        $contacts = \App\Models\ContactParticulier::query()->get();
-
-        return $contacts->filter(function ($contact) use ($normalized) {
-            return $this->matchesPhone($contact->telephone, $normalized);
-        })->values()->all();
+        $query = \App\Models\ContactParticulier::query();
+        $this->wherePhoneVariants($query, ['telephone'], $this->phoneVariants($normalized));
+        return $query->get()->all();
     }
+
 }

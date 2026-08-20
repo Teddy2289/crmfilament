@@ -9,14 +9,17 @@ use App\Enums\StatutCampagneProspection;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource;
 use App\Models\Appel;
 use App\Models\CampagnePhoning;
+use App\Models\EmailTemplate;
 use App\Models\PipelineStatut;
 use App\Models\Prospect;
+use App\Models\NoteCommentaire;
 use App\Models\RendezVous;
 use App\Models\StatutPhoning;
 use App\Models\User;
 use App\Mail\ConfirmationRdvProspectMail;
 use App\Mail\ContactSansCSEMail;
 use App\Mail\GenericProspectionMail;
+use App\Mail\PhoningWorkflowMail;
 use App\Mail\PreviewableProspectionMail;
 use App\Mail\PriseContactBlocMail;
 use Illuminate\Mail\Mailable;
@@ -28,6 +31,7 @@ use App\Services\Phoning\PhoningContactResolver;
 use App\Services\Phoning\PhoningContactSearchService;
 use App\Services\Phoning\PhoningQueueBuilder;
 use App\Services\ProspectionMailService;
+use App\Jobs\SendProspectionMailJob;
 use App\Support\CsePhoningWorkflow;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -38,10 +42,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Livewire\WithFileUploads;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 
 class PhoningWorkflow extends Page
 {
+    use WithFileUploads;
     // protected static ?string $navigationIcon    = 'heroicon-o-phone-arrow-up-right';
     protected static ?string $navigationLabel = 'Flux de travail téléphonique';
 
@@ -78,16 +86,41 @@ class PhoningWorkflow extends Page
     public string $contactType = '';
 
     public array $currentContactData = [];
+    public bool $showInlineProspectEditor = false;
+    public array $prospectEdit = [
+        "nom" => "", "telephone" => "", "email" => "", "ville" => "",
+        "statut" => "", "nb_salaries_libelle" => "", "notes" => "",
+    ];
+    public array $notesList = [];
+    public string $newNoteType = 'note';
+    public string $newNoteContent = '';
+    public bool $newNoteIsPrive = false;
 
     public string $commentaires = '';
 
     public bool $showEmailPreview = false;
     public bool $emailPreviewConfirmed = false;
     public ?string $emailPreviewRecipient = null;
+    public bool $emailPreviewCcEnabled = false;
+    public ?string $emailPreviewCc = null;
     public ?string $emailPreviewSubject = null;
     public ?string $emailPreviewBody = null;
     public ?string $emailPreviewOriginalSubject = null;
     public ?string $emailPreviewOriginalBody = null;
+    public string $emailPreviewContext = 'qualification';
+    public string $mailTemplateKey = '';
+    public string $mailRecipient = '';
+    public string $mailSubject = '';
+    public string $mailBody = '';
+    public bool $mailCcEnabled = false;
+    public string $mailCc = '';
+    public bool $mailAttachBlueSheet = true;
+    public bool $mailAttachAudio = false;
+    public bool $mailBccEnabled = false;
+    public string $mailBcc = '';
+    public array $mailSelectedPdfPaths = [];
+    public bool $showMailPdfPicker = false;
+    public array $mailExternalAttachments = [];
 
     public string $statut_resultat = '';
 
@@ -307,6 +340,91 @@ class PhoningWorkflow extends Page
     }
 
     // ── Supervision ───────────────────────────────────────────────────
+
+    private function statusValue(mixed $status): string
+    {
+        if ($status instanceof \BackedEnum) {
+            return (string) $status->value;
+        }
+        if (is_object($status) && method_exists($status, 'value')) {
+            return (string) $status->value;
+        }
+        return (string) ($status ?? '');
+    }
+
+    public function openInlineProspectEditor(): void
+    {
+        if (! $this->currentContact instanceof Prospect) {
+            Notification::make()->title('Cette fiche n’est pas un prospect')->warning()->send();
+            return;
+        }
+
+        $this->prospectEdit = [
+            'nom' => (string) ($this->currentContact->nom ?? ''),
+            'telephone' => (string) ($this->currentContact->telephone ?? ''),
+            'email' => (string) ($this->currentContact->email ?? ''),
+            'ville' => (string) ($this->currentContact->ville ?? ''),
+            'statut' => $this->statusValue($this->currentContact->statut),
+            'nb_salaries_libelle' => (string) ($this->currentContact->nb_salaries_libelle ?? ''),
+            'notes' => (string) ($this->currentContact->notes ?? ''),
+        ];
+        $this->showInlineProspectEditor = true;
+    }
+
+    public function cancelInlineProspectEditor(): void
+    {
+        $this->showInlineProspectEditor = false;
+    }
+
+    public function saveInlineProspect(): void
+    {
+        if (! $this->currentContact instanceof Prospect) {
+            return;
+        }
+
+        $validated = validator($this->prospectEdit, [
+            'nom' => 'required|string|max:255',
+            'telephone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'ville' => 'nullable|string|max:255',
+            'statut' => 'nullable|string|max:80',
+            'nb_salaries_libelle' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ])->validate();
+
+        $prospect = $this->currentContact->fresh();
+        $prospect->fill($validated);
+        if ($prospect->isDirty('nb_salaries_libelle')) {
+            $raw = trim((string) $prospect->nb_salaries_libelle);
+            if ($raw === '') {
+                $prospect->nb_salaries = null;
+            } elseif (preg_match('/(\d[\d\s]*)\s*(?:à|a|-|–|—|to)\s*(\d[\d\s]*)$/ui', $raw, $matches)) {
+                $low = (int) preg_replace('/\D/', '', $matches[1]);
+                $high = (int) preg_replace('/\D/', '', $matches[2]);
+                $prospect->nb_salaries = $high > 0 ? intdiv($low + $high, 2) : $low;
+            } elseif (preg_match('/\d[\d\s]*/', $raw, $matches)) {
+                $prospect->nb_salaries = (int) preg_replace('/\D/', '', $matches[0]);
+            } else {
+                $prospect->nb_salaries = null;
+            }
+        }
+
+        if (! $prospect->isDirty()) {
+            $this->showInlineProspectEditor = false;
+            Notification::make()->title('Aucune modification')->info()->send();
+            return;
+        }
+
+        $prospect->save();
+        $this->currentContact = $prospect;
+        $this->currentContactData = array_merge($this->currentContactData, $prospect->toArray());
+        $this->showInlineProspectEditor = false;
+        Notification::make()
+            ->title('Fiche mise à jour')
+            ->body('Les anciennes et nouvelles valeurs sont enregistrées dans l’historique.')
+            ->success()
+            ->send();
+    }
     public function selectSupervisedUser(int $userId): void
     {
         $this->supervisedUserId = $userId;
@@ -398,6 +516,7 @@ class PhoningWorkflow extends Page
         if (empty($this->contactQueue)) {
             $this->currentContact = null;
             $this->currentContactData = [];
+            $this->notesList = [];
             $this->total = 0;
             $this->progress = 0;
 
@@ -419,7 +538,9 @@ class PhoningWorkflow extends Page
         $model = $this->resolveModel($next['type'], $next['id']);
 
         if (! $model) {
-            array_shift($this->contactQueue);
+            $processedId = (int) ($next['id'] ?? 0);
+            $processedType = $next['type'] ?? '';
+            $this->contactQueue = collect($this->contactQueue)->reject(fn (array $item) => (int) ($item['id'] ?? 0) === $processedId && ($item['type'] ?? '') === $processedType)->values()->all();
             $this->loadNextContact();
 
             return;
@@ -429,6 +550,7 @@ class PhoningWorkflow extends Page
         $this->contactType = $next['type'];
         $this->currentCampagneId = $next['campagne_id'] ?? null;
         $this->currentContactData = $this->buildContactData($model, $next['type']);
+        $this->refreshNotesList();
 
         $this->resetContactFormFields();
         $this->populateContactFormFields($model, $next['type']);
@@ -563,6 +685,7 @@ class PhoningWorkflow extends Page
                     $this->currentContact = $model;
                     $this->contactType = $resolvedType;
                     $this->currentContactData = $this->buildContactData($model, $resolvedType);
+                    $this->refreshNotesList();
                     $this->incomingCallMatches = [[
                         'id' => $targetId,
                         'type' => $resolvedType,
@@ -695,6 +818,13 @@ class PhoningWorkflow extends Page
                     $this->currentContact->rendezVous()->latest('date_heure')->first()
                 );
                 if (! empty($docs)) {
+                    $latestAppel = Appel::where('appelable_type', Prospect::class)
+                        ->where('appelable_id', $this->currentContact->id)
+                        ->latest('id')
+                        ->first();
+                    if ($latestAppel && ! blank($docs[0]->path ?? null)) {
+                        $latestAppel->update(['fiche_docx_path' => $docs[0]->path]);
+                    }
                     $noms = collect($docs)->pluck('nom_fichier')->implode(', ');
                     Notification::make()
                         ->title('Fiches générées automatiquement')
@@ -723,12 +853,246 @@ class PhoningWorkflow extends Page
 
         $this->resetEmailPreviewState();
 
-        array_shift($this->contactQueue);
+        $processedId = (int) $this->currentContact->getKey();
+        $processedType = $this->contactType;
+        $this->contactQueue = collect($this->contactQueue)->reject(fn (array $item) => (int) ($item['id'] ?? 0) === $processedId && ($item['type'] ?? '') === $processedType)->values()->all();
         $this->completed++;
 
         $this->checkCampagneCompletion();
 
         $this->loadNextContact();
+    }
+
+    public function getMailTemplates(): array
+    {
+        $contactType = strtolower((string) ($this->contactType ?: "prospect"));
+        if (! in_array($contactType, ["prospect", "client", "partenaire"], true)) {
+            $contactType = "prospect";
+        }
+
+        return EmailTemplate::query()
+            ->where("actif", true)
+            ->where("contact_type", $contactType)
+            ->orderBy("nom")
+            ->get(["cle", "nom"])
+            ->mapWithKeys(fn (EmailTemplate $template) => [$template->cle => $template->nom])
+            ->all();
+    }
+
+    protected function mailTemplateVariables(): array
+    {
+        $prospect = $this->currentContact instanceof Prospect ? $this->currentContact : null;
+        $rdv = $prospect?->rendezVous()->latest('date_heure')->first();
+        $interlocuteurNom = trim((string) ($prospect?->interlocuteur_nom ?: $prospect?->fallback_interlocuteur_nom));
+        $parts = preg_split('/\s+/', $interlocuteurNom, 2) ?: [];
+        $interlocuteurPrenom = $parts[0] ?? '';
+        $interlocuteurNomFamille = $parts[1] ?? '';
+        $commercial = $prospect?->commercial;
+        $user = Auth::user();
+        $dateHeureRdv = $rdv?->date_heure;
+        $rdvDate = $dateHeureRdv instanceof \Carbon\CarbonInterface ? $dateHeureRdv->format('d/m/Y') : '';
+        $rdvHeure = $dateHeureRdv instanceof \Carbon\CarbonInterface ? $dateHeureRdv->format('H:i') : '';
+        $rdvJour = $dateHeureRdv instanceof \Carbon\CarbonInterface ? ucfirst($dateHeureRdv->locale('fr')->translatedFormat('l')) : '';
+        $entreprise = (string) ($prospect?->raison_sociale ?: $prospect?->nom ?: '');
+        $commercialNom = trim((string) ($commercial?->name ?: $user?->name ?: ''));
+        $commercialParts = preg_split('/\s+/', $commercialNom, 2) ?: [];
+
+        return [
+            'nom' => (string) ($prospect?->nom ?? ''),
+            'prenom' => $interlocuteurPrenom,
+            'nom_famille' => $interlocuteurNomFamille,
+            'entreprise_nom' => $entreprise,
+            'raison_sociale' => $entreprise,
+            'prospect_nom' => (string) ($prospect?->nom ?? ''),
+            'prospect_prenom' => $interlocuteurPrenom,
+            'contact_nom' => $interlocuteurNomFamille,
+            'contact_prenom' => $interlocuteurPrenom,
+            'contact_prenom_nom' => $interlocuteurNom,
+            'interlocuteur_nom' => $interlocuteurNom,
+            'interlocuteur_prenom' => $interlocuteurPrenom,
+            'interlocuteur_email' => (string) ($prospect?->interlocuteur_email ?: $prospect?->fallback_interlocuteur_email ?: ''),
+            'interlocuteur_telephone' => (string) ($prospect?->interlocuteur_telephone ?: $prospect?->fallback_interlocuteur_telephone ?: ''),
+            'email' => (string) ($prospect?->interlocuteur_email ?: $prospect?->fallback_interlocuteur_email ?: ''),
+            'telephone' => (string) ($prospect?->interlocuteur_telephone ?: $prospect?->fallback_interlocuteur_telephone ?: ''),
+            'ville' => (string) ($prospect?->ville ?? ''),
+            'departement' => (string) ($prospect?->departement ?? ''),
+            'nb_salaries' => (string) ($prospect?->nb_salaries ?? ''),
+            'cse_prenom' => $interlocuteurPrenom,
+            'cse_nom' => $interlocuteurNomFamille,
+            'cse_prenom_nom' => $interlocuteurNom,
+            'elu_prenom' => $interlocuteurPrenom,
+            'elu_nom' => $interlocuteurNomFamille,
+            'elu_email' => (string) ($prospect?->interlocuteur_email ?: $prospect?->fallback_interlocuteur_email ?: ''),
+            'elu_telephone' => (string) ($prospect?->interlocuteur_telephone ?: $prospect?->fallback_interlocuteur_telephone ?: ''),
+            'rdv_jour' => $rdvJour,
+            'rdv_date' => $rdvDate,
+            'rdv_heure' => $rdvHeure,
+            'rdv_lieu' => (string) ($rdv?->lieu ?? $this->lieu_rdv ?? ''),
+            'commercial_nom' => $commercialNom,
+            'commercial_prenom' => $commercialParts[0] ?? '',
+            'responsable_prenom' => $commercialParts[0] ?? $interlocuteurPrenom,
+            'responsable_prenom_nom' => $commercialNom,
+            'teleprospecteur_nom' => (string) ($user?->name ?? ''),
+            'teleprospecteur_prenom' => (string) (($user?->name ? preg_split('/\s+/', $user->name)[0] : '') ?: ''),
+            'date' => now()->format('d/m/Y'),
+            'heure' => now()->format('H:i'),
+            'lieu' => (string) ($rdv?->lieu ?? $this->lieu_rdv ?? ''),
+        ];
+    }
+    public function loadMailTemplate(?string $key = null): void
+    {
+        $key = $key ?: $this->mailTemplateKey;
+        $contactType = strtolower((string) ($this->contactType ?: "prospect"));
+        $template = blank($key) ? null : EmailTemplate::query()
+            ->where("cle", $key)
+            ->where("actif", true)
+            ->where(function ($query) use ($contactType): void {
+                $query->whereNull("contact_type")->orWhere("contact_type", $contactType);
+            })
+            ->first();
+        if (! $template) { Notification::make()->title('Modèle introuvable')->danger()->send(); return; }
+        $this->mailTemplateKey = $template->cle;
+        $this->mailSubject = $template->renderSujet($this->mailTemplateVariables());
+        $this->mailBody = $template->renderCorps($this->mailTemplateVariables());
+    }
+
+    public function generateFicheFromMail(): void
+    {
+        $this->dispatchFicheGenerationJob();
+        Notification::make()->title('Génération de fiche lancée')->body('Le document sera lié au dernier appel du prospect.')->info()->send();
+    }
+
+    public function openMailPdfPicker(): void
+    {
+        $this->showMailPdfPicker = true;
+    }
+
+    public function closeMailPdfPicker(): void
+    {
+        $this->showMailPdfPicker = false;
+    }
+
+    public function selectMailPdf(string $path): void
+    {
+        $available = collect($this->getLinkedFicheDocuments())
+            ->pluck('pdf_path')
+            ->filter()
+            ->map(fn ($value) => (string) $value)
+            ->values();
+
+        if ($available->contains($path)) {
+            $this->mailSelectedPdfPaths = [$path];
+            $this->mailAttachBlueSheet = true;
+        }
+        $this->showMailPdfPicker = false;
+    }
+
+    public function updatedMailExternalAttachments(): void
+    {
+        $this->validate([
+            'mailExternalAttachments.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,txt',
+        ]);
+    }
+
+    public function openMailTabPreview(): void
+    {
+        $this->mailRecipient = trim($this->mailRecipient);
+        if (! filter_var($this->mailRecipient, FILTER_VALIDATE_EMAIL)) {
+            Notification::make()->title('Destinataire invalide')->body('Saisissez une adresse email valide.')->danger()->send(); return;
+        }
+        if (blank(trim($this->mailSubject)) || blank(strip_tags($this->mailBody))) {
+            Notification::make()->title('Mail incomplet')->body('Le sujet et le corps sont obligatoires.')->danger()->send(); return;
+        }
+        $this->emailPreviewContext = 'mail_tab'; $this->showEmailPreview = true;
+        $this->emailPreviewRecipient = $this->mailRecipient; $this->emailPreviewCcEnabled = $this->mailCcEnabled;
+        $this->emailPreviewCc = $this->mailCc ?: config('mail.from.address');
+        $previewBody = $this->normalizeWorkflowMailHtml((string) $this->mailBody) . $this->workflowSignatureHtml();
+        $this->emailPreviewSubject = $this->mailSubject; $this->emailPreviewBody = $previewBody;
+        $this->emailPreviewOriginalSubject = $this->mailSubject; $this->emailPreviewOriginalBody = $previewBody;
+        $this->emailPreviewConfirmed = false;
+    }
+
+    protected function resolveWorkflowPdfPath(Prospect $prospect): ?string
+    {
+        $raison = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($prospect->raison_sociale ?: $prospect->nom ?: 'prospect'));
+        $raison = substr($raison, 0, 50);
+        $dir = storage_path('app/public/fiches-pdf/' . now()->format('Y/m'));
+        $matches = glob($dir . '/Fiche_bleue_' . $raison . '_*.pdf') ?: glob($dir . '/Fiche_*_' . $raison . '_*.pdf');
+        if (! $matches) return null;
+        usort($matches, fn ($a, $b) => filemtime($b) <=> filemtime($a));
+        return $matches[0] ?? null;
+    }
+
+    protected function resolveWorkflowAudioPath(Prospect $prospect): ?string
+    {
+        $appel = $prospect->appels()->whereNotNull('enregistrement_audio')->latest('date_heure')->first();
+        $path = $appel?->enregistrement_audio;
+        if (! $path) return null;
+        if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
+        foreach ([storage_path('app/public/' . ltrim($path, '/')), storage_path('app/' . ltrim($path, '/')), $path] as $candidate) {
+            if (is_file($candidate)) return $candidate;
+        }
+        return null;
+    }
+
+    protected function sendMailFromWorkflow(): void
+    {
+        $prospect = $this->currentContact instanceof Prospect ? $this->currentContact : null;
+        if (! $prospect || ! filter_var($this->emailPreviewRecipient, FILTER_VALIDATE_EMAIL)) {
+            Notification::make()->title('Envoi impossible')->body('Le prospect ou le destinataire est manquant.')->danger()->send(); return;
+        }
+        $pdfPath = null;
+        if ($this->mailAttachBlueSheet) {
+            $pdfPath = $this->mailSelectedPdfPaths[0] ?? $this->resolveWorkflowPdfPath($prospect);
+        }
+        $audioPath = $this->mailAttachAudio ? $this->resolveWorkflowAudioPath($prospect) : null;
+        $cc = $this->emailPreviewCcEnabled && filter_var(trim((string) $this->emailPreviewCc), FILTER_VALIDATE_EMAIL) ? trim((string) $this->emailPreviewCc) : null;
+        $bcc = $this->mailBccEnabled && filter_var(trim($this->mailBcc), FILTER_VALIDATE_EMAIL) ? trim($this->mailBcc) : null;
+        $mailBody = $this->normalizeWorkflowMailHtml((string) $this->emailPreviewBody);
+        $signatureUser = Auth::user();
+        $signatureName = $signatureUser?->name ?: $prospect->commercial?->nom_complet ?: config('mail.from.name');
+        $signaturePhone = $signatureUser?->telephone ?? $signatureUser?->phone ?? null;
+        $signatureEmail = $signatureUser?->email ?: config('mail.from.address');
+        $externalPaths = [];
+        foreach ($this->mailExternalAttachments as $uploaded) {
+            if ($uploaded instanceof TemporaryUploadedFile) {
+                $storedPath = $uploaded->store('mail-attachments', 'local');
+                if ($storedPath) {
+                    $externalPaths[] = Storage::disk('local')->path($storedPath);
+                }
+            }
+        }
+        $mailable = new PhoningWorkflowMail((string) $this->emailPreviewSubject, $mailBody, $pdfPath, $audioPath, null, null, null, $externalPaths);
+        Log::info('PhoningWorkflow: envoi manuel préparé', ['prospect_id'=>$prospect->id, 'to'=>$this->emailPreviewRecipient, 'cc'=>$cc, 'template'=>$this->mailTemplateKey ?: 'manuel', 'pdf'=>(bool)$pdfPath, 'audio'=>(bool)$audioPath, 'user_id'=>Auth::id()]);
+        dispatch(new SendProspectionMailJob(mailable:$mailable, to:(string)$this->emailPreviewRecipient, emailLabel:'Mail depuis le workflow de phoning', prospectId:$prospect->id, notifyUserId:Auth::id(), sourceEmail:config('mail.from.address'), cc:$cc, bcc:$bcc));
+        Notification::make()->title('Email mis en file d’envoi')->body('Le suivi sera visible dans les notifications.')->success()->send();
+        $this->resetEmailPreviewState();
+    }
+
+    protected function workflowSignatureHtml(): string
+    {
+        $user = Auth::user();
+        $name = $user?->name ?: $this->currentContact?->commercial?->nom_complet ?: config('mail.from.name');
+        $phone = $user?->telephone ?? $user?->phone ?? null;
+        $email = $user?->email ?: config('mail.from.address');
+        if (! $name && ! $phone && ! $email) return '';
+        return '<div style="margin-top:28px;padding-top:14px;border-top:1px solid #e5e7eb;color:#4b5563;font-size:14px;line-height:1.5;".'
+            .($name ? '<div style="font-weight:600;">'.e($name).'</div>' : '')
+            .($phone ? '<div>Tél. '.e($phone).'</div>' : '')
+            .($email ? '<div><a href="mailto:'.e($email).'" style="color:#2563eb;">'.e($email).'</a></div>' : '')
+            .'</div>';
+    }
+
+    protected function normalizeWorkflowMailHtml(string $body): string
+    {
+        $body = trim($body);
+        if ($body === '') return '';
+        // Content from the rich editor already contains HTML; preserve it.
+        if ($body !== strip_tags($body)) return $body;
+        $escaped = e($body);
+        return collect(preg_split('/\R/', $escaped) ?: [])
+            ->map(fn ($line) => trim($line) === '' ? '<div style="height:0.75rem;"></div>' : '<p style="margin:0 0 0.85rem;">'.$line.'</p>')
+            ->implode('');
     }
 
     protected function shouldPreviewEmail(): bool
@@ -745,8 +1109,11 @@ class PhoningWorkflow extends Page
             return;
         }
 
+        $this->emailPreviewContext = 'qualification';
         $this->showEmailPreview = true;
         $this->emailPreviewRecipient = $payload['recipient'];
+        $this->emailPreviewCcEnabled = false;
+        $this->emailPreviewCc = config('mail.from.address');
         $this->emailPreviewSubject = $payload['subject'];
         $this->emailPreviewBody = $payload['body'];
         $this->emailPreviewOriginalSubject = $payload['subject'];
@@ -754,13 +1121,16 @@ class PhoningWorkflow extends Page
         $this->emailPreviewConfirmed = false;
     }
 
-    public function syncEmailPreviewContent(string $subject, string $body, ?string $recipient = null): void
+    public function syncEmailPreviewContent(string $subject, string $body, ?string $recipient = null, ?string $cc = null): void
     {
         $this->emailPreviewSubject = trim($subject);
         $this->emailPreviewBody = $body;
 
         if ($recipient !== null && filter_var(trim($recipient), FILTER_VALIDATE_EMAIL)) {
             $this->emailPreviewRecipient = trim($recipient);
+        }
+        if ($cc !== null && filter_var(trim($cc), FILTER_VALIDATE_EMAIL)) {
+            $this->emailPreviewCc = trim($cc);
         }
     }
 
@@ -779,6 +1149,10 @@ class PhoningWorkflow extends Page
         $this->emailPreviewConfirmed = true;
         $this->showEmailPreview = false;
 
+        if ($this->emailPreviewContext === 'mail_tab') {
+            $this->sendMailFromWorkflow();
+            return;
+        }
         $this->submitResult();
     }
 
@@ -790,8 +1164,11 @@ class PhoningWorkflow extends Page
     protected function resetEmailPreviewState(): void
     {
         $this->showEmailPreview = false;
+        $this->emailPreviewContext = 'qualification';
         $this->emailPreviewConfirmed = false;
         $this->emailPreviewRecipient = null;
+        $this->emailPreviewCcEnabled = false;
+        $this->emailPreviewCc = null;
         $this->emailPreviewSubject = null;
         $this->emailPreviewBody = null;
         $this->emailPreviewOriginalSubject = null;
@@ -1095,6 +1472,29 @@ class PhoningWorkflow extends Page
 
         $this->persistProspectInterlocuteurFields($prospect);
 
+        // Planifier le rappel selon paramètres back-office.
+        // Répondeur/NRP doit toujours revenir dans la file avec un délai minimum de 3 h.
+        if (in_array($this->statut_resultat, ['nrp', 'repondeur'], true)) {
+            $this->programmerRappelRepondeur($prospect);
+        } elseif ($this->rappel_date) {
+            $this->appliquerRappelProspect($prospect);
+        } elseif ($statutMeta?->delai_rappel_jours) {
+            $prospect->programmerRappel(now()->addDays($statutMeta->delai_rappel_jours));
+        } elseif ($statutMeta?->compte_comme_tentative) {
+            $max = (int) app(CrmSettingsService::class)->get('prospection.max_standard_attempts', 3);
+            $tentatives = $this->compterTentativesNonAbouties($prospect) + 1;
+            if ($tentatives >= $max) {
+                $stdNr = ProspectStatut::tryFrom('STD_NR') ?? ProspectStatut::STD_NR;
+                $prospect->changerStatut($stdNr, "{$max} tentatives sans réponse");
+                $prospect->marquerDifficile();
+                $jours = (int) app(CrmSettingsService::class)->get('prospection.std_nr_reminder_days', 2);
+                $prospect->programmerRappel(now()->addDays($jours));
+            } else {
+                // Fiche encore sous le seuil : nouvelle tentative auto après un délai court
+                $heures = (int) app(CrmSettingsService::class)->get('prospection.retry_reminder_hours', 3);
+                $prospect->programmerRappel(now()->addHours($heures));
+            }
+        }
         // ── Envoi du mail correspondant au statut ──────────────────────
         $rdv = null; // déclarée en amont : nécessaire pour TOUS les statuts, pas seulement 'rdv'
 
@@ -1114,26 +1514,6 @@ class PhoningWorkflow extends Page
             $this->buildProspectionMailContext($rdv)
         );
 
-        // Planifier le rappel selon paramètres back-office
-        if ($this->rappel_date) {
-            $this->appliquerRappelProspect($prospect);
-        } elseif ($statutMeta?->delai_rappel_jours) {
-            $prospect->programmerRappel(now()->addDays($statutMeta->delai_rappel_jours));
-        } elseif ($statutMeta?->compte_comme_tentative) {
-            $max = (int) app(CrmSettingsService::class)->get('prospection.max_standard_attempts', 3);
-            $tentatives = $this->compterTentativesNonAbouties($prospect) + 1;
-            if ($tentatives >= $max) {
-                $stdNr = ProspectStatut::tryFrom('STD_NR') ?? ProspectStatut::STD_NR;
-                $prospect->changerStatut($stdNr, "{$max} tentatives sans réponse");
-                $prospect->marquerDifficile();
-                $jours = (int) app(CrmSettingsService::class)->get('prospection.std_nr_reminder_days', 2);
-                $prospect->programmerRappel(now()->addDays($jours));
-            } else {
-                // Fiche encore sous le seuil : nouvelle tentative auto après un délai court
-                $heures = (int) app(CrmSettingsService::class)->get('prospection.retry_reminder_hours', 3);
-                $prospect->programmerRappel(now()->addHours($heures));
-            }
-        }
     }
 
     protected function getProspectInterlocuteurUpdateData(): array
@@ -1199,6 +1579,7 @@ class PhoningWorkflow extends Page
 
         $this->currentContact = $this->resolveModel($this->contactType, $this->currentContact->id);
         $this->currentContactData = $this->buildContactData($this->currentContact, $this->contactType);
+        $this->refreshNotesList();
         $this->populateContactFormFields($this->currentContact, $this->contactType);
 
         Notification::make()
@@ -1285,7 +1666,7 @@ class PhoningWorkflow extends Page
             $val = $this->rappel_date . ($this->rappel_heure ? ' ' . $this->rappel_heure : '');
             $dt = \DateTime::createFromFormat($fmt, $val);
             if ($dt) {
-                $prospect->programmerRappel($dt);
+                $prospect->programmerRappel($dt, true);
             }
         } catch (\Exception) {
         }
@@ -1333,6 +1714,11 @@ class PhoningWorkflow extends Page
             return false;
         }
 
+        // Répondeur/NRP nécessite toujours une trace de ce qui a été entendu ou laissé.
+        if (in_array($this->statut_resultat, ['nrp', 'repondeur'], true)) {
+            return true;
+        }
+
         $statut = $this->getSelectedStatus();
 
         return (bool) ($statut?->note_obligatoire);
@@ -1369,6 +1755,29 @@ class PhoningWorkflow extends Page
             ->where('appelable_id', $contact->id)
             ->whereIn('phoning_status', $codes)
             ->count();
+    }
+
+    public function getLinkedFicheDocuments(): array
+    {
+        $contact = $this->currentContact;
+        if (! $contact instanceof Prospect) {
+            return ['docx_url' => null, 'docx_name' => null, 'pdf_url' => null, 'pdf_path' => null, 'pdf_name' => null, 'fiche_type' => null];
+        }
+        $docx = $contact->documents()
+            ->where('mime_type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            ->latest('id')->first();
+        $appel = Appel::where('appelable_type', Prospect::class)
+            ->where('appelable_id', $contact->id)
+            ->whereNotNull('fiche_word_path')
+            ->latest('id')->first();
+        return [
+            'docx_url' => $docx ? Storage::disk('public')->url($docx->path) : null,
+            'docx_name' => $docx?->nom_fichier,
+            'pdf_url' => $appel?->fiche_word_path,
+            'pdf_path' => $appel ? $this->resolveWorkflowPdfPath($contact) : null,
+            'pdf_name' => $appel?->fiche_word_path ? basename(parse_url($appel->fiche_word_path, PHP_URL_PATH) ?: $appel->fiche_word_path) : null,
+            'fiche_type' => $appel?->fiche_type,
+        ];
     }
 
     // ── Fiches récap ──────────────────────────────────────────────────
@@ -1492,7 +1901,7 @@ class PhoningWorkflow extends Page
     public function getCallHistory(): array
     {
         if (! $this->currentContact) {
-            return [];
+            return ['docx_url' => null, 'docx_name' => null, 'pdf_url' => null, 'pdf_path' => null, 'pdf_name' => null, 'fiche_type' => null];
         }
 
         return Appel::where('appelable_type', get_class($this->currentContact))
@@ -1528,15 +1937,42 @@ class PhoningWorkflow extends Page
             ->toArray();
     }
 
+    protected function programmerRappelRepondeur(Prospect $prospect): void
+    {
+        $minimum = now()->addHours(3);
+        $dateSaisie = null;
+
+        if ($this->rappel_date) {
+            $format = 'Y-m-d' . ($this->rappel_heure ? ' H:i' : '');
+            $valeur = $this->rappel_date . ($this->rappel_heure ? ' ' . $this->rappel_heure : '');
+            $dateSaisie = Carbon::createFromFormat($format, $valeur);
+        }
+
+        // Une date plus éloignée reste autorisée ; une date trop proche est repoussée à J+3 h.
+        $rappel = $dateSaisie && $dateSaisie->greaterThan($minimum) ? $dateSaisie : $minimum;
+        $prospect->programmerRappel($rappel, true);
+    }
+
     // ── Passer ────────────────────────────────────────────────────────
     public function skipCall(): void
     {
         if (empty($this->contactQueue)) {
             return;
         }
+
         $first = array_shift($this->contactQueue);
         $this->contactQueue[] = $first;
-        Notification::make()->title('Contact passé')->body('Repoussé en fin de file.')->warning()->send();
+
+        // « Passer » signifie également repousser la fiche d’au moins 3 heures.
+        if (($this->contactType ?: 'prospect') === 'prospect' && $this->currentContact instanceof Prospect) {
+            $this->currentContact->programmerRappel(now()->addHours(3), true);
+        }
+
+        Notification::make()
+            ->title('Contact passé')
+            ->body('Repoussé en fin de file avec un rappel dans au moins 3 heures.')
+            ->warning()
+            ->send();
         $this->loadNextContact();
     }
 
@@ -1704,6 +2140,90 @@ class PhoningWorkflow extends Page
     {
         return $this->compterTentativesNonAbouties();
     }
+    protected function refreshNotesList(): void
+    {
+        $this->notesList = [];
+
+        if (! $this->currentContact || ! method_exists($this->currentContact, 'notesCommentaires')) {
+            return;
+        }
+
+        $this->notesList = $this->currentContact->notesCommentaires()
+            ->with('user:id,prenom,nom,email')
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(fn (NoteCommentaire $note): array => [
+                'id' => $note->id,
+                'type_note' => $note->type_note,
+                'type_note_label' => $note->type_note_label,
+                'contenu' => $note->contenu,
+                'is_prive' => (bool) $note->is_prive,
+                'user_name' => $note->user
+                    ? trim(($note->user->prenom ?? '') . ' ' . ($note->user->nom ?? ''))
+                    : 'Utilisateur supprimé',
+                'created_at' => optional($note->created_at)->format('d/m/Y H:i'),
+            ])
+            ->all();
+    }
+
+    public function addNote(): void
+    {
+        $content = trim($this->newNoteContent);
+        if ($content === '') {
+            Notification::make()->title('Note vide')->body('Saisissez un contenu avant d’ajouter la note.')->warning()->send();
+            return;
+        }
+
+        if (! $this->currentContact || ! method_exists($this->currentContact, 'notesCommentaires')) {
+            Notification::make()->title('Contact non disponible')->body('Aucun contact courant ne peut recevoir une note.')->danger()->send();
+            return;
+        }
+
+        $allowedTypes = ['note', 'commentaire', 'suivi', 'phoning', 'fiche'];
+        $type = in_array($this->newNoteType, $allowedTypes, true) ? $this->newNoteType : 'note';
+
+        $this->currentContact->notesCommentaires()->create([
+            'user_id' => Auth::id(),
+            'type_note' => $type,
+            'contenu' => $content,
+            'is_prive' => $this->newNoteIsPrive,
+            'contexte' => ['source' => 'phoning_workflow'],
+        ]);
+
+        $this->newNoteContent = '';
+        $this->newNoteType = 'note';
+        $this->newNoteIsPrive = false;
+        $this->refreshNotesList();
+
+        Notification::make()->title('Note ajoutée')->success()->send();
+    }
+
+    public function deleteNote(int $noteId): void
+    {
+        if (! $this->currentContact || ! method_exists($this->currentContact, 'notesCommentaires')) {
+            return;
+        }
+
+        $note = $this->currentContact->notesCommentaires()->whereKey($noteId)->first();
+        if (! $note) {
+            Notification::make()->title('Note introuvable')->warning()->send();
+            return;
+        }
+
+        $user = Auth::user();
+        $canDelete = $note->user_id === $user?->id
+            || $user?->hasAnyRole(['super_admin', 'administrateur']);
+        if (! $canDelete) {
+            Notification::make()->title('Suppression non autorisée')->danger()->send();
+            return;
+        }
+
+        $note->delete();
+        $this->refreshNotesList();
+        Notification::make()->title('Note supprimée')->success()->send();
+    }
+
     public function selectCampagne(int $campagneId): void
     {
         $this->currentCampagneId = $campagneId;
@@ -1771,7 +2291,7 @@ class PhoningWorkflow extends Page
     public function getContactsRestantsCount(): int
     {
         if ($this->campagneFiltreId) {
-            return CampagnePhoning::find($this->campagneFiltreId)?->countQueueContacts() ?? 0;
+            return CampagnePhoning::find($this->campagneFiltreId)?->countContacts() ?? 0;
         }
 
         $userId = $this->supervisedUserId ?? Auth::id();
@@ -1779,7 +2299,7 @@ class PhoningWorkflow extends Page
         return CampagnePhoning::active()
             ->forUser($userId)
             ->get()
-            ->sum(fn (CampagnePhoning $campagne) => $campagne->countQueueContacts());
+            ->sum(fn (CampagnePhoning $campagne) => $campagne->countContacts());
     }
 
     public function getCampagnesDisponibles(): array
@@ -1798,6 +2318,110 @@ class PhoningWorkflow extends Page
             ->toArray();
     }
 
+
+    public ?string $historyRdvFrom = null;
+    public ?string $historyRdvTo = null;
+    public ?string $historyRappelFrom = null;
+    public ?string $historyRappelTo = null;
+    public ?string $historyRappelStatut = null;
+    public ?int $historyRappelCommercialId = null;
+
+    private function historyContact(): ?object
+    {
+        $contact = $this->currentContact;
+        return ($contact instanceof \App\Models\Prospect || $contact instanceof \App\Models\Client) ? $contact : null;
+    }
+
+    public function getRendezVousHistory(): \Illuminate\Support\Collection
+    {
+        $contact = $this->historyContact();
+        if (! $contact) return collect();
+        return \App\Models\RendezVous::query()
+            ->where('rdvable_type', $contact::class)
+            ->where('rdvable_id', $contact->getKey())
+            ->when($this->historyRdvFrom, fn ($q) => $q->whereDate('date_heure', '>=', $this->historyRdvFrom))
+            ->when($this->historyRdvTo, fn ($q) => $q->whereDate('date_heure', '<=', $this->historyRdvTo))
+            ->latest('date_heure')->limit(100)->get();
+    }
+
+    public function getRappelHistory(): \Illuminate\Support\Collection
+    {
+        $contact = $this->historyContact();
+        if (! $contact) return collect();
+        return \App\Models\Appel::query()
+            ->where('appelable_type', $contact::class)
+            ->where('appelable_id', $contact->getKey())
+            ->where('resultat', \App\Enums\EventResult::Rappel)
+            ->when($this->historyRappelFrom, fn ($q) => $q->whereDate('date_heure', '>=', $this->historyRappelFrom))
+            ->when($this->historyRappelTo, fn ($q) => $q->whereDate('date_heure', '<=', $this->historyRappelTo))
+            ->when($this->historyRappelStatut, fn ($q) => $q->where(function ($statusQuery) {
+                $statusQuery->where('phoning_status', $this->historyRappelStatut)
+                    ->orWhere('phoning_result', $this->historyRappelStatut);
+            }))
+            ->when($this->historyRappelCommercialId, function ($q) {
+                $contact = $this->historyContact();
+                if ($contact && (int) ($contact->commercial_id ?? 0) !== (int) $this->historyRappelCommercialId) {
+                    $q->whereRaw('1 = 0');
+                }
+            })
+            ->latest('date_heure')->limit(100)->get();
+    }
+
+    public function getHistoryRappelStatutOptionsProperty(): array
+    {
+        return StatutPhoning::forModelType($this->contactType ?: 'prospect')->pluck('label', 'code')->toArray();
+    }
+    public function getHistoryRappelCommercialOptionsProperty(): array
+    {
+        return User::query()->whereHas('roles', fn ($q) => $q->where('name', 'commercial'))->orderBy('nom')->get()->mapWithKeys(fn ($user) => [$user->id => trim($user->prenom . ' ' . $user->nom)])->toArray();
+    }
+    private function historyValue(mixed $value): string
+    {
+        if ($value instanceof \BackedEnum) {
+            return method_exists($value, 'label') ? $value->label() : (string) $value->value;
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('d/m/Y H:i');
+        }
+        return (string) ($value ?? '');
+    }
+
+    public function exportHistory(string $history, string $format)
+    {
+        abort_unless(in_array($history, ['rdv', 'rappels'], true), 404);
+        abort_unless(in_array($format, ['csv', 'pdf'], true), 404);
+        $rows = $history === 'rdv' ? $this->getRendezVousHistory() : $this->getRappelHistory();
+        $prefix = $history === 'rdv' ? 'historique-rendez-vous' : 'historique-rappels';
+        if ($format === 'csv') {
+            return response()->streamDownload(function () use ($rows, $history) {
+                $out = fopen('php://output', 'w');
+                fwrite($out, "\\xEF\\xBB\\xBF");
+                $headers = $history === 'rdv'
+                    ? ['Date', 'Type', 'Interlocuteur', 'Lieu', 'Résultat', 'Notes']
+                    : ['Date', 'Résultat', 'Commentaire', 'Durée (s)'];
+                fputcsv($out, $headers, ';');
+                foreach ($rows as $row) {
+                    if ($history === 'rdv') {
+                        fputcsv($out, [$row->date_heure, $this->historyValue($row->type), $row->interlocuteur_nom, $row->lieu, $this->historyValue($row->resultat), $row->commentaire ?: $row->notes], ';');
+                    } else {
+                        fputcsv($out, [$row->date_heure, $this->historyValue($row->resultat), $row->commentaire, $row->duree_secondes], ';');
+                    }
+                }
+                fclose($out);
+            }, $prefix . '-' . now()->format('Ymd-His') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+        $html = '<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:DejaVu Sans,Arial,sans-serif;font-size:11px;color:#172033}h1{font-size:18px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:6px;text-align:left}th{background:#e2e8f0}</style></head><body>';
+        $html .= '<h1>' . e($history === 'rdv' ? 'Historique des rendez-vous' : 'Historique des rappels') . '</h1><table><thead><tr>';
+        $headers = $history === 'rdv' ? ['Date', 'Type', 'Interlocuteur', 'Lieu', 'Résultat', 'Notes'] : ['Date', 'Résultat', 'Commentaire', 'Durée'];
+        foreach ($headers as $header) $html .= '<th>' . e($header) . '</th>';
+        $html .= '</tr></thead><tbody>';
+        foreach ($rows as $row) {
+            $values = $history === 'rdv' ? [$row->date_heure, $this->historyValue($row->type), $row->interlocuteur_nom, $row->lieu, $this->historyValue($row->resultat), $row->commentaire ?: $row->notes] : [$row->date_heure, $this->historyValue($row->resultat), $row->commentaire, $row->duree_secondes];
+            $html .= '<tr>' . implode('', array_map(fn ($value) => '<td>' . e((string) ($value ?? '')) . '</td>', $values)) . '</tr>';
+        }
+        $html .= '</tbody></table></body></html>';
+        return \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->download($prefix . '-' . now()->format('Ymd-His') . '.pdf');
+    }
 
     protected function getHeaderActions(): array
     {

@@ -44,8 +44,8 @@ class ImportLogResource extends Resource
                     ->label('Erreurs')
                     ->icon('heroicon-o-exclamation-triangle')
                     ->color('danger')
-                    ->visible(fn ($r) => ! empty($r->errors))
-                    ->modalContent(fn ($r) => view('filament.super-admin.import-errors', ['errors' => $r->errors]))
+                    ->visible(fn ($record) => ! empty($record->errors))
+                    ->modalContent(fn ($record) => view('filament.super-admin.import-errors', ['errors' => $record->errors]))
                     ->modalHeading('Erreurs d\'import')
                     ->modalSubmitAction(false),
             ])

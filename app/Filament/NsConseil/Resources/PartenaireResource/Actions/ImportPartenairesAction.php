@@ -9,6 +9,7 @@ use App\Models\Consultant;
 use App\Models\EntiteCommerciale;
 use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -44,41 +45,29 @@ class ImportPartenairesAction extends Action
                     ->required()
                     ->storeFiles(false)
                     ->columnSpanFull()
-                    ->live()
-                    ->afterStateUpdated(function (Forms\Components\FileUpload $component, $state) {
-                        // Charger les onglets disponibles après sélection du fichier
-                        if ($state instanceof TemporaryUploadedFile) {
-                            try {
-                                $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($state->getRealPath());
-                                $reader->setReadDataOnly(true);
-                                $spreadsheet = $reader->load($state->getRealPath());
-                                
-                                $sheets = [];
-                                foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-                                    $sheets[$sheet->getTitle()] = $sheet->getTitle();
-                                }
-                                
-                                $component->getContainer()->getComponent('target_sheets')->options($sheets);
-                            } catch (\Throwable $e) {
-                                // Ignorer les erreurs lors de la lecture
-                            }
-                        }
-                    }),
+                    ->live(),
 
                 Forms\Components\Section::make('Onglets à importer')
                     ->icon('heroicon-o-table-cells')
                     ->schema([
                         Forms\Components\Select::make('target_sheets')
-                            ->label('Onglets')
-                            ->options([])
+                            ->label('Onglets à importer')
+                            ->options(function (Get $get): array {
+                                $state = $get('file');
+                                $upload = is_array($state) ? reset($state) : $state;
+                                if (! $upload instanceof TemporaryUploadedFile) {
+                                    return [];
+                                }
+                                try {
+                                    return PartenaireImportResolver::listImportableSheets($upload->getRealPath());
+                                } catch (\Throwable) {
+                                    return [];
+                                }
+                            })
                             ->multiple()
                             ->searchable()
-                            ->allowHtml()
                             ->helperText('Laissez vide pour importer tous les onglets, ou sélectionnez les onglets spécifiques.')
                             ->live()
-                            ->afterStateUpdated(function (Forms\Components\Select $component, $state) {
-                                // Les options seront remplies dynamiquement après le chargement du fichier
-                            }),
                     ])
                     ->columns(1),
 

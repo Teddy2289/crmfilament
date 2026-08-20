@@ -40,7 +40,7 @@ class RdvWorkflowService
         }
 
         Mail::to($prospect->interlocuteur_email)
-            ->send(new ConfirmationRdvCseMail($rdv, $prospect, $teleprospecteur));
+            ->send(new ConfirmationRdvCseMail($prospect, $rdv));
 
         $rdv->confirmer();
 

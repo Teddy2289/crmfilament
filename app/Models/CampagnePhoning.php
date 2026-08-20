@@ -81,25 +81,28 @@ class CampagnePhoning extends Model
 
     public function getStats(): array
     {
-        $totalContacts = $this->countContacts();
+        $totalContacts = $this->countReferenceContacts();
         $totalAppels = $this->appels()->count();
+        $contactsUniquesAppeles = (int) ($this->appels()
+            ->selectRaw("COUNT(DISTINCT CONCAT(COALESCE(appelable_type, CHAR(0)), CHAR(58), appelable_id)) as aggregate")
+            ->value("aggregate") ?? 0);
 
         // Un contact ne compte comme "traité" que s'il a été réellement joint
         // au moins une fois (un appel dont le statut n'est pas marqué
         // "compte_comme_tentative" = simple tentative infructueuse, ex :
         // NRP, FAX, sans réponse...). Un contact uniquement joint via des
         // statuts de ce type reste donc "restant" (à rappeler).
-        $codesNonAboutis = StatutPhoning::where('model_type', $this->queueContactType())
-            ->where('compte_comme_tentative', true)
-            ->pluck('code');
+        // Règle métier CRM : Répondeur et NRP sont des tentatives sans contact.
+        // Tous les autres résultats enregistrés qualifient le contact comme traité.
+        $codesNonAboutis = collect(['MSG', 'NRP', 'nrp']);
 
         $contactsTraites = $this->appels()
             ->when(
                 $codesNonAboutis->isNotEmpty(),
                 fn (Builder $q) => $q->whereNotIn('phoning_status', $codesNonAboutis)
             )
-            ->distinct('appelable_id')
-            ->count('appelable_id');
+            ->selectRaw("COUNT(DISTINCT CONCAT(COALESCE(appelable_type, CHAR(0)), CHAR(58), appelable_id)) as aggregate")
+            ->value('aggregate') ?? 0;
 
         $contactsRestants = max(0, $totalContacts - $contactsTraites);
 
@@ -128,6 +131,7 @@ class CampagnePhoning extends Model
             'contacts_traites' => $contactsTraites,
             'contacts_restants' => $contactsRestants,
             'total_appels' => $totalAppels,
+            'contacts_uniques_appeles' => $contactsUniquesAppeles,
             'progression' => $progression,
             'par_statut' => $parStatut,
             'contacts_par_statut' => $contactsParStatut,
@@ -277,6 +281,25 @@ class CampagnePhoning extends Model
             ->toArray();
     }
 
+    public function countReferenceContacts(): int
+    {
+        $criteria = is_array($this->criteres) ? $this->criteres : [];
+        if ($this->type_entite !== "prospects") {
+            $criteria["statuts"] = [];
+            return match ($this->type_entite) {
+                "partenaires" => $this->buildPartenairesQuery($criteria)->count(),
+                "clients" => $this->buildClientsQuery($criteria)->count(),
+                default => $this->buildQuery()->count(),
+            };
+        }
+        $query = Prospect::query()->whereNull("deleted_at");
+        if (! empty($criteria["departement"])) $query->where("departement", $criteria["departement"]);
+        if (! empty($criteria["secteur_activite"])) $query->where("secteur_activite", "like", "%" . $criteria["secteur_activite"] . "%");
+        if (isset($criteria["nb_salaries_min"]) && $criteria["nb_salaries_min"] !== "") $query->where("nb_salaries", ">=", (int) $criteria["nb_salaries_min"]);
+        if (isset($criteria["nb_salaries_max"]) && $criteria["nb_salaries_max"] !== "") $query->where("nb_salaries", "<=", (int) $criteria["nb_salaries_max"]);
+        if (! empty($criteria["type_pressenti"])) $query->where("type_pressenti", $criteria["type_pressenti"]);
+        return $query->count();
+    }
     public function countContacts(): int
     {
         return $this->buildQuery()->count();
@@ -313,8 +336,22 @@ class CampagnePhoning extends Model
             $query->whereDoesntHave(
                 'appels',
                 fn (Builder $appelQuery) => $appelQuery
-                    ->where('campagne_id', $this->id)
-                    ->whereIn('phoning_status', $retireCodes)
+                    ->where(function (Builder $callScope) use ($retireCodes) {
+                        $callScope
+                            ->where(function (Builder $campaignCall) use ($retireCodes) {
+                                $campaignCall
+                                    ->where('campagne_id', $this->id)
+                                    ->whereIn('phoning_status', $retireCodes);
+                            })
+                            // Les appels Ringover qualifiés aujourd'hui doivent rester hors de la file,
+                            // même si l'import historique n'a pas renseigné campagne_id.
+                            ->orWhere(function (Builder $ringoverCall) {
+                                $ringoverCall
+                                    ->whereNotNull('ringover_call_id')
+                                    ->whereDate('date_heure', today())
+                                    ->whereNotNull('phoning_status');
+                            });
+                    })
             );
         }
 
@@ -346,8 +383,22 @@ class CampagnePhoning extends Model
             $query->whereDoesntHave(
                 'appels',
                 fn (Builder $appelQuery) => $appelQuery
-                    ->where('campagne_id', $this->id)
-                    ->whereIn('phoning_status', $retireCodes)
+                    ->where(function (Builder $callScope) use ($retireCodes) {
+                        $callScope
+                            ->where(function (Builder $campaignCall) use ($retireCodes) {
+                                $campaignCall
+                                    ->where('campagne_id', $this->id)
+                                    ->whereIn('phoning_status', $retireCodes);
+                            })
+                            // Les appels Ringover qualifiés aujourd'hui doivent rester hors de la file,
+                            // même si l'import historique n'a pas renseigné campagne_id.
+                            ->orWhere(function (Builder $ringoverCall) {
+                                $ringoverCall
+                                    ->whereNotNull('ringover_call_id')
+                                    ->whereDate('date_heure', today())
+                                    ->whereNotNull('phoning_status');
+                            });
+                    })
             );
         }
 
@@ -383,13 +434,7 @@ class CampagnePhoning extends Model
             });
         }
 
-        // Règle 2: Période de refroidissement (refroidissement depuis le dernier appel)
-        if (! empty($this->jours_refroidissement) && $this->jours_refroidissement > 0) {
-            $dateLimite = now()->subDays((int) $this->jours_refroidissement);
-            $q->whereDoesntHave('appels', function (Builder $aQuery) use ($dateLimite) {
-                $aQuery->where('date_heure', '>=', $dateLimite);
-            });
-        }
+        // Refroidissement désactivé : les appels récents ne retirent plus les prospects de la file.
 
         // Règle 4: Nombre maximal de tentatives d'appel non abouties
         if (! empty($this->max_tentatives) && $this->max_tentatives > 0) {
@@ -525,8 +570,22 @@ class CampagnePhoning extends Model
             $q->whereDoesntHave(
                 'appels',
                 fn (Builder $appelQuery) => $appelQuery
-                    ->where('campagne_id', $this->id)
-                    ->whereIn('phoning_status', $retireCodes)
+                    ->where(function (Builder $callScope) use ($retireCodes) {
+                        $callScope
+                            ->where(function (Builder $campaignCall) use ($retireCodes) {
+                                $campaignCall
+                                    ->where('campagne_id', $this->id)
+                                    ->whereIn('phoning_status', $retireCodes);
+                            })
+                            // Les appels Ringover qualifiés aujourd'hui doivent rester hors de la file,
+                            // même si l'import historique n'a pas renseigné campagne_id.
+                            ->orWhere(function (Builder $ringoverCall) {
+                                $ringoverCall
+                                    ->whereNotNull('ringover_call_id')
+                                    ->whereDate('date_heure', today())
+                                    ->whereNotNull('phoning_status');
+                            });
+                    })
             );
         }
 

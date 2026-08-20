@@ -45,6 +45,7 @@ class RendezVous extends Model
         'rappel_envoye_at',
         'outlook_event_id',
         'google_event_id',
+        'calendar_id',
     ];
 
     // ── Accesseurs ──────────────────────────────────────────────────
@@ -640,8 +641,7 @@ class RendezVous extends Model
 
     public function prospect()
     {
-        return $this->belongsTo(Prospect::class, 'rdvable_id')
-            ->where('rdvable_type', Prospect::class);
+        return $this->belongsTo(Prospect::class, 'rdvable_id');
     }
 
     public function artisan()

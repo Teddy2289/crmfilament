@@ -65,12 +65,15 @@ class PhoningQueueBuilder
 
         $restant = true;
         $tour = 0;
+        // L ordre des campagnes varie d une construction a l autre, mais
+        // reste stable pendant tous les tours afin de garantir le round-robin.
+        $ordre = range(0, count($campagnes) - 1);
+        if (count($campagnes) > 2) {
+            shuffle($ordre);
+        }
 
         while ($restant) {
             $restant = false;
-            $ordre = range(0, count($campagnes) - 1);
-            shuffle($ordre);
-
             foreach ($ordre as $campagneIndex) {
                 $campagne = $campagnes[$campagneIndex];
                 $liste = $campagne['items'];
@@ -79,7 +82,7 @@ class PhoningQueueBuilder
                     continue;
                 }
 
-                $cible = $liste[array_rand($liste)];
+                $cible = $liste[0];
                 $key = $cible['type'].'_'.$cible['id'];
 
                 if (isset($seen[$key])) {
@@ -88,7 +91,7 @@ class PhoningQueueBuilder
                         continue;
                     }
 
-                    $cible = $remaining[array_rand($remaining)];
+                    $cible = $remaining[0];
                     $key = $cible['type'].'_'.$cible['id'];
                 }
 

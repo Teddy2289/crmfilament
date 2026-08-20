@@ -78,3 +78,13 @@ Schedule::job(new \App\Jobs\SendInvitationAgendaJob())
 Schedule::job(new \App\Jobs\SendFicheVerteCommercialJob())
     ->everyTenMinutes()
     ->withoutOverlapping();
+
+// Synchronisation IMAP globale des boîtes actives.
+Schedule::command('emails:sync --all --limit=50')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
+// Rapport CSV des campagnes d'appels : chaque samedi à 18h.
+Schedule::command('crm:weekly-campagne-csv --to=admin@ns-conseil.com')
+    ->weeklyOn(6, '18:00')
+    ->withoutOverlapping();

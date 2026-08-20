@@ -806,3 +806,4 @@ h1, h2, h3, .fi-header-heading, .fi-modal-heading, .fi-section-header-heading {
     z-index: 999999 !important;
 }
 </style>
+@include('filament.ns-conseil.crm-global-ui')

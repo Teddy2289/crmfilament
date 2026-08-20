@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\GoogleOAuthController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\RingoverWebhookController;
+use App\Http\Controllers\UserPreferenceController;
 use App\Models\CrmSetting;
 use App\Models\GoogleToken;
 use App\Models\User;
@@ -44,12 +45,45 @@ Route::post('/api/ringover/webhook', RingoverWebhookController::class)
     ->middleware(app()->environment('testing') ? [] : ['ringover.rate_limit', 'throttle:60,1']);
 
 Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/ns-conseil/user-preferences/{resource}', [UserPreferenceController::class, 'show'])->name('user-preferences.show');
+    Route::post('/ns-conseil/user-preferences/{resource}', [UserPreferenceController::class, 'store'])->name('user-preferences.store');
+    Route::delete('/ns-conseil/user-preferences/{resource}', [UserPreferenceController::class, 'destroy'])->name('user-preferences.destroy');
     Route::get('/google/redirect', [GoogleOAuthController::class, 'redirect'])->name('google.redirect');
     Route::get('/google/callback', [GoogleOAuthController::class, 'callback'])->name('google.callback');
     Route::get('/google/disconnect', [GoogleOAuthController::class, 'disconnect'])->name('google.disconnect');
 
     Route::get('/pdf/facture/{facture}', [PdfController::class, 'facture'])->name('factures.pdf');
     Route::get('/pdf/devis/{devis}', [PdfController::class, 'devis'])->name('devis.pdf');
+    Route::get('/ns-conseil/campagne-phonings/{campagne}/export-csv', function (Request $request, \App\Models\CampagnePhoning $campagne) {
+        abort_unless(auth()->check(), 403);
+        $query = \App\Models\Appel::query()->where('campagne_id', $campagne->id)
+            ->when($request->query('statut'), fn ($q, $value) => $q->where('phoning_status', $value))
+            ->when($request->query('dateFrom'), fn ($q, $value) => $q->whereDate('date_heure', '>=', $value))
+            ->when($request->query('dateUntil'), fn ($q, $value) => $q->whereDate('date_heure', '<=', $value))
+            ->when($request->query('teleprospecteurId'), fn ($q, $value) => $q->whereHas('appelable', fn ($sub) => $sub->where('teleprospecteur_id', $value)))
+            ->when(trim((string) $request->query('search')) !== '', function ($q) use ($request) {
+                $term = '%' . trim((string) $request->query('search')) . '%';
+                $q->where(function ($sub) use ($term) {
+                    $sub->where('numero_appelant', 'like', $term)
+                        ->orWhereHas('appelable', fn ($contact) => $contact->where('nom', 'like', $term)->orWhere('raison_sociale', 'like', $term)->orWhere('telephone', 'like', $term));
+                });
+            });
+        $filename = 'appels-' . $campagne->id . '-' . \Illuminate\Support\Str::slug((string) ($request->query('statut') ?: 'tous')) . '.csv';
+        return response()->streamDownload(function () use ($query): void {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Contact', 'Téléphone', 'Date', 'Téléprospecteur', 'Statut'], ';');
+            foreach ($query->with(['appelable', 'user'])->orderByDesc('date_heure')->cursor() as $appel) {
+                fputcsv($handle, [
+                    $appel->appelable?->nom ?? 'Contact #' . $appel->appelable_id,
+                    $appel->appelable?->telephone ?? $appel->numero_appelant ?? '',
+                    optional($appel->date_heure)->format('d/m/Y H:i'),
+                    trim(($appel->user?->prenom ?? '') . ' ' . ($appel->user?->nom ?? '')),
+                    strtoupper((string) $appel->phoning_status),
+                ], ';');
+            }
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv; charset=utf-8']);
+    })->name('ns-conseil.campagnes.export-csv');
 });
 
 Route::get('/debug-calendar', function () {
@@ -112,3 +146,56 @@ Route::get('/debug-calendar', function () {
         'events' => $allEvents,
     ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 })->middleware(['web', 'auth']);
+
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/ns-conseil/campagne-contacts-traites', function (Request $request) {
+        $statut = $request->query('statut');
+        $prospectStatut = $request->query('prospect_statut');
+        $validProspectStatuts = collect(\App\Enums\ProspectStatut::cases())->pluck('value');
+        $prospectStatut = $validProspectStatuts->contains($prospectStatut) ? $prospectStatut : null;
+        $campagneIds = \App\Models\CampagnePhoning::query()
+            ->pluck('id');
+        $appels = \App\Models\Appel::query()
+            ->whereIn('campagne_id', $campagneIds)
+            ->when($statut, fn ($q) => $q->where('phoning_status', $statut))
+            ->with(['appelable', 'user', 'campagne'])
+            ->orderByDesc('date_heure')->get()
+            ->unique(fn ($appel) => (string) $appel->appelable_type . ':' . $appel->appelable_id)->values()
+            ->when($prospectStatut, fn ($rows) => $rows->filter(fn ($appel) => $appel->appelable instanceof \App\Models\Prospect && optional($appel->appelable->statut)->value === $prospectStatut)->values());
+        $statutLabel = $statut ? (\App\Models\StatutPhoning::where('code', $statut)->value('label') ?: $statut) : null;
+        $prospectStatutLabel = $prospectStatut ? (\App\Enums\ProspectStatut::tryFrom($prospectStatut)?->label() ?: $prospectStatut) : null;
+        if ($request->boolean('export')) {
+            $filename = 'prospects-campagne-' . now()->format('Ymd-His') . '.csv';
+            return response()->streamDownload(function () use ($appels): void {
+                $out = fopen('php://output', 'wb');
+                fputcsv($out, ['Prospect / contact', 'Type', 'Téléphone', 'Ville', 'Campagne', 'Agent', 'Dernier appel', 'Statut appel', 'Statut prospect', 'Commentaire', 'Note']);
+                foreach ($appels as $appel) {
+                    $contact = $appel->appelable;
+                    $appelStatus = is_object($appel->phoning_status) ? ($appel->phoning_status->value ?? $appel->phoning_status->name ?? '') : (string) $appel->phoning_status;
+                    $prospectStatus = $contact?->statut;
+                    $prospectStatus = is_object($prospectStatus) ? ($prospectStatus->label() ?? $prospectStatus->value ?? $prospectStatus->name ?? '') : (string) ($prospectStatus ?? '');
+                    fputcsv($out, [$contact?->nom ?? $contact?->raison_sociale ?? 'Contact #'.$appel->appelable_id, class_basename((string) $appel->appelable_type), $contact?->telephone ?? $appel->numero_appelant ?? '', $contact?->ville ?? '', $appel->campagne?->nom ?? '', trim(($appel->user?->prenom ?? '').' '.($appel->user?->nom ?? '')), optional($appel->date_heure)->format('d/m/Y H:i'), $appelStatus, $prospectStatus, $appel->commentaire ?? '', $appel->phoning_notes ?? '']);
+                }
+                fclose($out);
+            }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+        $prospectStatuts = \App\Enums\ProspectStatut::pourSelect();
+        return view('filament.ns-conseil.pages.campagne-contacts-traites', compact('appels', 'statutLabel', 'prospectStatut', 'prospectStatutLabel', 'prospectStatuts', ));
+    })->name('ns-conseil.campagnes.contacts-traites');
+});
+
+
+Route::middleware(['web', 'auth'])->group(function (): void {
+    Route::get('/ns-conseil/api/crm-dashboard', [\App\Http\Controllers\Api\CrmDashboardController::class, 'getData'])->name('ns-conseil.api.crm-dashboard');
+    Route::get('/ns-conseil/api/crm-dashboard/export/excel', [\App\Http\Controllers\Api\CrmDashboardController::class, 'exportExcel'])->name('ns-conseil.api.crm-dashboard.export.excel');
+    Route::get('/ns-conseil/api/crm-dashboard/export/pdf', [\App\Http\Controllers\Api\CrmDashboardController::class, 'exportPdf'])->name('ns-conseil.api.crm-dashboard.export.pdf');
+
+    Route::get('/ns-conseil/api/crm-map', function () {
+        return response()->json(
+            app(\App\Filament\NsConseil\Pages\CrmMap::class)->getViewData(),
+            200,
+            ['Cache-Control' => 'no-store, no-cache, must-revalidate'],
+            JSON_UNESCAPED_UNICODE
+        );
+    })->name('ns-conseil.api.crm-map');
+});

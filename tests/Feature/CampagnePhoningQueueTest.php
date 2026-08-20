@@ -242,6 +242,28 @@ class CampagnePhoningQueueTest extends TestCase
         $this->assertCount(2, $membreDesDeux->groupesTelepro);
     }
 
+
+    #[Test]
+    public function phone_search_accepts_national_spaces_plus33_and_0033_formats(): void
+    {
+        $prospect = Prospect::factory()->create([
+            'nom' => 'Recherche téléphone robuste',
+            'telephone' => '05 62 57 79 90',
+            'telephone_alt' => null,
+            'interlocuteur_telephone' => null,
+            'statut' => 'AC',
+        ]);
+
+        $service = app(\App\Services\Phoning\PhoningContactSearchService::class);
+        foreach (['05 62 57 79 90', '+33 5 62 57 79 90', '0033 5 62 57 79 90', '0562577990'] as $input) {
+            $results = $service->findByPhone($input);
+            $this->assertTrue(
+                collect($results)->contains(fn (array $result): bool => $result['type'] === 'prospect' && $result['id'] === $prospect->id),
+                "Le numéro {$input} doit retrouver le prospect cible."
+            );
+        }
+    }
+
     private function userWithFullAccess(): User
     {
         $role = Role::create(['name' => 'test_full_access_campaign_queue', 'guard_name' => 'web']);

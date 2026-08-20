@@ -14,13 +14,13 @@ class FicheWordService
 {
     public function __construct()
     {
-        $tempDir = storage_path('app/temp');
+        $tempDir = sys_get_temp_dir();
 
-        // Le dossier temp doit exister physiquement AVANT que PhpWord
-        // n'essaie d'y écrire, sinon on obtient un "mkdir(): No such
-        // file or directory" silencieux dans le worker.
-        if (! File::isDirectory($tempDir)) {
-            File::makeDirectory($tempDir, 0755, true);
+        // PhpWord crée des fichiers temporaires pendant l’écriture du document.
+        // Le dossier système /tmp est plus fiable que storage/app/temp et évite
+        // les erreurs de permissions sur les environnements partagés.
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
         }
 
         Settings::setTempDir($tempDir);
@@ -154,16 +154,11 @@ class FicheWordService
         }
 
         $filename = basename($localPath);
-
-        // Utiliser le disque 'public' avec le chemin complet : fiches/YYYY/MM/filename.docx
         $storagePath = 'fiches/'.$destination.'/'.$filename;
-        
-        // Créer le répertoire s'il n'existe pas
-        if (! Storage::disk('public')->exists('fiches/'.$destination)) {
-            Storage::disk('public')->makeDirectory('fiches/'.$destination, 0755, true);
+        if (! Storage::disk('public')->exists(dirname($storagePath))) {
+            Storage::disk('public')->makeDirectory(dirname($storagePath), 0755, true);
         }
-        
-        // Copier le fichier avec permissions publiques
+
         $success = Storage::disk('public')->put(
             $storagePath,
             File::get($localPath),
@@ -174,10 +169,8 @@ class FicheWordService
             throw new \Exception("Impossible de copier le fichier vers le disque public : {$storagePath}");
         }
 
-        // Nettoyage du fichier temporaire une fois copié vers le disque public
         File::delete($localPath);
 
-        // Retourner l'URL publique accessible
         return Storage::disk('public')->url($storagePath);
     }
 }

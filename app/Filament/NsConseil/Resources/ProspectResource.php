@@ -347,9 +347,9 @@ class ProspectResource extends Resource
                     ->alignCenter()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('nb_salaries')
+                Tables\Columns\TextColumn::make('nb_salaries_tranche')
                     ->label('Nb salariés')
-                    ->numeric()
+                    ->formatStateUsing(fn ($state, $record) => $state ?: ($record->nb_salaries !== null ? (string) $record->nb_salaries : null))
                     ->sortable()
                     ->placeholder('—')
                     ->toggleable(),
@@ -359,11 +359,13 @@ class ProspectResource extends Resource
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('telephone')
+                    ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
                     ->label('Téléphone')
                     ->icon('heroicon-m-phone')
                     ->badge()
                     ->color('green')
                     ->copyable()
+                    ->searchable(query: fn ($query, string $search) => \App\Support\PhoneNumber::applySearch($query, 'telephone', $search))
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('rappel_planifie_at')
@@ -401,6 +403,36 @@ class ProspectResource extends Resource
                             ->toArray()
                     )
                     ->searchable(),
+                Tables\Filters\SelectFilter::make('telephone_zone')
+                    ->label('Indicatif / type de ligne')
+                    ->options([
+                        'mobile' => 'Mobile (06 / 07)',
+                        '01' => 'Fixe 01 — Île-de-France',
+                        '02' => 'Fixe 02 — Nord-Ouest',
+                        '03' => 'Fixe 03 — Nord-Est',
+                        '04' => 'Fixe 04 — Sud-Est',
+                        '05' => 'Fixe 05 — Sud-Ouest',
+                        '08' => 'Numéro spécial (08)',
+                    ])
+                    ->query(function ($query, array $data) {
+                        $value = $data['value'] ?? null;
+                        if (! $value) {
+                            return $query;
+                        }
+                        $patterns = [
+                            'mobile' => '^(06|07|336|337|00336|00337)',
+                            '01' => '^(01|331|00331)',
+                            '02' => '^(02|332|00332)',
+                            '03' => '^(03|333|00333)',
+                            '04' => '^(04|334|00334)',
+                            '05' => '^(05|335|00335)',
+                            '08' => '^(08|338|00338)',
+                        ];
+                        $pattern = $patterns[$value] ?? null;
+                        return $pattern
+                            ? $query->whereRaw("REGEXP_REPLACE(COALESCE(telephone, ''), '[^0-9]', '') REGEXP ?", [$pattern])
+                            : $query;
+                    }),
 
                 Tables\Filters\SelectFilter::make('teleprospecteur_id')
                     ->label('Téléprospecteur')
@@ -607,7 +639,7 @@ class ProspectResource extends Resource
                         $record->convertirEnPartenaire();
                         Notification::make()
                             ->title('Converti en partenaire')
-                            ->body('Le prospect a ete archive et reste tracable depuis le partenaire.')
+                            ->body('Le prospect a été archivé et reste traçable depuis le partenaire.')
                             ->success()
                             ->send();
                     })
@@ -677,6 +709,7 @@ class ProspectResource extends Resource
                     ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('telephone')
+                    ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
                     ->label('Téléphone')
                     ->copyable()
                     ->toggleable(),
@@ -828,9 +861,9 @@ class ProspectResource extends Resource
                             ->label('Département')
                             ->placeholder('—'),
 
-                        TextEntry::make('nb_salaries')
+                        TextEntry::make('nb_salaries_tranche')
                             ->label('Nombre de salariés')
-                            ->numeric()
+                            ->formatStateUsing(fn ($state, $record) => $state ?: ($record->nb_salaries !== null ? (string) $record->nb_salaries : null))
                             ->placeholder('—')
                             ->suffix(' salariés'),
 
@@ -863,6 +896,7 @@ class ProspectResource extends Resource
                         // Coordonnées entité
                         Group::make([
                             TextEntry::make('telephone')
+                        ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
                                 ->label('Téléphone principal')
                                 ->copyable()
                                 ->copyMessage('Numéro copié !')

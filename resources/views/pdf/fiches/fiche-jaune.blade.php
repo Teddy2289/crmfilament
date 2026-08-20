@@ -112,12 +112,23 @@
     <div class="section-title">Planning de Relance</div>
     <table>
         <tr>
-            <td style="width:50%"><span class="label">Date de l'appel initial :</span> {{ $data['date_appel'] ?? '—' }}</td>
+            <td style="width:50%"><span class="label">Date de l'appel initial :</span> {{ $data['date_appel'] ?? '—' }}<br><span class="label">Dernier appel :</span> {{ $data['date_heure_dernier_appel'] ?? '—' }}</td>
             <td><span class="label">Date de rappel J+7 :</span> {{ $data['date_rappel_j7'] ?? '—' }}</td>
         </tr>
     </table>
 </div>
 
+{{-- Rappel à faire --}}
+<div class="section">
+    <div class="section-title">Rappel à faire</div>
+    <table>
+        <tr>
+            <td style="width:50%"><span class="label">Responsable de Secteur assigné :</span> {{ $data['commercial_nom'] ?? '—' }}</td>
+            <td><span class="label">Date du rappel :</span> {{ $data['date_rappel_j7'] ?? '—' }}</td>
+        </tr>
+        <tr><td colspan="2"><span class="label">Commentaires :</span> {{ $data['commentaires'] ?? $data['motif_refus'] ?? '—' }}</td></tr>
+    </table>
+</div>
 {{-- Responsables --}}
 <div class="section">
     <div class="section-title">Responsables</div>

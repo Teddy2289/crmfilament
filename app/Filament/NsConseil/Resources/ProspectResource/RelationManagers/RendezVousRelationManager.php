@@ -4,6 +4,7 @@ namespace App\Filament\NsConseil\Resources\ProspectResource\RelationManagers;
 
 use App\Enums\RendezVousStatut;
 use App\Enums\RendezVousType;
+use App\Services\GoogleCalendarService;
 use App\Filament\Shared\Components\PhoneNumberInput;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -34,6 +35,13 @@ class RendezVousRelationManager extends RelationManager
             Forms\Components\DateTimePicker::make('date_heure')
                 ->label('Date et heure')
                 ->required(),
+            Forms\Components\Select::make('calendar_id')
+                ->label('Agenda Google')
+                ->options(fn () => app(GoogleCalendarService::class)->getAvailableCalendars(auth()->user()))
+                ->searchable()
+                ->preload()
+                ->placeholder('Agenda principale')
+                ->helperText('Choisissez l’agenda Google utilisé pour ce rendez-vous.'),
             Forms\Components\Select::make('commercial_id')
                 ->label('Commercial')
                 ->relationship('commercial', 'nom')

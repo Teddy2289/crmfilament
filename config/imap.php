@@ -10,7 +10,9 @@ return [
     |
     */
 
-    'host' => env('IMAP_HOST', 'imap.gmail.com'),
+    'host' => env('IMAP_HOST', env('MAIL_HOST', 'imap.gmail.com')),
+    'username' => env('IMAP_USERNAME', env('MAIL_USERNAME')),
+    'password' => env('IMAP_PASSWORD', env('MAIL_PASSWORD')),
     
     'port' => env('IMAP_PORT', 993),
     

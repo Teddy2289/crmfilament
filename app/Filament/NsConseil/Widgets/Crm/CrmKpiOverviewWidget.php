@@ -15,9 +15,7 @@ class CrmKpiOverviewWidget extends BaseWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $pollingInterval = '300s';
 
-    protected static bool $isLazy = true;
 
     public ?string $errorMessage = null;
 
@@ -37,7 +35,7 @@ class CrmKpiOverviewWidget extends BaseWidget
             $clientsQuery = Client::query();
             
             // Filter by user if not admin/supervisor
-            if (!$user->hasRoleCache(['admin', 'superviseur']) && !$user->isSuperAdmin()) {
+            if (!$user->hasRoleCache("admin") && !$user->hasRoleCache("superviseur") && !$user->isSuperAdmin()) {
                 if ($user->hasRoleCache('teleprospecteur')) {
                     $prospectsQuery->where('teleprospecteur_id', $user->id);
                     $opportunitesQuery->where('assigne_a', $user->id);
@@ -120,6 +118,11 @@ class CrmKpiOverviewWidget extends BaseWidget
                     ->color('danger'),
             ];
         }
+    }
+
+    protected function getPollingInterval(): ?string
+    {
+        return null;
     }
 
     public static function canView(): bool

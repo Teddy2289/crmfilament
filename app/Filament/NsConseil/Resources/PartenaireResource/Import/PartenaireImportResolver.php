@@ -2,18 +2,49 @@
 
 namespace App\Filament\NsConseil\Resources\PartenaireResource\Import;
 
+use Illuminate\Support\Facades\DB;
+
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 /**
  * Charge le fichier Excel et importe une ou plusieurs feuilles.
  *
- * Par défaut, importe uniquement la feuille "MAJ" (source de vérité consolidée).
- * Les autres onglets (par conseiller, archives, COMM…) peuvent être importés
- * en spécifiant $targetSheets = null pour importer tous les onglets.
+ * Importe les feuilles sélectionnées. Une sélection vide importe toutes les feuilles
+ * compatibles ; les feuilles sans structure partenaire sont ignorées avec un diagnostic.
  */
 class PartenaireImportResolver
 {
     public const DEFAULT_TARGET_SHEET = 'MAJ';
+
+    /**
+     * Retourne les feuilles ayant la structure positionnelle minimale attendue.
+     * Le tableau est directement utilisable par un Select Filament (clé => libellé).
+     */
+    public static function listImportableSheets(string $filePath): array
+    {
+        $reader = IOFactory::createReaderForFile($filePath);
+        $reader->setReadDataOnly(true);
+        $spreadsheet = $reader->load($filePath);
+        $result = [];
+
+        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+            $rows = $sheet->toArray(
+                nullValue: null,
+                calculateFormulas: false,
+                formatData: false,
+                returnCellRef: false
+            );
+            $headerCount = count(array_filter($rows[0] ?? [], fn ($value) => trim((string) $value) !== ''));
+            if (count($rows) >= 2 && $headerCount >= PartenaireImporter::MIN_EXPECTED_COLUMNS) {
+                $title = trim($sheet->getTitle());
+                if ($title !== '') {
+                    $result[$title] = $title;
+                }
+            }
+        }
+
+        return $result;
+    }
 
     /**
      * @param  string  $filePath  Chemin absolu vers le .xlsx
@@ -29,15 +60,9 @@ class PartenaireImportResolver
         $spreadsheet = $reader->load($filePath);
 
         // ── Déterminer les onglets à importer ─────────────────────────────
-        if ($targetSheets === null) {
-            // Importer tous les onglets
-            $targetSheets = [];
-            foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-                $targetSheets[] = $sheet->getTitle();
-            }
-        } elseif (empty($targetSheets)) {
-            // Utiliser l'onglet par défaut si aucun spécifié
-            $targetSheets = [self::DEFAULT_TARGET_SHEET];
+        $autoSelectSheets = $targetSheets === null || $targetSheets === [];
+        if ($autoSelectSheets) {
+            $targetSheets = array_keys(self::listImportableSheets($filePath));
         }
 
         // ── Résultats globaux ─────────────────────────────────────────────
@@ -48,7 +73,14 @@ class PartenaireImportResolver
         $sheetsProcessed = [];
 
         // ── Traiter chaque onglet ────────────────────────────────────────
-        foreach ($targetSheets as $targetSheet) {
+        return DB::transaction(function () use ($spreadsheet, $targetSheets, $defaults, $strategy) {
+            $totalCreated = 0;
+            $totalUpdated = 0;
+            $totalSkipped = 0;
+            $allErrors = [];
+            $sheetsProcessed = [];
+
+            foreach ($targetSheets as $targetSheet) {
             $worksheet = null;
             foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
                 if (mb_strtoupper(trim($sheet->getTitle())) === mb_strtoupper(trim($targetSheet))) {
@@ -75,6 +107,15 @@ class PartenaireImportResolver
                 continue;
             }
 
+            // ── Vérifier la structure positionnelle avant d'écrire ───────────
+            $nonEmptyHeaderCount = count(array_filter($rows[0] ?? [], fn ($value) => trim((string) $value) !== ''));
+            if ($nonEmptyHeaderCount < PartenaireImporter::MIN_EXPECTED_COLUMNS) {
+                if (! $autoSelectSheets) {
+                    $allErrors[] = "[{$targetSheet}] Feuille ignorée : structure incompatible ({$nonEmptyHeaderCount} colonne(s) d'en-tête détectée(s)).";
+                }
+                continue;
+            }
+
             // ── Déléguer à l'importer ─────────────────────────────────────
             $importer = new PartenaireImporter;
             $result = $importer->import($rows, $defaults, $strategy);
@@ -86,12 +127,13 @@ class PartenaireImportResolver
             $sheetsProcessed[] = $targetSheet;
         }
 
-        return [
-            'created' => $totalCreated,
-            'updated' => $totalUpdated,
-            'skipped' => $totalSkipped,
-            'errors' => $allErrors,
-            'sheets_processed' => $sheetsProcessed,
-        ];
+            return [
+                'created' => $totalCreated,
+                'updated' => $totalUpdated,
+                'skipped' => $totalSkipped,
+                'errors' => $allErrors,
+                'sheets_processed' => $sheetsProcessed,
+            ];
+        });
     }
 }

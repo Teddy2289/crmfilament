@@ -12,6 +12,7 @@ use Database\Factories\ProspectFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
@@ -112,6 +113,7 @@ class Prospect extends Model
         'qf_valide' => 'boolean',
         'qf_valide_at' => 'datetime',
         'nb_salaries' => 'integer',
+        'nb_salaries_tranche' => 'string',
         'chiffre_affaires' => 'decimal:2',
         'numero_ordre' => 'integer',
         'mail1_envoye' => 'boolean',
@@ -134,6 +136,7 @@ class Prospect extends Model
         'siret',
         'secteur_activite',
         'nb_salaries',
+        'nb_salaries_tranche',
         'chiffre_affaires',
         'statut',
         'teleprospecteur_id',
@@ -442,6 +445,7 @@ class Prospect extends Model
     public function getTousAppelsRingover(): array
     {
         $appels = $this->appels()
+            ->select(["id", "appelable_type", "appelable_id", "date_heure", "duree_secondes", "direction", "ringover_call_id", "numero_appelant", "enregistrement_audio", "ringover_payload", "commentaire", "phoning_notes"])
             ->whereNotNull('ringover_call_id')
             ->orderByDesc('date_heure')
             ->get();
@@ -541,6 +545,7 @@ class Prospect extends Model
     public function programmerRappel(\DateTime $date, bool $manual = false): void
     {
         $dateRappel = $this->normaliserDateRappel($date, $manual);
+        $dateRappel = $this->appliquerQuotaRappelsJournalier($dateRappel);
 
         $this->update([
             'rappel_planifie_at' => $dateRappel,
@@ -548,6 +553,31 @@ class Prospect extends Model
                 ? ProspectStatut::AC
                 : $this->statut,
         ]);
+    }
+
+    /**
+     * Limite à deux rappels planifiés par jour.
+     * Si la journée est pleine, le rappel est déplacé au prochain jour disponible.
+     */
+    protected function appliquerQuotaRappelsJournalier(\DateTime $date): \DateTime
+    {
+        $candidat = \Carbon\Carbon::instance($date)->copy();
+
+        for ($i = 0; $i < 366; $i++) {
+            $rappelsDuJour = static::query()
+                ->whereNotNull('rappel_planifie_at')
+                ->whereDate('rappel_planifie_at', $candidat->toDateString())
+                ->when($this->exists, fn ($query) => $query->where('id', '!=', $this->getKey()))
+                ->count();
+
+            if ($rappelsDuJour < 2) {
+                return $candidat->toDateTime();
+            }
+
+            $candidat->addDay();
+        }
+
+        return $candidat->toDateTime();
     }
 
     protected function normaliserDateRappel(\DateTime $date, bool $manual = false): \DateTime

@@ -77,6 +77,7 @@ class ProspectionMailService
                 notifyUserId: Auth::id(),
                 sourceEmail: $this->resolveSourceEmail(),
                 emailConfigurationId: $this->resolveEmailConfigurationId(),
+            cc: $this->resolvePreviewCc($contexte),
             ));
             $rdv->confirmer();
         }
@@ -115,6 +116,7 @@ class ProspectionMailService
             notifyUserId: Auth::id(),
             sourceEmail: $this->resolveSourceEmail(),
             emailConfigurationId: $this->resolveEmailConfigurationId(),
+            cc: $this->resolvePreviewCc($contexte),
         ));
     }
 
@@ -148,6 +150,7 @@ class ProspectionMailService
             notifyUserId: Auth::id(),
             sourceEmail: $this->resolveSourceEmail(),
             emailConfigurationId: $this->resolveEmailConfigurationId(),
+            cc: $this->resolvePreviewCc($contexte),
         ));
     }
 
@@ -182,6 +185,7 @@ class ProspectionMailService
             notifyUserId: Auth::id(),
             sourceEmail: $this->resolveSourceEmail(),
             emailConfigurationId: $this->resolveEmailConfigurationId(),
+            cc: $this->resolvePreviewCc($contexte),
         ));
     }
 
@@ -228,6 +232,14 @@ class ProspectionMailService
         }
 
         return $default;
+    }
+
+    protected function resolvePreviewCc(array $contexte): ?string
+    {
+        $cc = $contexte['email_preview_cc'] ?? null;
+        return is_string($cc) && filter_var(trim($cc), FILTER_VALIDATE_EMAIL)
+            ? trim($cc)
+            : null;
     }
 
     protected function resolveSourceEmail(): ?string

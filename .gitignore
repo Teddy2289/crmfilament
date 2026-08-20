@@ -42,3 +42,14 @@ skills
 /storage/framework/views/
 /storage/logs/
 .claude/
+
+# Historical snapshots: keep outside the active source tree
+*.bak
+*.bak_*
+*.backup-*
+*.backup_*
+*.before-*
+*.pre-*
+.env.before-*
+.env.pre-*
+/storage/backups/

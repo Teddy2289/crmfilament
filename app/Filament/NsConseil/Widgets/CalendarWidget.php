@@ -48,6 +48,37 @@ class CalendarWidget extends FullCalendarWidget
             'eventDisplay' => 'block',
             'nowIndicator' => true,
             'scrollTime' => '08:00',
+            'dayHeaderFormat' => [
+                'weekday' => 'short',
+                'day' => 'numeric',
+            ],
+            'slotLabelFormat' => [
+                'hour' => 'numeric',
+                'minute' => '2-digit',
+                'hour12' => false,
+            ],
+            'eventTimeFormat' => [
+                'hour' => 'numeric',
+                'minute' => '2-digit',
+                'hour12' => false,
+            ],
+            'buttonText' => [
+                'today' => "Aujourd'hui",
+                'month' => 'Mois',
+                'week' => 'Semaine',
+                'day' => 'Jour',
+                'list' => 'Liste',
+            ],
+            'allDayText' => 'Toute la journée',
+            'moreLinkText' => function($n) {
+                return '+ ' . $n . ' de plus';
+            },
+            'noEventsText' => 'Aucun événement à afficher',
+            'viewClassNames' => 'rounded-lg',
+            'dayCellClassNames' => 'hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors',
+            'dayMaxEvents' => true,
+            'eventMaxStack' => 3,
+            'eventDragStartMinDistance' => 5,
         ];
     }
 
@@ -59,16 +90,37 @@ class CalendarWidget extends FullCalendarWidget
     {
         return <<<'JS'
         function({ event, el }) {
-            var calName = event.extendedProps.calendar_name;
-            if (! calName) {
+            var calId = event.extendedProps.calendar_id;
+            if (calId) {
+                el.setAttribute("data-calendar-id", calId);
+            }
+            if (event.extendedProps.source) {
+                el.setAttribute("data-event-source", String(event.extendedProps.source).toLowerCase());
+            }
+            if (event.extendedProps.type) {
+                el.setAttribute("data-event-type", String(event.extendedProps.type).toLowerCase());
+            }
+            if (event.extendedProps.statut) {
+                el.setAttribute("data-event-status", String(event.extendedProps.statut).toLowerCase());
+            }
+            if (! calId) {
                 return;
             }
-            el.setAttribute('data-calendar-name', calName);
+            el.setAttribute("data-calendar-id", calId);
             try {
-                var hidden = JSON.parse(localStorage.getItem('hiddenGoogleCalendars') || '[]');
-                if (hidden.indexOf(calName) !== -1) {
-                    el.style.display = 'none';
+                var hidden = JSON.parse(localStorage.getItem("hiddenGoogleCalendars") || "[]");
+                var colors = JSON.parse(localStorage.getItem("googleCalendarColors") || "{}");
+                var defaultColor = event.extendedProps.calendar_color || "#6b7280";
+                el.dataset.calendarDefaultColor = defaultColor;
+                if (hidden.indexOf(calId) !== -1) {
+                    el.style.display = "none";
                 }
+                var color = colors[calId] || defaultColor;
+                el.style.setProperty("background-color", color, "important");
+                el.style.setProperty("border-color", color, "important");
+                el.querySelectorAll(".fc-event-title, .fc-event-time").forEach(function(child) {
+                    child.style.setProperty("color", "#ffffff", "important");
+                });
             } catch (e) {}
         }
         JS;
@@ -148,6 +200,7 @@ class CalendarWidget extends FullCalendarWidget
                 'source' => 'crm',
                 'rdv_id' => $rdv->id,
                 'type' => $type?->value,
+                'type_label' => $type?->name,
                 'statut' => $statut?->value,
                 'interlocuteur' => $rdv->interlocuteur_nom,
                 'telephone' => $rdv->interlocuteur_tel,
@@ -189,6 +242,7 @@ class CalendarWidget extends FullCalendarWidget
                 'source' => 'google',
                 'google_id' => $gEvent['id'],
                 'calendar_name' => $calName,
+                'calendar_id' => $gEvent['_calendar_id'] ?? null,
                 'calendar_color' => $color,
                 'description' => $gEvent['description'] ?? null,
                 'location' => $gEvent['location'] ?? null,

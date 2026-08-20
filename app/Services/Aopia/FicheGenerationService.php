@@ -8,6 +8,7 @@ use App\Models\FicheTemplate;
 use App\Models\Prospect;
 use App\Models\RendezVous;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\TemplateProcessor;
 use RuntimeException;
 
@@ -26,6 +27,13 @@ class FicheGenerationService
             throw new RuntimeException("Le fichier template n'existe pas : {$template->template_path}");
         }
 
+        $tempDir = sys_get_temp_dir();
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        Settings::setTempDir($tempDir);
+
         $processor = new TemplateProcessor($templatePath);
         $values = $this->resoudreValeurs($template, $prospect, $rdv);
 
@@ -35,11 +43,11 @@ class FicheGenerationService
         }
 
         $outputDir = 'fiches-generees/'.date('Y/m');
-        Storage::makeDirectory($outputDir);
+        Storage::disk('public')->makeDirectory($outputDir);
 
         $filename = $this->genererNomFichier($template, $prospect);
         $outputPath = $outputDir.'/'.$filename;
-        $absoluteOutput = Storage::path($outputPath);
+        $absoluteOutput = Storage::disk('public')->path($outputPath);
 
         $processor->saveAs($absoluteOutput);
 

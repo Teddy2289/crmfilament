@@ -121,6 +121,17 @@
 </div>
 @endif
 
+{{-- Champs de prise de rendez-vous --}}
+<div class="section">
+    <div class="section-title">Rendez-vous à prendre</div>
+    <table>
+        <tr>
+            <td style="width:50%"><span class="label">Responsable de Secteur assigné :</span> {{ $data['commercial_nom'] ?? '—' }}</td>
+            <td><span class="label">Date et heure :</span> {{ trim(($data['date_rdv_a_prendre'] ?? '') . ' ' . ($data['heure_rdv_a_prendre'] ?? '')) ?: '—' }}</td>
+        </tr>
+        <tr><td colspan="2"><span class="label">Commentaires :</span> {{ $data['commentaires'] ?? $data['notes'] ?? '—' }}</td></tr>
+    </table>
+</div>
 {{-- RDV à planifier --}}
 @if(isset($data['date_rdv_a_prendre']) || isset($data['heure_rdv_a_prendre']))
 <div class="section">
@@ -143,7 +154,7 @@
             <td><span class="label">Responsable de Secteur :</span> {{ $data['commercial_nom'] ?? '—' }}</td>
         </tr>
         <tr>
-            <td colspan="2"><span class="label">Date du premier contact :</span> {{ $data['date_appel'] ?? '—' }}</td>
+            <td colspan="2"><span class="label">Date du premier contact :</span> {{ $data['date_appel'] ?? '—' }} &nbsp; <span class="label">Dernier appel :</span> {{ $data['date_heure_dernier_appel'] ?? '—' }}</td>
         </tr>
     </table>
 </div>

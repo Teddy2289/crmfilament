@@ -295,7 +295,7 @@ class OpportuniteResource extends Resource
                             : '-'),
 
                     Infolists\Components\TextEntry::make('date_detection')
-                        ->label('Detectee le')
+                        ->label('Détectée le')
                         ->date('d/m/Y')
                         ->default('-'),
 

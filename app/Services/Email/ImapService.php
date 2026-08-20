@@ -23,11 +23,11 @@ class ImapService
     {
         $this->user = $user ?? auth()->user();
         
-        if (! $this->user) {
-            Log::info("ImapService: aucun utilisateur authentifié, utilisation d'une configuration globale", ['config_id' => $this->config->id ?? null]);;
-        }
-
         $this->config = $config ?? $this->getEmailConfiguration();
+
+        if (! $this->user) {
+            Log::info("ImapService: aucun utilisateur authentifié, utilisation d'une configuration globale", ['config_id' => $this->config?->id]);
+        }
         
         if (! $this->config) {
             throw new \Exception('Aucune configuration email trouvée pour cet utilisateur');
@@ -65,26 +65,32 @@ class ImapService
             $folder = $this->client->getFolder('INBOX');
             
             // Récupérer les messages non lus ou récents
-            $messages = $folder->messages()
-                ->all()
-                ->limit($limit)
-                ->get();
+            // Filtrer les messages non lus avant d'appliquer la limite.
+            // La limite précédente était appliquée aux messages lus et pouvait
+            // masquer les messages non lus situés après les 50 premiers.
+            $messages = collect($folder->messages()->all()->get())
+                ->filter(fn ($m) => ! $m->hasFlag('Seen'))
+                ->take($limit);
 
-            // Filtrer les messages non lus si la méthode unseen() n'est pas disponible
-            $messages = collect($messages)->filter(fn($m) => ! $m->hasFlag('Seen'));
+            Log::info('ImapService: messages non lus détectés', ['count' => $messages->count(), 'limit' => $limit]);
 
+            $syncedMessages = [];
             foreach ($messages as $message) {
                 try {
-                    $this->processMessage($message);
-                    $stats['synced']++;
+                    if ($this->processMessage($message)) {
+                        $stats['synced']++;
+                        $syncedMessages[] = $message;
+                    } else {
+                        $stats['skipped']++;
+                    }
                 } catch (\Exception $e) {
                     Log::error('Erreur traitement message: '.$e->getMessage());
                     $stats['errors']++;
                 }
             }
 
-            // Marquer les messages comme lus sur le serveur
-            foreach ($messages as $m) {
+            // Ne marquer comme lus que les messages effectivement importés.
+            foreach ($syncedMessages as $m) {
                 try {
                     $m->setFlag('Seen');
                 } catch (\Exception $e) {
@@ -106,14 +112,13 @@ class ImapService
     /**
      * Traite un message individuel
      */
-    protected function processMessage(Message $message): void
+    protected function processMessage(Message $message): bool
     {
         // Vérifier si l'email existe déjà
         $existing = Email::where('message_id', $message->getMessageId())->first();
         
         if ($existing) {
-            $stats['skipped']++;
-            return;
+            return false;
         }
 
         // Télécharger les pièces jointes
@@ -133,11 +138,12 @@ class ImapService
             'body_html' => $message->getHTMLBody(),
             'attachments' => $attachments,
             'received_at' => $message->getDate(),
-            'user_id' => $this->user->id,
+            'user_id' => $this->user?->id,
             'folder' => Email::FOLDER_INBOX,
             'priority' => $this->detectPriority($message),
             'in_reply_to' => $message->getInReplyTo(),
         ]);
+        return true;
     }
 
     /**
@@ -196,9 +202,10 @@ class ImapService
      */
     protected function detectPriority(Message $message): string
     {
-        $priority = $message->getPriority();
-        
-        // Priorité IMAP: 1 = haute, 3 = normale, 5 = basse
+        $rawPriority = $message->getPriority();
+        $priority = is_scalar($rawPriority) && is_numeric($rawPriority) ? (int) $rawPriority : 3;
+
+        // Priorité IMAP : 1 = haute, 3 = normale, 5 = basse.
         return match (true) {
             $priority <= 2 => Email::PRIORITY_HIGH,
             $priority >= 4 => Email::PRIORITY_LOW,

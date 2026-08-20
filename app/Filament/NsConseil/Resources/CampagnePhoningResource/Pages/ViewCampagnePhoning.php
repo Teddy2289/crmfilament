@@ -30,6 +30,8 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -44,6 +46,25 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
     public ?int $filter_telepro_id = null;
     public ?int $filter_agent_id = null;
     public ?string $filter_type = null;
+    public ?string $ventilationFilter = null;
+
+    public function getActiveVentilation(): string
+    {
+        return $this->ventilationFilter ?: (string) request()->query("ventilation", "available");
+    }
+
+    public function setVentilationFilter(string $filter): void
+    {
+        $allowed = ["available", "targeted", "multi_appels", "selected"];
+        if (str_starts_with($filter, "status:")) {
+            $allowed[] = $filter;
+        }
+        if (! in_array($filter, $allowed, true)) {
+            return;
+        }
+        $this->ventilationFilter = $filter;
+        $this->resetTable();
+    }
     public ?string $filter_status = null;
 
     // Per-tab filters: keyed by statut code
@@ -66,6 +87,11 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                 ->url(fn() => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
 
             PageActions\EditAction::make(),
+            PageActions\Action::make('export_ventilation_csv')
+                ->label('Exporter la ventilation CSV')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->action(fn () => $this->exportDiagnosticVentilation()),
         ];
     }
 
@@ -125,15 +151,23 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                         ->badge()
                         ->color('info'),
                     TextEntry::make('stats_traites')
-                        ->label('Contacts traités')
+                        ->label('Contacts uniques traités')
                         ->getStateUsing(fn($record) => $record->getStats()['contacts_traites'])
+                        ->helperText('Contacts ayant au moins un statut qui n’est pas une simple tentative infructueuse.')
                         ->badge()
                         ->color('success'),
                     TextEntry::make('stats_restants')
-                        ->label('Contacts restants')
+                        ->label('Contacts uniques restants')
                         ->getStateUsing(fn($record) => $record->getStats()['contacts_restants'])
+                        ->helperText('Contacts sans résultat qualifiant ; ils peuvent encore être rappelés.')
                         ->badge()
                         ->color('warning'),
+                    TextEntry::make('stats_appels')
+                        ->label('Appels enregistrés')
+                        ->getStateUsing(fn($record) => $record->getStats()['total_appels'])
+                        ->helperText('Nombre total de tentatives, plusieurs appels pouvant concerner le même contact.')
+                        ->badge()
+                        ->color('info'),
                     TextEntry::make('stats_progression')
                         ->label('Progression')
                         ->getStateUsing(fn($record) => $record->getStats()['progression'] . '%')
@@ -145,7 +179,9 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                         }),
                 ]),
 
-            Section::make('Contacts traités par statut')
+            Section::make('Répartition synthétique')
+                ->collapsible()
+                ->collapsed()
                 ->icon('heroicon-o-list-bullet')
                 ->columnSpanFull()
                 ->schema([
@@ -153,22 +189,12 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                         ->view('filament.infolists.entries.campagne-phoning-contacts-par-statut'),
                 ]),
 
-            Section::make('Résultats des appels')
-                ->icon('heroicon-o-phone')
+            Section::make("Résultats des appels")
+                ->icon("heroicon-o-phone")
+                ->columnSpanFull()
                 ->schema([
-                    TextEntry::make('stats_total_appels')
-                        ->label('Total appels passés')
-                        ->getStateUsing(fn($record) => $record->getStats()['total_appels'])
-                        ->badge()
-                        ->color('info'),
-
-                    ...($this->getRecord()->statutsUtilises() === []
-                        ? [
-                            TextEntry::make('aucun_appel')
-                                ->hiddenLabel()
-                                ->getStateUsing(fn() => 'Aucun appel enregistré pour le moment.'),
-                        ]
-                        : [$this->buildResultatsParStatutTabs()]),
+                    \Filament\Infolists\Components\ViewEntry::make("resultats_appels")
+                        ->view("filament.infolists.entries.campagne-resultats-appels"),
                 ]),
         ]));
     }
@@ -216,14 +242,107 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
         return $appel->appelable ? $this->queuePhone($appel->appelable) : null;
     }
 
+    public function exportDiagnosticVentilation()
+    {
+        $record = $this->getRecord();
+        $diagnostic = $this->getDiagnosticVentilation();
+        $filename = 'campagne-'.$record->id.'-ventilation-'.now()->format('Y-m-d_His').'.csv';
+
+        return response()->streamDownload(function () use ($record, $diagnostic): void {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Campagne', 'ID', 'Département', 'Type', 'Indicateur', 'Valeur', 'Détail'], ';');
+            foreach ($diagnostic['cards'] ?? [] as $card) {
+                fputcsv($handle, [$record->nom, $record->id, $diagnostic['department'] ?? '', $record->type_entite, $card['label'], $card['value'], $card['description']], ';');
+            }
+            fputcsv($handle, [], ';');
+            fputcsv($handle, ['Campagne', 'ID', 'Département', 'Type', 'Statut', 'Nombre', 'Détail'], ';');
+            foreach ($diagnostic['statuses'] ?? [] as $status => $count) {
+                fputcsv($handle, [$record->nom, $record->id, $diagnostic['department'] ?? '', $record->type_entite, $status, $count, 'Répartition de la population de référence'], ';');
+            }
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function getDiagnosticVentilation(): array
+    {
+        $record = $this->getRecord();
+        if ($record->type_entite !== 'prospects') {
+            return ['enabled' => false, 'cards' => [], 'statuses' => [], 'selected_statuses' => []];
+        }
+
+        $criteria = is_array($record->criteres) ? $record->criteres : [];
+        $base = Prospect::query()->whereNull('deleted_at');
+        if (! empty($criteria['departement'])) $base->where('departement', $criteria['departement']);
+        if (! empty($criteria['secteur_activite'])) $base->where('secteur_activite', 'like', '%'.$criteria['secteur_activite'].'%');
+        if (isset($criteria['nb_salaries_min']) && $criteria['nb_salaries_min'] !== '') $base->where('nb_salaries', '>=', (int) $criteria['nb_salaries_min']);
+        if (isset($criteria['nb_salaries_max']) && $criteria['nb_salaries_max'] !== '') $base->where('nb_salaries', '<=', (int) $criteria['nb_salaries_max']);
+        if (! empty($criteria['type_pressenti'])) $base->where('type_pressenti', $criteria['type_pressenti']);
+
+        $phoneMissing = fn (Builder $q) => $q
+            ->where(function (Builder $phone) {
+                $phone->whereNull('telephone')->orWhere('telephone', '');
+            })
+            ->where(function (Builder $alt) {
+                $alt->whereNull('telephone_alt')->orWhere('telephone_alt', '');
+            });
+        $statuses = (clone $base)->select('statut', DB::raw('COUNT(*) as total'))->groupBy('statut')->orderBy('statut')->pluck('total', 'statut')->map(fn ($v) => (int) $v)->all();
+        $selected = array_values(array_filter((array) ($criteria['statuts'] ?? []), 'is_string'));
+        $selectedCount = $selected === [] ? (clone $base)->count() : (clone $base)->whereIn('statut', $selected)->count();
+        $maxAttempts = (clone $base)->when($record->max_tentatives > 0, fn (Builder $q) => $q->whereRaw('(SELECT COUNT(*) FROM appels WHERE appels.appelable_id = prospects.id AND appels.appelable_type = ? AND appels.compte_comme_tentative = 1) >= ?', ['App\\Models\\Prospect', (int) $record->max_tentatives]))->count();
+        $multiAppels = (clone $base)->whereHas('appels', fn (Builder $q) => $q, '>=', 2)->count();
+        $withoutPhone = (clone $base)->where($phoneMissing)->count();
+        $targeted = $record->countContacts();
+        $available = $record->countQueueContacts();
+
+        return [
+            'enabled' => true,
+            'department' => $criteria['departement'] ?? null,
+            'cards' => [
+                ['key' => 'total', 'label' => 'Population de référence', 'value' => (clone $base)->count(), 'color' => 'gray', 'icon' => 'heroicon-o-users', 'description' => 'Toutes les fiches correspondant au périmètre géographique et métier.'],
+                ['key' => 'selected', 'label' => 'Statuts sélectionnés', 'value' => $selectedCount, 'color' => 'info', 'icon' => 'heroicon-o-funnel', 'description' => $selected === [] ? 'Tous les statuts' : implode(', ', $selected)],
+                ['key' => 'without_phone', 'label' => 'Sans téléphone', 'value' => $withoutPhone, 'color' => 'danger', 'icon' => 'heroicon-o-phone-x-mark', 'description' => 'Exclus de la file si la règle est activée.'],
+                ['key' => 'max_attempts', 'label' => 'Limite de tentatives', 'value' => $maxAttempts, 'color' => 'danger', 'icon' => 'heroicon-o-arrow-path-rounded-square', 'description' => 'Nombre maximal de tentatives atteint.'],
+                ['key' => 'multi_appels', 'label' => 'Prospects multi-appelés', 'value' => $multiAppels, 'color' => 'warning', 'icon' => 'heroicon-o-phone-arrow-up-right', 'description' => 'Prospects ayant au moins deux appels enregistrés.'],
+                ['key' => 'targeted', 'label' => 'Ciblés par la campagne', 'value' => $targeted, 'color' => 'primary', 'icon' => 'heroicon-o-adjustments-horizontal', 'description' => 'Résultat de la requête de campagne.'],
+                ['key' => 'available', 'label' => 'Disponibles dans la file', 'value' => $available, 'color' => 'success', 'icon' => 'heroicon-o-queue-list', 'description' => 'Résultat exact de la file de phoning.'],
+                ['key' => 'excluded', 'label' => 'Écart ciblés / disponibles', 'value' => max(0, $targeted - $available), 'color' => 'warning', 'icon' => 'heroicon-o-minus-circle', 'description' => 'Exclusions supplémentaires de la file, dont statuts retirés.'],
+            ],
+            'statuses' => $statuses,
+            'selected_statuses' => $selected,
+        ];
+    }
+
+    private function applyDiagnosticVentilation(Builder $query, CampagnePhoning $record, string $filter): Builder
+    {
+        if ($record->type_entite !== 'prospects' || $filter === 'available' || $filter === 'targeted') return $filter === 'available' ? $record->buildQueueQuery() : $query;
+        $criteria = is_array($record->criteres) ? $record->criteres : [];
+        if ($filter === 'without_phone') $query
+            ->where(function (Builder $phone) { $phone->whereNull('telephone')->orWhere('telephone', ''); })
+            ->where(function (Builder $alt) { $alt->whereNull('telephone_alt')->orWhere('telephone_alt', ''); });
+        if ($filter === 'max_attempts' && $record->max_tentatives > 0) $query->whereRaw('(SELECT COUNT(*) FROM appels WHERE appels.appelable_id = prospects.id AND appels.appelable_type = ? AND appels.compte_comme_tentative = 1) >= ?', ['App\\Models\\Prospect', (int) $record->max_tentatives]);
+        if ($filter === 'multi_appels') $query->whereHas('appels', fn (Builder $q) => $q, '>=', 2);
+        if ($filter === 'targeted') { /* conserve la population ciblée sans modifier les critères */ }
+        if ($filter === 'selected' && ! empty($criteria['statuts'])) $query->whereIn('statut', (array) $criteria['statuts']);
+        if (str_starts_with($filter, 'status:')) $query->where('statut', substr($filter, 7));
+        return $query;
+    }
+
     public function table(Table $table): Table
     {
         return $table
             ->heading(fn() => 'File d\'attente - ' . $this->getRecord()->countQueueContacts() . ' contact(s)')
-            ->query(fn() => $this->getRecord()->buildQueueQuery())
+            ->searchPlaceholder('Nom, téléphone, email ou ville')
+            ->searchDebounce(400)
+            ->query(function () {
+                $record = $this->getRecord();
+                $filter = (string) $this->getActiveVentilation();
+                return $this->applyDiagnosticVentilation($record->buildQuery(), $record, $filter);
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('queue_contact')
                     ->label('Contact')
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $this->applyQueueSearch($query, $search))
                     ->getStateUsing(fn(Model $record) => $this->queueContactName($record))
                     ->description(fn(Model $record) => $this->queueContactDescription($record))
                     ->weight('semibold')
@@ -293,11 +412,35 @@ class ViewCampagnePhoning extends ViewRecord implements HasTable
                         $this->retirerContactDeCampagne($record);
                     }),
             ])
-            ->defaultPaginationPageOption(25)
+            ->defaultPaginationPageOption(10)
             ->paginated([10, 25, 50])
             ->emptyStateHeading('Aucun contact en file d\'attente')
             ->emptyStateDescription('La campagne ne contient aucun contact appelable avec les critères actuels.')
             ->emptyStateIcon('heroicon-o-phone-x-mark');
+    }
+
+    private function applyQueueSearch(Builder $query, string $search): Builder
+    {
+        $table = $query->getModel()->getTable();
+        $columns = match ($table) {
+            'prospects' => ['nom', 'raison_sociale', 'email', 'ville', 'telephone', 'telephone_alt'],
+            'clients' => ['prenom', 'nom_tiers', 'email', 'ville', 'telephone'],
+            'contacts_partenaires' => ['nom_affichage', 'nom_complet', 'email', 'ville', 'telephone'],
+            default => ['nom', 'email', 'ville', 'telephone'],
+        };
+        $needle = '%' . mb_strtolower(trim($search)) . '%';
+        $digits = preg_replace('/\\D+/', '', $search) ?: '';
+        return $query->where(function (Builder $q) use ($columns, $needle, $digits): void {
+            foreach ($columns as $column) {
+                $q->orWhereRaw("LOWER(COALESCE(`{$column}`, '')) LIKE ?", [$needle]);
+            }
+            if ($digits !== '') {
+                foreach (['telephone', 'telephone_alt'] as $column) {
+                    $normalized = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(`{$column}`, ''), ' ', ''), '.', ''), '-', ''), '(', ''), ')', '')";
+                    $q->orWhereRaw("{$normalized} LIKE ?", ['%' . $digits . '%']);
+                }
+            }
+        });
     }
 
     private function retirerContactDeCampagne(Model $record): void

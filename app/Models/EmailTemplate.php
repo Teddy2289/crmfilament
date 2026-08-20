@@ -12,6 +12,7 @@ class EmailTemplate extends Model
         'sujet',
         'corps',
         'description',
+        'contact_type',
         'actif',
     ];
 
@@ -75,12 +76,19 @@ class EmailTemplate extends Model
     private function remplacerVariables(string $texte, array $variables): string
     {
         $estHtml = $this->estHtml($texte);
+        $variables = collect($variables)->mapWithKeys(fn ($value, $key) => [strtolower(trim((string) $key)) => (string) $value])->all();
 
-        foreach ($variables as $cle => $valeur) {
-            $valeur = (string) $valeur;
-            $texte = str_replace('{{' . $cle . '}}', $estHtml ? e($valeur) : $valeur, $texte);
-        }
-
-        return $texte;
+        return preg_replace_callback(
+            '/\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}|\[\[\s*([A-Za-z0-9_.-]+)\s*\]\]|(?<!\{)\{\s*([A-Za-z0-9_.-]+)\s*\}(?!\})/',
+            function (array $match) use ($variables, $estHtml): string {
+                $cle = strtolower(trim((string) ($match[1] ?: $match[2] ?: $match[3])));
+                if (! array_key_exists($cle, $variables)) {
+                    return $match[0];
+                }
+                $valeur = $variables[$cle];
+                return $estHtml ? e($valeur) : $valeur;
+            },
+            $texte
+        ) ?? $texte;
     }
 }

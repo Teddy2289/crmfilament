@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Filament\NsConseil\Resources\ProspectResource;
+use App\Models\Email;
 use App\Models\EmailConfiguration;
 use App\Models\Prospect;
 use App\Models\User;
@@ -33,14 +34,43 @@ class SendProspectionMailJob implements ShouldQueue
         public ?int $notifyUserId = null,
         public ?string $sourceEmail = null,
         public ?int $emailConfigurationId = null,
+        public ?string $cc = null,
+        public ?string $bcc = null,
     ) {
     }
 
     public function handle(): void
     {
         try {
-            $this->configureMailerFromEmailConfiguration();
-            Mail::mailer('smtp')->to($this->to)->send($this->mailable);
+            // Le transport SMTP Laravel provient du .env. La configuration CRM
+            // peut rester informative, mais ne doit pas écraser les identifiants valides.
+            $pendingMail = Mail::mailer('smtp')->to($this->to);
+            if (is_string($this->cc) && filter_var(trim($this->cc), FILTER_VALIDATE_EMAIL)
+                && strcasecmp(trim($this->cc), $this->to) !== 0) {
+                $pendingMail->cc(trim($this->cc));
+            }
+            if (is_string($this->bcc) && filter_var(trim($this->bcc), FILTER_VALIDATE_EMAIL)
+                && strcasecmp(trim($this->bcc), $this->to) !== 0) {
+                $pendingMail->bcc(trim($this->bcc));
+            }
+            $pendingMail->send($this->mailable);
+
+            // Conserver une copie dans la boîte Envoyés du CRM.
+            Email::create([
+                'type' => Email::TYPE_SENT,
+                'folder' => Email::FOLDER_SENT,
+                'from_email' => $this->sourceEmail ?: config('mail.from.address'),
+                'from_name' => config('mail.from.name'),
+                'to_email' => $this->to,
+                'cc_email' => $this->cc,
+                'bcc_email' => $this->bcc,
+                'subject' => $this->emailLabel,
+                'body_text' => 'Message envoyé depuis le CRM : '.$this->emailLabel,
+                'sent_at' => now(),
+                'user_id' => $this->notifyUserId,
+                'priority' => Email::PRIORITY_NORMAL,
+            ]);
+
             $this->notifier(true);
         } catch (\Throwable $e) {
             Log::error("SendProspectionMailJob: échec envoi [{$this->emailLabel}] à {$this->to}" .

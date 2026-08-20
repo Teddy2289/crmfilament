@@ -213,6 +213,20 @@ class RendezVousResource extends Resource
                         default => null,
                     }),
 
+                Tables\Columns\TextColumn::make('prospect.nom')
+                    ->label('Prospect')
+                    ->getStateUsing(fn($record) => $record->rdvable_type === \App\Models\Prospect::class && $record->prospect
+                        ? ($record->prospect->raison_sociale ?? $record->prospect->nom ?? '—')
+                        : '—')
+                    ->url(fn($record) => $record->rdvable_type === \App\Models\Prospect::class && $record->prospect
+                        ? \App\Filament\NsConseil\Resources\ProspectResource::getUrl('view', ['record' => $record->prospect], panel: 'ns-conseil')
+                        : null)
+                    ->openUrlInNewTab()
+                    ->searchable()
+                    ->sortable()
+                    ->icon('heroicon-o-user')
+                    ->color('primary'),
+
                 Tables\Columns\TextColumn::make('date_heure')
                     ->label('Date')
                     ->dateTime('d/m/Y H:i')
@@ -379,163 +393,144 @@ class RendezVousResource extends Resource
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema(static::applyShowFieldPermissions([
-            Infolists\Components\Section::make('Informations générales')->schema([
-                Infolists\Components\TextEntry::make('type')
-                    ->label('Type')
-                    ->badge()
-                    ->formatStateUsing(
-                        fn($state) => $state instanceof RendezVousType
+            Infolists\Components\Section::make('Résumé du rendez-vous')
+                ->icon('heroicon-o-calendar-days')
+                ->schema([
+                    Infolists\Components\TextEntry::make('type')
+                        ->label('Type')
+                        ->badge()
+                        ->formatStateUsing(fn ($state) => $state instanceof RendezVousType
                             ? $state->label()
-                            : RendezVousType::tryFrom((string) $state)?->label() ?? $state
-                    )
-                    ->color(fn($state) => match ($state instanceof RendezVousType ? $state : RendezVousType::tryFrom((string) $state)) {
-                        RendezVousType::Appel => 'primary',
-                        RendezVousType::Permanence => 'success',
-                        RendezVousType::Presentation => 'warning',
-                        RendezVousType::Intervention => 'danger',
-                        default => 'gray',
-                    }),
-
-                Infolists\Components\TextEntry::make('statut')
-                    ->label('Statut')
-                    ->badge()
-                    ->formatStateUsing(
-                        fn($state) => $state instanceof RendezVousStatut
+                            : RendezVousType::tryFrom((string) $state)?->label() ?? '—')
+                        ->color('primary'),
+                    Infolists\Components\TextEntry::make('statut')
+                        ->label('Statut')
+                        ->badge()
+                        ->formatStateUsing(fn ($state) => $state instanceof RendezVousStatut
                             ? $state->label()
-                            : RendezVousStatut::tryFrom((string) $state)?->label() ?? $state
-                    )
-                    ->color(fn($state) => match ($state instanceof RendezVousStatut ? $state : RendezVousStatut::tryFrom((string) $state)) {
-                        RendezVousStatut::Planifie => 'info',
-                        RendezVousStatut::Realise => 'success',
-                        RendezVousStatut::Annule => 'danger',
-                        RendezVousStatut::Decale => 'warning',
-                        default => 'gray',
-                    }),
+                            : RendezVousStatut::tryFrom((string) $state)?->label() ?? '—')
+                        ->color(fn ($state) => match ($state instanceof RendezVousStatut ? $state : RendezVousStatut::tryFrom((string) $state)) {
+                            RendezVousStatut::Planifie => 'info',
+                            RendezVousStatut::Realise => 'success',
+                            RendezVousStatut::Annule => 'danger',
+                            RendezVousStatut::Decale => 'warning',
+                            default => 'gray',
+                        }),
+                    Infolists\Components\TextEntry::make('date_heure')
+                        ->label('Date et heure')
+                        ->dateTime('d/m/Y à H:i')
+                        ->icon('heroicon-o-clock')
+                        ->weight('bold'),
+                    Infolists\Components\TextEntry::make('duree')
+                        ->label('Durée')
+                        ->formatStateUsing(fn ($state) => $state ? ((string) $state . ' min') : '—')
+                        ->icon('heroicon-o-hourglass'),
+                ])->columns(4),
 
-                Infolists\Components\TextEntry::make('date_heure')
-                    ->label('Date et heure')
-                    ->dateTime('d/m/Y à H:i'),
-
-                Infolists\Components\TextEntry::make('lieu')
-                    ->label('Lieu'),
-
-                Infolists\Components\TextEntry::make('adresse_lieu')
-                    ->label('Adresse'),
-            ])->columns(3),
-
-            Infolists\Components\Section::make('Interlocuteur')->schema([
-                Infolists\Components\TextEntry::make('interlocuteur_nom')
-                    ->label('Nom'),
-                Infolists\Components\TextEntry::make('interlocuteur_tel')
-                    ->label('Téléphone')
-                    ->badge()
-                    ->color('green')
-                    ->icon('heroicon-o-phone')
-                    ->copyable(),
-                Infolists\Components\TextEntry::make('interlocuteur_email')
-                    ->label('Email')
-                    ->copyable(),
-            ])->columns(3),
-
-            Infolists\Components\Section::make('Équipe')->schema([
-                Infolists\Components\TextEntry::make('commercial.nom')
-                    ->label('Commercial')
-                    ->getStateUsing(fn($record) => $record->commercial
-                        ? "{$record->commercial->prenom} {$record->commercial->nom}" : '—'),
-                Infolists\Components\TextEntry::make('teleprospecteur.nom')
-                    ->label('Téléprospecteur')
-                    ->getStateUsing(fn($record) => $record->teleprospecteur
-                        ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}" : '—'),
-                Infolists\Components\IconEntry::make('google_event_id')
-                    ->label('Google Calendar')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->trueColor('success')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->falseColor('gray'),
-            ])->columns(3),
-
-            Infolists\Components\Section::make('Notes')->schema([
-                Infolists\Components\TextEntry::make('notes')
-                    ->label('')
-                    ->columnSpanFull()
-                    ->html(),
-            ]),
-
-            Infolists\Components\Section::make('Contact lié')->schema([
-                Infolists\Components\TextEntry::make('rdvable_nom')
-                    ->label('Nom du contact')
-                    ->getStateUsing(function ($record) {
-                        return match ($record->rdvable_type) {
-                            'App\Models\Prospect' => $record->prospect?->nom ?? '—',
-                            'App\Models\Partenaire' => $record->partenaire?->nom ?? '—',
-                            'App\Models\Client' => $record->rdvable?->nom ?? $record->rdvable?->prenom . ' ' . $record->rdvable?->nom ?? '—',
-                            'App\Models\ContactParticulier' => $record->rdvable?->nom ?? '—',
+            Infolists\Components\Section::make('Prospect / contact')
+                ->icon('heroicon-o-user-circle')
+                ->schema([
+                    Infolists\Components\TextEntry::make('prospect_nom')
+                        ->label('Prospect')
+                        ->state(fn ($record) => $record->rdvable_type === \App\Models\Prospect::class
+                            ? ($record->prospect?->raison_sociale ?? $record->prospect?->nom ?? 'Prospect introuvable')
+                            : ($record->rdvable?->nom ?? '—'))
+                        ->url(fn ($record) => $record->rdvable_type === \App\Models\Prospect::class && $record->prospect
+                            ? \App\Filament\NsConseil\Resources\ProspectResource::getUrl('view', ['record' => $record->prospect], panel: 'ns-conseil')
+                            : null)
+                        ->openUrlInNewTab()
+                        ->icon('heroicon-o-arrow-top-right-on-square')
+                        ->weight('bold')
+                        ->color('primary'),
+                    Infolists\Components\TextEntry::make('rdvable_type_label')
+                        ->label('Nature du contact')
+                        ->state(fn ($record) => match ($record->rdvable_type) {
+                            \App\Models\Prospect::class => 'Prospect',
+                            \App\Models\Partenaire::class => 'Partenaire',
+                            \App\Models\Client::class => 'Client',
+                            \App\Models\ContactParticulier::class => 'Particulier',
                             default => '—',
-                        };
-                    })
-                    ->url(function ($record) {
-                        return match ($record->rdvable_type) {
-                            'App\Models\Prospect' => route('filament.ns-conseil.resources.prospects.view', ['record' => $record->prospect?->id]),
-                            'App\Models\Partenaire' => route('filament.ns-conseil.resources.partenaires.view', ['record' => $record->partenaire?->id]),
-                            'App\Models\Client' => route('filament.ns-conseil.resources.clients.view', ['record' => $record->rdvable?->id]),
-                            default => null,
-                        };
-                    })
-                    ->openUrlInNewTab(),
+                        })
+                        ->badge(),
+                    Infolists\Components\TextEntry::make('interlocuteur_nom')
+                        ->label('Interlocuteur')
+                        ->placeholder('Non renseigné')
+                        ->icon('heroicon-o-identification'),
+                    Infolists\Components\TextEntry::make('interlocuteur_tel')
+                        ->label('Téléphone')
+                        ->placeholder('Non renseigné')
+                        ->icon('heroicon-o-phone')
+                        ->copyable(),
+                    Infolists\Components\TextEntry::make('interlocuteur_email')
+                        ->label('Email')
+                        ->placeholder('Non renseigné')
+                        ->icon('heroicon-o-envelope')
+                        ->copyable(),
+                ])->columns(3),
 
-                Infolists\Components\TextEntry::make('rdvable_type_label')
-                    ->label('Type')
-                    ->getStateUsing(function ($record) {
-                        return match ($record->rdvable_type) {
-                            'App\Models\Prospect' => 'Prospect',
-                            'App\Models\Partenaire' => 'Partenaire',
-                            'App\Models\Client' => 'Client',
-                            'App\Models\ContactParticulier' => 'Particulier',
-                            default => 'Inconnu',
-                        };
-                    })
-                    ->badge(),
-            ])->columns(2)->visible(fn($record) => $record->rdvable_id !== null),
+            Infolists\Components\Section::make('Organisation et lieu')
+                ->icon('heroicon-o-building-office-2')
+                ->schema([
+                    Infolists\Components\TextEntry::make('commercial_nom')
+                        ->label('Commercial')
+                        ->state(fn ($record) => $record->commercial
+                            ? trim($record->commercial->prenom . ' ' . $record->commercial->nom)
+                            : 'Non assigné'),
+                    Infolists\Components\TextEntry::make('teleprospecteur_nom')
+                        ->label('Téléprospecteur')
+                        ->state(fn ($record) => $record->teleprospecteur
+                            ? trim($record->teleprospecteur->prenom . ' ' . $record->teleprospecteur->nom)
+                            : 'Non assigné'),
+                    Infolists\Components\TextEntry::make('lieu')
+                        ->label('Lieu')
+                        ->placeholder('Non renseigné'),
+                    Infolists\Components\TextEntry::make('adresse_lieu')
+                        ->label('Adresse')
+                        ->placeholder('Non renseignée')
+                        ->columnSpan(2),
+                ])->columns(3),
 
-            Infolists\Components\Section::make('Fiches concernées')->schema([
-                Infolists\Components\RepeatableEntry::make('fiches_associees')
-                    ->label('')
-                    ->relationship()
-                    ->getStateUsing(function ($record) {
-                        // Récupérer les fiches Word générées pour le contact lié
-                        if ($record->rdvable_type === 'App\Models\Prospect' && $record->prospect_id) {
-                            return \App\Models\Appel::where('appelable_type', 'App\Models\Prospect')
-                                ->where('appelable_id', $record->prospect_id)
+            Infolists\Components\Section::make('Notes')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Infolists\Components\TextEntry::make('notes')
+                        ->label('')
+                        ->placeholder('Aucune note')
+                        ->prose()
+                        ->columnSpanFull(),
+                ]),
+
+            Infolists\Components\Section::make('Fiches associées')
+                ->icon('heroicon-o-document-text')
+                ->schema([
+                    Infolists\Components\RepeatableEntry::make('fiches_associees')
+                        ->label('')
+                        ->getStateUsing(function ($record) {
+                            if ($record->rdvable_type !== \App\Models\Prospect::class || ! $record->rdvable_id) {
+                                return collect();
+                            }
+                            return \App\Models\Appel::where('appelable_type', \App\Models\Prospect::class)
+                                ->where('appelable_id', $record->rdvable_id)
                                 ->whereNotNull('fiche_word_path')
                                 ->latest('fiche_word_generated_at')
                                 ->get();
-                        }
-                        return collect();
-                    })
-                    ->schema([
-                        Infolists\Components\TextEntry::make('fiche_type')
-                            ->label('Type')
-                            ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'bleue' => 'blue',
-                                'jaune' => 'yellow',
-                                'verte' => 'green',
-                                default => 'gray',
-                            }),
-
-                        Infolists\Components\TextEntry::make('fiche_word_generated_at')
-                            ->label('Générée le')
-                            ->dateTime('d/m/Y H:i'),
-
-                        Infolists\Components\TextEntry::make('fiche_word_path')
-                            ->label('Télécharger')
-                            ->formatStateUsing(fn ($state) => 'Télécharger la fiche')
-                            ->url(fn ($state) => $state)
-                            ->openUrlInNewTab()
-                            ->color('primary'),
-                    ])->columns(3),
-            ])->visible(fn($record) => $record->rdvable_type === 'App\Models\Prospect' && $record->prospect_id !== null),
+                        })
+                        ->schema([
+                            Infolists\Components\TextEntry::make('fiche_type')
+                                ->label('Type')
+                                ->badge(),
+                            Infolists\Components\TextEntry::make('fiche_word_generated_at')
+                                ->label('Générée le')
+                                ->dateTime('d/m/Y H:i'),
+                            Infolists\Components\TextEntry::make('fiche_word_path')
+                                ->label('Document')
+                                ->formatStateUsing(fn ($state) => $state ? 'Ouvrir la fiche' : '—')
+                                ->url(fn ($state) => $state)
+                                ->openUrlInNewTab()
+                                ->color('primary'),
+                        ])->columns(3),
+                ])
+                ->visible(fn ($record) => $record->rdvable_type === \App\Models\Prospect::class && (bool) $record->rdvable_id),
         ]));
     }
 

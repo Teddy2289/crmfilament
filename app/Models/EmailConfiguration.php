@@ -44,15 +44,17 @@ class EmailConfiguration extends Model
 
     public function getImapConnectionArray(): array
     {
+        // Les identifiants IMAP opérationnels sont centralisés dans .env.
+        // IMAP_* peut surcharger MAIL_* si un compte possède une configuration dédiée.
         return [
-            'host' => $this->imap_host,
-            'port' => $this->imap_port,
-            'encryption' => $this->imap_encryption,
-            'validate_cert' => true,
-            'username' => $this->email,
-            'password' => $this->password,
-            'protocol' => $this->imap_protocol,
-            'authentication' => null,
+            'host' => config('imap.host', $this->imap_host),
+            'port' => (int) config('imap.port', 993),
+            'encryption' => config('imap.encryption', 'ssl'),
+            'validate_cert' => (bool) config('imap.validate_cert', true),
+            'username' => config('imap.username') ?: $this->email,
+            'password' => config('imap.password') ?: $this->password,
+            'protocol' => config('imap.protocol', 'imap'),
+            'authentication' => config('imap.authentication'),
         ];
     }
 

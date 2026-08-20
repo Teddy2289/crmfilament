@@ -22,7 +22,7 @@
 
                 <div>
                     <label class="block text-xs font-medium text-gray-700">Recherche</label>
-                    <input id="filter-search-{{ $slug }}" type="search" placeholder="Contact, téléphone ou téléprospecteur" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    <input id="filter-search-{{ $slug }}" type="search" placeholder="Nom, téléphone, email ou ville" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -98,6 +98,8 @@
                             data-date="{{ optional($appel->date_heure)->format('Y-m-d') }}"
                             data-contact="{{ strtolower($appel->appelable?->nom ?? 'contact #' . $appel->appelable_id) }}"
                             data-phone="{{ strtolower($appel->appelable?->telephone ?? $appel->numero_appelant) }}"
+                            data-email="{{ strtolower($appel->appelable?->email ?? '') }}"
+                            data-city="{{ strtolower($appel->appelable?->ville ?? '') }}"
                             data-telepro="{{ strtolower($appel->user?->nom ?? '') }}"
                         >
                             <td class="px-4 py-4">
@@ -264,12 +266,14 @@
                     const rowDate = parseDate(row.dataset.date);
                     const rowContact = normalize(row.dataset.contact);
                     const rowPhone = normalize(row.dataset.phone);
+                    const rowEmail = normalize(row.dataset.email);
+                    const rowCity = normalize(row.dataset.city);
                     const rowTelepro = normalize(row.dataset.telepro);
 
                     const matchesTeleprospecteur = !teleprospecteur || rowTeleprospecteur === teleprospecteur;
                     const matchesDateFrom = !dateFrom || (rowDate && rowDate >= dateFrom);
                     const matchesDateUntil = !dateUntil || (rowDate && rowDate <= dateUntil);
-                    const matchesSearch = !search || rowContact.includes(search) || rowPhone.includes(search) || rowTelepro.includes(search);
+                    const matchesSearch = !search || rowContact.includes(search) || rowPhone.includes(search) || rowEmail.includes(search) || rowCity.includes(search) || rowTelepro.includes(search);
 
                     const visibleRow = matchesTeleprospecteur && matchesDateFrom && matchesDateUntil && matchesSearch;
                     row.style.display = visibleRow ? '' : 'none';

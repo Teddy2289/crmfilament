@@ -32,6 +32,9 @@ class AccessRightsCatalog
      */
     private static array $userPermissionCache = [];
 
+    /** Cache par requête des permissions d’un utilisateur. */
+    private static array $userCanCache = [];
+
     /**
      * Source de vérité des droits par module/entité exposés en super administration.
      *
@@ -726,6 +729,7 @@ class AccessRightsCatalog
         static::ensurePermissionsExist();
         $role->syncPermissions(static::allPermissionNames());
         static::$userPermissionCache = [];
+        static::$userCanCache = [];
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
@@ -744,6 +748,7 @@ class AccessRightsCatalog
         );
 
         static::$userPermissionCache = [];
+        static::$userCanCache = [];
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
@@ -783,30 +788,18 @@ class AccessRightsCatalog
     public static function userCan(?Authenticatable $user, string $permission): bool
     {
         if (! $user instanceof User || ! $user->actif) {
-            try {
-                \Log::info('AccessRightsCatalog::userCan - denied (inactive or not user)', ['user' => $user?->id ?? null, 'permission' => $permission]);
-            } catch (\Throwable $e) {
-            }
-
             return false;
         }
 
+        $cacheKey = (string) $user->getKey().'|'.$permission;
+        if (array_key_exists($cacheKey, static::$userCanCache)) {
+            return static::$userCanCache[$cacheKey];
+        }
+
         try {
-            $result = $user->can($permission);
-            try {
-                \Log::info('AccessRightsCatalog::userCan', ['user_id' => $user->id, 'permission' => $permission, 'result' => $result, 'current_panel' => \Filament\Facades\Filament::getCurrentPanel()?->id ?? null]);
-            } catch (\Throwable $e) {
-                // ignore logging errors
-            }
-
-            return $result;
+            return static::$userCanCache[$cacheKey] = (bool) $user->can($permission);
         } catch (Throwable) {
-            try {
-                \Log::warning('AccessRightsCatalog::userCan - exception during can()', ['user_id' => $user->id ?? null, 'permission' => $permission]);
-            } catch (\Throwable $e) {
-            }
-
-            return false;
+            return static::$userCanCache[$cacheKey] = false;
         }
     }
 

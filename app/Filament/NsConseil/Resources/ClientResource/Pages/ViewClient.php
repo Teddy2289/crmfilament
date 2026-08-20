@@ -5,7 +5,10 @@ namespace App\Filament\NsConseil\Resources\ClientResource\Pages;
 use App\Filament\NsConseil\Resources\ClientResource;
 use App\Filament\Widgets\HistoriqueModificationsWidget;
 use App\Models\Client;
+use App\Models\PipelineStatut;
+use App\Filament\NsConseil\Resources\PartenaireResource;
 use Filament\Actions;
+use Filament\Forms;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewClient extends ViewRecord
@@ -37,6 +40,33 @@ class ViewClient extends ViewRecord
                 ]))
                 ->openUrlInNewTab(),
 
+            Actions\Action::make('voir_partenaire')
+                ->label('Voir le partenaire')
+                ->icon('heroicon-o-building-office-2')
+                ->color('gray')
+                ->visible(fn () => filled($this->record->partenaire_id))
+                ->url(fn () => PartenaireResource::getUrl('view', ['record' => $this->record->partenaire_id]))
+                ->openUrlInNewTab(),
+            Actions\Action::make('changer_statut')
+                ->label('Changer le statut')
+                ->icon('heroicon-o-arrow-path')
+                ->color('gray')
+                ->form([
+                    Forms\Components\Select::make('etat')
+                        ->label('Nouveau statut client')
+                        ->options(fn () => PipelineStatut::optionsFor('client') ?: Client::etatOptions())
+                        ->default(fn () => $this->record->etat)
+                        ->required()
+                        ->native(false),
+                ])
+                ->action(function (array $data): void {
+                    $this->record->update([
+                        'etat' => $data['etat'],
+                        'date_modification_statut' => now(),
+                    ]);
+                    $this->record->refresh();
+                    $this->dispatch('notify', type: 'success', message: 'Statut client mis à jour.');
+                }),
             Actions\Action::make('toggle_contact')
                 ->label(fn () => $this->record->ne_plus_contacter ? 'Réactiver' : 'Bloquer')
                 ->icon(fn () => $this->record->ne_plus_contacter ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')

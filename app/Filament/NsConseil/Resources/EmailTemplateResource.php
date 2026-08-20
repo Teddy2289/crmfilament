@@ -47,6 +47,16 @@ class EmailTemplateResource extends Resource
                         ->rows(2)
                         ->columnSpanFull(),
 
+                    Forms\Components\Select::make('contact_type')
+                        ->label('Type de contact')
+                        ->options([
+                            'prospect' => 'Prospect',
+                            'client' => 'Client',
+                            'partenaire' => 'Partenaire',
+                        ])
+                        ->placeholder('Tous les types')
+                        ->native(false)
+                        ->helperText('Laissez vide pour un modèle commun aux trois types.'),
                     Forms\Components\Toggle::make('actif')
                         ->label('Actif')
                         ->default(true),
@@ -192,6 +202,21 @@ class EmailTemplateResource extends Resource
                     ->color('gray')
                     ->fontFamily('mono'),
 
+                Tables\Columns\TextColumn::make('contact_type')
+                    ->label('Type')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'prospect' => 'Prospect',
+                        'client' => 'Client',
+                        'partenaire' => 'Partenaire',
+                        default => 'Tous',
+                    })
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'prospect' => 'info',
+                        'client' => 'success',
+                        'partenaire' => 'warning',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('sujet')
                     ->label('Sujet')
                     ->limit(60)

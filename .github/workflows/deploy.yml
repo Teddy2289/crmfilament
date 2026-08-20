@@ -112,4 +112,13 @@ jobs:
             echo "==> Bringing app back online..."
             php artisan up
 
+            echo "==> Running read-only phone search smoke test..."
+            php artisan crm:phone-search-smoke
+            echo "==> Checking public login endpoint..."
+            HTTP_STATUS=$(curl --silent --show-error --max-time 20 --output /dev/null --write-out "%{http_code}" https://manage.ns-conseil.com/ns-conseil/login)
+            case "$HTTP_STATUS" in
+              200|301|302|303|307|308) echo "Public endpoint healthy (HTTP $HTTP_STATUS)" ;;
+              *) echo "Public endpoint check failed (HTTP $HTTP_STATUS)" >&2; exit 1 ;;
+            esac
+            echo "==> Deployment smoke tests complete!"
             echo "==> Deployment complete!"

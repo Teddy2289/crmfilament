@@ -2,6 +2,12 @@
 
 namespace App\Filament\NsConseil\Resources\CampagnePhoningResource\Pages;
 
+use App\Filament\NsConseil\Widgets\CampagnesGlobalStatsWidget;
+use App\Filament\NsConseil\Widgets\CampagnesGlobalPeriodWidget;
+use App\Filament\NsConseil\Widgets\CampagnesDailyCallsChartWidget;
+use App\Filament\NsConseil\Widgets\CampagnesChartExportWidget;
+use App\Filament\NsConseil\Widgets\CampagnesAgentPerformanceWidget;
+use App\Filament\NsConseil\Widgets\CampagnesCallStatusesPieWidget;
 use App\Filament\NsConseil\Pages\PhoningWorkflow;
 use App\Filament\NsConseil\Resources\CampagnePhoningResource;
 use Filament\Actions;
@@ -24,10 +30,24 @@ class ListCampagnesPhonings extends ListRecords
         parent::mount();
     }
 
+    protected function getFooterWidgets(): array
+    {
+        return [CampagnesGlobalPeriodWidget::class, CampagnesGlobalStatsWidget::class, CampagnesDailyCallsChartWidget::class, CampagnesChartExportWidget::class, CampagnesAgentPerformanceWidget::class, CampagnesCallStatusesPieWidget::class];
+    }
+
+    public function getFooterWidgetsColumns(): int|array
+    {
+        return 1;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
             Actions\CreateAction::make()->label('Nouvelle campagne'),
         ];
+    }
+    public function updatedTableFilters(): void
+    {
+        $this->dispatch('campagnes-global-filters-updated', periode: $this->tableFilters['periode'] ?? []);
     }
 }

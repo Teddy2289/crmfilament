@@ -4,10 +4,14 @@ namespace App\Filament\NsConseil\Widgets;
 
 use App\Enums\ProspectStatut;
 use App\Models\Prospect;
+use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class ProspectionStatutsChart extends ChartWidget
 {
+    use InteractsWithPageFilters;
+
     protected static ?string $heading = 'Répartition des prospects par statut';
 
     protected static ?int $sort = 2;
@@ -32,6 +36,27 @@ class ProspectionStatutsChart extends ChartWidget
         $user = auth()->user();
         $isTp = $user->hasRoleCache('teleprospecteur');
 
+        $filterStart = data_get($this->filters, 'startDate')
+            ?? data_get($this->filters, 'start_date')
+            ?? request()->input('filters.startDate')
+            ?? request()->input('filters.start_date');
+        $filterEnd = data_get($this->filters, 'endDate')
+            ?? data_get($this->filters, 'end_date')
+            ?? request()->input('filters.endDate')
+            ?? request()->input('filters.end_date');
+
+        $startDate = filled($filterStart)
+            ? Carbon::parse($filterStart)->startOfDay()
+            : now()->startOfMonth();
+        $endDate = filled($filterEnd)
+            ? Carbon::parse($filterEnd)->endOfDay()
+            : now()->endOfMonth();
+
+        $selectedUserId = data_get($this->filters, 'userId')
+            ?? data_get($this->filters, 'user_id')
+            ?? request()->input('filters.userId')
+            ?? request()->input('filters.user_id');
+
         $statuts = ProspectStatut::cases();
         $counts = [];
         $labels = [];
@@ -48,10 +73,17 @@ class ProspectionStatutsChart extends ChartWidget
         $bgColors = [];
 
         foreach ($statuts as $statut) {
-            $query = Prospect::where('statut', $statut->value);
+            $query = Prospect::where('statut', $statut->value)
+                // La répartition filtrée représente les prospects dont la fiche
+                // a été mise à jour pendant la période demandée.
+                ->whereBetween('updated_at', [$startDate, $endDate]);
 
             if ($isTp) {
                 $query->where('teleprospecteur_id', $user->id);
+            }
+
+            if (filled($selectedUserId)) {
+                $query->where('teleprospecteur_id', $selectedUserId);
             }
 
             $counts[] = $query->count();
@@ -62,7 +94,7 @@ class ProspectionStatutsChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Prospects',
+                    'label' => 'Prospects du ' . $startDate->format('d/m/Y') . ' au ' . $endDate->format('d/m/Y'),
                     'data' => $counts,
                     'backgroundColor' => $bgColors,
                     'borderColor' => $bgColors,

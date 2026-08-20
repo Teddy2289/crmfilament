@@ -1721,6 +1721,8 @@ $tentativesActuelles = $this->getTentativesAppel();
                 activeTab: 'edit',
                 subject: initial.subject || '',
                 recipient: initial.recipient || '',
+                cc: initial.cc || '',
+                ccEnabled: initial.ccEnabled === true,
                 body: initial.body || '',
                 originalSubject: initial.originalSubject || initial.subject || '',
                 originalBody: initial.originalBody || initial.body || '',
@@ -1739,7 +1741,9 @@ $tentativesActuelles = $this->getTentativesAppel();
                 markDirty() {
                     this.isDirty = this.subject !== this.originalSubject
                         || this.body !== this.originalBody
-                        || this.recipient !== initial.recipient;
+                        || this.recipient !== initial.recipient
+                        || this.cc !== (initial.cc || '')
+                        || this.ccEnabled !== (initial.ccEnabled === true);
                 },
 
                 syncEditorFromState() {
@@ -1800,7 +1804,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                         window.alert('Le sujet et le corps du message sont obligatoires.');
                         return;
                     }
-                    await this.$wire.syncEmailPreviewContent(this.subject, this.body, this.recipient);
+                    await this.$wire.syncEmailPreviewContent(this.subject, this.body, this.recipient, this.ccEnabled ? this.cc : null);
                     await this.$wire.confirmEmailPreview();
                 },
 
@@ -1861,7 +1865,10 @@ $tentativesActuelles = $this->getTentativesAppel();
                 return true;
             }
 
-            return window.confirm('Le rappel manuel est programmé un week-end. Confirmez-vous cette date ?');
+            Livewire.dispatch('notify', {
+                message: 'Rappel programmé un week-end : la date saisie est conservée.'
+            });
+            return true;
         }
 
         function copyToClipboard(text) {
@@ -1872,11 +1879,29 @@ $tentativesActuelles = $this->getTentativesAppel();
             });
         }
 
-        function switchInfoTab(tab) {
-            document.querySelectorAll('.pw-info-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.pw-info-panel[data-tab]').forEach(p => p.style.display = 'none');
-            document.querySelector(`.pw-info-tab[data-tab="${tab}"]`).classList.add('active');
-            document.querySelector(`.pw-info-panel[data-tab="${tab}"]`).style.display = 'block';
+        function phoningInfoTabStorageKey() {
+            const params = new URLSearchParams(window.location.search);
+            const contactId = params.get('contact_id') || 'current';
+            const contactType = params.get('contact_type') || 'prospect';
+            return `phoning-info-tab:${contactType}:${contactId}`;
+        }
+        function switchInfoTab(tab, persist = true) {
+            const button = document.querySelector(`.pw-info-tab[data-tab="${tab}"]`);
+            const panel = document.querySelector(`.pw-info-panel[data-tab="${tab}"]`);
+            if (!button || !panel) {
+                tab = 'contact';
+            }
+            document.querySelectorAll('.pw-info-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.querySelectorAll('.pw-info-panel[data-tab]').forEach(p => p.style.display = p.dataset.tab === tab ? 'block' : 'none');
+            if (persist) {
+                try { localStorage.setItem(phoningInfoTabStorageKey(), tab); } catch (e) {}
+            }
+        }
+        function restoreInfoTab() {
+            let tab = 'contact';
+            try { tab = localStorage.getItem(phoningInfoTabStorageKey()) || 'contact'; } catch (e) {}
+            if (!document.querySelector(`.pw-info-tab[data-tab="${tab}"]`)) tab = 'contact';
+            switchInfoTab(tab, false);
         }
 
         function switchCaseTab(tab) {
@@ -1888,12 +1913,18 @@ $tentativesActuelles = $this->getTentativesAppel();
             if (panel) panel.classList.add('active');
         }
 
-        document.addEventListener('livewire:navigated', () => {
-            switchInfoTab('contact');
+        document.addEventListener('livewire:navigated', () => setTimeout(restoreInfoTab, 0));
+        document.addEventListener('livewire:morph.updated', () => setTimeout(restoreInfoTab, 0));
+        document.addEventListener('livewire:init', () => {
+            if (window.Livewire && typeof Livewire.hook === 'function') {
+                Livewire.hook('request', ({ succeed }) => {
+                    const active = document.querySelector('.pw-info-tab.active')?.dataset?.tab;
+                    if (active) localStorage.setItem(phoningInfoTabStorageKey(), active);
+                    succeed(() => setTimeout(restoreInfoTab, 0));
+                });
+            }
         });
-        document.addEventListener('DOMContentLoaded', () => {
-            switchInfoTab('contact');
-        });
+        document.addEventListener('DOMContentLoaded', restoreInfoTab);
     </script>
     @endpush
 
@@ -2171,6 +2202,105 @@ $tentativesActuelles = $this->getTentativesAppel();
             </div>
         </div>
 
+        @if (($contactType ?? null) === 'partenaire')
+        <div class="pw-partner-details pw-card" style="margin: 0 1.25rem 1rem;">
+            <div class="pw-infos-header">
+                <span class="pw-infos-title">
+                    <span class="pw-infos-title-icon">🏢</span>
+                    Informations partenaire
+                </span>
+                <span class="pw-badge">{{ $info['type_partenaire'] ?? 'Partenaire' }}</span>
+            </div>
+            <div class="pw-summary-grid" style="border-top: 0;">
+                @php
+                    $partnerDetails = [
+                        'Nom retenu' => $info['nom_retenu'] ?? null,
+                        'Nomenclature interne' => $info['nomenclature_interne'] ?? null,
+                        'Origine du contact' => $info['origine_contact'] ?? null,
+                        'Commercial' => $info['commercial'] ?? null,
+                        'Conseiller' => $info['conseiller'] ?? null,
+                        'Fonction / interlocuteur' => $info['fonction'] ?? ($info['interlocuteur'] ?? null),
+                        'Parrain / marraine' => $info['parrain_marraine_texte'] ?? ($info['parrain_marraine'] ?? null),
+                        'Parrainage entreprise' => $info['parrainage_entreprise'] ?? null,
+                        'Permanence possible' => $info['possibilite_permanence'] ?? null,
+                        'Syndicat majoritaire' => $info['syndicat_majoritaire'] ?? null,
+                        'Réplication' => $info['replicable'] ?? null,
+                        'Ventes liées' => $info['nombre_ventes_liees'] ?? null,
+                        'Date signature' => $info['date_signature'] ?? null,
+                        'Année signature' => $info['annee_signature'] ?? null,
+                    ];
+                @endphp
+                @foreach ($partnerDetails as $label => $value)
+                    <div class="pw-summary-field">
+                        <span class="pw-summary-field-text">
+                            <span class="pw-summary-field-label">{{ $label }}</span>
+                            <span class="pw-summary-field-value">{{ filled($value) ? $value : '—' }}</span>
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+            @if (filled($info['notes'] ?? null))
+            <div style="padding: 0 1.25rem 1.125rem;">
+                <span class="pw-summary-field-label">Notes et commentaires</span>
+                <div class="pw-summary-field-value" style="white-space: pre-line; margin-top: .25rem;">{{ $info['notes'] }}</div>
+            </div>
+            @endif
+        </div>
+        @endif
+        @if (($contactType ?? null) === 'client')
+        <div class="pw-client-details pw-card" style="margin: 0 1.25rem 1rem;">
+            <div class="pw-infos-header">
+                <span class="pw-infos-title">Informations client</span>
+                <span class="pw-badge">{{ $info['statut'] ?? 'Client' }}</span>
+            </div>
+            <div class="pw-summary-grid" style="border-top: 0;">
+                @php
+                    $clientDetails = [
+                        'Référence client' => $info['ref_client'] ?? null,
+                        'Source' => $info['source_sheet'] ?? null,
+                        'Entreprise' => $info['entreprise'] ?? null,
+                        'Type de tiers' => $info['type_tiers'] ?? null,
+                        'Interlocuteur' => $info['interlocuteur'] ?? null,
+                        'Suivi client' => $info['suivi_client'] ?? null,
+                        'Partenaire' => $info['partenaire_nom'] ?? null,
+                        'Nomenclature partenaire' => $info['nomenclature_partenaire'] ?? null,
+                        'Rattachement partenaire' => $info['statut_rattachement_partenaire'] ?? null,
+                        'Parrain' => $info['parrain_nom'] ?? null,
+                        'Commercial' => $info['commercial'] ?? null,
+                        'Date de naissance' => $info['date_naissance'] ?? null,
+                        'Âge' => $info['age'] ?? null,
+                        'Montant CPF' => $info['montant_cpf'] ?? null,
+                        'Ne plus contacter' => ($info['ne_plus_contacter'] ?? false) ? 'Oui' : 'Non',
+                    ];
+                @endphp
+                @foreach ($clientDetails as $label => $value)
+                    <div class="pw-summary-field">
+                        <span class="pw-summary-field-text">
+                            <span class="pw-summary-field-label">{{ $label }}</span>
+                            <span class="pw-summary-field-value">{{ filled($value) ? $value : '—' }}</span>
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+            @if (filled($info['partenaire_id'] ?? null))
+                <div style="padding: 0 1.25rem 1.125rem;">
+                    <a href="{{ url('/ns-conseil/partenaires/'.$info['partenaire_id'].'/edit') }}" class="pw-action-link">Voir la fiche partenaire →</a>
+                </div>
+            @endif
+            @if (filled($info['statut_description'] ?? null) || filled($info['notes_commerciales'] ?? null))
+                <div style="padding: 0 1.25rem 1.125rem;">
+                    @if (filled($info['statut_description'] ?? null))
+                        <div class="pw-summary-field-label">Description du statut</div>
+                        <div class="pw-summary-field-value" style="margin-top: .25rem;">{{ $info['statut_description'] }}</div>
+                    @endif
+                    @if (filled($info['notes_commerciales'] ?? null))
+                        <div class="pw-summary-field-label" style="margin-top: .75rem;">Notes commerciales</div>
+                        <div class="pw-summary-field-value" style="white-space: pre-line; margin-top: .25rem;">{{ $info['notes_commerciales'] }}</div>
+                    @endif
+                </div>
+            @endif
+        </div>
+        @endif
         <div class="pw-body">
             <div class="pw-left">
 
@@ -2206,6 +2336,40 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </div>
 
                     <div class="pw-info-tabs">
+                        @if (($info['type'] ?? '') === 'prospect')
+                        <div style="display:flex;justify-content:flex-end;margin:0.75rem 0 0.25rem;">
+                            <button type="button" wire:click="openInlineProspectEditor" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.55rem 0.8rem;border:1px solid rgb(14 116 144 / 0.25);border-radius:0.65rem;background:rgb(236 254 255);color:rgb(14 116 144);font-size:0.78rem;font-weight:700;">
+                                Modifier la fiche
+                            </button>
+                        </div>
+                        @if ($showInlineProspectEditor)
+                        <section style="margin:0.75rem 0;padding:1rem;border:1px solid rgb(14 116 144 / 0.2);border-radius:0.8rem;background:rgb(248 250 252);">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;margin-bottom:0.8rem;">
+                                <div>
+                                    <h3 style="margin:0;font-size:0.95rem;font-weight:800;color:rgb(15 23 42);">Mise à jour en temps réel</h3>
+                                    <p style="margin:0.2rem 0 0;font-size:0.72rem;color:rgb(71 85 105);">Chaque valeur modifiée sera enregistrée avec l’ancienne et la nouvelle valeur.</p>
+                                </div>
+                                <button type="button" wire:click="cancelInlineProspectEditor" aria-label="Fermer l’édition" style="border:0;background:transparent;color:rgb(71 85 105);font-size:1.1rem;">×</button>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0.7rem;">
+                                @foreach ([['nom','Nom'],['telephone','Téléphone'],['email','Email'],['ville','Ville'],['statut','Statut'],['nb_salaries_libelle','Nombre de salariés']] as [$field,$label])
+                                <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.72rem;font-weight:700;color:rgb(51 65 85);">
+                                    {{ $label }}
+                                    <input type="text" wire:model.blur="prospectEdit.{{ $field }}" style="min-height:2.5rem;width:100%;border:1px solid rgb(203 213 225);border-radius:0.5rem;padding:0.55rem 0.65rem;background:white;color:rgb(15 23 42);">
+                                </label>
+                                @endforeach
+                                <label style="grid-column:1/-1;display:flex;flex-direction:column;gap:0.25rem;font-size:0.72rem;font-weight:700;color:rgb(51 65 85);">
+                                    Notes
+                                    <textarea wire:model.blur="prospectEdit.notes" rows="3" style="width:100%;border:1px solid rgb(203 213 225);border-radius:0.5rem;padding:0.55rem 0.65rem;background:white;color:rgb(15 23 42);"></textarea>
+                                </label>
+                            </div>
+                            <div style="display:flex;justify-content:flex-end;gap:0.55rem;margin-top:0.85rem;">
+                                <button type="button" wire:click="cancelInlineProspectEditor" style="padding:0.55rem 0.8rem;border:1px solid rgb(203 213 225);border-radius:0.55rem;background:white;color:rgb(51 65 85);font-size:0.78rem;font-weight:700;">Annuler</button>
+                                <button type="button" wire:click="saveInlineProspect" wire:loading.attr="disabled" style="padding:0.55rem 0.8rem;border:0;border-radius:0.55rem;background:rgb(15 118 110);color:white;font-size:0.78rem;font-weight:800;">Enregistrer les modifications</button>
+                            </div>
+                        </section>
+                        @endif
+                        @endif
                         <button class="pw-info-tab {{ ($info['type'] ?? '') === 'prospect' ? '' : 'active' }}" data-tab="contact" onclick="switchInfoTab('contact')">
                             <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                             Contact
@@ -2235,19 +2399,22 @@ $tentativesActuelles = $this->getTentativesAppel();
                             RDV
                         </button>
                         @endif
+                        <button class="pw-info-tab" data-tab="historique_rdv" onclick="switchInfoTab('historique_rdv')">Historique RDV</button>
                         @if (!empty($info['dernier_appel_ringover']))
                         <button class="pw-info-tab" data-tab="appels-ringover" onclick="switchInfoTab('appels-ringover')">
-                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 11.622 9.128 21 20.25 21s20.25-9.378 20.25-21S41.625 3.75 30.375 3.75c-1.898 0-3.750.189-5.551.564m-5.552 15.6c0 2.268-.18 4.505-.584 6.702m-5.5-13.402C3.964 18.017 3 21.25 3 25.5" /></svg>
                             Appel Ringover
                         </button>
+                        @endif
                         @if (config('aopia.prospection.show_ringover_history') && count($info['tous_appels_ringover'] ?? []) > 1)
                         <button class="pw-info-tab" data-tab="historique-ringover" onclick="switchInfoTab('historique-ringover')">
-                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             Historique Ringover
                             <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.25rem;height:1.25rem;padding:0 0.25rem;border-radius:9999px;background:rgb(99 102 241);color:white;font-size:0.65rem;font-weight:700;">{{ count($info['tous_appels_ringover'] ?? []) }}</span>
                         </button>
                         @endif
-                        @endif
+                        <button class="pw-info-tab" data-tab="mail" onclick="switchInfoTab('mail')">
+                            <svg class="pw-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 17.25V6.75zm0 0 9 6.75 9-6.75" /></svg>
+                            Mail
+                        </button>
                     </div>
 
                     <div class="pw-info-panel" data-tab="contact">
@@ -2564,11 +2731,28 @@ $tentativesActuelles = $this->getTentativesAppel();
                     </div>
                     @endif
 
-                    <div class="pw-info-panel" data-tab="rdv" style="display:none;">
+
+
+<div class="pw-info-panel" data-tab="journal" style="display:none;">
+                        <div class="pw-result-header"><span>Historique des rappels</span><span style="margin-left:auto;font-size:.75rem;">{{ $this->getRappelHistory()->count() }} résultat(s)</span></div>
+                        <div style="padding:1rem 1.25rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:end;">
+                            <label style="font-size:.8rem;">Du<input type="date" wire:model.live="historyRappelFrom" class="pw-field-input"></label>
+                            <label style="font-size:.8rem;">Au<input type="date" wire:model.live="historyRappelTo" class="pw-field-input"></label>
+                            <label style="font-size:.8rem;">Statut<select wire:model.live="historyRappelStatut" class="pw-field-input"><option value="">Tous</option>@foreach ($this->historyRappelStatutOptions as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</select></label>
+                            <label style="font-size:.8rem;">Commercial<select wire:model.live="historyRappelCommercialId" class="pw-field-input"><option value="">Tous</option>@foreach ($this->historyRappelCommercialOptions as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</select></label>
+                            <button type="button" wire:click="exportHistory('rappels','csv')" class="pw-btn-secondary">Exporter CSV</button>
+                            <button type="button" wire:click="exportHistory('rappels','pdf')" class="pw-btn-secondary">Exporter PDF</button>
+                        </div>
+                        <div style="padding:0 1.25rem 1.25rem;">
+                            @forelse ($this->getRappelHistory() as $appel)
+                                <div style="padding:.75rem 0;border-bottom:1px solid rgb(226 232 240);"><strong>{{ optional($appel->date_heure)->format('d/m/Y H:i') ?? 'Date non renseignée' }}</strong> — {{ $appel->commentaire ?: 'Aucune note de rappel' }}<div style="font-size:.8rem;color:rgb(71 85 105);">{{ $appel->duree_secondes ? 'Durée : ' . $appel->duree_secondes . ' s' : 'Durée non renseignée' }}</div></div>
+                            @empty <div style="padding:1rem 0;color:rgb(100 116 139);">Aucun rappel pour cette période.</div> @endforelse
+                        </div>
+                    </div>                    <div class="pw-info-panel" data-tab="rdv" style="display:none;">
                         <div class="pw-info-grid">
                             <div>
                                 <div class="pw-field-label">Date RDV</div>
-                                <input type="date" wire:model="rappel_date" class="pw-field-input" onchange="if (!confirmManualReminderDate(this)) { this.value = ''; }">
+                                <input type="date" wire:model="rappel_date" class="pw-field-input" onchange="confirmManualReminderDate(this)">
                             </div>
                             <div>
                                 <div class="pw-field-label">Heure RDV</div>
@@ -2584,6 +2768,119 @@ $tentativesActuelles = $this->getTentativesAppel();
                             </div>
                         </div>
                     </div>
+
+                    <div class="pw-info-panel" data-tab="historique_rdv" style="display:none;">
+                        <div class="pw-result-header"><span>Historique des rendez-vous</span><span style="margin-left:auto;font-size:.75rem;">{{ $this->getRendezVousHistory()->count() }} résultat(s)</span></div>
+                        <div style="padding:1rem 1.25rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:end;">
+                            <label style="font-size:.8rem;">Du<input type="date" wire:model.live="historyRdvFrom" class="pw-field-input"></label>
+                            <label style="font-size:.8rem;">Au<input type="date" wire:model.live="historyRdvTo" class="pw-field-input"></label>
+                            <button type="button" wire:click="exportHistory('rdv','csv')" class="pw-btn-secondary">Exporter CSV</button>
+                            <button type="button" wire:click="exportHistory('rdv','pdf')" class="pw-btn-secondary">Exporter PDF</button>
+                        </div>
+                        <div style="padding:0 1.25rem 1.25rem;">
+                            @forelse ($this->getRendezVousHistory() as $rdv)
+                                <div style="padding:.75rem 0;border-bottom:1px solid rgb(226 232 240);"><strong>{{ optional($rdv->date_heure)->format('d/m/Y H:i') ?? 'Date non renseignée' }}</strong> — {{ $rdv->interlocuteur_nom ?: 'Interlocuteur non renseigné' }} — {{ $rdv->lieu ?: 'Lieu non renseigné' }}<div style="font-size:.8rem;color:rgb(71 85 105);">{{ $rdv->commentaire ?: $rdv->notes ?: 'Aucune note' }}</div></div>
+                            @empty <div style="padding:1rem 0;color:rgb(100 116 139);">Aucun rendez-vous pour cette période.</div> @endforelse
+                        </div>
+                    </div>
+                <div class="pw-info-panel" data-tab="mail" style="display:none;">
+                    @php
+                        $ficheDocuments = $this->getLinkedFicheDocuments();
+                    @endphp
+                    @if (($ficheDocuments['docx_url'] ?? null) || ($ficheDocuments['pdf_url'] ?? null))
+                        <div class="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
+                            <div class="mb-2 text-sm font-semibold text-blue-900 dark:text-blue-100">Fiches liées à cet envoi</div>
+                            <div class="flex flex-wrap gap-2">
+                                @if (($ficheDocuments['docx_url'] ?? null))<a href="{{ ($ficheDocuments['docx_url'] ?? null) }}" target="_blank" rel="noopener" class="pw-btn-secondary">Ouvrir le Word</a>@endif
+                                @if (($ficheDocuments['pdf_url'] ?? null))<a href="{{ ($ficheDocuments['pdf_url'] ?? null) }}" target="_blank" rel="noopener" class="pw-btn-secondary">Ouvrir le PDF</a>@endif
+                                <button type="button" wire:click="generateFicheFromMail" class="pw-btn-primary">Générer fiche</button>
+                            </div>
+                            @if (($ficheDocuments['fiche_type'] ?? null) === 'bleue')
+                                <div class="mt-2 text-xs font-medium text-blue-800 dark:text-blue-200">La fiche bleue doit être confirmée dans l’aperçu avant tout envoi.</div>
+                            @endif
+                        </div>
+                    @endif
+                    <div class="pw-result-header">
+                        <span class="pw-result-header-icon" style="background:rgb(239 246 255); color:rgb(29 78 216);">✉</span>
+                        <span>Mail</span>
+                        <span style="margin-left:auto; font-size:.75rem; font-weight:500; color:rgb(100 116 139);">Prévisualisation obligatoire avant envoi</span>
+                    </div>
+                    <div style="display:grid; gap:1rem; padding:1rem 1.25rem 1.25rem;">
+                        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:.75rem;">
+                            <div>
+                                <label class="pw-field-label" for="mail-template">Modèle</label>
+                                <select id="mail-template" wire:model="mailTemplateKey" wire:change="loadMailTemplate" class="pw-field-input">
+                                    <option value="">— Saisie manuelle —</option>
+                                    @foreach ($this->getMailTemplates() as $templateKey => $templateName)
+                                        <option value="{{ $templateKey }}">{{ $templateName }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="pw-field-label" for="mail-recipient">Destinataire</label>
+                                <input id="mail-recipient" type="email" wire:model="mailRecipient" class="pw-field-input" placeholder="email@entreprise.fr">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="pw-field-label" for="mail-subject">Objet</label>
+                            <input id="mail-subject" type="text" wire:model="mailSubject" class="pw-field-input" placeholder="Objet du message">
+                        </div>
+                        <div>
+                            <label class="pw-field-label" for="mail-body">Message</label>
+                            <textarea id="mail-body" wire:model="mailBody" rows="8" class="pw-field-input" style="resize:vertical; font-family:Arial,Helvetica,sans-serif; line-height:1.6;" placeholder="Rédigez votre message ou sélectionnez un modèle..."></textarea>
+                            <div style="margin-top:.35rem; font-size:.72rem; color:rgb(100 116 139);">Le contenu peut contenir du HTML simple : paragraphes, liens et listes.</div>
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem; padding:.75rem; border:1px solid rgb(226 232 240); border-radius:.75rem; background:rgb(248 250 252);">
+                            <label style="display:flex; align-items:center; gap:.45rem; font-size:.8rem; font-weight:600; cursor:pointer;">
+                                <input type="checkbox" wire:model="mailCcEnabled" style="width:1rem;height:1rem;">
+                                Ajouter une copie CC
+                            </label>
+                            @if ($mailCcEnabled)
+                                <input type="email" wire:model="mailCc" class="pw-field-input" style="max-width:240px;" placeholder="copie@entreprise.fr">
+                            @endif
+                            <label style="display:flex; align-items:center; gap:.45rem; font-size:.8rem; cursor:pointer;">
+                                <input type="checkbox" wire:model="mailBccEnabled" style="width:1rem;height:1rem;">
+                                Ajouter une copie CCI
+                            </label>
+                            @if ($mailBccEnabled)
+                                <input type="email" wire:model="mailBcc" class="pw-field-input" style="max-width:240px;" placeholder="copie-cachee@entreprise.fr">
+                            @endif
+                            <label style="display:flex; align-items:center; gap:.45rem; font-size:.8rem; cursor:pointer;">
+                                <input type="checkbox" wire:model="mailAttachBlueSheet" style="width:1rem;height:1rem;">
+                                Joindre le PDF sélectionné
+                            </label>
+                            <button type="button" wire:click="openMailPdfPicker" class="pw-btn-secondary">Sélectionner le PDF</button>
+                            <label style="display:flex; align-items:center; gap:.45rem; font-size:.8rem; cursor:pointer;">
+                                <input type="checkbox" wire:model="mailAttachAudio" style="width:1rem;height:1rem;">
+                                Joindre l’audio Ringover
+                            </label>
+                            <label style="display:flex; align-items:center; gap:.45rem; font-size:.8rem; cursor:pointer;">
+                                Ajouter une pièce jointe externe
+                                <input type="file" wire:model="mailExternalAttachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt" style="max-width:260px;">
+                            </label>
+                        </div>
+                        @if ($showMailPdfPicker)
+                            <div style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(15,23,42,.55);" wire:click="closeMailPdfPicker">
+                                <div style="width:min(620px,92vw); max-height:80vh; overflow:auto; background:white; border-radius:1rem; padding:1.25rem;" wire:click.stop>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                        <strong>Sélectionner le PDF à joindre</strong>
+                                        <button type="button" wire:click="closeMailPdfPicker" class="pw-btn-secondary">Fermer</button>
+                                    </div>
+                                    @if (!empty($ficheDocuments['pdf_path']))
+                                        <button type="button" wire:click="selectMailPdf(@js($ficheDocuments['pdf_path']))" style="display:flex; width:100%; justify-content:space-between; align-items:center; padding:.75rem; margin:.5rem 0; border:1px solid rgb(226 232 240); border-radius:.6rem; background:white; text-align:left;">
+                                            <span>{{ $ficheDocuments['pdf_name'] ?? basename($ficheDocuments['pdf_path']) }}</span><span>Joindre</span>
+                                        </button>
+                                    @else
+                                        <p>Aucun PDF lié n’est disponible pour ce prospect.</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                        <div style="display:flex; justify-content:flex-end;">
+                            <button type="button" wire:click="openMailTabPreview" class="pw-btn-primary">Aperçu avant envoi</button>
+                        </div>
+                    </div>
+                </div>
 
                     <div class="pw-info-panel" data-tab="appels-ringover" style="display:none;">
                         <div class="pw-info-grid">
@@ -2883,7 +3180,7 @@ $tentativesActuelles = $this->getTentativesAppel();
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
                             <div>
                                 <div class="pw-field-label">Date</div>
-                                <input type="date" wire:model="rappel_date" class="pw-field-input" onchange="if (!confirmManualReminderDate(this)) { this.value = ''; }">
+                                <input type="date" wire:model="rappel_date" class="pw-field-input" onchange="confirmManualReminderDate(this)">
                             </div>
                             <div>
                                 <div class="pw-field-label">Heure</div>
@@ -3190,6 +3487,8 @@ $tentativesActuelles = $this->getTentativesAppel();
             x-data="phoningEmailPreview(@js([
                 'subject' => $emailPreviewSubject,
                 'recipient' => $emailPreviewRecipient,
+                'cc' => $emailPreviewCc,
+                'ccEnabled' => $emailPreviewCcEnabled,
                 'body' => $emailPreviewBody,
                 'originalSubject' => $emailPreviewOriginalSubject ?? $emailPreviewSubject,
                 'originalBody' => $emailPreviewOriginalBody ?? $emailPreviewBody,
@@ -3234,6 +3533,23 @@ $tentativesActuelles = $this->getTentativesAppel();
                                     @input="markDirty()"
                                     class="pw-email-preview-input pw-email-preview-input-recipient"
                                     autocomplete="off"
+                                />
+                            </div>
+
+                            <div class="pw-email-preview-section">
+                                <label class="pw-email-preview-label" style="display:flex;align-items:center;gap:8px;">
+                                    <input type="checkbox" x-model="ccEnabled" @change="markDirty()" />
+                                    Ajouter une copie visible en CC
+                                </label>
+                                <input
+                                    id="email-preview-cc"
+                                    type="email"
+                                    x-model="cc"
+                                    x-show="ccEnabled"
+                                    @input="markDirty()"
+                                    class="pw-email-preview-input"
+                                    autocomplete="off"
+                                    placeholder="Adresse CC"
                                 />
                             </div>
 

@@ -58,7 +58,9 @@ class FichePdfGenerationService
             'interlocuteur_telephone' => $formData['interlocuteur_telephone'] ?? $prospect->interlocuteur_telephone,
             'interlocuteur_email' => $formData['interlocuteur_email'] ?? $prospect->interlocuteur_email,
             'rdv_date_heure' => $rdv?->date_heure?->format('d/m/Y à H:i'),
-            'rdv_lieu' => $formData['lieu_rdv'] ?? $rdv?->lieu,
+            'rdv_lieu' => $formData['lieu_rdv'] ?? ($rdv?->lieu ?: $rdv?->adresse_lieu),
+            'enregistrement_appel' => filled($rdv?->enregistrement_audio) ? 'Oui' : 'Non',
+            'fiche_validee_tl' => 'En attente',
             'invitation_agenda_envoyee' => ($formData['invitation_agenda_envoyee'] ?? false) ? 'Oui' : 'Non',
             'cse_secretaire' => trim(($prospect->cse_secretaire_prenom ?? '') . ' ' . ($prospect->cse_secretaire_nom ?? '')),
             'cse_tresorier' => trim(($prospect->cse_tresorier_prenom ?? '') . ' ' . ($prospect->cse_tresorier_nom ?? '')),
@@ -69,6 +71,7 @@ class FichePdfGenerationService
             'teleprospecteur_nom' => $prospect->teleprospecteur?->nom_complet,
             'commercial_nom' => $prospect->commercial?->nom_complet,
             'date_appel' => $prospect->date_premier_contact?->format('d/m/Y'),
+            'date_heure_dernier_appel' => $this->dateHeureDernierAppel($prospect),
             'date_generation' => now()->format('d/m/Y H:i'),
             'notes' => $formData['commentaires'] ?? $prospect->description,
         ];
@@ -97,7 +100,10 @@ class FichePdfGenerationService
             'cse_tresorier' => trim(($prospect->cse_tresorier_prenom ?? '') . ' ' . ($prospect->cse_tresorier_nom ?? '')),
             'cse_nb_elus' => $prospect->cse_nb_elus,
             'motif_refus' => $formData['commentaires'] ?? $prospect->motif_ko,
+            'commentaires' => $formData['commentaires'] ?? $prospect->motif_ko,
+            'date_email_assistante' => $prospect->date_premier_contact?->format('d/m/Y'),
             'date_appel' => $prospect->date_premier_contact?->format('d/m/Y'),
+            'date_heure_dernier_appel' => $this->dateHeureDernierAppel($prospect),
             'date_rappel_j7' => $dateRappelJ7,
             'teleprospecteur_nom' => $prospect->teleprospecteur?->nom_complet,
             'commercial_nom' => $prospect->commercial?->nom_complet,
@@ -127,13 +133,25 @@ class FichePdfGenerationService
             'cse_tresorier' => trim(($prospect->cse_tresorier_prenom ?? '') . ' ' . ($prospect->cse_tresorier_nom ?? '')),
             'cse_nb_elus' => $prospect->cse_nb_elus,
             'date_rdv_a_prendre' => $formData['rappel_date'] ?? null,
+            'commentaires' => $formData['commentaires'] ?? $prospect->description,
             'heure_rdv_a_prendre' => $formData['rappel_heure'] ?? null,
             'teleprospecteur_nom' => $prospect->teleprospecteur?->nom_complet,
             'commercial_nom' => $prospect->commercial?->nom_complet,
             'date_appel' => $prospect->date_premier_contact?->format('d/m/Y'),
+            'date_heure_dernier_appel' => $this->dateHeureDernierAppel($prospect),
             'date_generation' => now()->format('d/m/Y H:i'),
             'notes' => $formData['commentaires'] ?? $prospect->description,
         ];
+    }
+
+    /**
+     * Retourne la date et l'heure exactes du dernier appel enregistré pour le prospect.
+     */
+    private function dateHeureDernierAppel(Prospect $prospect): ?string
+    {
+        return $prospect->appels()
+            ->latest('date_heure')
+            ->first()?->date_heure?->format('d/m/Y H:i');
     }
 
     /**

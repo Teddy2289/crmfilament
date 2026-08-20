@@ -68,6 +68,7 @@ class Appel extends Model
         'fiche_data',
         // Fiche Word générée
         'fiche_word_path',
+        'fiche_docx_path',
         'fiche_word_generated_at',
         'fiche_jaune_j7_envoye_at',
         'fiche_verte_envoyee_at',

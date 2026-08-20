@@ -49,7 +49,6 @@ class CampagnePhoningResource extends Resource
                 'rdv_date_fin' => $get('criteres.rdv_date_fin') ?? null,
             ],
             'max_tentatives' => $get('max_tentatives') ?? 4,
-            'jours_refroidissement' => $get('jours_refroidissement') ?? 15,
             'exclure_sans_telephone' => $get('exclure_sans_telephone') ?? true,
             'exclure_autres_campagnes' => $get('exclure_autres_campagnes') ?? true,
         ];
@@ -84,7 +83,6 @@ class CampagnePhoningResource extends Resource
             'Période' => trim(($get('date_debut') ? \Illuminate\Support\Str::of($get('date_debut'))->explode(' ')[0] : '—') . ' → ' . ($get('date_fin') ? \Illuminate\Support\Str::of($get('date_fin'))->explode(' ')[0] : '—')),
             'Statuts ciblés' => $statuts,
             'Tentation max' => (string) ($get('max_tentatives') ?? 4) . ' appel(s)',
-            'Refroidissement' => ($get('jours_refroidissement') ?? 15) . ' jour(s)',
         ];
 
         $lines = collect($summary)->map(fn ($value, $key) => sprintf('<div class="flex items-start justify-between gap-4 py-1"><span class="font-medium text-gray-700">%s</span><span class="text-right text-sm text-gray-900">%s</span></div>', $key, $value))->implode('');
@@ -327,7 +325,7 @@ class CampagnePhoningResource extends Resource
                 ]),
 
             Forms\Components\Section::make('Exclusions & Limites')
-                ->description('Refroidissement et limites de réessai')
+                ->description('Limites de réessai')
                 ->icon('heroicon-o-shield-exclamation')
                 ->columns(2)
                 ->collapsible()
@@ -341,14 +339,6 @@ class CampagnePhoningResource extends Resource
                         ->minValue(1)
                         ->maxValue(10)
                         ->helperText('Nombre maximal d\'appels non aboutis avant sortie automatique.'),
-
-                    Forms\Components\TextInput::make('jours_refroidissement')
-                        ->label('Délai de refroidissement (jours)')
-                        ->numeric()
-                        ->default(15)
-                        ->required()
-                        ->minValue(0)
-                        ->helperText('Exclure les contacts ayant eu un appel au cours des X derniers jours.'),
 
                     Forms\Components\Toggle::make('exclure_sans_telephone')
                         ->label('Exclure les fiches sans téléphone valide')
@@ -419,7 +409,7 @@ class CampagnePhoningResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->columns(static::applyShowFieldPermissions([
+            ->columns([
                 Tables\Columns\TextColumn::make('nom')
                     ->label('Campagne')
                     ->searchable()
@@ -496,8 +486,24 @@ class CampagnePhoningResource extends Resource
                     ->label('Entité')
                     ->placeholder('—')
                     ->toggleable(isToggledHiddenByDefault: true),
-            ]))
+            ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
             ->filters([
+                Tables\Filters\Filter::make('periode')
+                    ->label('Période')
+                    ->form([
+                        \Filament\Forms\Components\DatePicker::make('date_debut')->label('Du'),
+                        \Filament\Forms\Components\DatePicker::make('date_fin')->label('Au'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['date_debut'] ?? null, fn ($q, $date) => $q->where(function ($period) use ($date) {
+                                $period->whereNull('date_fin')->orWhere('date_fin', '>=', $date);
+                            }))
+                            ->when($data['date_fin'] ?? null, fn ($q, $date) => $q->where(function ($period) use ($date) {
+                                $period->whereNull('date_debut')->orWhere('date_debut', '<=', $date);
+                            }));
+                    }),
                 Tables\Filters\SelectFilter::make('statut')
                     ->label('Statut')
                     ->options(CampagnePhoning::STATUTS),
@@ -510,14 +516,20 @@ class CampagnePhoningResource extends Resource
                     ->label('Groupe')
                     ->options(fn () => GroupeTelepro::actifs()->orderBy('nom')->pluck('nom', 'id')),
 
-                Tables\Filters\SelectFilter::make('user_id')
-                    ->label('Agent spécifique')
+                Tables\Filters\SelectFilter::make("user_id")
+                    ->label("Agent spécifique")
                     ->options(
-                        fn () => User::where('actif', true)
-                            ->orderBy('nom')
+                        fn () => User::where("actif", true)
+                            ->orderBy("nom")
                             ->get()
                             ->mapWithKeys(fn ($u) => [$u->id => trim("{$u->prenom} {$u->nom}")])
-                    ),
+                    )
+                    ->query(function ($query, array $data) {
+                        $agentId = $data["value"] ?? null;
+                        return filled($agentId)
+                            ? $query->whereHas("appels", fn ($appels) => $appels->where("phoning_agent_id", $agentId)->orWhere("user_id", $agentId))
+                            : $query;
+                    }),
             ])
             ->actions([
                 Tables\Actions\Action::make('lancer_phoning')
@@ -527,7 +539,14 @@ class CampagnePhoningResource extends Resource
                     ->visible(fn ($record) => static::userCanResourcePermission('view') && $record->statut === 'active')
                     ->url(fn ($record) => route('filament.ns-conseil.pages.phoning-workflow', ['campagne_id' => $record->id])),
 
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(function ($record): string {
+                        $url = static::getUrl('view', ['record' => $record]);
+                        $filters = request()->query('tableFilters', []);
+                        return !empty($filters)
+                            ? $url . '?' . http_build_query(['tableFilters' => $filters])
+                            : $url;
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

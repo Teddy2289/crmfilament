@@ -6,6 +6,13 @@
 
     <div class="space-y-6">
         {{ $this->form }}
+        @if(!empty($this->results))
+            <div class="flex flex-wrap items-center justify-end gap-2">
+                <span class="mr-auto text-sm text-gray-500">{{ collect($this->results)->flatten(1)->count() }} résultat(s)</span>
+                <button type="button" wire:click="exportCsv" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700">Exporter CSV</button>
+                <button type="button" wire:click="exportExcel" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">Exporter Excel</button>
+            </div>
+        @endif
 
         @if(!empty($this->results))
             <div class="space-y-6">
@@ -40,6 +47,13 @@
                                                     | Commercial: {{ $prospect['teleprospecteur'] }}
                                                 @endif
                                             </div>
+                                            @if(!empty($prospect['presence_cse']) || !empty($prospect['cse_contact']))
+                                                <div class="text-xs text-indigo-700 mt-1">
+                                                    CSE
+                                                    @if($prospect['presence_cse']) : {{ $prospect['presence_cse'] }} @endif
+                                                    @if($prospect['cse_contact']) — Contact : {{ $prospect['cse_contact'] }} @endif
+                                                </div>
+                                            @endif
                                         </div>
                                         <a href="{{ $prospect['url'] }}" class="text-blue-600 hover:text-blue-800">
                                             Voir →

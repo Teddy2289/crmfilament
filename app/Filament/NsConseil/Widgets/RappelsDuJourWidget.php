@@ -61,11 +61,18 @@ class RappelsDuJourWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('teleprospecteur.nom')
                     ->label('Téléprospecteur')
-                    ->formatStateUsing(fn ($r) => $r->teleprospecteur
-                        ? "{$r->teleprospecteur->prenom} {$r->teleprospecteur->nom}"
-                        : '—'),
+                    ->formatStateUsing(fn ($state, Prospect $record): string => $record->teleprospecteur ? "{$record->teleprospecteur->prenom} {$record->teleprospecteur->nom}" : "—"),
             ])
             ->actions([
+                Tables\Actions\Action::make('ouvrir_phoning')
+                    ->label('Ouvrir le phoning')
+                    ->icon('heroicon-o-phone')
+                    ->color('primary')
+                    ->url(fn (Prospect $record): string => route('filament.ns-conseil.pages.phoning-workflow', [
+                        'contact_id' => $record->id,
+                        'contact_type' => 'prospect',
+                    ]))
+                    ->openUrlInNewTab(),
                 Tables\Actions\Action::make('appel_fait')
                     ->label('Appel effectué')
                     ->icon('heroicon-o-phone')

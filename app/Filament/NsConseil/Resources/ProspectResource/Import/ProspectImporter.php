@@ -249,8 +249,10 @@ class ProspectImporter
                 "secteur d'activité", "secteur d'activites", 'secteur_activite', 'secteur',
             ],
             'nb_salaries' => [
-                'nbrs de salariés', 'nb salariés', 'nb_salaries', 'salariés', 'effectif',
-                'nbr de salariés',
+                'nbrs de salariés', 'nbr salariés', 'nbre de salarié', 'nbre de salariés', 'nombre de salarié', 'nombre de salariés', 'nombre salariés', 'nb salariés', 'nb_salaries', 'salariés', 'effectif',
+                'nbr de salariés', 'nbre de salarié', 'nbre de salariés',
+                'nbr salarié', 'nbr salariés', 'nombre de salarié', 'nombre de salariés',
+                'nombre salariés',
             ],
             'chiffre_affaires' => ['ca', "chiffre d'affaires", 'chiffre_affaires'],
 
@@ -403,7 +405,8 @@ class ProspectImporter
             'ville' => $get('ville'),
             'adresse' => $get('adresse'),
             'secteur_activite' => $get('secteur_activite') ?: ($this->defaults['secteur_activite'] ?? null),
-            'nb_salaries' => $this->cleanInt($get('nb_salaries')),
+            'nb_salaries' => $this->cleanSalaryNumeric($get('nb_salaries')),
+            'nb_salaries_tranche' => $this->cleanSalaryRange($get('nb_salaries')),
             'chiffre_affaires' => $this->cleanDecimal($get('chiffre_affaires')),
 
             // ── Coordonnées ─────────────────────────────────────────
@@ -685,6 +688,45 @@ class ProspectImporter
 
     // ── Gère désormais les tranches ("500 à 999", "3-5") en prenant
     // le milieu de la fourchette, au lieu de concaténer les chiffres.
+    /**
+     * Conserve la tranche telle qu'elle est fournie par la source Excel.
+     */
+    protected function cleanSalaryRange(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $range = trim((string) $value);
+        return $range !== '' ? $range : null;
+    }
+
+    /**
+     * Valeur numérique auxiliaire conservée pour les filtres historiques.
+     * Pour une tranche, on utilise sa borne basse ; la valeur affichée est la tranche.
+     */
+    protected function cleanSalaryNumeric(mixed $value): ?int
+    {
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '') {
+            return null;
+        }
+
+        if (preg_match('/\d[\d\s.,]*\s*(?:-|–|—|à|a|au|to|et)\s*(\d[\d\s.,]*)/iu', $text, $matches)) {
+            $lower = preg_replace('/[^0-9]/', '', $matches[0]);
+            if (preg_match('/\d[\d\s.,]*/', $text, $first) && $lower !== '') {
+                $firstNumber = preg_replace('/[^0-9]/', '', $first[0]);
+                return $firstNumber !== '' ? (int) $firstNumber : null;
+            }
+        }
+
+        return $this->cleanInt($value);
+    }
+
     protected function cleanInt(mixed $value): ?int
     {
         if ($value === null || $value === '') {
@@ -692,6 +734,15 @@ class ProspectImporter
         }
 
         $str = trim((string) $value);
+
+        // Reconnaît les tranches françaises : « Entre 20 et 49 » et « 20 et 49 ».
+        if (preg_match('/(?:entre\s+)?(\d[\d\s]*)\s+et\s+(\d[\d\s]*)$/ui', $str, $m)) {
+            $low = (int) preg_replace('/\D/', '', $m[1]);
+            $high = (int) preg_replace('/\D/', '', $m[2]);
+            if ($high > 0) {
+                return intdiv($low + $high, 2);
+            }
+        }
 
         if (preg_match('/(\d[\d\s]*)\s*(?:à|a|-|–|—|to)\s*(\d[\d\s]*)$/ui', $str, $m)) {
             $low = (int) preg_replace('/\D/', '', $m[1]);

@@ -183,12 +183,14 @@ class Partenaire extends Model
 
     public function getStatutLabelAttribute(): string
     {
-        return $this->statut->label();
+        $code = $this->statut?->value ?? (string) $this->statut;
+        return PipelineStatut::findFor('partenaire', $code)?->label ?? $this->statut->label();
     }
 
     public function getStatutColorAttribute(): string
     {
-        return $this->statut->color();
+        $code = $this->statut?->value ?? (string) $this->statut;
+        return PipelineStatut::findFor('partenaire', $code)?->couleur ?? $this->statut->color();
     }
 
     public function getTypeLabelAttribute(): string

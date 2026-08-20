@@ -14,9 +14,7 @@ class CrmPipelineWidget extends ChartWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $pollingInterval = '300s';
 
-    protected static bool $isLazy = true;
 
     protected static ?string $maxHeight = '400px';
 

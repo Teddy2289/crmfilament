@@ -34,6 +34,7 @@ class PipelineStatutResource extends Resource
                 ->label('Entité')
                 ->options([
                     'prospect' => 'Prospect',
+                    'client' => 'Client',
                     'partenaire' => 'Partenaire',
                     'opportunite' => 'Opportunité',
                 ])
@@ -73,7 +74,7 @@ class PipelineStatutResource extends Resource
             ->reorderable('ordre')
             ->filters([
                 Tables\Filters\SelectFilter::make('model_type')
-                    ->options(['prospect' => 'Prospect', 'partenaire' => 'Partenaire', 'opportunite' => 'Opportunité']),
+                    ->options(['prospect' => 'Prospect', 'client' => 'Client', 'partenaire' => 'Partenaire', 'opportunite' => 'Opportunité']),
             ])
             ->actions([Tables\Actions\EditAction::make()]);
     }

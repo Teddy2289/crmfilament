@@ -33,44 +33,56 @@ class Calendar extends Page
     }
 
     public bool $isGoogleConnected = false;
+    public array $googleCalendars = [];
 
     public function mount(): void
     {
-        $this->isGoogleConnected = app(GoogleCalendarService::class)
-            ->isConnected(auth()->user());
+        $service = app(GoogleCalendarService::class);
+        $user = auth()->user();
+        $this->isGoogleConnected = $service->isConnected($user);
+        $this->googleCalendars = $this->isGoogleConnected
+            ? $service->getCalendars($user)
+            : [];
     }
 
     protected function getHeaderActions(): array
     {
         $actions = [
-            // Bouton création RDV — toujours visible
+            // Bouton création RDV — toujours visible et mis en avant
             Action::make('new_rdv')
                 ->label('Nouveau RDV')
                 ->icon('heroicon-o-plus')
                 ->color('primary')
+                ->size('md')
                 ->action(fn () => redirect('/ns-conseil/rendez-vous/create')),
         ];
 
         if ($this->isGoogleConnected) {
             $actions[] = Action::make('sync_all')
-                ->label('Resync RDV')
+                ->label('Synchroniser')
                 ->icon('heroicon-o-arrow-path')
-                ->color('warning')
+                ->color('info')
                 ->outlined()
+                ->size('sm')
+                ->tooltip('Synchroniser les RDV avec Google Calendar')
                 ->action('syncAll');
 
             $actions[] = Action::make('disconnect_google')
-                ->label('Déconnecter Google')
+                ->label('Déconnecter')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->outlined()
+                ->size('sm')
+                ->tooltip('Déconnecter Google Calendar')
                 ->action(fn () => redirect('/google/disconnect'));
         } else {
             $actions[] = Action::make('connect_google')
-                ->label('Connecter Google Calendar')
+                ->label('Connecter Google')
                 ->icon('heroicon-o-calendar-days')
                 ->color('success')
                 ->outlined()
+                ->size('sm')
+                ->tooltip('Connecter votre compte Google Calendar')
                 ->action(fn () => redirect('/google/redirect'));
         }
 

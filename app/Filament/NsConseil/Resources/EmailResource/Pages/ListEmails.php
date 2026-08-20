@@ -6,6 +6,7 @@ use App\Filament\NsConseil\Resources\EmailResource;
 use App\Models\Email;
 use App\Models\EmailConfiguration;
 use App\Services\Email\ImapService;
+use App\Filament\NsConseil\Widgets\ActiveMailboxWidget;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
@@ -16,6 +17,11 @@ use Illuminate\Support\Facades\Auth;
 class ListEmails extends ListRecords
 {
     protected static string $resource = EmailResource::class;
+
+    protected function getHeaderWidgets(): array
+    {
+        return [ActiveMailboxWidget::class];
+    }
 
     protected function getHeaderActions(): array
     {
@@ -74,7 +80,10 @@ class ListEmails extends ListRecords
      */
     protected function getTableQuery(): Builder
     {
-        return Email::query()->where('user_id', auth()->id());
+        return Email::query()->where(function (Builder $query): void {
+            $query->where('user_id', auth()->id())
+                ->orWhereNull('user_id');
+        });
     }
 
     /**

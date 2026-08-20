@@ -211,7 +211,7 @@ class Opportunite extends Model
     public function convertirEnProspect(): ?Prospect
     {
         if (! $this->est_convertible) {
-            throw new \LogicException('Seule une opportunite qualifiee peut etre convertie en prospect.');
+            throw new \LogicException('Seule une opportunité qualifiée peut être convertie en prospect.');
         }
 
         return DB::transaction(function (): Prospect {

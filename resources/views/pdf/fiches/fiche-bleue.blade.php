@@ -135,6 +135,24 @@
     </table>
 </div>
 
+{{-- Rendez-vous et validation --}}
+<div class="section">
+    <div class="section-title">Rendez-vous</div>
+    <table>
+        <tr>
+            <td style="width:50%"><span class="label">Date et heure :</span> {{ $data['rdv_date_heure'] ?? '—' }}</td>
+            <td><span class="label">Lieu :</span> {{ $data['rdv_lieu'] ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td><span class="label">Invitation agenda envoyée :</span> {{ $data['invitation_agenda_envoyee'] ?? 'Non' }}</td>
+            <td><span class="label">Enregistrement appel joint :</span> {{ $data['enregistrement_appel'] ?? 'Non' }}</td>
+        </tr>
+    </table>
+</div>
+<div class="section">
+    <div class="section-title">Validation Team Leader</div>
+    <div><span class="label">Fiche validée par le TL :</span> {{ $data['fiche_validee_tl'] ?? 'En attente' }}</div>
+</div>
 {{-- Responsables --}}
 <div class="section">
     <div class="section-title">Responsables</div>
@@ -144,7 +162,7 @@
             <td><span class="label">Responsable de Secteur :</span> {{ $data['commercial_nom'] ?? '—' }}</td>
         </tr>
         <tr>
-            <td colspan="2"><span class="label">Date du premier contact :</span> {{ $data['date_appel'] ?? '—' }}</td>
+            <td colspan="2"><span class="label">Date du premier contact :</span> {{ $data['date_appel'] ?? '—' }} &nbsp; <span class="label">Dernier appel :</span> {{ $data['date_heure_dernier_appel'] ?? '—' }}</td>
         </tr>
     </table>
 </div>

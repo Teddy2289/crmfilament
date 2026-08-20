@@ -38,7 +38,7 @@ trait WithCommonEagerLoading
         return $query->with([
             'partenaire:id,nom,entreprise',
             'commercial:id,nom,prenom,email',
-            'parrain:id,nom,prenom',
+            'parrain:id,nom_prenom',
         ]);
     }
 

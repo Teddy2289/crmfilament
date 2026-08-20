@@ -84,9 +84,11 @@ class PartenaireImporter
         'tarifs_affichage' => 40,
         'adresse_facturation' => 41,
         'commentaires' => 42,
+        'prc_2026' => 43,
     ];
 
     private const MIN_COLS = 17;
+    public const MIN_EXPECTED_COLUMNS = 17;
 
     protected array $errors = [];
 
@@ -113,6 +115,7 @@ class PartenaireImporter
     public function import(array $rows, array $defaults = [], string $strategy = self::STRATEGY_MERGE): array
     {
         $this->strategy = $strategy;
+        $rows = $this->normalizeRowsForKnownLayouts($rows);
 
         for ($i = 1; $i < count($rows); $i++) {
             $row = $rows[$i];
@@ -135,6 +138,27 @@ class PartenaireImporter
         }
 
         return $this->getResult();
+    }
+
+    /**
+     * Remet les feuilles commerciales à colonnes décalées dans le format MAJ.
+     */
+    private function normalizeRowsForKnownLayouts(array $rows): array
+    {
+        $headers = array_map(fn ($value) => mb_strtolower(trim((string) $value)), $rows[0] ?? []);
+        if (array_search('type', $headers, true) !== 7 || array_search('entreprise', $headers, true) !== 1) {
+            return $rows;
+        }
+
+        $map = [0=>0,1=>1,2=>2,3=>3,4=>4,5=>5,6=>6,36=>8,37=>9,38=>10,39=>11,40=>12,41=>43,7=>14,8=>15,9=>16,12=>19,13=>20,14=>21,15=>22,16=>23,17=>24,18=>25,19=>26,20=>27,21=>28,22=>29,23=>30,24=>31,25=>32,26=>33,27=>34,28=>35,29=>36,30=>37,31=>38,32=>39,33=>40,34=>41,35=>42];
+        $normalized=[];
+        foreach ($rows as $rowIndex=>$row) {
+            $target=array_fill(0,43,null);
+            foreach ($map as $source=>$canonical) { $target[$canonical]=$row[$source]??null; }
+            if ($rowIndex > 0) { $target[17]=trim((string)($row[10]??'').' '.(string)($row[11]??'')); }
+            $normalized[]=$target;
+        }
+        return $normalized;
     }
 
     // ─── Traitement d'une ligne ───────────────────────────────────────
@@ -278,7 +302,8 @@ class PartenaireImporter
         $dernierePerm = $this->parseDate($get('derniere_permanence'));
         $nbre2025 = $this->cleanInt($get('nbre_perm_2025'));
         $nbre2026 = $this->cleanInt($get('nbre_perm_2026'));
-        if ($dernierePerm || $nbre2025 !== null || $nbre2026 !== null) {
+        $prc2026 = $this->cleanInt($get('prc_2026'));
+        if ($dernierePerm || $nbre2025 !== null || $nbre2026 !== null || $prc2026 !== null) {
             ActivitePermanence::updateOrCreate(
                 ['partenaire_id' => $partenaire->id],
                 array_filter([
@@ -287,6 +312,7 @@ class PartenaireImporter
                     'derniere_permanence' => $dernierePerm,
                     'nbre_2025' => $nbre2025,
                     'nbre_2026' => $nbre2026,
+                    'prc_2026' => $prc2026,
                 ], fn ($v) => $v !== null)
             );
         }
@@ -650,6 +676,7 @@ class PartenaireImporter
             'boutique' => OrganizationType::EntrepriseDirecte->value,
             'syndicat' => OrganizationType::Syndicat->value,
             'association' => OrganizationType::Association->value,
+            'associations' => OrganizationType::Association->value,
             'ass' => OrganizationType::Association->value,
         ];
         foreach ($map as $key => $enumVal) {
@@ -743,8 +770,11 @@ class PartenaireImporter
         if (is_float($value)) {
             return (int) $value;
         }
-        $digits = preg_replace('/[^\d]/', '', (string) $value);
-
+        $text = trim((string) $value);
+        if (preg_match('/^\s*(\d+)\s*(?:à|a|-|–|—)\s*\d+/iu', $text, $matches)) {
+            return (int) $matches[1];
+        }
+        $digits = preg_replace('/[^\d]/', '', $text);
         return $digits !== '' ? (int) $digits : null;
     }
 

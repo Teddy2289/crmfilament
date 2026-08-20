@@ -156,6 +156,47 @@ class FicheWordServiceTest extends TestCase
         }
     }
 
+    public function test_generer_sauvegarde_le_document_dans_le_disque_public(): void
+    {
+        $template = \App\Models\FicheTemplate::create([
+            'type' => 'bleue',
+            'nom' => 'Template public',
+            'template_path' => 'templates_fiches/test-public.docx',
+            'actif' => true,
+            'placeholders' => [
+                '${RAISON_SOCIALE}' => 'raison_sociale',
+            ],
+        ]);
+
+        $templateDir = storage_path('app/templates_fiches');
+        if (! is_dir($templateDir)) {
+            mkdir($templateDir, 0755, true);
+        }
+
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $section = $phpWord->addSection();
+        $section->addText('Test public');
+
+        \PhpOffice\PhpWord\Settings::setTempDir(storage_path('app/temp'));
+        $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save(storage_path('app/templates_fiches/test-public.docx'));
+
+        $prospect = Prospect::factory()->create([
+            'raison_sociale' => 'Gonzalez SAS',
+            'nom' => 'Gonzalez SAS',
+        ]);
+
+        $document = app(\App\Services\Aopia\FicheGenerationService::class)->generer($template, $prospect);
+
+        $this->assertNotNull($document);
+        $this->assertTrue(Storage::disk('public')->exists($document->path));
+        $this->assertStringStartsWith('fiches-generees/', $document->path);
+
+        if (file_exists(storage_path('app/templates_fiches/test-public.docx'))) {
+            unlink(storage_path('app/templates_fiches/test-public.docx'));
+        }
+    }
+
     public function test_retourne_null_si_template_non_trouve(): void
     {
         $user = User::factory()->create();

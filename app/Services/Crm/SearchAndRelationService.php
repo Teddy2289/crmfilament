@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Entreprise;
 use App\Models\Partenaire;
 use App\Models\Prospect;
+use App\Support\PhoneNumber;
 
 class SearchAndRelationService
 {
@@ -25,14 +26,47 @@ class SearchAndRelationService
 
     protected function searchProspects(string $query): array
     {
-        return Prospect::where(function ($q) use ($query) {
-            $q->where('telephone', 'like', "%{$query}%")
-                ->orWhere('email', 'like', "%{$query}%")
-                ->orWhere('nom', 'like', "%{$query}%")
-                ->orWhere('ville', 'like', "%{$query}%");
+        $query = trim($query);
+        $phoneColumns = [
+            'telephone', 'telephone_alt', 'interlocuteur_telephone', 'interlocuteur_add_telephone',
+            'cse_secretaire_tel_direct', 'cse_secretaire_tel_perso',
+            'cse_tresorier_tel_direct', 'cse_tresorier_tel_perso',
+            'syndicat_tel_direct', 'syndicat_tel_perso', 'dirigeant_telephone',
+        ];
+        $textColumns = [
+            'email', 'interlocuteur_email', 'interlocuteur_add_email',
+            'cse_secretaire_nom', 'cse_secretaire_prenom', 'cse_secretaire_email_pro', 'cse_secretaire_email_perso',
+            'cse_tresorier_nom', 'cse_tresorier_prenom', 'cse_tresorier_email_pro', 'cse_tresorier_email_perso',
+            'cse_existence_juridique', 'cse_notes', 'presence_cse',
+            'syndicat_appartenance', 'syndicat_nom_organisation', 'syndicat_responsable_nom',
+            'syndicat_responsable_prenom', 'syndicat_responsable_fonction', 'syndicat_email_pro',
+            'syndicat_email_perso', 'syndicat_perimetre', 'syndicat_notes',
+            'dirigeant_nom', 'dirigeant_prenom', 'dirigeant_email',
+            'nom', 'ville', 'departement', 'siret', 'secteur_activite',
+        ];
+        $variants = PhoneNumber::searchVariants($query);
+
+        return Prospect::where(function ($q) use ($query, $phoneColumns, $textColumns, $variants) {
+            $first = true;
+            if ($variants !== []) {
+                foreach ($phoneColumns as $column) {
+                    $qualified = $q->getModel()->getTable() . '.' . $column;
+                    $expression = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE($qualified, ''), ' ', ''), '.', ''), '-', ''), '(', ''), ')', ''), '+', '')";
+                    foreach ($variants as $variant) {
+                        $method = $first ? 'whereRaw' : 'orWhereRaw';
+                        $q->{$method}($expression . ' LIKE ?', ['%' . $variant . '%']);
+                        $first = false;
+                    }
+                }
+            }
+            foreach ($textColumns as $column) {
+                $method = $first ? 'where' : 'orWhere';
+                $q->{$method}($column, 'like', '%' . $query . '%');
+                $first = false;
+            }
         })
         ->with(['teleprospecteur', 'commercial'])
-        ->limit(20)
+        ->limit(30)
         ->get()
         ->map(fn ($prospect) => [
             'id' => $prospect->id,
@@ -42,12 +76,13 @@ class SearchAndRelationService
             'email' => $prospect->email,
             'statut' => $prospect->statut,
             'ville' => $prospect->ville,
+            'presence_cse' => $prospect->presence_cse,
+            'cse_contact' => trim(($prospect->cse_secretaire_prenom ?? '') . ' ' . ($prospect->cse_secretaire_nom ?? '')),
             'teleprospecteur' => $prospect->teleprospecteur ? "{$prospect->teleprospecteur->prenom} {$prospect->teleprospecteur->nom}" : null,
             'url' => \App\Filament\NsConseil\Resources\ProspectResource::getUrl('view', ['record' => $prospect->id]),
         ])
         ->toArray();
     }
-
     protected function searchClients(string $query): array
     {
         return Client::where(function ($q) use ($query) {
