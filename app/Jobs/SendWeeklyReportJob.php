@@ -5,8 +5,10 @@ namespace App\Jobs;
 use App\Mail\WeeklyReportMail;
 use App\Models\User;
 use App\Services\Crm\CrmSettingsService;
+use App\Services\Crm\ReportEmailLogService;
 use App\Services\Crm\WeeklyReportService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -26,10 +28,23 @@ class SendWeeklyReportJob implements ShouldQueue
      */
     public function __construct(public array $roles = []) {}
 
-    public function handle(WeeklyReportService $service, ?CrmSettingsService $settings = null): int
+    public function middleware(): array
     {
-        $settings = $settings ?? app(CrmSettingsService::class);
+        return [
+            (new WithoutOverlapping('crm-report-weekly-' . now()->format('o-W')))->expireAfter(7200),
+        ];
+    }
+
+    public function handle(
+        WeeklyReportService $service,
+        ?CrmSettingsService $settings = null,
+        ?ReportEmailLogService $emailLog = null,
+    ): int
+    {
+        $settings ??= app(CrmSettingsService::class);
+        $emailLog ??= app(ReportEmailLogService::class);
         $envoyes = 0;
+        $executionUuid = (string) \Illuminate\Support\Str::uuid();
 
         $roles = $this->roles ?: $settings->get('roles.weekly_report_roles', [
             User::ROLE_TELEPROSPECTEUR,
@@ -45,8 +60,31 @@ class SendWeeklyReportJob implements ShouldQueue
                 default => $service->pourTeamLeader($user),
             };
 
-            Mail::to($user->email)->send(new WeeklyReportMail($rapport));
-            $envoyes++;
+            $log = $emailLog->begin(
+                reportKey: 'weekly',
+                recipientEmail: $user->email,
+                user: $user,
+                reportType: 'weekly',
+                scope: $user->role_cache,
+                subject: 'Rapport hebdomadaire CRM — ' . ($user->prenom ?: $user->email),
+                executionUuid: $executionUuid,
+            );
+
+            if (! $log) {
+                continue;
+            }
+
+            try {
+                $sentMessage = Mail::to($user->email)->send(new WeeklyReportMail($rapport));
+                $emailLog->markSent($log, $sentMessage?->getMessageId());
+                $envoyes++;
+            } catch (\Throwable $exception) {
+                $emailLog->markFailed($log, $exception);
+                Log::error('Échec du rapport hebdomadaire CRM.', [
+                    'recipient' => $user->email,
+                    'exception' => $exception::class,
+                ]);
+            }
         }
 
         Log::info("Rapport hebdomadaire CRM envoye a {$envoyes} destinataire(s).");

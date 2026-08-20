@@ -7,15 +7,18 @@ use App\Models\EmailConfiguration;
 use App\Models\User;
 use App\Services\Crm\CrmSettingsService;
 use App\Services\Crm\DailyReportService;
+use App\Services\Crm\ReportEmailLogService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class SendDailyReportJob implements ShouldQueue
 {
@@ -24,7 +27,10 @@ class SendDailyReportJob implements ShouldQueue
     public function __construct(
         public array $roles = [],
         public ?int $userId = null,
+        public string $reportKey = 'daily',
+        public string $executionUuid = '',
     ) {
+        $this->executionUuid = $executionUuid ?: (string) Str::uuid();
     }
 
     public function middleware(): array
@@ -34,9 +40,14 @@ class SendDailyReportJob implements ShouldQueue
         ];
     }
 
-    public function handle(DailyReportService $service, ?CrmSettingsService $settings = null): int
+    public function handle(
+        DailyReportService $service,
+        ?CrmSettingsService $settings = null,
+        ?ReportEmailLogService $emailLog = null,
+    ): int
     {
-        $settings = $settings ?? app(CrmSettingsService::class);
+        $settings ??= app(CrmSettingsService::class);
+        $emailLog ??= app(ReportEmailLogService::class);
         $this->configureMailerFromActiveEmailConfiguration();
 
         $envoyes = 0;
@@ -59,8 +70,39 @@ class SendDailyReportJob implements ShouldQueue
                 default => $service->pourTeamLeader($user),
             };
 
-            Mail::mailer('smtp')->to($user->email)->send(new DailyReportMail($rapport));
-            $envoyes++;
+            $prenom = $rapport['user']->prenom ?? '';
+            $mailable = new DailyReportMail($rapport);
+            $log = $emailLog->begin(
+                reportKey: $this->reportKey,
+                recipientEmail: $user->email,
+                user: $user,
+                reportType: 'daily',
+                scope: $this->userId !== null ? 'targeted' : 'roles',
+                subject: 'Rapport quotidien CRM'.($prenom ? " — {$prenom}" : ''),
+                executionUuid: $this->executionUuid,
+                metadata: ['role' => $user->role_cache],
+            );
+
+            if (! $log) {
+                Log::warning('Rapport quotidien CRM ignoré : destinataire déjà traité.', [
+                    'report_key' => $this->reportKey,
+                    'recipient' => $user->email,
+                ]);
+                continue;
+            }
+
+            try {
+                $sentMessage = Mail::mailer('smtp')->to($user->email)->send($mailable);
+                $messageId = null;
+                if (is_object($sentMessage) && method_exists($sentMessage, 'getSymfonySentMessage')) {
+                    $messageId = $sentMessage->getSymfonySentMessage()?->getMessageId();
+                }
+                $emailLog->markSent($log, $messageId);
+                $envoyes++;
+            } catch (Throwable $exception) {
+                $emailLog->markFailed($log, $exception);
+                throw $exception;
+            }
         }
 
         Log::info("Rapport quotidien CRM envoye a {$envoyes} destinataire(s).");
@@ -74,7 +116,7 @@ class SendDailyReportJob implements ShouldQueue
             ? 'user-'.$this->userId
             : 'roles-'.sha1(implode(',', $this->roles ?: ['default']));
 
-        return 'crm-daily-report:'.Carbon::now()->format('Y-m-d').':'.$scope;
+        return 'crm-daily-report:'.Carbon::now()->format('Y-m-d').':'.$this->reportKey.':'.$scope;
     }
 
     protected function configureMailerFromActiveEmailConfiguration(): void
