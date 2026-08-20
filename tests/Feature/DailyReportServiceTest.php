@@ -45,6 +45,39 @@ class DailyReportServiceTest extends TestCase
     }
 
     #[Test]
+    public function daily_report_job_can_target_one_user(): void
+    {
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-06-29 09:00:00'));
+        Mail::fake();
+
+        $target = $this->user('target@test.com', User::ROLE_COMMERCIAL);
+        $this->user('other@test.com', User::ROLE_TELEPROSPECTEUR);
+
+        $envoyes = (new SendDailyReportJob([], $target->id, 'daily-test'))->handle(app(DailyReportService::class));
+
+        $this->assertSame(1, $envoyes);
+        Mail::assertSent(DailyReportMail::class, fn (DailyReportMail $mail): bool => $mail->hasTo('target@test.com'));
+        Mail::assertNotSent(DailyReportMail::class, fn (DailyReportMail $mail): bool => $mail->hasTo('other@test.com'));
+    }
+
+    #[Test]
+    public function daily_report_job_does_not_send_the_same_recipient_twice_for_the_same_day(): void
+    {
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-06-29 09:00:00'));
+        Mail::fake();
+
+        $user = $this->user('target@test.com', User::ROLE_COMMERCIAL);
+        $job = new SendDailyReportJob([], $user->id, 'daily-test');
+
+        $first = $job->handle(app(DailyReportService::class));
+        $second = $job->handle(app(DailyReportService::class));
+
+        $this->assertSame(1, $first);
+        $this->assertSame(0, $second);
+        Mail::assertSent(DailyReportMail::class, 1);
+    }
+
+    #[Test]
     public function daily_report_job_only_sends_to_relevant_roles(): void
     {
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-06-29 09:00:00'));
