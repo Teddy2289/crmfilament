@@ -8,9 +8,11 @@ use App\Models\User;
 use App\Services\Crm\CrmSettingsService;
 use App\Services\Crm\DailyReportService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Carbon;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -19,6 +21,19 @@ class SendDailyReportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public function __construct(
+        public array $roles = [],
+        public ?int $userId = null,
+    ) {
+    }
+
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping($this->lockKey()))->expireAfter(3600),
+        ];
+    }
+
     public function handle(DailyReportService $service, ?CrmSettingsService $settings = null): int
     {
         $settings = $settings ?? app(CrmSettingsService::class);
@@ -26,12 +41,16 @@ class SendDailyReportJob implements ShouldQueue
 
         $envoyes = 0;
 
-        $destinataires = $service->destinatairesPourRoles($settings->get('roles.daily_report_roles', [
+        $roles = $this->roles ?: $settings->get('roles.daily_report_roles', [
             User::ROLE_TELEPROSPECTEUR,
             User::ROLE_COMMERCIAL,
             User::ROLE_SUPERVISEUR,
             DailyReportService::ROLE_TEAM_LEADER,
-        ]));
+        ]);
+
+        $destinataires = $this->userId !== null
+            ? User::query()->whereKey($this->userId)->whereNotNull('email')->get()
+            : $service->destinatairesPourRoles($roles);
 
         foreach ($destinataires as $user) {
             $rapport = match ($user->role_cache) {
@@ -47,6 +66,15 @@ class SendDailyReportJob implements ShouldQueue
         Log::info("Rapport quotidien CRM envoye a {$envoyes} destinataire(s).");
 
         return $envoyes;
+    }
+
+    protected function lockKey(): string
+    {
+        $scope = $this->userId !== null
+            ? 'user-'.$this->userId
+            : 'roles-'.sha1(implode(',', $this->roles ?: ['default']));
+
+        return 'crm-daily-report:'.Carbon::now()->format('Y-m-d').':'.$scope;
     }
 
     protected function configureMailerFromActiveEmailConfiguration(): void
