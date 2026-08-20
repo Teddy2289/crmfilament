@@ -62,6 +62,8 @@ class SendDailyReportJob implements ShouldQueue
 
         $smtpConfig = [
             'transport' => 'smtp',
+            // Ne pas conserver un scheme smtps hérité lorsque la configuration active utilise TLS.
+            'scheme' => $config->smtp_encryption === 'ssl' ? 'smtps' : null,
             'host' => $config->smtp_host,
             'port' => $config->smtp_port,
             'username' => $config->email,
