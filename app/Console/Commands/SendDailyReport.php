@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\SendDailyReportJob;
 use App\Models\User;
 use App\Services\Crm\DailyReportService;
+use App\Services\Crm\ReportEmailLogService;
 use Illuminate\Console\Command;
 
 class SendDailyReport extends Command
@@ -28,6 +29,8 @@ class SendDailyReport extends Command
                 DailyReportService::ROLE_TEAM_LEADER,
             ];
 
+        $reportKey = $this->option('sync') ? 'daily-test' : 'daily';
+
         if ($userOption) {
             $user = $this->findUser($userOption);
 
@@ -36,13 +39,16 @@ class SendDailyReport extends Command
                 return self::FAILURE;
             }
 
-            $job = new SendDailyReportJob([], $user->id);
+            $job = new SendDailyReportJob([], $user->id, $reportKey);
         } else {
-            $job = new SendDailyReportJob($roles);
+            $job = new SendDailyReportJob($roles, null, $reportKey);
         }
 
         if ($this->option('sync')) {
-            $envoyes = $job->handle(app(DailyReportService::class));
+            $envoyes = $job->handle(
+                app(DailyReportService::class),
+                app(ReportEmailLogService::class),
+            );
             $this->info("Rapport quotidien CRM envoyé à {$envoyes} destinataire(s).");
 
             return self::SUCCESS;

@@ -1,0 +1,1065 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\OrganizationStatus;
+use App\Enums\OrganizationType;
+use App\Enums\ProspectStatut;
+use App\Support\PhoneFormatter;
+use App\Traits\HasModelValidation;
+use App\Traits\HasInputSanitization;
+use Database\Factories\ProspectFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+
+class Prospect extends Model
+{
+    use HasFactory, SoftDeletes, HasModelValidation, HasInputSanitization;
+
+    protected $table = 'prospects';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($prospect) {
+            HistoriqueModification::enregistrerCreation($prospect);
+        });
+
+        static::updated(function ($prospect) {
+            $champsSuivis = [
+                'nom', 'type_pressenti', 'departement', 'telephone', 'telephone_alt',
+                'email', 'adresse', 'code_postal', 'ville', 'siret', 'secteur_activite',
+                'statut', 'commercial_id', 'difficile', 'qf_valide', 'notes',
+            ];
+
+            foreach ($champsSuivis as $champ) {
+                if ($prospect->isDirty($champ)) {
+                    HistoriqueModification::enregistrerModification(
+                        $prospect,
+                        $champ,
+                        $prospect->getOriginal($champ),
+                        $prospect->$champ
+                    );
+                }
+            }
+        });
+
+        static::deleted(function ($prospect) {
+            HistoriqueModification::enregistrerSuppression($prospect);
+        });
+
+        static::bootHasModelValidation();
+        
+        static::bootHasInputSanitization();
+
+        static::restored(function ($prospect) {
+            HistoriqueModification::create([
+                'model_type' => get_class($prospect),
+                'model_id' => $prospect->id,
+                'user_id' => auth()->id(),
+                'champ' => null,
+                'ancienne_valeur' => null,
+                'nouvelle_valeur' => $prospect->toArray(),
+                'type_modification' => 'restauration',
+                'date_modification' => now(),
+            ]);
+        });
+    }
+
+    // ── Validation Rules ─────────────────────────────────────────────
+    public function getValidationRules(): array
+    {
+        return [
+            'nom' => 'required|string|max:255',
+            'type_pressenti' => 'nullable|string',
+            'telephone' => 'nullable|string|max:20',
+            'telephone_alt' => 'nullable|string|max:20',
+            'email' => 'nullable|email',
+            'code_postal' => 'nullable|string|max:5',
+            'ville' => 'nullable|string|max:255',
+            'departement' => 'nullable|string|max:3',
+            'siret' => 'nullable|string|min:14|max:14',
+            'statut' => 'required|string',
+        ];
+    }
+
+    // ── Sanitization Fields ───────────────────────────────────────────
+    public function getSanitizableFields(): array
+    {
+        return [
+            'nom' => 'sanitizeString',
+            'telephone' => 'sanitizePhone',
+            'telephone_alt' => 'sanitizePhone',
+            'email' => 'sanitizeEmail',
+            'ville' => 'sanitizeString',
+            'departement' => 'sanitizeString',
+            'siret' => 'sanitizeSiret',
+            'code_postal' => 'sanitizePostalCode',
+        ];
+    }
+
+    protected $casts = [
+        'statut' => ProspectStatut::class,
+        'date_premier_contact' => 'date',
+        'rappel_planifie_at' => 'datetime',
+        'rappel_notifie_retard_at' => 'datetime',
+        'difficile' => 'boolean',
+        'difficile_at' => 'datetime',
+        'qf_valide' => 'boolean',
+        'qf_valide_at' => 'datetime',
+        'nb_salaries' => 'integer',
+        'nb_salaries_tranche' => 'string',
+        'chiffre_affaires' => 'decimal:2',
+        'numero_ordre' => 'integer',
+        'mail1_envoye' => 'boolean',
+        'mail1_envoye_at' => 'datetime',
+        'mail2_envoye' => 'boolean',
+        'mail2_envoye_at' => 'datetime',
+        'invitation_agenda_envoyee' => 'boolean',
+    ];
+
+    protected $fillable = [
+        'nom',
+        'type_pressenti',
+        'departement',
+        'telephone',
+        'telephone_alt',
+        'email',
+        'adresse',
+        'code_postal',
+        'ville',
+        'siret',
+        'secteur_activite',
+        'nb_salaries',
+        'nb_salaries_tranche',
+        'chiffre_affaires',
+        'statut',
+        'teleprospecteur_id',
+        'commercial_id',
+        'date_premier_contact',
+        'rappel_planifie_at',
+        'rappel_notifie_retard_at',
+        'difficile',
+        'difficile_at',
+        'interlocuteur_nom',
+        'interlocuteur_prenom',
+        'interlocuteur_fonction',
+        'interlocuteur_telephone',
+        'interlocuteur_email',
+        'interlocuteur_add_nom',
+        'interlocuteur_add_fonction',
+        'interlocuteur_add_telephone',
+        'interlocuteur_add_email',
+        'description',
+        // Champs pour fiches de prospection
+        'besoins_exprimes',
+        'objections_soulevees',
+        'points_attention_rdv',
+        'invitation_agenda_envoyee',
+        'presence_cse',
+        'jour_dispo_appel',
+        'motif_ko',
+        'qf_valide',
+        'valide_par',
+        'qf_valide_at',
+        // Infos CSE
+        'cse_secretaire_nom',
+        'cse_secretaire_prenom',
+        'cse_secretaire_tel_direct',
+        'cse_secretaire_tel_perso',
+        'cse_secretaire_email_pro',
+        'cse_secretaire_email_perso',
+        'cse_tresorier_nom',
+        'cse_tresorier_prenom',
+        'cse_tresorier_tel_direct',
+        'cse_tresorier_tel_perso',
+        'cse_tresorier_email_pro',
+        'cse_tresorier_email_perso',
+        'cse_nb_elus',
+        'cse_date_fin_mandat',
+        'cse_existence_juridique',
+        'cse_notes',
+        // Infos Syndicat
+        'syndicat_appartenance',
+        'syndicat_nom_organisation',
+        'syndicat_responsable_nom',
+        'syndicat_responsable_prenom',
+        'syndicat_responsable_fonction',
+        'syndicat_tel_direct',
+        'syndicat_tel_perso',
+        'syndicat_email_pro',
+        'syndicat_email_perso',
+        'syndicat_perimetre',
+        'syndicat_notes',
+        // ── Dirigeant (commun à tous les types) ─────────────────────────
+        'dirigeant_nom',
+        'dirigeant_prenom',
+        'dirigeant_fonction',
+        'dirigeant_telephone',
+        'dirigeant_email',
+
+        'ordre_priorite',
+        'numero_ordre',
+        'raison_sociale',
+        'campagne_id',
+        'converti_partenaire_id',
+        // Interlocuteur Standard
+        'nom_interlocuteur_standard',
+        'creneaux_permanence_cse',
+        'email_general_standard',
+        'mail1_envoye',
+        'mail1_envoye_at',
+        'mail2_envoye',
+        'mail2_envoye_at',
+    ];
+
+    // ── Accesseurs ──────────────────────────────────────────────────
+    public function getStatutLabelAttribute(): string
+    {
+        return $this->statut->label();
+    }
+
+    public function getStatutColorAttribute(): string
+    {
+        return $this->statut->color();
+    }
+
+    public function getStatutIconAttribute(): string
+    {
+        return $this->statut->icon();
+    }
+
+    public function getStatutDescriptionAttribute(): string
+    {
+        return match ($this->statut) {
+            ProspectStatut::AC => 'À contacter - Nouveau prospect',
+            ProspectStatut::STD_NR => 'Standard non référencé - En attente',
+            ProspectStatut::STD_Joint => 'Standard joint - En cours de qualification',
+            ProspectStatut::CSE_NR => 'CSE non référencé - À qualifier',
+            ProspectStatut::RP => 'Réponse positive - À suivre',
+            ProspectStatut::RPC => 'Réponse positive CSE - Prioritaire',
+            ProspectStatut::KO => 'KO - Prospect non intéressé',
+            ProspectStatut::QF => 'Qualifié - Prêt pour commercial',
+        };
+    }
+
+    public function getTypePressentiLabelAttribute(): string
+    {
+        if (! $this->type_pressenti) {
+            return 'Non défini';
+        }
+
+        $types = OrganizationType::pourSelect();
+
+        return $types[$this->type_pressenti] ?? $this->type_pressenti;
+    }
+
+    public function getEstQualifieAttribute(): bool
+    {
+        return $this->statut === ProspectStatut::QF;
+    }
+
+    public function getEstConvertibleEnPartenaireAttribute(): bool
+    {
+        return $this->statut === ProspectStatut::QF
+            && $this->qf_valide
+            && ! $this->converti_partenaire_id;
+    }
+
+    public function getEstAPlanifierAttribute(): bool
+    {
+        return in_array($this->statut, [
+            ProspectStatut::RP,
+            ProspectStatut::RPC,
+        ]);
+    }
+
+    public function getEstARelancerAttribute(): bool
+    {
+        return in_array($this->statut, [
+            ProspectStatut::AC,
+            ProspectStatut::STD_NR,
+            ProspectStatut::CSE_NR,
+        ]);
+    }
+
+    public function getEstKOAttribute(): bool
+    {
+        return $this->statut === ProspectStatut::KO;
+    }
+
+    public function getAdresseCompleteAttribute(): string
+    {
+        return collect([
+            $this->adresse,
+            $this->code_postal,
+            $this->ville,
+        ])->filter()->implode(', ');
+    }
+
+    public function getInterlocuteurCompletAttribute(): string
+    {
+        if (! $this->interlocuteur_nom) {
+            return 'Non défini';
+        }
+
+        return trim(
+            ($this->interlocuteur_prenom ? $this->interlocuteur_prenom.' ' : '').
+                $this->interlocuteur_nom.
+                ($this->interlocuteur_fonction ? ' - '.$this->interlocuteur_fonction : '')
+        );
+    }
+    public function getFallbackInterlocuteurNomAttribute(): ?string
+    {
+        if ($this->interlocuteur_nom) {
+            return $this->interlocuteur_nom;
+        }
+
+        $secretaire = trim(($this->cse_secretaire_prenom ?? '') . ' ' . ($this->cse_secretaire_nom ?? ''));
+        if ($secretaire) {
+            return $secretaire;
+        }
+
+        $tresorier = trim(($this->cse_tresorier_prenom ?? '') . ' ' . ($this->cse_tresorier_nom ?? ''));
+        return $tresorier ?: null;
+    }
+
+    public function getFallbackInterlocuteurTelephoneAttribute(): ?string
+    {
+        return $this->interlocuteur_telephone
+            ?: $this->cse_secretaire_tel_direct
+            ?: $this->cse_secretaire_tel_perso
+            ?: $this->cse_tresorier_tel_direct
+            ?: $this->cse_tresorier_tel_perso
+            ?: null;
+    }
+
+    public function getFallbackInterlocuteurEmailAttribute(): ?string
+    {
+        return $this->interlocuteur_email
+            ?: $this->cse_secretaire_email_pro
+            ?: $this->cse_secretaire_email_perso
+            ?: $this->cse_tresorier_email_pro
+            ?: $this->cse_tresorier_email_perso
+            ?: null;
+    }
+    public function getDernierContactAttribute(): ?string
+    {
+        return $this->date_premier_contact?->diffForHumans();
+    }
+
+    public function getJoursDepuisPremierContactAttribute(): ?int
+    {
+        return $this->date_premier_contact?->diffInDays(now());
+    }
+
+    public function getJoursAvantRappelAttribute(): ?int
+    {
+        if (! $this->rappel_planifie_at) {
+            return null;
+        }
+
+        if ($this->rappel_planifie_at->isPast()) {
+            return -$this->rappel_planifie_at->diffInDays(now());
+        }
+
+        return $this->rappel_planifie_at->diffInDays(now());
+    }
+
+    public function getRappelEstEnRetardAttribute(): bool
+    {
+        return $this->rappel_planifie_at && $this->rappel_planifie_at->isPast()
+            && ! in_array($this->statut, [ProspectStatut::KO, ProspectStatut::QF]);
+    }
+
+    public function getTauxEngagementAttribute(): string
+    {
+        if ($this->statut === ProspectStatut::QF) {
+            return '⭐⭐⭐⭐⭐';
+        }
+        if (in_array($this->statut, [ProspectStatut::RP, ProspectStatut::RPC])) {
+            return '⭐⭐⭐⭐';
+        }
+        if ($this->statut === ProspectStatut::STD_Joint) {
+            return '⭐⭐⭐';
+        }
+        if (in_array($this->statut, [ProspectStatut::STD_NR, ProspectStatut::CSE_NR])) {
+            return '⭐⭐';
+        }
+
+        return '⭐';
+    }
+
+    public function getDernierAppelRingoverAttribute(): ?array
+    {
+        // Récupère le dernier appel Ringover
+        $appel = $this->appels()
+            ->whereNotNull('ringover_call_id')
+            ->orderByDesc('date_heure')
+            ->first();
+
+        if (!$appel) {
+            return null;
+        }
+
+        return [
+            'id' => $appel->id,
+            'date_heure' => $appel->date_heure,
+            'date_heure_formatee' => $appel->date_heure->format('d/m/Y H:i'),
+            'date_seulement' => $appel->date_heure->format('d/m/Y'),
+            'heure_seulement' => $appel->date_heure->format('H:i'),
+            'duree_secondes' => $appel->duree_secondes ?? 0,
+            'duree_formatee' => $appel->duree_formatee ?? '0 sec',
+            'direction' => $appel->direction,
+            'ringover_call_id' => $appel->ringover_call_id,
+            'numero_national' => $appel->numero_appelant ? PhoneFormatter::toNationalFrench($appel->numero_appelant) : null,
+            'numero_international' => $appel->numero_appelant ? PhoneFormatter::toInternational($appel->numero_appelant) : null,
+            'numero_dual' => $appel->numero_appelant ? PhoneFormatter::formatDual($appel->numero_appelant) : null,
+            'enregistrement_audio' => $appel->enregistrement_audio,
+            'resume_ia' => $appel->ringover_payload['note'] ?? null,
+            'notes_ringover' => data_get($appel->ringover_payload, 'comments.0.content')
+                ?? data_get($appel->ringover_payload, 'comments.0.text')
+                ?? data_get($appel->ringover_payload, 'comment')
+                ?? data_get($appel->ringover_payload, 'notes')
+                ?? $appel->commentaire,
+            'phoning_notes' => $appel->phoning_notes ?? $appel->commentaire,
+        ];
+    }
+
+    /**
+     * Alias method for the accessor - used in ContactResolver
+     */
+    public function getDernierAppelRingover(): ?array
+    {
+        return $this->getDernierAppelRingoverAttribute();
+    }
+
+    /**
+     * Get all Ringover calls for this prospect
+     */
+    public function getTousAppelsRingover(): array
+    {
+        $appels = $this->appels()
+            ->whereNotNull('ringover_call_id')
+            ->orderByDesc('date_heure')
+            ->get();
+
+        return $appels->map(function($appel) {
+            return [
+                'id' => $appel->id,
+                'date_heure' => $appel->date_heure,
+                'date_heure_formatee' => $appel->date_heure->format('d/m/Y H:i'),
+                'date_seulement' => $appel->date_heure->format('d/m/Y'),
+                'heure_seulement' => $appel->date_heure->format('H:i'),
+                'duree_secondes' => $appel->duree_secondes ?? 0,
+                'duree_formatee' => $appel->duree_formatee ?? '0 sec',
+                'direction' => $appel->direction,
+                'ringover_call_id' => $appel->ringover_call_id,
+                'numero_national' => $appel->numero_appelant ? PhoneFormatter::toNationalFrench($appel->numero_appelant) : null,
+                'numero_international' => $appel->numero_appelant ? PhoneFormatter::toInternational($appel->numero_appelant) : null,
+                'numero_dual' => $appel->numero_appelant ? PhoneFormatter::formatDual($appel->numero_appelant) : null,
+                'enregistrement_audio' => $appel->enregistrement_audio,
+                'resume_ia' => $appel->ringover_payload['note'] ?? null,
+                'notes_ringover' => data_get($appel->ringover_payload, 'comments.0.content')
+                    ?? data_get($appel->ringover_payload, 'comments.0.text')
+                    ?? data_get($appel->ringover_payload, 'comment')
+                    ?? data_get($appel->ringover_payload, 'notes')
+                    ?? $appel->commentaire,
+                'phoning_notes' => $appel->phoning_notes ?? $appel->commentaire,
+            ];
+        })->toArray();
+    }
+
+    // ── Méthodes métier ─────────────────────────────────────────────
+    public function peutPasserEnQF(): bool
+    {
+        return $this->mail1_envoye
+            && $this->mail2_envoye
+            && !empty($this->interlocuteur_email);
+    }
+
+    public function sentEmails(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(\App\Models\SentEmail::class, 'emailable');
+    }
+
+    public function marquerContact(): void
+    {
+        $this->update([
+            'date_premier_contact' => $this->date_premier_contact ?? now(),
+        ]);
+    }
+
+    public function changerStatut(ProspectStatut $nouveauStatut, ?string $notes = null): void
+    {
+        if ($nouveauStatut === ProspectStatut::KO && ! $notes) {
+            throw new \Exception('Un motif est obligatoire pour passer en KO');
+        }
+
+        $data = ['statut' => $nouveauStatut];
+
+        if ($notes) {
+            $data['description'] = $this->description
+                ? $this->description."\n[".now()->format('d/m/Y H:i')."] {$notes}"
+                : '['.now()->format('d/m/Y H:i')."] {$notes}";
+        }
+
+        if ($nouveauStatut === ProspectStatut::KO) {
+            $data['motif_ko'] = $notes;
+        }
+
+        $this->update($data);
+    }
+
+    public function qualifier(): void
+    {
+        $this->changerStatut(ProspectStatut::QF, 'Prospect qualifié');
+    }
+
+    public function marquerKO(string $motif): void
+    {
+        $this->changerStatut(ProspectStatut::KO, $motif);
+    }
+
+    public function marquerReponsePositive(): void
+    {
+        $this->changerStatut(ProspectStatut::RP, 'Réponse positive reçue');
+    }
+
+    public function marquerReponsePositiveCSE(): void
+    {
+        $this->changerStatut(ProspectStatut::RPC, 'Réponse positive CSE');
+    }
+
+    public function standardJoint(): void
+    {
+        $this->changerStatut(ProspectStatut::STD_Joint, 'Standard joint');
+    }
+
+    public function programmerRappel(\DateTime $date, bool $manual = false): void
+    {
+        $dateRappel = $this->normaliserDateRappel($date, $manual);
+
+        $this->update([
+            'rappel_planifie_at' => $dateRappel,
+            'statut' => in_array($this->statut, [ProspectStatut::AC, ProspectStatut::KO])
+                ? ProspectStatut::AC
+                : $this->statut,
+        ]);
+    }
+
+    protected function normaliserDateRappel(\DateTime $date, bool $manual = false): \DateTime
+    {
+        if ($manual || ! $this->estWeekEnd($date)) {
+            return $date;
+        }
+
+        $dateCarbon = \Carbon\Carbon::instance($date);
+
+        while ($dateCarbon->isWeekend()) {
+            $dateCarbon->addDay();
+        }
+
+        return $dateCarbon->toDateTime();
+    }
+
+    protected function estWeekEnd(\DateTime $date): bool
+    {
+        return \Carbon\Carbon::instance($date)->isWeekend();
+    }
+
+    public function annulerRappel(): void
+    {
+        $this->update(['rappel_planifie_at' => null]);
+    }
+
+    public function marquerDifficile(): void
+    {
+        if ($this->difficile) {
+            return;
+        }
+
+        $this->update([
+            'difficile' => true,
+            'difficile_at' => now(),
+        ]);
+    }
+
+    public function retirerDifficile(): void
+    {
+        $this->update(['difficile' => false, 'difficile_at' => null]);
+    }
+
+    public function validerQF(int $userId): void
+    {
+        $this->update([
+            'statut' => ProspectStatut::QF,
+            'qf_valide' => true,
+            'valide_par' => $userId,
+            'qf_valide_at' => now(),
+        ]);
+    }
+
+    public function assignerTeleprospecteur(int $userId): void
+    {
+        $this->update(['teleprospecteur_id' => $userId]);
+    }
+
+    public function assignerCommercial(int $userId): void
+    {
+        $this->update(['commercial_id' => $userId]);
+    }
+
+    public function ajouterNote(string $note): void
+    {
+        $this->update([
+            'description' => $this->description
+                ? $this->description."\n[".now()->format('d/m/Y H:i')."] {$note}"
+                : '['.now()->format('d/m/Y H:i')."] {$note}",
+        ]);
+    }
+
+    public function mettreAJourContact(
+        string $nom,
+        ?string $fonction = null,
+        ?string $telephone = null,
+        ?string $email = null
+    ): void {
+        $this->update([
+            'interlocuteur_nom' => $nom,
+            'interlocuteur_fonction' => $fonction,
+            'interlocuteur_telephone' => $telephone,
+            'interlocuteur_email' => $email,
+        ]);
+    }
+
+    // ── Scopes ──────────────────────────────────────────────────────
+    public function scopeActifs($query): Builder
+    {
+        return $query->whereNotIn('statut', [
+            ProspectStatut::KO,
+            ProspectStatut::QF,
+        ]);
+    }
+
+    public function scopeQualifies($query): Builder
+    {
+        return $query->where('statut', ProspectStatut::QF);
+    }
+
+    public function scopeKO($query): Builder
+    {
+        return $query->where('statut', ProspectStatut::KO);
+    }
+
+    public function scopeARelancer($query): Builder
+    {
+        return $query->whereIn('statut', [
+            ProspectStatut::AC->value,
+            ProspectStatut::STD_NR->value,
+            ProspectStatut::CSE_NR->value,
+        ]);
+    }
+
+    public function scopeSansContact($query): Builder
+    {
+        return $query->whereNull('date_premier_contact');
+    }
+
+    /**
+     * Fiches jamais appelées : aucun appel enregistré, dossier non finalisé.
+     */
+    public function scopeVierges($query): Builder
+    {
+        return $query->whereDoesntHave('appels')
+            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value]);
+    }
+
+    /**
+     * Fiches déjà appelées au moins une fois mais pas encore finalisées (ni KO ni QF).
+     */
+    public function scopeEnCoursDeTraitement($query): Builder
+    {
+        return $query->whereHas('appels')
+            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value]);
+    }
+
+    public function scopeRappelPlanifie($query): Builder
+    {
+        return $query->whereNotNull('rappel_planifie_at')
+            ->where('rappel_planifie_at', '>', now());
+    }
+
+    public function scopeRappelEnRetard($query): Builder
+    {
+        return $query->whereNotNull('rappel_planifie_at')
+            ->where('rappel_planifie_at', '<', now())
+            ->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value]);
+    }
+
+    public function scopeDifficiles($query): Builder
+    {
+        return $query->where('difficile', true);
+    }
+
+    public function scopeAReponsePositive($query): Builder
+    {
+        return $query->whereIn('statut', [
+            ProspectStatut::RP,
+            ProspectStatut::RPC,
+        ]);
+    }
+
+    public function scopeQFValides($query): Builder
+    {
+        return $query->where('qf_valide', true);
+    }
+
+    public function scopeQFNonValides($query): Builder
+    {
+        return $query->where('statut', ProspectStatut::QF)
+            ->where('qf_valide', false);
+    }
+
+    public function scopeParTeleprospecteur($query, int $userId): Builder
+    {
+        return $query->where('teleprospecteur_id', $userId);
+    }
+
+    public function scopeParCommercial($query, int $userId): Builder
+    {
+        return $query->where('commercial_id', $userId);
+    }
+
+    public function scopeParDepartement($query, string $departement): Builder
+    {
+        return $query->where('departement', $departement);
+    }
+
+    public function scopeParTypePressenti($query, string $type): Builder
+    {
+        return $query->where('type_pressenti', $type);
+    }
+
+    public function scopeParStatut($query, ProspectStatut $statut): Builder
+    {
+        return $query->where('statut', $statut);
+    }
+
+    public function scopeDuMois($query): Builder
+    {
+        return $query->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year);
+    }
+
+    public function scopeSansActiviteDepuis($query, int $jours): Builder
+    {
+        return $query->where(function ($q) use ($jours) {
+            $q->whereNull('date_premier_contact')
+                ->orWhere('date_premier_contact', '<', now()->subDays($jours));
+        })->whereNotIn('statut', [ProspectStatut::KO->value, ProspectStatut::QF->value]);
+    }
+
+    // ── Méthodes statiques KPIs ─────────────────────────────────────
+    public static function getKpis(?int $teleprospecteurId = null): array
+    {
+        $query = static::query();
+
+        if ($teleprospecteurId) {
+            $query->where('teleprospecteur_id', $teleprospecteurId);
+        }
+
+        return [
+            'total' => $query->count(),
+            'actifs' => (clone $query)->actifs()->count(),
+            'a_relancer' => (clone $query)->aRelancer()->count(),
+            'rappels_en_retard' => (clone $query)->rappelEnRetard()->count(),
+            'qualifies' => (clone $query)->qualifies()->count(),
+            'ko' => (clone $query)->ko()->count(),
+            'taux_qualification' => static::getTauxQualification($teleprospecteurId),
+            'taux_ko' => static::getTauxKO($teleprospecteurId),
+            'par_statut' => static::getRepartitionParStatut($teleprospecteurId),
+            'par_type' => static::getRepartitionParType($teleprospecteurId),
+            'nouveaux_mois' => (clone $query)->duMois()->count(),
+        ];
+    }
+
+    public static function getTauxQualification(?int $teleprospecteurId = null): float
+    {
+        $query = static::query();
+
+        if ($teleprospecteurId) {
+            $query->where('teleprospecteur_id', $teleprospecteurId);
+        }
+
+        $total = $query->count();
+        if ($total === 0) {
+            return 0;
+        }
+
+        $qualifies = (clone $query)->qualifies()->count();
+
+        return round(($qualifies / $total) * 100, 1);
+    }
+
+    public static function getTauxKO(?int $teleprospecteurId = null): float
+    {
+        $query = static::query();
+
+        if ($teleprospecteurId) {
+            $query->where('teleprospecteur_id', $teleprospecteurId);
+        }
+
+        $total = $query->count();
+        if ($total === 0) {
+            return 0;
+        }
+
+        $ko = (clone $query)->ko()->count();
+
+        return round(($ko / $total) * 100, 1);
+    }
+
+    public static function getRepartitionParStatut(?int $teleprospecteurId = null): array
+    {
+        $query = static::query();
+
+        if ($teleprospecteurId) {
+            $query->where('teleprospecteur_id', $teleprospecteurId);
+        }
+
+        return collect(ProspectStatut::cases())
+            ->mapWithKeys(function ($statut) use ($query) {
+                return [$statut->value => (clone $query)->where('statut', $statut)->count()];
+            })
+            ->toArray();
+    }
+
+    public static function getRepartitionParType(?int $teleprospecteurId = null): array
+    {
+        $query = static::query();
+
+        if ($teleprospecteurId) {
+            $query->where('teleprospecteur_id', $teleprospecteurId);
+        }
+
+        return (clone $query)
+            ->selectRaw('type_pressenti, COUNT(*) as total')
+            ->whereNotNull('type_pressenti')
+            ->groupBy('type_pressenti')
+            ->orderByDesc('total')
+            ->get()
+            ->pluck('total', 'type_pressenti')
+            ->toArray();
+    }
+
+    // ── Boot ────────────────────────────────────────────────────────
+    protected static function booted(): void
+    {
+        static::creating(function (Prospect $prospect) {
+            if (! $prospect->statut) {
+                $prospect->statut = ProspectStatut::AC;
+            }
+        });
+
+        static::updating(function (Prospect $prospect) {
+            // Si le statut change vers STD_Joint, enregistrer le premier contact
+            if (
+                $prospect->isDirty('statut') &&
+                $prospect->statut === ProspectStatut::STD_Joint &&
+                ! $prospect->date_premier_contact
+            ) {
+                $prospect->date_premier_contact = now();
+            }
+
+            // Toute replanification manuelle du rappel (ex: formulaire d'édition)
+            // doit rouvrir le droit à une nouvelle notification de retard.
+            if ($prospect->isDirty('rappel_planifie_at') && ! $prospect->isDirty('rappel_notifie_retard_at')) {
+                $prospect->rappel_notifie_retard_at = null;
+            }
+        });
+    }
+
+    /**
+     * Convertit un Prospect en Partenaire.
+     *
+     * Règle actuelle (implémentation):
+     * - Le prospect doit être qualifié (statut QF) et validé par un responsable d'équipe
+     * - Le partenaire créé a le statut "Signé accord cadre" (OrganizationStatus::SigneAccordCadre)
+     * - Les contacts (dirigeant, CSE, syndicat) sont automatiquement migrés vers ContactPartenaire
+     *
+     * Note CDC vs Implémentation:
+     * - CDC §4.4: "Conversion Prospect → Partenaire : responsable d'équipe uniquement | Statut = QF validé"
+     * - CDC mentionne également "Convention signée" comme condition ; la conversion crée donc
+     *   directement le partenaire au statut "Signé accord cadre"
+     *
+     * @throws \Exception Si le prospect n'est pas qualifié (QF)
+     * @return Partenaire|null Le partenaire créé ou null en cas d'échec
+     */
+    public function convertirEnPartenaire(): ?Partenaire
+    {
+        if (! $this->est_convertible_en_partenaire) {
+            throw new \Exception('Seuls les prospects QF validés et non déjà convertis peuvent être convertis en partenaire.');
+        }
+
+        return DB::transaction(function (): Partenaire {
+            $partenaire = Partenaire::create([
+                // Infos de base
+                'nom' => $this->nom,
+                'type' => $this->type_pressenti ?? OrganizationType::EntrepriseDirecte->value,
+                'siret' => $this->siret,
+                'telephone' => $this->telephone,
+                'email' => $this->email,
+                'adresse' => $this->adresse,
+                'code_postal' => $this->code_postal,
+                'ville' => $this->ville,
+                'departement' => $this->departement,
+                'secteur_activite' => $this->secteur_activite,
+                'nb_salaries' => $this->nb_salaries,
+                'chiffre_affaires' => $this->chiffre_affaires,
+                'commercial_id' => $this->commercial_id,
+                'statut' => OrganizationStatus::SigneAccordCadre,
+                'prospect_id' => $this->id,
+                'notes' => "Converti depuis prospect #{$this->id}\n{$this->description}",
+            ]);
+
+            // Migrer le dirigeant vers ContactPartenaire
+            if ($this->dirigeant_nom || $this->dirigeant_prenom) {
+                ContactPartenaire::create([
+                    'partenaire_id' => $partenaire->id,
+                    'civilite' => 'M.',
+                    'nom' => $this->dirigeant_nom,
+                    'prenom' => $this->dirigeant_prenom,
+                    'fonction' => $this->dirigeant_fonction,
+                    'email' => $this->dirigeant_email,
+                    'telephone_direct' => $this->dirigeant_telephone,
+                    'est_principal' => true,
+                    'est_decisionnaire' => true,
+                    'niveau_influence' => 5,
+                    'notes' => 'Migré depuis prospect (dirigeant)',
+                ]);
+            }
+
+            // Migrer le secrétaire CSE vers ContactPartenaire
+            if ($this->cse_secretaire_nom || $this->cse_secretaire_prenom) {
+                ContactPartenaire::create([
+                    'partenaire_id' => $partenaire->id,
+                    'civilite' => 'Mme',
+                    'nom' => $this->cse_secretaire_nom,
+                    'prenom' => $this->cse_secretaire_prenom,
+                    'fonction' => 'Secrétaire CSE',
+                    'email' => $this->cse_secretaire_email_pro,
+                    'email_perso' => $this->cse_secretaire_email_perso,
+                    'telephone_direct' => $this->cse_secretaire_tel_direct,
+                    'telephone_perso' => $this->cse_secretaire_tel_perso,
+                    'est_principal' => false,
+                    'notes' => 'Migré depuis prospect (secrétaire CSE)',
+                ]);
+            }
+
+            // Migrer le trésorier CSE vers ContactPartenaire
+            if ($this->cse_tresorier_nom || $this->cse_tresorier_prenom) {
+                ContactPartenaire::create([
+                    'partenaire_id' => $partenaire->id,
+                    'civilite' => 'M.',
+                    'nom' => $this->cse_tresorier_nom,
+                    'prenom' => $this->cse_tresorier_prenom,
+                    'fonction' => 'Trésorier CSE',
+                    'email' => $this->cse_tresorier_email_pro,
+                    'email_perso' => $this->cse_tresorier_email_perso,
+                    'telephone_direct' => $this->cse_tresorier_tel_direct,
+                    'telephone_perso' => $this->cse_tresorier_tel_perso,
+                    'est_principal' => false,
+                    'notes' => 'Migré depuis prospect (trésorier CSE)',
+                ]);
+            }
+
+            // Migrer le responsable syndical vers ContactPartenaire
+            if ($this->syndicat_responsable_nom || $this->syndicat_responsable_prenom) {
+                ContactPartenaire::create([
+                    'partenaire_id' => $partenaire->id,
+                    'civilite' => 'M.',
+                    'nom' => $this->syndicat_responsable_nom,
+                    'prenom' => $this->syndicat_responsable_prenom,
+                    'fonction' => $this->syndicat_responsable_fonction ?: 'Délégué syndical',
+                    'nom_syndicat' => $this->syndicat_appartenance,
+                    'email' => $this->syndicat_email_pro,
+                    'email_perso' => $this->syndicat_email_perso,
+                    'telephone_direct' => $this->syndicat_tel_direct,
+                    'telephone_perso' => $this->syndicat_tel_perso,
+                    'est_principal' => false,
+                    'notes' => 'Migré depuis prospect (responsable syndical)',
+                ]);
+            }
+
+            $this->update([
+                'converti_partenaire_id' => $partenaire->id,
+                'description' => $this->description."\n[Conversion] Partenaire créé le ".now()->format('d/m/Y H:i'),
+            ]);
+
+            $this->delete();
+
+            return $partenaire;
+        });
+    }
+
+    // ── Relations ────────────────────────────────────────────────────
+    public function teleprospecteur()
+    {
+        return $this->belongsTo(User::class, 'teleprospecteur_id');
+    }
+
+    public function commercial()
+    {
+        return $this->belongsTo(User::class, 'commercial_id');
+    }
+
+    public function validePar()
+    {
+        return $this->belongsTo(User::class, 'valide_par');
+    }
+
+    public function rendezVous()
+    {
+        return $this->morphMany(RendezVous::class, 'rdvable');
+    }
+
+    public function appels()
+    {
+        return $this->morphMany(Appel::class, 'appelable');
+    }
+
+    public function documents()
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function opportunite()
+    {
+        return $this->hasOne(Opportunite::class, 'converti_en_prospect_id')->withTrashed();
+    }
+
+    public function campagne()
+    {
+        return $this->belongsTo(CampagnePhoning::class, 'campagne_id');
+    }
+
+    public function convertiEnPartenaire()
+    {
+        return $this->belongsTo(Partenaire::class, 'converti_partenaire_id');
+    }
+
+    public function historiqueInteractions()
+    {
+        return $this->morphMany(HistoriqueInteractionUser::class, 'interactable');
+    }
+
+    public function notesCommentaires()
+    {
+        return $this->morphMany(NoteCommentaire::class, 'notable');
+    }
+}

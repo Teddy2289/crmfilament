@@ -1,0 +1,748 @@
+<?php
+
+namespace App\Filament\NsConseil\Resources;
+
+use App\Filament\NsConseil\Actions\VerifierRattachementsAction;
+use App\Filament\Shared\Components\PhoneNumberInput;
+use App\Filament\NsConseil\Resources\ClientResource\Actions\ImportClientsAction;
+use App\Filament\NsConseil\Resources\ClientResource\Pages;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DocumentsRelationManager;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\DossierFormationsRelationManager;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\NotesCommentairesRelationManager;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\PropositionsRelationManager;
+use App\Filament\NsConseil\Resources\ClientResource\RelationManagers\RendezVousRelationManager;
+use App\Filament\Exports\ClientExporter;
+use App\Filament\Shared\Actions\LancerAppelsAction;
+use App\Filament\Shared\Components\DuplicateWarning;
+use App\Filament\Shared\Concerns\HasCustomFieldsForm;
+use App\Models\Client;
+use App\Services\Cache\NavigationBadgeCacheService;
+use App\Support\UsesResourcePermissions;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+
+class ClientResource extends Resource
+{
+    use HasCustomFieldsForm;
+    use UsesResourcePermissions;
+
+    protected static ?string $model = Client::class;
+
+    protected static string $permissionPrefix = 'clients';
+
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
+    protected static ?string $navigationGroup = 'Clients & Formations';
+
+    protected static ?string $navigationLabel = 'Clients';
+
+    protected static ?int $navigationSort = 1;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) app(NavigationBadgeCacheService::class)->getClientsCount();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // FORMULAIRE
+    // ─────────────────────────────────────────────────────────────────
+    public static function form(Form $form): Form
+    {
+        return $form->schema(static::applyFormFieldPermissions([
+            Forms\Components\Section::make('Identité')
+                ->icon('heroicon-o-user')
+                ->schema([
+                    Forms\Components\Select::make('civilite')
+                        ->label('Civilité')
+                        ->options([
+                            'M.' => 'M.',
+                            'Mme' => 'Mme',
+                            'Mlle' => 'Mlle',
+                            'Dr' => 'Dr',
+                        ]),
+
+                    Forms\Components\TextInput::make('nom_tiers')
+                        ->label('Nom')
+                        ->required()
+                        ->maxLength(255)
+                        ->live(onBlur: true),
+
+                    Forms\Components\TextInput::make('prenom')
+                        ->label('Prénom')
+                        ->maxLength(255),
+
+                    Forms\Components\TextInput::make('email')
+                        ->label('Email')
+                        ->email()
+                        ->live(onBlur: true),
+
+                    PhoneNumberInput::make('telephone')
+                        ->label('Téléphone')
+                        ->live(onBlur: true),
+
+                    DuplicateWarning::make(
+                        key: 'client_duplicate_warning',
+                        modelClass: Client::class,
+                        fields: ['nom_tiers' => 'nom_tiers', 'telephone' => 'telephone', 'email' => 'email'],
+                        labelAttribute: 'nom_tiers',
+                        resourceClass: self::class,
+                        entityLabel: 'client',
+                    ),
+
+                    Forms\Components\DatePicker::make('date_naissance')
+                        ->label('Date de naissance')
+                        ->displayFormat('d/m/Y'),
+
+                    Forms\Components\TextInput::make('entreprise')
+                        ->label('Entreprise'),
+
+                    Forms\Components\TextInput::make('ref_client')
+                        ->label('Réf. Client')
+                        ->disabled()
+                        ->helperText('Généré automatiquement'),
+
+                    Forms\Components\Select::make('partenaire_id')
+                        ->label('Partenaire')
+                        ->relationship('partenaire', 'nom')
+                        ->searchable()
+                        ->preload(),
+
+                    Forms\Components\Select::make('parrain_id')
+                        ->label('Parrain')
+                        ->relationship('parrain', 'nom_prenom')
+                        ->searchable()
+                        ->preload(),
+                ])->columns(3),
+
+            Forms\Components\Section::make('Adresse')
+                ->icon('heroicon-o-map-pin')
+                ->schema([
+                    Forms\Components\Textarea::make('adresse')
+                        ->label('Adresse')
+                        ->rows(2)
+                        ->columnSpan(2),
+
+                    Forms\Components\TextInput::make('code_postal')
+                        ->label('Code postal')
+                        ->maxLength(5),
+
+                    Forms\Components\TextInput::make('ville')
+                        ->label('Ville'),
+
+                    Forms\Components\TextInput::make('departement')
+                        ->label('Département')
+                        ->maxLength(3),
+
+                    Forms\Components\TextInput::make('region')
+                        ->label('Région'),
+                ])->columns(3),
+
+            Forms\Components\Section::make('Formation & CPF')
+                ->icon('heroicon-o-academic-cap')
+                ->schema([
+                    Forms\Components\Select::make('etat')
+                        ->label('État')
+                        ->options([
+                            'prospect' => 'Prospect',
+                            'en_cours' => 'En cours',
+                            'termine' => 'Terminé',
+                            'certifie' => 'Certifié',
+                            'abandonne' => 'Abandonné',
+                        ]),
+
+                    Forms\Components\TextInput::make('montant_cpf')
+                        ->label('Montant CPF (€)')
+                        ->numeric()
+                        ->prefix('€'),
+
+                    Forms\Components\Toggle::make('ne_plus_contacter')
+                        ->label('Ne plus contacter')
+                        ->inline(false),
+
+                    Forms\Components\TextInput::make('source_sheet')
+                        ->label('Source (fichier)')
+                        ->disabled(),
+                ])->columns(2),
+
+            Forms\Components\Section::make('Données supplémentaires')
+                ->schema([
+                    Forms\Components\KeyValue::make('extra_data')
+                        ->label('Données extra')
+                        ->columnSpanFull(),
+                ])
+                ->collapsible()
+                ->collapsed(),
+
+            static::customFieldsFormSection(),
+        ]));
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // TABLE - Version optimisée
+    // ─────────────────────────────────────────────────────────────────
+    public static function table(Table $table): Table
+    {
+        return static::listTable($table);
+    }
+
+    protected static function listTable(Table $table): Table
+    {
+        return $table
+            ->defaultSort('created_at', 'desc')
+            ->columns(static::applyShowFieldPermissions([
+                // 🔵 Colonne principale : Nom + Civilité
+                Tables\Columns\TextColumn::make('nom_tiers')
+                    ->label('Client')
+                    ->searchable(['nom_tiers', 'prenom', 'email', 'telephone'])
+                    ->sortable()
+                    ->weight('bold')
+                    ->formatStateUsing(
+                        fn($state, Client $record) => trim(($record->civilite ? $record->civilite . ' ' : '') . ($record->prenom ? $record->prenom . ' ' : '') . $state)
+                    )
+                    ->description(fn(Client $record) => static::userCanShowField('email') && filled($record->email)
+                        ? $record->email
+                        : (static::userCanShowField('telephone') ? $record->telephone : null))
+                    ->toggleable(),
+
+                // 📞 Contact
+                Tables\Columns\TextColumn::make('telephone')
+                    ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
+                    ->label('Téléphone')
+                    ->copyable()
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+
+                Tables\Columns\TextColumn::make('email')
+                    ->label('Email')
+                    ->copyable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+
+                // 📍 Localisation
+                Tables\Columns\TextColumn::make('ville')
+                    ->label('Ville')
+                    ->searchable(query: fn ($query, $search) => \App\Support\PhoneNumber::applySearch($query, 'telephone', $search))
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('departement')
+                    ->label('Dép.')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+
+                // 🤝 Relations
+                Tables\Columns\TextColumn::make('partenaire.nom')
+                    ->label('Partenaire')
+                    ->searchable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+
+                Tables\Columns\TextColumn::make('statut_rattachement_partenaire')
+                    ->label('Rattachement')
+                    ->badge()
+                    ->formatStateUsing(fn($state) => match ($state) {
+                        'rattache' => 'Rattaché',
+                        'partenaire_non_rattache' => 'Partenaire non rattaché',
+                        default => '-',
+                    })
+                    ->icon(fn($state) => match ($state) {
+                        'rattache' => 'heroicon-o-link',
+                        'partenaire_non_rattache' => 'heroicon-o-link-slash',
+                        default => null,
+                    })
+                    ->color(fn($state) => match ($state) {
+                        'rattache' => 'rattachement',
+                        'partenaire_non_rattache' => 'gray',
+                        default => 'gray',
+                    })
+                    ->tooltip(fn($state) => match ($state) {
+                        'rattache' => 'Ce client est relié à un partenaire identifié.',
+                        'partenaire_non_rattache' => "Aucun partenaire correspondant n'a été trouvé automatiquement. Utilisez « Vérifier les rattachements » ou rattachez-le manuellement.",
+                        default => null,
+                    })
+                    ->description(fn(Client $record) => $record->nomenclature_partenaire_import)
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('parrain.nom_prenom')
+                    ->label('Parrain')
+                    ->searchable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+
+                // 📊 État & Formation
+                Tables\Columns\TextColumn::make('etat')
+                    ->label('État')
+                    ->badge()
+                    ->formatStateUsing(fn($state) => Client::etatLabel($state))
+                    ->color(fn($state) => Client::etatColor($state))
+                    ->tooltip(fn($state) => Client::etatDescription($state))
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Type')
+                    ->badge()
+                    ->formatStateUsing(fn($state) => $state)
+                    ->color(fn($state) => match($state) {
+                        'Partenaire' => 'primary',
+                        'Prospect' => 'warning',
+                        'Client' => 'success',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('montant_cpf')
+                    ->label('CPF')
+                    ->money('EUR')
+                    ->sortable()
+                    ->alignRight()
+                    ->toggleable(),
+
+                // 🚫 Ne plus contacter
+                Tables\Columns\IconColumn::make('ne_plus_contacter')
+                    ->label('NPC')
+                    ->boolean()
+                    ->trueColor('danger')
+                    ->falseColor('gray')
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+
+                // 📅 Dates
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Créé le')
+                    ->dateTime('d/m/Y')
+                    ->sortable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+            ], [
+                'partenaire.nom' => 'partenaire_id',
+                'parrain.nom_prenom' => 'parrain_id',
+            ]))
+            ->filters([
+                // 📊 Filtres principaux
+                Tables\Filters\SelectFilter::make('etat')
+                    ->label('État')
+                    ->options([
+                        'prospect' => 'Prospect',
+                        'en_cours' => 'En cours',
+                        'termine' => 'Terminé',
+                        'certifie' => 'Certifié',
+                        'abandonne' => 'Abandonné',
+                    ])
+                    ->placeholder('Tous les états'),
+
+                Tables\Filters\Filter::make('type_partenaire')
+                    ->label('Partenaires (clients associés à un partenaire)')
+                    ->query(fn(Builder $query): Builder => $query->whereNotNull('partenaire_id'))
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('type_prospect')
+                    ->label('Prospects')
+                    ->query(fn(Builder $query): Builder => $query->where('etat', 'prospect'))
+                    ->toggle(),
+
+                // 🤝 Filtres relations
+                Tables\Filters\SelectFilter::make('partenaire_id')
+                    ->label('Partenaire')
+                    ->relationship('partenaire', 'nom')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Tous les partenaires'),
+
+                Tables\Filters\Filter::make('partenaire_non_rattache')
+                    ->label('Partenaire non rattaché')
+                    ->query(fn(Builder $query): Builder => Client::constrainPartenaireNonRattaches($query))
+                    ->toggle(),
+
+                Tables\Filters\SelectFilter::make('parrain_id')
+                    ->label('Parrain')
+                    ->relationship('parrain', 'nom_prenom')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Tous les parrains'),
+
+                // 📍 Filtres géographiques
+                Tables\Filters\SelectFilter::make('region')
+                    ->label('Région')
+                    ->options(
+                        fn() => Client::whereNotNull('region')
+                            ->where('region', '!=', '')
+                            ->distinct()
+                            ->orderBy('region')
+                            ->pluck('region', 'region')
+                            ->toArray()
+                    )
+                    ->placeholder('Toutes les régions')
+                    ->searchable(),
+
+                Tables\Filters\SelectFilter::make('departement')
+                    ->label('Département')
+                    ->options(
+                        fn() => Client::whereNotNull('departement')
+                            ->where('departement', '!=', '')
+                            ->distinct()
+                            ->orderBy('departement')
+                            ->pluck('departement', 'departement')
+                            ->toArray()
+                    )
+                    ->placeholder('Tous les départements')
+                    ->searchable(),
+
+                // 🎯 Filtres booléens
+                Tables\Filters\Filter::make('contactables')
+                    ->label('Contactables')
+                    ->query(
+                        fn(Builder $q) => $q->where('ne_plus_contacter', false)
+                            ->where(function ($q) {
+                                $q->whereNotNull('email')->orWhereNotNull('telephone');
+                            })
+                    )
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('avec_cpf')
+                    ->label('Avec CPF')
+                    ->query(fn(Builder $q) => $q->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0))
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('avec_dossier_formation')
+                    ->label('Avec dossier de formation')
+                    ->query(fn(Builder $query): Builder => $query->avecDossierFormation())
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('avec_proposition')
+                    ->label('Avec proposition')
+                    ->query(fn(Builder $query): Builder => $query->avecPropositions())
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('sans_contact_30j')
+                    ->label('Sans contact depuis 30 jours')
+                    ->query(fn(Builder $query): Builder => $query->sansContactDepuis(30))
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('actifs')
+                    ->label('Clients actifs (en cours de formation)')
+                    ->query(fn(Builder $query): Builder => $query->actifs())
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('sans_proposition')
+                    ->label('Sans proposition')
+                    ->query(fn(Builder $q) => $q->doesntHave('propositions')),
+
+                // 🗑️ Corbeille
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Corbeille'),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label(''),
+                Tables\Actions\EditAction::make()
+                    ->label(''),
+
+                Tables\Actions\Action::make('toggle_contact')
+                    ->label(fn(Client $record) => $record->ne_plus_contacter ? 'Réactiver' : 'Bloquer')
+                    ->icon(fn(Client $record) => $record->ne_plus_contacter ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->color(fn(Client $record) => $record->ne_plus_contacter ? 'success' : 'danger')
+                    ->action(function (Client $record) {
+                        if ($record->ne_plus_contacter) {
+                            $record->reactiver();
+                        } else {
+                            $record->marquerNePlusContacter('Bloqué manuellement');
+                        }
+                    }),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    // 🗑️ Actions de suppression
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+
+                    // 🤝 Assigner un partenaire
+                    Tables\Actions\BulkAction::make('assign_partner')
+                        ->label('Assigner un partenaire')
+                        ->icon('heroicon-o-user-plus')
+                        ->form([
+                            Forms\Components\Select::make('partenaire_id')
+                                ->label('Partenaire')
+                                ->relationship('partenaire', 'nom')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(function (Client $record) use ($data) {
+                                $record->update(['partenaire_id' => $data['partenaire_id']]);
+                            });
+                        })
+                        ->successNotificationTitle('Partenaire assigé'),
+
+                    // 🔄 Changer l'état
+                    Tables\Actions\BulkAction::make('change_state')
+                        ->label('Changer l\'état')
+                        ->icon('heroicon-o-arrow-path')
+                        ->form([
+                            Forms\Components\Select::make('etat')
+                                ->label('État')
+                                ->options(Client::etatOptions())
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(function (Client $record) use ($data) {
+                                $record->update(['etat' => $data['etat']]);
+                            });
+                        })
+                        ->successNotificationTitle('État mis à jour'),
+
+                    // 👥 Assigner un parrain
+                    Tables\Actions\BulkAction::make('assign_parrain')
+                        ->label('Assigner un parrain')
+                        ->icon('heroicon-o-heart')
+                        ->form([
+                            Forms\Components\Select::make('parrain_id')
+                                ->label('Parrain')
+                                ->relationship('parrain', 'nom_prenom')
+                                ->searchable()
+                                ->preload(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(function (Client $record) use ($data) {
+                                $record->update(['parrain_id' => $data['parrain_id'] ?? null]);
+                            });
+                        })
+                        ->successNotificationTitle('Parrain assigé'),
+                ]),
+            ])
+            ->headerActions([
+                // Tables\Actions\Action::make('switch_view')
+                //     ->label(session()->get('view_clients', 'list') === 'kanban' ? 'Vue liste' : 'Vue Kanban')
+                //     ->icon(session()->get('view_clients', 'list') === 'kanban' ? 'heroicon-o-bars-3' : 'heroicon-o-squares-2x2')
+                //     ->color('gray')
+                //     ->action(function () {
+                //         $currentView = session()->get('view_clients', 'list');
+                //         session()->put('view_clients', $currentView === 'kanban' ? 'list' : 'kanban');
+                //         return redirect()->back();
+                //     }),
+                // \App\Filament\NsConseil\Actions\DownloadMultiSheetTemplateAction::make(),
+                // \App\Filament\NsConseil\Actions\ImportMultiSheetAction::make(),
+                // Tables\Actions\ExportAction::make()
+                //     ->exporter(ClientExporter::class)
+                //     ->label('Exporter les clients')
+                //     ->icon('heroicon-o-arrow-down-tray'),
+                VerifierRattachementsAction::make(),
+                LancerAppelsAction::make('clients'),
+            ])
+            ->emptyStateHeading('Aucun client')
+            ->emptyStateDescription('Importez des clients depuis un fichier CSV.')
+            ->emptyStateActions([
+                Tables\Actions\Action::make('import')
+                    ->label('Importer des clients')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->url(ImportClientsAction::class),
+            ]);
+    }
+
+    protected static function kanbanTable(Table $table): Table
+    {
+        return $table
+            ->defaultSort('created_at', 'desc')
+            ->columns([
+                Tables\Columns\TextColumn::make('nom_tiers')
+                    ->label('Client')
+                    ->searchable()
+                    ->weight('bold')
+                    ->formatStateUsing(fn($state, Client $record) => trim(($record->civilite ? $record->civilite . ' ' : '') . ($record->prenom ? $record->prenom . ' ' : '') . $state)),
+
+                Tables\Columns\TextColumn::make('etat')
+                    ->label('État')
+                    ->badge()
+                    ->formatStateUsing(fn($state) => Client::etatLabel($state))
+                    ->color(fn($state) => Client::etatColor($state))
+                    ->tooltip(fn($state) => Client::etatDescription($state)),
+
+                Tables\Columns\TextColumn::make('type_tiers')
+                    ->label('Type')
+                    ->badge()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('ville')
+                    ->label('Ville')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('telephone')
+                    ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
+                    ->label('Téléphone')
+                    ->badge()
+                    ->color('green')
+                    ->icon('heroicon-o-phone')
+                    ->copyable()
+                    ->toggleable(),
+            ])
+            ->groups([
+                'etat',
+            ])
+            ->reorderable('etat')
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // INFOLIST
+    // ─────────────────────────────────────────────────────────────────
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema(static::applyShowFieldPermissions([
+            Infolists\Components\Section::make('Identité')
+                ->schema([
+                    Infolists\Components\TextEntry::make('nom_affiche')
+                        ->label('Nom')
+                        ->weight('bold')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('prenom_affiche')
+                        ->label('Prénom')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('nom_naissance')
+                        ->label('Nom de naissance')
+                        ->placeholder('—')
+                        ->visible(fn($record) => filled($record->nom_naissance)),
+                    Infolists\Components\TextEntry::make('ref_client')
+                        ->label('Référence'),
+                    Infolists\Components\TextEntry::make('civilite')
+                        ->label('Civilité'),
+                    Infolists\Components\TextEntry::make('date_naissance')
+                        ->label('Né(e) le')
+                        ->date('d/m/Y'),
+
+                    Infolists\Components\TextEntry::make('entreprise')
+                        ->label('Entreprise'),
+                    Infolists\Components\TextEntry::make('partenaire.nom')
+                        ->label('Partenaire')
+                        ->placeholder('Aucun'),
+                    Infolists\Components\TextEntry::make('parrain.nom_prenom')
+                        ->label('Parrain')
+                        ->placeholder('Aucun'),
+                ])->columns(3),
+
+            Infolists\Components\Section::make('Coordonnées')
+                ->schema([
+                    Infolists\Components\TextEntry::make('telephone')
+                        ->formatStateUsing(fn ($state) => \App\Support\PhoneNumber::format($state))
+                        ->label('Téléphone')
+                        ->badge()
+                        ->icon('heroicon-o-phone')
+                        ->color('green')
+                        ->copyable(),
+                    Infolists\Components\TextEntry::make('email')
+                        ->label('Email')
+                        ->copyable(),
+                    Infolists\Components\TextEntry::make('adresse')
+                        ->label('Adresse')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('code_postal')
+                        ->label('Code postal')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('ville')
+                        ->label('Ville')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('departement')
+                        ->label('Département')
+                        ->placeholder('—'),
+                    Infolists\Components\TextEntry::make('region')
+                        ->label('Région')
+                        ->placeholder('—'),
+                ])->columns(2),
+
+            Infolists\Components\Section::make('Formation')
+                ->schema([
+                    Infolists\Components\TextEntry::make('etat')
+                        ->label('État')
+                        ->badge()
+                        ->formatStateUsing(fn($state) => Client::etatLabel($state))
+                        ->color(fn($state) => Client::etatColor($state))
+                        ->tooltip(fn($state) => Client::etatDescription($state)),
+                    Infolists\Components\TextEntry::make('montant_cpf')
+                        ->label('Montant CPF')
+                        ->money('EUR'),
+                    Infolists\Components\IconEntry::make('ne_plus_contacter')
+                        ->label('Ne plus contacter')
+                        ->boolean(),
+                    Infolists\Components\TextEntry::make('source_sheet')
+                        ->label('Fichier source')
+                        ->placeholder('Aucun fichier')
+                        ->badge()
+                        ->color('primary'),
+                ])->columns(2),
+
+            Infolists\Components\Section::make('Statistiques formation')
+                ->schema([
+                    Infolists\Components\TextEntry::make('total_heures_formation')
+                        ->label('Total heures formation')
+                        ->numeric()
+                        ->placeholder('0'),
+                    Infolists\Components\TextEntry::make('total_heures_realisees')
+                        ->label('Heures réalisées')
+                        ->numeric()
+                        ->placeholder('0'),
+                    Infolists\Components\TextEntry::make('total_heures_restantes')
+                        ->label('Heures restantes')
+                        ->numeric()
+                        ->placeholder('0'),
+                    Infolists\Components\TextEntry::make('progression_formation')
+                        ->label('Progression')
+                        ->suffix('%')
+                        ->numeric()
+                        ->placeholder('0'),
+                    Infolists\Components\TextEntry::make('montant_total_cpf')
+                        ->label('Montant total CPF')
+                        ->money('EUR')
+                        ->placeholder('0,00 €'),
+                ])->columns(3),
+        ], [
+            'age' => 'date_naissance',
+            'partenaire.nom' => 'partenaire_id',
+            'parrain.nom_prenom' => 'parrain_id',
+            'total_heures_formation' => 'etat',
+            'total_heures_realisees' => 'etat',
+            'total_heures_restantes' => 'etat',
+            'progression_formation' => 'etat',
+            'montant_total_cpf' => 'montant_cpf',
+        ]));
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            PropositionsRelationManager::class,
+            DocumentsRelationManager::class,
+            RendezVousRelationManager::class,
+            NotesCommentairesRelationManager::class,
+            DossierFormationsRelationManager::class,
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListClients::route('/'),
+            'create' => Pages\CreateClient::route('/create'),
+            'edit' => Pages\EditClient::route('/{record}/edit'),
+            'view' => Pages\ViewClient::route('/{record}'),
+        ];
+    }
+}

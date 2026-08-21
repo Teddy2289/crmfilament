@@ -1,0 +1,690 @@
+<?php
+
+namespace App\Models;
+
+use App\Traits\HasModelValidation;
+use App\Traits\HasInputSanitization;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Client extends Model
+{
+    use SoftDeletes, HasModelValidation, HasInputSanitization;
+
+    protected $table = 'clients';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($client) {
+            HistoriqueModification::enregistrerCreation($client);
+        });
+
+        static::updated(function ($client) {
+            $champsSuivis = [
+                'ref_client', 'civilite', 'prenom', 'nom_tiers', 'email', 'telephone',
+                'adresse', 'code_postal', 'ville', 'region', 'departement', 'date_naissance',
+                'entreprise', 'type_tiers', 'avis_google', 'etat', 'montant_cpf',
+                'ne_plus_contacter', 'partenaire_id', 'parrain_id', 'commercial_id',
+                'notes_commerciales',
+            ];
+
+            foreach ($champsSuivis as $champ) {
+                if ($client->isDirty($champ)) {
+                    HistoriqueModification::enregistrerModification(
+                        $client,
+                        $champ,
+                        $client->getOriginal($champ),
+                        $client->$champ
+                    );
+                }
+            }
+        });
+
+        static::deleted(function ($client) {
+            HistoriqueModification::enregistrerSuppression($client);
+        });
+
+        static::bootHasModelValidation();
+        
+        static::bootHasInputSanitization();
+
+        static::restored(function ($client) {
+            HistoriqueModification::create([
+                'model_type' => get_class($client),
+                'model_id' => $client->id,
+                'user_id' => auth()->id(),
+                'champ' => null,
+                'ancienne_valeur' => null,
+                'nouvelle_valeur' => $client->toArray(),
+                'type_modification' => 'restauration',
+                'date_modification' => now(),
+            ]);
+        });
+    }
+
+    // ── Validation Rules ─────────────────────────────────────────────
+    public function getValidationRules(): array
+    {
+        return [
+            'nom_tiers' => 'required|string|max:255',
+            'prenom' => 'nullable|string|max:255',
+            'email' => 'nullable|email',
+            'telephone' => 'nullable|string|max:20',
+            'code_postal' => 'nullable|string|max:5',
+            'ville' => 'nullable|string|max:255',
+            'departement' => 'nullable|string|max:3',
+            'date_naissance' => 'nullable|date',
+        ];
+    }
+
+    // ── Sanitization Fields ───────────────────────────────────────────
+    public function getSanitizableFields(): array
+    {
+        return [
+            'nom_tiers' => 'sanitizeName',
+            'prenom' => 'sanitizeName',
+            'email' => 'sanitizeEmail',
+            'telephone' => 'sanitizePhone',
+            'ville' => 'sanitizeString',
+            'departement' => 'sanitizeString',
+            'code_postal' => 'sanitizePostalCode',
+        ];
+    }
+
+    protected $casts = [
+        'date_naissance' => 'date',
+        'montant_cpf' => 'decimal:2',
+        'ne_plus_contacter' => 'boolean',
+        'extra_data' => 'array',
+        'ref_clients' => 'array',
+    ];
+
+    protected $fillable = [
+        'source_sheet',
+        'ref_client',
+        'ref_clients',
+        'civilite',
+        'prenom',
+        'nom_tiers',
+        'email',
+        'telephone',
+        'adresse',
+        'code_postal',
+        'ville',
+        'region',
+        'departement',
+        'date_naissance',
+        'entreprise',
+        'type_tiers',
+        'avis_google',
+        'etat',
+        'montant_cpf',
+        'ne_plus_contacter',
+        'partenaire_id',
+        'parrain_id',
+        'commercial_id',
+        'notes_commerciales',
+        'extra_data',
+    ];
+
+    // ── Accesseurs ──────────────────────────────────────────────────
+
+    /**
+     * Label du badge "État" — source unique utilisée par le tableau,
+     * la fiche et le Kanban Client pour éviter que le même état n'ait
+     * un libellé ou une couleur différente selon l'écran.
+     */
+    public static function etatOptions(): array
+    {
+        return [
+            'prospect' => 'Prospect',
+            'en_cours' => 'En cours',
+            'termine' => 'Terminé',
+            'certifie' => 'Certifié',
+            'abandonne' => 'Abandonné',
+        ];
+    }
+
+    public static function etatLabel(?string $etat): string
+    {
+        return match ($etat) {
+            'prospect' => 'Prospect',
+            'en_cours' => 'En cours',
+            'termine' => 'Terminé',
+            'certifie' => 'Certifié',
+            'abandonne' => 'Abandonné',
+            default => $etat ?? '—',
+        };
+    }
+
+    /**
+     * Couleur de badge — noms de couleur Tailwind bruts pour que les 5
+     * états restent distincts les uns des autres (voir
+     * App\Enums\OrganizationStatus::color() pour le même principe).
+     */
+    public static function etatColor(?string $etat): string
+    {
+        return match ($etat) {
+            'prospect' => 'gray',
+            'en_cours' => 'blue',
+            'termine' => 'green',
+            'certifie' => 'purple',
+            'abandonne' => 'red',
+            default => 'gray',
+        };
+    }
+
+    /**
+     * Explication en langage courant, affichée en infobulle au survol du
+     * badge pour les utilisateurs qui ne connaissent pas le pipeline par
+     * cœur.
+     */
+    public static function etatDescription(?string $etat): string
+    {
+        return match ($etat) {
+            'prospect' => "N'a pas encore commencé de formation.",
+            'en_cours' => 'La formation est en cours.',
+            'termine' => 'La formation est terminée.',
+            'certifie' => 'La formation est terminée et certifiée.',
+            'abandonne' => 'La formation a été abandonnée en cours de route.',
+            default => '',
+        };
+    }
+
+    public function getNomCompletAttribute(): string
+    {
+        return trim(($this->civilite ? $this->civilite.' ' : '').($this->prenom ? $this->prenom.' ' : '').($this->nom_tiers ?? ''));
+    }
+
+    /**
+     * Certains imports stockent nom + prénom (+ nom de naissance entre
+     * parenthèses) dans le seul champ `nom_tiers` (ex: "GALAND Colette
+     * (VASSEUR)"), laissant `prenom` vide. Ces accesseurs séparent
+     * l'affichage sans toucher aux données brutes.
+     */
+    public function getNomAfficheAttribute(): ?string
+    {
+        return $this->identiteSeparee()['nom'];
+    }
+
+    public function getPrenomAfficheAttribute(): ?string
+    {
+        return $this->identiteSeparee()['prenom'];
+    }
+
+    public function getNomNaissanceAttribute(): ?string
+    {
+        return $this->identiteSeparee()['nom_naissance'];
+    }
+
+    private function identiteSeparee(): array
+    {
+        if (filled($this->prenom)) {
+            return ['nom' => $this->nom_tiers, 'prenom' => $this->prenom, 'nom_naissance' => null];
+        }
+
+        $brut = trim((string) $this->nom_tiers);
+        if ($brut === '') {
+            return ['nom' => null, 'prenom' => null, 'nom_naissance' => null];
+        }
+
+        $nomNaissance = null;
+        if (preg_match('/^(.*)\(([^)]+)\)\s*$/u', $brut, $matches)) {
+            $brut = trim($matches[1]);
+            $nomNaissance = trim($matches[2]);
+        }
+
+        $mots = preg_split('/\s+/', $brut);
+        $nomParts = [];
+        $i = 0;
+        while ($i < count($mots) - 1 && mb_strtoupper($mots[$i]) === $mots[$i]) {
+            $nomParts[] = $mots[$i];
+            $i++;
+        }
+
+        if ($nomParts === []) {
+            return ['nom' => $brut, 'prenom' => null, 'nom_naissance' => $nomNaissance];
+        }
+
+        return [
+            'nom' => implode(' ', $nomParts),
+            'prenom' => implode(' ', array_slice($mots, $i)) ?: null,
+            'nom_naissance' => $nomNaissance,
+        ];
+    }
+
+    public function getAgeAttribute(): ?int
+    {
+        return $this->date_naissance?->age;
+    }
+
+    public function getAdresseCompleteAttribute(): string
+    {
+        return collect([$this->adresse, $this->code_postal, $this->ville])
+            ->filter()
+            ->implode(', ');
+    }
+
+    public function getEstContactableAttribute(): bool
+    {
+        return ! $this->ne_plus_contacter && ($this->email || $this->telephone);
+    }
+
+    public function getInitialesAttribute(): string
+    {
+        if (! $this->nom_tiers) {
+            return '?';
+        }
+
+        return collect(explode(' ', $this->nom_tiers))
+            ->map(fn ($mot) => strtoupper(substr($mot, 0, 1)))
+            ->implode('');
+    }
+
+    public function getStatutRattachementPartenaireAttribute(): ?string
+    {
+        return $this->extra_data['partenaire_import']['statut'] ?? ($this->partenaire_id ? 'rattache' : null);
+    }
+
+    public function getNomenclaturePartenaireImportAttribute(): ?string
+    {
+        return $this->extra_data['partenaire_import']['nomenclature'] ?? null;
+    }
+
+    /**
+     * Détermine le type du client : Partenaire, Prospect ou Client
+     */
+    public function getTypeAttribute(): string
+    {
+        if ($this->partenaire_id) {
+            return 'Partenaire';
+        }
+        if ($this->etat === 'prospect') {
+            return 'Prospect';
+        }
+        return 'Client';
+    }
+
+    // ── Méthodes métier ─────────────────────────────────────────────
+
+    public function marquerNePlusContacter(?string $motif = null): void
+    {
+        $this->update([
+            'ne_plus_contacter' => true,
+            'extra_data' => array_merge($this->extra_data ?? [], [
+                'motif_npc' => $motif,
+                'date_npc' => now()->toDateString(),
+            ]),
+        ]);
+    }
+
+    public function reactiver(): void
+    {
+        $this->update(['ne_plus_contacter' => false]);
+    }
+
+    public function aDesPropositions(): bool
+    {
+        // Guard : pas de relation si ref_client null
+        if (! $this->ref_client) {
+            return false;
+        }
+
+        return $this->propositions()->exists();
+    }
+
+    public function aDesPropositionsEnCours(): bool
+    {
+        if (! $this->ref_client) {
+            return false;
+        }
+
+        return $this->propositions()
+            ->whereNotIn('etat', ['Terminée', 'Annulée'])
+            ->exists();
+    }
+
+    public function getTotalHeuresFormation(): int
+    {
+        if (! $this->ref_client) {
+            return 0;
+        }
+
+        return (int) $this->propositions()->sum('nb_heures_formation');
+    }
+
+    public function getTotalHeuresRealisees(): int
+    {
+        if (! $this->ref_client) {
+            return 0;
+        }
+
+        return (int) $this->propositions()->sum('heures_realisees');
+    }
+
+    public function getTotalHeuresRestantes(): int
+    {
+        if (! $this->ref_client) {
+            return 0;
+        }
+
+        return (int) $this->propositions()->sum('heures_restantes');
+    }
+
+    public function getMontantTotalCPF(): float
+    {
+        $fromPropositions = $this->ref_client
+            ? (float) $this->propositions()->sum('montant_cpf')
+            : 0.0;
+
+        return $fromPropositions + (float) ($this->montant_cpf ?? 0);
+    }
+
+    public function getProgressionFormationAttribute(): float
+    {
+        $total = $this->getTotalHeuresFormation();
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        return round(($this->getTotalHeuresRealisees() / $total) * 100, 1);
+    }
+
+    public function getPalierParrainageAttribute(): ?string
+    {
+        // Compter le nombre de parrainages réalisés
+        $nombreParrainages = $this->parrain_id ? 1 : 0;
+        
+        // Ajouter les parrainages via propositions si disponibles
+        if ($this->ref_client) {
+            $nombreParrainages += $this->propositions()->where('est_parrainage', true)->count();
+        }
+
+        return match (true) {
+            $nombreParrainages >= 4 => '100€',
+            $nombreParrainages >= 1 => '50€',
+            default => null,
+        };
+    }
+
+    public function getMontantParrainageAttribute(): float
+    {
+        $nombreParrainages = $this->parrain_id ? 1 : 0;
+        
+        if ($this->ref_client) {
+            $nombreParrainages += $this->propositions()->where('est_parrainage', true)->count();
+        }
+
+        return match (true) {
+            $nombreParrainages >= 4 => 100.0,
+            $nombreParrainages >= 1 => 50.0,
+            default => 0.0,
+        };
+    }
+
+    public function getDernierePropositionAttribute(): ?Proposition
+    {
+        if (! $this->ref_client) {
+            return null;
+        }
+
+        return $this->propositions()->latest('date_lancement')->first();
+    }
+
+    public function getDerniereFormationAttribute(): ?Proposition
+    {
+        if (! $this->ref_client) {
+            return null;
+        }
+
+        return $this->propositions()
+            ->whereNotNull('date_debut_formation')
+            ->latest('date_debut_formation')
+            ->first();
+    }
+
+    // ── Accesseurs pour formations multiples ─────────────────────────────
+
+    public function getDatesDebutFormationAttribute(): array
+    {
+        $dossiers = $this->dossierFormations()
+            ->whereNotNull('date_vente')
+            ->orderBy('date_vente')
+            ->get();
+
+        return $dossiers->pluck('date_vente')->toArray();
+    }
+
+    public function getDatesFinFormationAttribute(): array
+    {
+        // Pour l'instant, on utilise les statuts de formation pour déterminer la fin
+        // À adapter selon la logique métier réelle
+        $dossiers = $this->dossierFormations()
+            ->whereIn('statut_formation', ['termine', 'valide', 'annule'])
+            ->orderBy('updated_at')
+            ->get();
+
+        return $dossiers->pluck('updated_at')->map(fn ($date) => $date->format('Y-m-d'))->toArray();
+    }
+
+    public function getFormationsEnCoursAttribute(): int
+    {
+        return $this->dossierFormations()
+            ->whereIn('statut_formation', ['en_cours', 'a_venir'])
+            ->count();
+    }
+
+    public function getFormationsTermineesAttribute(): int
+    {
+        return $this->dossierFormations()
+            ->whereIn('statut_formation', ['termine', 'valide'])
+            ->count();
+    }
+
+    // ── Scopes ──────────────────────────────────────────────────────
+
+    public function scopeContactables(Builder $query): Builder
+    {
+        return $query->where('ne_plus_contacter', false)
+            ->where(function (Builder $q) {
+                $q->whereNotNull('email')
+                    ->orWhereNotNull('telephone');
+            });
+    }
+
+    public function scopeNonContactables(Builder $query): Builder
+    {
+        return $query->where('ne_plus_contacter', true);
+    }
+
+    public function scopeAvecPropositions(Builder $query): Builder
+    {
+        return $query->has('propositions');
+    }
+
+    public function scopeSansPropositions(Builder $query): Builder
+    {
+        return $query->doesntHave('propositions');
+    }
+
+    public function scopeAvecCPF(Builder $query): Builder
+    {
+        return $query->whereNotNull('montant_cpf')->where('montant_cpf', '>', 0);
+    }
+
+    public function scopeAvecDossierFormation(Builder $query): Builder
+    {
+        return $query->has('dossierFormations');
+    }
+
+    public function scopeSansContactDepuis(Builder $query, int $jours): Builder
+    {
+        $dateLimit = now()->subDays($jours);
+        return $query->where(function (Builder $q) use ($dateLimit) {
+            $q->doesntHave('propositions', 'and', function (Builder $subQ) use ($dateLimit) {
+                    $subQ->where('date_lancement', '>=', $dateLimit);
+                })
+                ->doesntHave('rendezVous', 'and', function (Builder $subQ) use ($dateLimit) {
+                    $subQ->where('date_heure', '>=', $dateLimit);
+                })
+                ->doesntHave('appels', 'and', function (Builder $subQ) use ($dateLimit) {
+                    $subQ->where('date_heure', '>=', $dateLimit);
+                });
+        });
+    }
+
+    public function scopeActifs(Builder $query): Builder
+    {
+        return $query->where('etat', 'en_cours');
+    }
+
+    public function scopePartenaireNonRattaches(Builder $query): Builder
+    {
+        return static::constrainPartenaireNonRattaches($query);
+    }
+
+    public static function constrainPartenaireNonRattaches(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('partenaire_id')
+            ->where('extra_data->partenaire_import->statut', 'partenaire_non_rattache');
+    }
+
+    public function scopeParRegion(Builder $query, string $region): Builder
+    {
+        return $query->where('region', $region);
+    }
+
+    public function scopeParDepartement(Builder $query, string $departement): Builder
+    {
+        return $query->where('departement', $departement);
+    }
+
+    public function scopeParVille(Builder $query, string $ville): Builder
+    {
+        return $query->where('ville', 'like', "%{$ville}%");
+    }
+
+    public function scopeRecents(Builder $query): Builder
+    {
+        return $query->orderBy('created_at', 'desc');
+    }
+
+    public function scopeSansActiviteDepuis(Builder $query, int $jours): Builder
+    {
+        return $query->whereDoesntHave('propositions', function (Builder $q) use ($jours) {
+            $q->where('updated_at', '>=', now()->subDays($jours));
+        });
+    }
+
+    // ── KPIs statiques ──────────────────────────────────────────────
+
+    public static function getKpis(): array
+    {
+        return [
+            'total' => static::count(),
+            'contactables' => static::contactables()->count(),
+            'non_contactables' => static::nonContactables()->count(),
+            'avec_propositions' => static::avecPropositions()->count(),
+            'sans_propositions' => static::sansPropositions()->count(),
+            'avec_cpf' => static::avecCPF()->count(),
+            'nouveaux_mois' => static::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count(),
+            'par_region' => static::getRepartitionParRegion(),
+        ];
+    }
+
+    public static function getRepartitionParRegion(): array
+    {
+        return static::selectRaw('region, COUNT(*) as total')
+            ->whereNotNull('region')
+            ->where('region', '!=', '')
+            ->groupBy('region')
+            ->orderByDesc('total')
+            ->get()
+            ->pluck('total', 'region')
+            ->toArray();
+    }
+
+    // ── Boot ────────────────────────────────────────────────────────
+
+    protected static function booted(): void
+    {
+        static::creating(function (Client $client) {
+            if (! $client->ref_client) {
+                // Génère une ref unique basée sur timestamp + random pour éviter
+                // les collisions sur import massif (plusieurs milliers en parallèle)
+                $client->ref_client = 'CLI-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -6));
+            }
+        });
+
+        static::saved(function (Client $client) {
+            if ($client->wasChanged('partenaire_id')) {
+                ActiviteVente::actualiserPourPartenaire($client->getOriginal('partenaire_id'));
+            }
+
+            ActiviteVente::actualiserPourPartenaire($client->partenaire_id);
+        });
+
+        static::deleted(function (Client $client) {
+            ActiviteVente::actualiserPourPartenaire($client->partenaire_id);
+        });
+
+        static::restored(function (Client $client) {
+            ActiviteVente::actualiserPourPartenaire($client->partenaire_id);
+        });
+    }
+
+    // ── Relations ────────────────────────────────────────────────────
+
+    public function propositions()
+    {
+        // whereNotNull garantit qu'on ne fait jamais WHERE ref_client = NULL
+        return $this->hasMany(Proposition::class, 'ref_client', 'ref_client')
+            ->whereNotNull('ref_client');
+    }
+
+    public function partenaire()
+    {
+        return $this->belongsTo(Partenaire::class);
+    }
+
+    public function activiteVente()
+    {
+        return $this->hasOne(ActiviteVente::class, 'partenaire_id', 'partenaire_id');
+    }
+
+    public function parrain()
+    {
+        return $this->belongsTo(Parrain::class);
+    }
+
+    public function commercial()
+    {
+        return $this->belongsTo(User::class, 'commercial_id');
+    }
+
+    public function dossierFormations()
+    {
+        return $this->hasMany(DossierFormation::class, 'personne_id');
+    }
+
+    public function rendezVous()
+    {
+        return $this->morphMany(RendezVous::class, 'rdvable');
+    }
+
+    public function documents()
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function notesCommentaires()
+    {
+        return $this->morphMany(NoteCommentaire::class, 'notable');
+    }
+}

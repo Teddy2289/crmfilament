@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Filament\NsConseil\Resources\CampagnePhoningResource\Pages;
+
+use App\Filament\NsConseil\Widgets\CampagnesGlobalStatsWidget;
+use App\Filament\NsConseil\Widgets\CampagnesGlobalPeriodWidget;
+use App\Filament\NsConseil\Widgets\CampagnesDailyCallsChartWidget;
+use App\Filament\NsConseil\Widgets\CampagnesChartExportWidget;
+use App\Filament\NsConseil\Widgets\CampagnesAgentPerformanceWidget;
+use App\Filament\NsConseil\Widgets\CampagnesCallStatusesPieWidget;
+use App\Filament\NsConseil\Pages\PhoningWorkflow;
+use App\Filament\NsConseil\Resources\CampagnePhoningResource;
+use Filament\Actions;
+use Filament\Resources\Pages\ListRecords;
+
+class ListCampagnesPhonings extends ListRecords
+{
+    protected static string $resource = CampagnePhoningResource::class;
+
+    public function mount(): void
+    {
+        // Un téléprospecteur n'a pas besoin de gérer les campagnes : on
+        // l'envoie directement sur son interface d'appels.
+        if (auth()->user()?->hasRoleCache('teleprospecteur')) {
+            $this->redirect(PhoningWorkflow::getUrl());
+
+            return;
+        }
+
+        parent::mount();
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [CampagnesGlobalPeriodWidget::class, CampagnesGlobalStatsWidget::class, CampagnesDailyCallsChartWidget::class, CampagnesChartExportWidget::class, CampagnesAgentPerformanceWidget::class, CampagnesCallStatusesPieWidget::class];
+    }
+
+    public function getHeaderWidgetsColumns(): int|array
+    {
+        return 2;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make()->label('Nouvelle campagne'),
+        ];
+    }
+    public function updatedTableFilters(): void
+    {
+        $this->dispatch('campagnes-global-filters-updated', periode: $this->tableFilters['periode'] ?? []);
+    }
+}

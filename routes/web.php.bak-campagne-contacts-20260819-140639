@@ -1,0 +1,190 @@
+<?php
+
+use App\Http\Controllers\Api\GoogleOAuthController;
+use App\Http\Controllers\PdfController;
+use App\Http\Controllers\RingoverWebhookController;
+use App\Models\CrmSetting;
+use App\Models\GoogleToken;
+use App\Models\User;
+use App\Services\RingoverService;
+use GuzzleHttp\Client;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    $defaultCrm = CrmSetting::where('cle', 'default_crm')->first()?->default_crm ?? 'ns-conseil';
+    
+    return redirect()->to("/{$defaultCrm}");
+});
+
+if (app()->environment('testing')) {
+    Route::get('/__e2e/login', function (Request $request) {
+        $redirect = $request->query('redirect', '/ns-conseil');
+
+        abort_unless(is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//'), 400);
+
+        $user = User::where('email', $request->query('email', 'a.florek@ns-conseil.com'))->firstOrFail();
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->to($redirect);
+    })->middleware('web');
+}
+
+Route::get('/ns-conseil/ringover/recording/{callId}', function (string $callId) {
+    $call = app(RingoverService::class)->getCall($callId);
+
+    return response()->json(['url' => $call['recording'] ?? null]);
+})->middleware(['auth', 'web']);
+
+Route::post('/api/ringover/webhook', RingoverWebhookController::class)
+    ->middleware(app()->environment('testing') ? [] : ['ringover.rate_limit', 'throttle:60,1']);
+
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/google/redirect', [GoogleOAuthController::class, 'redirect'])->name('google.redirect');
+    Route::get('/google/callback', [GoogleOAuthController::class, 'callback'])->name('google.callback');
+    Route::get('/google/disconnect', [GoogleOAuthController::class, 'disconnect'])->name('google.disconnect');
+
+    Route::get('/pdf/facture/{facture}', [PdfController::class, 'facture'])->name('factures.pdf');
+    Route::get('/pdf/devis/{devis}', [PdfController::class, 'devis'])->name('devis.pdf');
+    Route::get('/ns-conseil/campagne-phonings/{campagne}/export-csv', function (Request $request, \App\Models\CampagnePhoning $campagne) {
+        abort_unless(auth()->check(), 403);
+        $query = \App\Models\Appel::query()->where('campagne_id', $campagne->id)
+            ->when($request->query('statut'), fn ($q, $value) => $q->where('phoning_status', $value))
+            ->when($request->query('dateFrom'), fn ($q, $value) => $q->whereDate('date_heure', '>=', $value))
+            ->when($request->query('dateUntil'), fn ($q, $value) => $q->whereDate('date_heure', '<=', $value))
+            ->when($request->query('teleprospecteurId'), fn ($q, $value) => $q->whereHas('appelable', fn ($sub) => $sub->where('teleprospecteur_id', $value)))
+            ->when(trim((string) $request->query('search')) !== '', function ($q) use ($request) {
+                $term = '%' . trim((string) $request->query('search')) . '%';
+                $q->where(function ($sub) use ($term) {
+                    $sub->where('numero_appelant', 'like', $term)
+                        ->orWhereHas('appelable', fn ($contact) => $contact->where('nom', 'like', $term)->orWhere('raison_sociale', 'like', $term)->orWhere('telephone', 'like', $term));
+                });
+            });
+        $filename = 'appels-' . $campagne->id . '-' . \Illuminate\Support\Str::slug((string) ($request->query('statut') ?: 'tous')) . '.csv';
+        return response()->streamDownload(function () use ($query): void {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Contact', 'Téléphone', 'Date', 'Téléprospecteur', 'Statut'], ';');
+            foreach ($query->with(['appelable', 'user'])->orderByDesc('date_heure')->cursor() as $appel) {
+                fputcsv($handle, [
+                    $appel->appelable?->nom ?? 'Contact #' . $appel->appelable_id,
+                    $appel->appelable?->telephone ?? $appel->numero_appelant ?? '',
+                    optional($appel->date_heure)->format('d/m/Y H:i'),
+                    trim(($appel->user?->prenom ?? '') . ' ' . ($appel->user?->nom ?? '')),
+                    strtoupper((string) $appel->phoning_status),
+                ], ';');
+            }
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv; charset=utf-8']);
+    })->name('ns-conseil.campagnes.export-csv');
+});
+
+Route::get('/debug-calendar', function () {
+    $user = auth()->user();
+    $token = GoogleToken::where('user_id', $user->id)->first();
+    $client = new Client;
+
+    $start = Carbon::now()->startOfMonth()->toRfc3339String();
+    $end = Carbon::now()->endOfMonth()->toRfc3339String();
+
+    // Lister tous les calendriers
+    $calResp = $client->get('https://www.googleapis.com/calendar/v3/users/me/calendarList', [
+        'headers' => ['Authorization' => "Bearer {$token->access_token}"],
+    ]);
+    $calendars = json_decode($calResp->getBody(), true)['items'] ?? [];
+
+    $allEvents = [];
+
+    foreach ($calendars as $cal) {
+        $calId = $cal['id'];
+        try {
+            $evResp = $client->get('https://www.googleapis.com/calendar/v3/calendars/'.urlencode($calId).'/events', [
+                'headers' => ['Authorization' => "Bearer {$token->access_token}"],
+                'query' => [
+                    'timeMin' => $start,
+                    'timeMax' => $end,
+                    'singleEvents' => 'true',
+                    'orderBy' => 'startTime',
+                    'maxResults' => 50,
+                ],
+            ]);
+            $events = json_decode($evResp->getBody(), true)['items'] ?? [];
+
+            foreach ($events as $e) {
+                $allEvents[] = [
+                    'calendar_id' => $calId,
+                    'calendar_name' => $cal['summary'] ?? '?',
+                    'calendar_color' => $cal['backgroundColor'] ?? null,
+                    'event_id' => $e['id'],
+                    'summary' => $e['summary'] ?? '(sans titre)',
+                    'start' => $e['start']['dateTime'] ?? $e['start']['date'] ?? null,
+                    'colorId' => $e['colorId'] ?? null,
+                    'event_color' => $e['color'] ?? null,
+                    'status' => $e['status'] ?? null,
+                ];
+            }
+        } catch (Throwable $e) {
+            continue;
+        }
+    }
+
+    // Résumé des colorIds utilisés
+    $colorIds = array_unique(array_filter(array_column($allEvents, 'colorId')));
+    $calColors = array_unique(array_filter(array_column($allEvents, 'calendar_color')));
+
+    return response()->json([
+        'total_events' => count($allEvents),
+        'color_ids_used' => array_values($colorIds),
+        'calendar_colors' => array_values($calColors),
+        'events' => $allEvents,
+    ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+})->middleware(['web', 'auth']);
+
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/ns-conseil/campagne-contacts-traites', function (Request $request) {
+        $dateDebut = $request->query('date_debut');
+        $dateFin = $request->query('date_fin');
+        $statut = $request->query('statut');
+        $prospectStatut = $request->query('prospect_statut');
+        $heureDebut = $request->query('heure_debut');
+        $heureFin = $request->query('heure_fin');
+        $validProspectStatuts = collect(\App\Enums\ProspectStatut::cases())->pluck('value');
+        $prospectStatut = $validProspectStatuts->contains($prospectStatut) ? $prospectStatut : null;
+        $campagneIds = \App\Models\CampagnePhoning::query()
+            ->when($dateDebut, fn ($q) => $q->where(fn ($period) => $period->whereNull('date_fin')->orWhereDate('date_fin', '>=', $dateDebut)))
+            ->when($dateFin, fn ($q) => $q->where(fn ($period) => $period->whereNull('date_debut')->orWhereDate('date_debut', '<=', $dateFin)))
+            ->pluck('id');
+        $appels = \App\Models\Appel::query()
+            ->whereIn('campagne_id', $campagneIds)
+            ->when($statut, fn ($q) => $q->where('phoning_status', $statut))
+            ->when($dateDebut, fn ($q) => $q->whereDate('date_heure', '>=', $dateDebut))
+            ->when($dateFin, fn ($q) => $q->whereDate('date_heure', '<=', $dateFin))
+            ->when($heureDebut, fn ($q) => $q->whereTime('date_heure', '>=', $heureDebut))
+            ->when($heureFin, fn ($q) => $q->whereTime('date_heure', '<=', $heureFin))
+            ->with(['appelable', 'user', 'campagne'])
+            ->orderByDesc('date_heure')->get()
+            ->unique(fn ($appel) => (string) $appel->appelable_type . ':' . $appel->appelable_id)->values()
+            ->when($prospectStatut, fn ($rows) => $rows->filter(fn ($appel) => $appel->appelable instanceof \App\Models\Prospect && optional($appel->appelable->statut)->value === $prospectStatut)->values());
+        $statutLabel = $statut ? (\App\Models\StatutPhoning::where('code', $statut)->value('label') ?: $statut) : null;
+        $prospectStatutLabel = $prospectStatut ? (\App\Enums\ProspectStatut::tryFrom($prospectStatut)?->label() ?: $prospectStatut) : null;
+        $dateLabel = $dateDebut || $dateFin ? (($dateDebut ?: '…') . ' → ' . ($dateFin ?: '…')) : 'Toutes les dates';
+        $heureLabel = $heureDebut || $heureFin ? (($heureDebut ?: '00:00') . ' → ' . ($heureFin ?: '23:59')) : 'Toutes les heures';
+        if ($request->boolean('export')) {
+            $filename = 'prospects-campagne-' . now()->format('Ymd-His') . '.csv';
+            return response()->streamDownload(function () use ($appels): void {
+                $out = fopen('php://output', 'wb');
+                fputcsv($out, ['Prospect / contact', 'Type', 'Téléphone', 'Ville', 'Campagne', 'Agent', 'Dernier appel', 'Statut appel', 'Statut prospect', 'Commentaire', 'Note']);
+                foreach ($appels as $appel) {
+                    $contact = $appel->appelable;
+                    fputcsv($out, [$contact?->nom ?? $contact?->raison_sociale ?? 'Contact #'.$appel->appelable_id, class_basename((string) $appel->appelable_type), $contact?->telephone ?? $appel->numero_appelant ?? '', $contact?->ville ?? '', $appel->campagne?->nom ?? '', trim(($appel->user?->prenom ?? '').' '.($appel->user?->nom ?? '')), optional($appel->date_heure)->format('d/m/Y H:i'), (string) $appel->phoning_status, optional($contact?->statut)->label(), $appel->commentaire ?? '', $appel->phoning_notes ?? '']);
+                }
+                fclose($out);
+            }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+        $prospectStatuts = \App\Enums\ProspectStatut::pourSelect();
+        return view('filament.ns-conseil.pages.campagne-contacts-traites', compact('appels', 'statutLabel', 'prospectStatut', 'prospectStatutLabel', 'prospectStatuts', 'dateLabel', 'heureDebut', 'heureFin', 'heureLabel'));
+    })->name('ns-conseil.campagnes.contacts-traites');
+});

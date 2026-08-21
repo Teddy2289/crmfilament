@@ -1,0 +1,51 @@
+<?php
+namespace App\Filament\NsConseil\Widgets;
+use App\Models\Appel;
+use App\Models\CampagnePhoning;
+use App\Models\User;
+use App\Models\StatutPhoning;
+use Filament\Widgets\Widget;
+use Livewire\Attributes\On;
+class CampagnesAgentPerformanceWidget extends Widget
+{
+    protected static string $view = 'filament.ns-conseil.widgets.campagnes-agent-performance';
+    protected int|string|array $columnSpan = ['md' => 1];
+    protected static ?int $sort = -7;
+    public array $rows = [];
+    public array $periodeGlobale = [];
+    public ?string $dateDebutPersonnalisee = null;
+    public ?string $dateFinPersonnalisee = null;
+    public function mount(): void { $this->refreshRows(); }
+    #[On('campagnes-global-filters-updated')]
+    public function updateGlobalPeriod(array $periode = []): void { $this->periodeGlobale = $periode; $this->refreshRows(); }
+    public function updatedDateDebutPersonnalisee(): void { $this->refreshRows(); }
+    public function updatedDateFinPersonnalisee(): void { $this->refreshRows(); }
+    public function reinitialiserDatesPersonnalisees(): void { $this->dateDebutPersonnalisee = null; $this->dateFinPersonnalisee = null; $this->refreshRows(); }
+    public function refreshRows(): void
+    {
+        $ids = CampagnePhoning::query()->pluck('id');
+        [$from, $to] = $this->periodBounds();
+        $appels = Appel::query()->whereIn('campagne_id', $ids)
+            ->when($from, fn ($q) => $q->whereDate('date_heure', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('date_heure', '<=', $to))
+            ->get(['user_id','phoning_agent_id','phoning_status','duree_secondes']);
+        $labels = StatutPhoning::query()->pluck('label', 'code');
+        $groups = $appels->groupBy(fn ($a) => $a->phoning_agent_id ?: $a->user_id ?: 0);
+        $this->rows = $groups->map(function ($items, $agentId) {
+            $user = $agentId ? User::find($agentId) : null;
+            $total = $items->count();
+            $aboutis = $items->whereNotIn('phoning_status', ['MSG','NRP','nrp'])->count();
+            $statuts = $items->groupBy(fn ($appel) => $appel->phoning_status ?: 'sans_statut')
+                ->map(fn ($statusItems, $code) => ['code' => $code, 'label' => $labels[$code] ?? ($code === 'sans_statut' ? 'Sans statut' : $code), 'total' => $statusItems->count()])
+                ->sortByDesc('total')->values()->all();
+            return ['agent' => $user ? trim(($user->prenom ?? '').' '.($user->nom ?? '')) : 'Agent non attribué', 'appels' => $total, 'aboutis' => $aboutis, 'taux' => $total ? round($aboutis * 100 / $total, 1) : 0, 'duree' => $items->whereNotNull('duree_secondes')->avg('duree_secondes'), 'statuts' => $statuts];
+        })->sortByDesc('appels')->values()->all();
+    }
+    private function periodBounds(): array
+    {
+        if ($this->dateDebutPersonnalisee || $this->dateFinPersonnalisee) {
+            return [$this->dateDebutPersonnalisee, $this->dateFinPersonnalisee];
+        }
+        return [$this->periodeGlobale['date_debut'] ?? null, $this->periodeGlobale['date_fin'] ?? null];
+    }
+}

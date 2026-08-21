@@ -1,0 +1,19 @@
+<x-filament-panels::page>
+    @if (empty($this->getHeaderWidgets()) && empty($this->getFooterWidgets()))
+        <div class="fi-empty-state flex flex-col items-center justify-center gap-y-4 rounded-xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+            <x-heroicon-o-chart-pie class="h-12 w-12 text-gray-400" />
+            <div>
+                <h2 class="text-base font-semibold text-gray-950 dark:text-white">Aucun widget disponible</h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Acces aux widgets non disponible pour cet utilisateur.</p>
+            </div>
+        </div>
+    @else
+        @if (! empty($this->getHeaderWidgets()))
+            <x-filament-widgets::widgets :widgets="$this->getHeaderWidgets()" :columns="$this->getColumns()" />
+        @endif
+
+        @if (! empty($this->getFooterWidgets()))
+            <x-filament-widgets::widgets :widgets="$this->getFooterWidgets()" :columns="$this->getColumns()" class="mt-6" />
+        @endif
+    @endif
+</x-filament-panels::page>
