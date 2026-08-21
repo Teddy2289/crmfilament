@@ -43,7 +43,23 @@ class ViewReportConfiguration extends ViewRecord
                 ->state(fn (CrmReportConfiguration $record): string => (string) $record->recipientCount()),
             TextEntry::make('sections')
                 ->label('Blocs inclus')
-                ->formatStateUsing(fn (?array $state): string => collect($state ?? [])->implode(', ') ?: 'Aucun'),
+                ->formatStateUsing(function (mixed $state): string {
+                    if (is_array($state)) {
+                        return collect($state)->implode(', ') ?: 'Aucun';
+                    }
+
+                    if (is_string($state)) {
+                        $decoded = json_decode($state, true);
+
+                        if (is_array($decoded)) {
+                            return collect($decoded)->implode(', ') ?: 'Aucun';
+                        }
+
+                        return trim($state) !== '' ? $state : 'Aucun';
+                    }
+
+                    return 'Aucun';
+                }),
             TextEntry::make('period_type')->label('Période'),
             TextEntry::make('last_status')->label('Dernier statut')->placeholder('Jamais exécuté'),
             TextEntry::make('last_run_at')->label('Dernière exécution')->dateTime('d/m/Y H:i:s')->placeholder('Jamais'),
