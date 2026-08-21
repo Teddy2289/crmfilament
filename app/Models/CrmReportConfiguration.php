@@ -97,12 +97,28 @@ class CrmReportConfiguration extends Model
 
     public function recipientCount(): int
     {
-        return match ($this->recipient_mode) {
-            self::RECIPIENT_USERS => count($this->recipient_user_ids ?? []),
-            self::RECIPIENT_ROLES => count($this->recipient_roles ?? []),
-            self::RECIPIENT_EMAILS => count($this->recipient_emails ?? []),
-            default => 0,
+        $value = match ($this->recipient_mode) {
+            self::RECIPIENT_USERS => $this->recipient_user_ids,
+            self::RECIPIENT_ROLES => $this->recipient_roles,
+            self::RECIPIENT_EMAILS => $this->recipient_emails,
+            default => null,
         };
+
+        if (is_array($value)) {
+            return count($value);
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+
+            if (is_array($decoded)) {
+                return count($decoded);
+            }
+
+            return trim($value) === '' ? 0 : 1;
+        }
+
+        return 0;
     }
 
     public function scheduleDescription(): string
