@@ -31,7 +31,9 @@ class ViewReportConfiguration extends ViewRecord
             TextEntry::make('slug')->label('Identifiant'),
             TextEntry::make('report_type')->label('Type'),
             TextEntry::make('description')->label('Description')->placeholder('Aucune description'),
-            TextEntry::make('active')->label('Actif')->boolean(),
+            TextEntry::make('active')
+                ->label('Actif')
+                ->formatStateUsing(fn (bool $state): string => $state ? 'Oui' : 'Non'),
             TextEntry::make('schedule_description')
                 ->label('Planification')
                 ->state(fn (CrmReportConfiguration $record): string => $record->scheduleDescription()),
