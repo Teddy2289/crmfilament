@@ -29,6 +29,7 @@ class SendDailyReportJob implements ShouldQueue
         public ?int $userId = null,
         public string $reportKey = 'daily',
         public string $executionUuid = '',
+        public ?string $recipientEmail = null,
     ) {
         $this->executionUuid = $executionUuid ?: (string) Str::uuid();
     }
@@ -72,9 +73,10 @@ class SendDailyReportJob implements ShouldQueue
 
             $prenom = $rapport['user']->prenom ?? '';
             $mailable = new DailyReportMail($rapport);
+            $recipientEmail = $this->recipientEmail ?: $user->email;
             $log = $emailLog->begin(
                 reportKey: $this->reportKey,
-                recipientEmail: $user->email,
+                recipientEmail: $recipientEmail,
                 user: $user,
                 reportType: 'daily',
                 scope: $this->userId !== null ? 'targeted' : 'roles',
@@ -86,13 +88,13 @@ class SendDailyReportJob implements ShouldQueue
             if (! $log) {
                 Log::warning('Rapport quotidien CRM ignoré : destinataire déjà traité.', [
                     'report_key' => $this->reportKey,
-                    'recipient' => $user->email,
+                    'recipient' => $recipientEmail,
                 ]);
                 continue;
             }
 
             try {
-                $sentMessage = Mail::mailer('smtp')->to($user->email)->send($mailable);
+                $sentMessage = Mail::mailer('smtp')->to($recipientEmail)->send($mailable);
                 $messageId = null;
                 if (is_object($sentMessage) && method_exists($sentMessage, 'getSymfonySentMessage')) {
                     $messageId = $sentMessage->getSymfonySentMessage()?->getMessageId();
