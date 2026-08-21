@@ -14,4 +14,3 @@ class ViewCrmReportEmailLog extends ViewRecord
         return [];
     }
 }
-

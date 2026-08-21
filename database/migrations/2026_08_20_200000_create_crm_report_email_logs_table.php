@@ -39,4 +39,3 @@ return new class extends Migration
         Schema::dropIfExists('crm_report_email_logs');
     }
 };
-

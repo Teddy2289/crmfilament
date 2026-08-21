@@ -14,4 +14,3 @@ class ListCrmReportEmailLogs extends ListRecords
         return [];
     }
 }
-
