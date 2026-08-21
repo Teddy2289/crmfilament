@@ -40,18 +40,8 @@ class SendDailyReportJob implements ShouldQueue
         ];
     }
 
-<<<<<<< HEAD
     public function handle(DailyReportService $service, ?ReportEmailLogService $emailLog = null): int
     {
-=======
-    public function handle(
-        DailyReportService $service,
-        ?CrmSettingsService $settings = null,
-        ?ReportEmailLogService $emailLog = null,
-    ): int
-    {
-        $settings ??= app(CrmSettingsService::class);
->>>>>>> 624e1c0b (feat(reporting): journaliser les envois de rapports)
         $emailLog ??= app(ReportEmailLogService::class);
         $this->configureMailerFromActiveEmailConfiguration();
 
